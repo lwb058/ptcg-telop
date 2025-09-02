@@ -14,9 +14,8 @@ PTCG-Telopは、[NodeCG](https://www.nodecg.dev/)フレームワークをベー�
 
 ## スクリーンショット
 
-（ここにダッシュボードやグラフィックのスクリーンショットを挿入）
+<img width="1920" height="1080" alt="Screenshot 2025-09-02 14-36-42" src="https://github.com/user-attachments/assets/776332a4-29ee-46a7-bfb4-e97b4e49c82d" />
 
-![スクリーンショット](https://user-images.githubusercontent.com/your-image-path.png)
 
 ## 前提条件
 
