@@ -50,20 +50,19 @@ PTCG-Telopは、[NodeCG](https://www.nodecg.dev/)フレームワークをベー�
     nodecg-cli install ptcg-telop
     ```
 
-4.  **Python環境のセットアップ**:
+4.  **アセット（画像・動画素材）の配置**:
+    このバンドルは、背景画像やカードスリーブなどの表示に画像・動画ファイルを使用します。これらはリポジトリに含まれていないため、別途ダウンロードが必要です。
+    1.  本リポジトリの [**Releases**](https://github.com/lwb058/ptcg-telop/releases) ページにアクセスします。
+    2.  最新のリリースから、アセットパッケージ（例: `ptcg-telop_assets_v1.0.0.zip`）をダウンロードします。
+    3.  ダウンロードしたファイルを解凍し、中のファイルをすべて `nodecg/assets/ptcg-telop/` ディレクトリに配置します。（もし `assets/ptcg-telop` ディレクトリが存在しない場合は、作成してください）
+
+5.  **Python環境のセットアップ**:
     バンドルの`python`ディレクトリに移動し、必要なライブラリをインストールします。
     ```bash
     cd bundles/ptcg-telop/python
     pip install -r requirements.txt
     ```
     *もし`requirements.txt`がなければ、`card_utils.py`や`extract_deck_cards.py`でimportしているライブラリ（例: `requests`, `beautifulsoup4`など）を手動でインストールしてください。*
-
-5.  **カードデータベースの生成**:
-    配信で使用するデッキ情報（デッキコードなど）を使って、カードデータベースを生成します。
-    ```bash
-    python extract_deck_cards.py
-    ```
-    これにより、バンドルのルートに`database.json`ファイルが生成されます。
 
 ## 使用方法
 
@@ -78,16 +77,27 @@ PTCG-Telopは、[NodeCG](https://www.nodecg.dev/)フレームワークをベー�
     `ptcg-telop`という名前のタブが表示され、各種コントロールパネル（Master Control, Player L/Rなど）にアクセスできます。
 
 3.  **基本操作**:
-    -   **Playerパネル**: 各プレイヤーのデッキIDを設定し、盤面にポケモンを配置・管理します。
-    -   **Master Controlパネル**: 選択したポケモンに対して、ダメージ計算やエネルギー付与などの一括操作を行います。
-    -   全ての操作は、まずドラフトとしてキューに追加されます。
-    -   `Apply`ボタンを押すと、キュー内の全操作がライブ画面に反映されます。
-    -   `Discard`ボタンを押すと、キュー内の全操作が破棄されます。
+    -   **Playerパネルでのデッキ設定**:
+        1.  [ポケモンカードゲーム公式ホームページのデッキ構築ページ](https://www.pokemon-card.com/deck/)等で、使用したいデッキの「デッキコード」を取得します。
+        2.  Playerパネル内の`DeckID`入力欄にデッキコードを入力し、「Set」ボタンを押します。
+        3.  システムが自動でカード情報を取得し、データベースを構築・更新します。
+        4.  その後、ドロップダウンメニューからポケモンを選択し、盤面に配置します。
+    -   **Master Controlパネル**: 選択したポケモンに対して、ダメージ計算やエネルギー付付などの一括操作を行います。
+    -   **操作フロー**: 全ての操作は、まずドラフトとしてキューに追加され、`Apply`ボタンを押すとライブ画面に反映されます。`Discard`ボタンで破棄できます。
+
+4.  **配信ソフトでの画面設定 (OBS等)**:
+    NodeCGのグラフィックは、複数のレイヤー（層）を重ねて一つの画面を構成しています。OBS等の配信ソフトに以下のURLを「ブラウザソース」として追加してください。
+
+    最適な表示を得るために、OBSのソースリストで以下の順序（上が最前面）で配置することを推奨します。
+
+    1.  **カード展示レイヤー**: `http://localhost:9090/bundles/ptcg-telop/graphics/card.html`
+    2.  **拡張ベンチレイヤー**: `http://localhost:9090/bundles/ptcg-telop/graphics/extra.html`
+    3.  **メイン盤面レイヤー**: `http://localhost:9090/bundles/ptcg-telop/graphics/main.html`
 
 ## 注意点
 
 -   **実行ディレクトリ**: `nodecg`コマンドは、必ずNodeCGの**ルートディレクトリ**で実行してください。
--   **データベース生成**: 配信前には、必ず`extract_deck_cards.py`を実行して、使用するカードの`database.json`を最新の状態にしてください。
+-   **データベース**: データベースはPlayerパネルからデッキコードをセットすることで自動生成されます。手動での操作は不要です。
 -   **操作フロー**: このシステムの操作は「Playerパネルで個別の状態を設定」→「Masterパネルで選択・一括操作」→「MasterパネルでApply/Discard」という流れが基本です。
 
 ## ライセンス
