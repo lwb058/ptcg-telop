@@ -1,0 +1,119 @@
+{
+  "name": "ptcg-telop",
+  "version": "1.0.0",
+  "description": "Pokemon TCG Telop System",
+  "main": "extension/index.js",
+  "nodecg": {
+    "compatibleRange": "^2.0.0",
+    "assetCategories": [
+    {
+      "name": "fx",
+      "title": "エフェクト動画",
+      "allowedTypes": [
+        "webm"
+      ]
+    },
+    {
+      "name": "energy",
+      "title": "エネルギーアイコン",
+      "allowedTypes": [
+        "png",
+        "webp"
+      ]
+    },
+    {
+      "name": "element",
+      "title": "UI構成",
+      "allowedTypes": [
+        "jpg",
+        "jpeg",
+        "gif",
+        "png",
+        "webm"
+      ]
+    }
+    ],
+    "dashboardPanels": [
+      {
+        "name": "master-control-panel",
+        "title": "Master Control",
+        "width": 4,
+        "file": "master_control_panel.html",
+        "headerColor": "#607D8B"
+      },
+      {
+        "name": "settings-panel",
+        "title": "Settings",
+        "file": "setting.html",
+        "headerColor": "#525F78",
+        "fullbleed": true
+      },
+      {
+        "name": "player-l-panel",
+        "title": "Player L",
+        "width": 3,
+        "file": "player_l_panel.html",
+        "headerColor": "#3498DB"
+      },
+      {
+        "name": "player-r-panel",
+        "title": "Player R",
+        "width": 3,
+        "file": "player_r_panel.html",
+        "headerColor": "#E74C3C"
+      },
+      {
+        "name": "deck-viewer",
+        "title": "Deck Viewer",
+        "file": "deck_viewer.html",
+        "headerColor": "#2E8B57",
+        "fullbleed": true
+      }
+    ],
+    "graphics": [
+      {
+        "file": "main.html",
+        "width": 1920,
+        "height": 1080,
+        "name": "Main Graphic"
+      },
+      {
+        "file": "extra.html",
+        "width": 1920,
+        "height": 1080,
+        "name": "Extra Bench Graphic"
+      },
+      {
+        "file": "card.html",
+        "width": 1920,
+        "height": 1080,
+        "name": "Card Presenter Graphic"
+      }
+    ],
+    "replicants": [
+      {
+        "name": "ptcg-settings",
+        "defaultValue": {
+          "typeColorMap": {
+            "草": "rgba(120, 200, 80, 0.2)",
+            "炎": "rgba(240, 128, 48, 0.2)",
+            "水": "rgba(104, 144, 240, 0.2)",
+            "雷": "rgba(248, 208, 48, 0.2)",
+            "超": "rgba(160, 64, 160, 0.2)",
+            "闘": "rgba(192, 48, 40, 0.2)",
+            "悪": "rgba(112, 88, 72, 0.2)",
+            "鋼": "rgba(184, 184, 208, 0.2)",
+            "妖": "rgba(238, 153, 172, 0.2)",
+            "竜": "rgba(112, 56, 248, 0.2)",
+            "無": "rgba(168, 168, 120, 0.2)"
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Extra Bench Graphic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+1p:wght@400;700;900&family=Sora:wght@400;700;900&family=Robot+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font-main: 'M PLUS 1p', sans-serif;
+            --font-numeric: 'Sora', sans-serif;
+            --font-damage: 'Rotobo Mono', sans-serif;
+            --color-bg-panel: #3db1ff;
+            --color-bg-module: #0a406d;
+            --module-border: 2px;
+            --module-border-radius: 8px;
+            --module-color-border: #ffffff;
+            --image-border: 3px;
+            --text-light: #F3F4F6;
+            --text-dark: #9CA3AF;
+            --sub-color: #3db1ffbd;
+            --third-color: #1a59be83;
+            --hp-high: #22C55E;
+            --hp-medium: #F59E0B;
+            --hp-low: #da0000;
+            --hp-border:2px;
+            --hp-border-color:#ffffff;
+            --ability-tag-color: #d4000e;
+        }
+
+        body, html { margin: 0; padding: 0; width: 1920px; height: 1080px; font-family: var(--font-main); color: var(--text-light); background-color: transparent; overflow: hidden; }
+        .overlay-frame { width: 100%; height: 100%; display: flex; justify-content: space-between; position: relative; }
+        .player-area { 
+            width: 406px; 
+            height: 560px; 
+            transform: translateY(475px);
+            display: flex; 
+            flex-direction: column; 
+            padding: 5px; 
+            box-sizing: border-box; 
+            background-color: var(--color-bg-panel); 
+            background-image: url('/assets/ptcg-telop/element/extra-bg.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .bench-slots {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            width: 100%;
+        }
+
+        .extra-bench-title {
+            height: 64px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Dela Gothic One', sans-serif;
+            font-size: 32px;
+            font-style: italic;
+            letter-spacing: 3px;
+            color: var(--module-border);
+            background-color: var(--third-color);
+            border-radius: 20px;
+            margin: 8px;
+            margin-top: 36px;
+            margin-bottom: 36px;
+            box-sizing: border-box;
+            visibility: hidden;
+        }
+
+        .bench-slot {
+            height: 108px;
+            flex-shrink: 0;
+            padding: 5px;
+            border-radius: 6px; 
+            box-sizing: border-box;
+            background-color: var(--color-bg-module);
+            background-image: url('/assets/ptcg-telop/element/bench-bg.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            border: var(--module-border) solid var(--module-color-border);
+            position: relative;
+            opacity: 1;
+        }
+
+        .bench-slot.is-empty {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .bench-pokemon-wrapper { display: flex; align-items: flex-start; gap: 5px; width: 100%; height: 100%; }
+        .bench-card-image-area { position: relative; width: 142px; height: 88px; margin: 0 auto; display: flex; flex-shrink: 0; overflow: hidden; border-radius: 4px; border: var(--image-border) solid var(--module-color-border); }
+        .bench-pokemon-image { position: absolute; width: 171.4px; height: auto; top: -26.5px; left: -13.8px; }
+        .bench-attached-energies { position: absolute; bottom: -2px; left: -2px; display: flex; gap: 1px; }
+        .bench-attached-energies:not(:empty) { background-color: var(--module-color-border); border-radius: 0px 11px 0px 0px; padding: 1px; border: 1px solid var(--module-color-border); box-shadow: 1px 1px 3px rgba(0,0,0,0.6); }
+        .bench-attached-energies .energy-icon { width: 14px; height: 14px; }
+        .energy-count-group { display: flex; align-items: center; gap: 2px; }
+        .energy-count-number { font-family: var(--font-numeric); font-weight: bold; color: #212121; text-shadow: 0 0 2px white; font-size: 14px; padding-right: 4px; }
+        .bench-attached-tool { position: absolute; bottom: 2px; right: 2px; width: 40px; height: 25px; overflow: hidden; border-radius: 3px; border: var(--module-border) solid var(--module-color-border); box-shadow: 2px 2px 5px rgba(0,0,0,0.7); }
+        .bench-attached-tool img { position: absolute; width: 47.63px; height: auto; left: -3.79px; top: -9.44px; }
+        .bench-info-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 4px; overflow: hidden; }
+        .bench-pokemon-name { font-size: 16px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 21px; display: flex; align-items: flex-end; }
+        .bench-hp-gauge { display: flex; align-items: center; }
+        .bench-hp-text { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; font-family: var(--font-numeric); font-size: 11px; font-weight: bold; color: white; text-shadow: 1px 1px 1px black; z-index: 2; }
+        .bench-hp-bar-container { position: relative; flex-grow: 1; height: 16px; background-color: rgba(0, 0, 0, 0.5); border-radius: 8px; overflow: hidden; border: var(--hp-border) solid var(--hp-border-color); }
+        .bench-hp-bar { height: 100%; transition: width 0.5s ease-in-out, background-color 0.5s ease; }
+        .bench-skills-container { display: flex; flex-direction: column; justify-content: space-around; flex-grow: 0; overflow: hidden; height: 44px; }
+        .bench-skill-row-wrapper { position: relative; height: 20px; }
+        .bench-skill { display: grid; grid-template-columns: 1fr 40px; width: 100%; height: 100%; align-items: center; background-color: var(--third-color); border-radius: 6px; gap: 4px; }
+        .bench-energy-cost-container, .bench-skill-ability-tag { position: absolute; left: 0; top: 0; z-index: 1; }
+        .bench-energy-cost-container { background-color: rgb(201, 201, 201); border-radius: 3px 9px 9px 3px; height: 20px; display: inline-flex; align-items: center; padding: 0 2px; box-sizing: border-box; gap: 1px; }
+        .bench-energy-cost-container .energy-icon { width: 14px; height: 14px; margin-left: 0px; }
+        .bench-skill-ability-tag { background-color: var(--ability-tag-color); color: white; font-size: 12px; border-radius: 3px 9px 9px 3px; font-weight: bold; width: 50px; height: 20px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; font-style: italic; transition: filter 0.3s ease; filter: grayscale(0) }
+        .bench-skill-name-wrapper { display: flex; align-items: center; gap: 4px; overflow: hidden; padding-left: 80px; }
+        .bench-skill-name { font-size: 12px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bench-skill-name.is-ability { color: var(--ability-tag-color); }
+        .bench-skill-damage { font-family: var(--font-numeric);font-size: 14px; font-weight: bold; text-align: right; padding-right: 8px; white-space: nowrap; }
+        .battle-skill-ability-tag.used, .bench-skill-ability-tag.used { background-color: #9e9e9e;}
+        .battle-skill-name.is-ability.used, .bench-skill-name.is-ability.used { color: #9e9e9e; }
+        .hidden { display: none; }
+
+        /* --- Animation Styles --- */
+        #animation-wrapper-L,
+        #animation-wrapper-R {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @keyframes slide-out-left { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-120%); opacity: 0; } }
+        @keyframes slide-in-left { 0%, 15% { transform: translateX(-120%); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+        @keyframes slide-out-right { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+        @keyframes slide-in-right { 0%, 15%  { transform: translateX(120%); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+
+        .anim-slide-out-L, .anim-slide-out-R {
+            animation-duration: 0.5s;
+            animation-fill-mode: forwards;
+        }
+        .anim-slide-in-L, .anim-slide-in-R {
+            animation-duration: 0.5s;
+            animation-fill-mode: forwards;
+            pointer-events: auto;
+        }
+
+        .anim-slide-out-L { animation-name: slide-out-left; }
+        .anim-slide-in-L { animation-name: slide-in-left; }
+        .anim-slide-out-R { animation-name: slide-out-right; }
+        .anim-slide-in-R { animation-name: slide-in-right; }
+
+        /* --- Animation for Tool Card Attachment --- */
+        @keyframes scale-in-tool {
+            from {
+                transform: scale(1.1);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        .anim-scale-in-tool {
+            animation: scale-in-tool 0.1s ease-out forwards;
+        }
+
+        /* --- Attack FX Animations --- */
+        @keyframes flash-white {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(2.5); }
+        }
+        .anim-flash-white { animation: flash-white 0.1s ease 2; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-5px) translateY(4px); }
+            40% { transform: translateX(4px) translateY(-3px); }
+            75% { transform: translateX(2px) translateY(1px); }
+        }
+        .anim-shake { animation: shake 0.1s ease-in-out 2; }
+
+        .hit-effect {
+            position: absolute;
+            z-index: 400;
+            pointer-events: none;
+        }
+
+        @keyframes show-and-fade-up {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+            10% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+            90% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.0); }
+        }
+
+        /* --- Damage Number FX --- */
+        .damage-number {
+            font-family: var(--font-damage);
+            position: absolute;
+            font-weight: 900;
+            color: #fff9dd;
+            z-index: 500;
+            pointer-events: none;
+            animation: show-and-fade-up 1.5s ease-out forwards;
+        }
+
+        .damage-number-bench {
+            font-size: 40px;
+            text-shadow: 2px 2px 0 #750000, -2px -2px 0 #750000, 2px -2px 0 #750000, -2px 2px 0 #750000, 4px 4px 6px #000000cc;
+        }
+        
+        .heal-number {
+            font-family: var(--font-damage);
+            position: absolute;
+            font-weight: 900;
+            color: #dcffe3; /* Light green color */
+            z-index: 500;
+            pointer-events: none;
+            animation: show-and-fade-up 1.5s ease-out forwards;
+        }
+
+        .heal-number-bench {
+            font-size: 40px;
+            text-shadow: 2px 2px 0 #1aa541, -2px -2px 0 #1aa541, 2px -2px 0 #1aa541, -2px 2px 0 #1aa541, 4px 4px 6px #000000cc;
+        }
+
+        /* --- Preloader --- */
+        #video-preloader {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            left: -9999px;
+            top: -9999px;
+            visibility: hidden;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay-frame">
+        <div id="animation-wrapper-L">
+            <div class="player-area" id="player-L-area">
+                <div class="extra-bench-title">EXTRA BENCH</div>
+                <div class="bench-slots">
+                    <div class="bench-slot" id="slot-L6"></div>
+                    <div class="bench-slot" id="slot-L7"></div>
+                    <div class="bench-slot" id="slot-L8"></div>
+                </div>
+            </div>
+        </div>
+        <div id="animation-wrapper-R">
+            <div class="player-area" id="player-R-area">
+                <div class="extra-bench-title">EXTRA BENCH</div>
+                <div class="bench-slots">
+                    <div class="bench-slot" id="slot-R6"></div>
+                    <div class="bench-slot" id="slot-R7"></div>
+                    <div class="bench-slot" id="slot-R8"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Preloader Container for FX Videos (Hidden) -->
+    <div id="video-preloader"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const ENERGY_MAP = { "草": "草", "炎": "炎", "水": "水", "雷": "雷", "超": "超", "闘": "闘", "悪": "悪", "鋼": "鋼", "無": "無", "全": "全", "超悪": "超悪", "竜": "竜", "妖": "妖" };
+            // Animation Timings
+            const REPLACE_ANIMATION_HIDE_MS = 550;
+            const REPLACE_ANIMATION_SHOW_MS = 700;
+            const g_attackAnimationTargets = new Set();
+            const activeAnimations = new Map();
+
+            // --- Animation Control ---
+            const animationWrapperL = document.getElementById('animation-wrapper-L');
+            const animationWrapperR = document.getElementById('animation-wrapper-R');
+            const extraBenchVisible = nodecg.Replicant('extraBenchVisible', { defaultValue: { left: false, right: false } });
+
+            const visibilityState = {
+                left: { isVisible: false, isAnimating: false },
+                right: { isVisible: false, isAnimating: false }
+            };
+
+            function onAnimationEnd(element) {
+                return new Promise(resolve => {
+                    element.addEventListener('animationend', resolve, { once: true });
+                });
+            }
+
+            async function handleVisibility(side, wantsToShow) {
+                const state = side === 'L' ? visibilityState.left : visibilityState.right;
+                const wrapper = side === 'L' ? animationWrapperL : animationWrapperR;
+                const animInClass = `anim-slide-in-${side}`;
+                const animOutClass = `anim-slide-out-${side}`;
+
+                if (state.isAnimating || state.isVisible === wantsToShow) {
+                    return;
+                }
+                state.isAnimating = true;
+
+                try {
+                    if (wantsToShow) {
+                        wrapper.classList.remove(animOutClass);
+                        wrapper.classList.add(animInClass);
+                        await onAnimationEnd(wrapper);
+                        state.isVisible = true;
+                    } else {
+                        wrapper.classList.remove(animInClass);
+                        wrapper.classList.add(animOutClass);
+                        await onAnimationEnd(wrapper);
+                        state.isVisible = false;
+                    }
+                } finally {
+                    state.isAnimating = false;
+                }
+            }
+
+            extraBenchVisible.on('change', (newValue) => {
+                if (!newValue) return;
+                handleVisibility('L', newValue.left);
+                handleVisibility('R', newValue.right);
+            });
+
+
+            function animateHp(element, from, to, fromMax, toMax, duration) {
+                if (!element) return;
+                let start = null;
+                const animate = (timestamp) => {
+                    if (!start) start = timestamp;
+                    const progress = Math.min((timestamp - start) / duration, 1);
+                    const currentVal = Math.round(from + (to - from) * progress);
+                    const currentMaxVal = Math.round(fromMax + (toMax - fromMax) * progress);
+                    element.textContent = `${currentVal}/${currentMaxVal}`;
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    }
+                };
+                requestAnimationFrame(animate);
+            }
+
+            function displayHpChangeNumber(targetSlotEl, hpChange) {
+                if (hpChange === 0) return;
+                const isHeal = hpChange > 0;
+                const number = Math.abs(hpChange);
+                const text = isHeal ? `+${number}` : `${-number}`;
+                const isBattleSlot = targetSlotEl.classList.contains('active-slot');
+                const numberTypeClass = isHeal ? 'heal-number' : 'damage-number';
+                const numberSizeClass = (isHeal ? 'heal-number-bench' : 'damage-number-bench');
+                const cardImageSelector = isBattleSlot ? '.battle-card-image-area' : '.bench-card-image-area';
+                const cardImageEl = targetSlotEl.querySelector(cardImageSelector);
+                if (!cardImageEl) return;
+                requestAnimationFrame(() => {
+                    const imageRect = cardImageEl.getBoundingClientRect();
+                    if (imageRect.width === 0) return;
+                    const numberEl = document.createElement('div');
+                    numberEl.className = `${numberTypeClass} ${numberSizeClass}`;
+                    numberEl.textContent = text;
+                    numberEl.style.left = `${imageRect.left + imageRect.width / 2}px`;
+                    numberEl.style.top = `${imageRect.top + imageRect.height / 2}px`;
+                    document.body.appendChild(numberEl);
+
+                    setTimeout(() => numberEl.remove(), 1500);
+                });
+            }
+
+            function renderAttachedEnergies(container, energies, getIconHtml) {
+                if (!container || !energies) return;
+                const energyCounts = energies.reduce((acc, energy) => { acc[energy] = (acc[energy] || 0) + 1; return acc; }, {});
+                const totalEnergyCount = energies.length;
+                const maxSingleEnergyCount = Object.values(energyCounts).reduce((max, count) => Math.max(max, count), 0);
+                const useTypeB = (maxSingleEnergyCount > 1 && totalEnergyCount >= 7) || maxSingleEnergyCount >= 5;
+                let html = '';
+                if (useTypeB) {
+                    for (const type in energyCounts) {
+                        html += `<div class="energy-count-group">${getIconHtml(type)}<span class="energy-count-number">${energyCounts[type]}</span></div>`;
+                    }
+                } else {
+                    html = energies.map(getIconHtml).join('');
+                }
+                container.innerHTML = html;
+            }
+
+            function renderSlot(side, index, slotData, oldSlotData) {
+                const slotEl = document.getElementById(`slot-${side}${index}`);
+                const db = cardDatabase.value;
+                const settings = settingsRep.value || {};
+
+                const hasCard = slotData && slotData.cardId;
+                const forceSlideIn = slotData && slotData.forceSlideIn;
+                const skipSlideIn = slotData && slotData.evolutionSelect;
+                const isNewCard = hasCard && (!oldSlotData || slotData.cardId !== oldSlotData.cardId);
+
+                const oldToolId = oldSlotData ? oldSlotData.attachedToolId : null;
+                const newToolId = slotData ? slotData.attachedToolId : null;
+
+                const sanitizeDamage = (damage) => {
+                    if (typeof damage !== 'string') return damage || '';
+                    return damage.replace(/＋/g, '+').replace(/－/g, '-').replace(/×/g, '×');
+                };
+
+                if (!slotEl || !slotData || !slotData.cardId || !db || !db[slotData.cardId]) {
+                    const isSlidingOut = slotEl.classList.contains('anim-slide-out-L') || slotEl.classList.contains('anim-slide-out-R');
+
+                    const clearSlot = () => {
+                        slotEl.innerHTML = '';
+                        slotEl.dataset.cardId = '';
+                        slotEl.classList.add('is-empty');
+                        slotEl.classList.remove('anim-slide-out-L', 'anim-slide-out-R', 'anim-slide-in-L', 'anim-slide-in-R');
+                    };
+
+                    if (isSlidingOut) {
+                        setTimeout(clearSlot, 500); 
+                    } else {
+                        clearSlot();
+                    }
+                    return;
+                }
+                slotEl.classList.remove('is-empty');
+
+                const cardData = db[slotData.cardId];
+                if (!cardData || !cardData.pokemon) return;
+
+                const baseHp = parseInt(cardData.pokemon.hp || 0, 10);
+                const extraHp = parseInt(slotData.extraHp || 0, 10);
+                const damage = parseInt(slotData.damage || 0, 10);
+                const maxHp = baseHp + extraHp;
+                const currentHp = Math.max(0, maxHp - damage);
+                const hpPercent = maxHp > 0 ? (currentHp / maxHp) * 100 : 0;
+
+                let startHp = currentHp, startMaxHp = maxHp;
+                if (oldSlotData) {
+                    const oldBaseHp = oldSlotData.cardId && db[oldSlotData.cardId] ? parseInt(db[oldSlotData.cardId].pokemon.hp || 0, 10) : 0;
+                    const oldExtraHp = parseInt(oldSlotData.extraHp || 0, 10);
+                    startMaxHp = oldBaseHp + oldExtraHp;
+                    startHp = Math.max(0, startMaxHp - (parseInt(oldSlotData.damage || 0, 10)));
+                }
+                const hpChangeToShow = currentHp - startHp;
+                const isUnderAttack = g_attackAnimationTargets.has(slotEl.id);
+                const isEvolution = slotData && slotData.evolutionSelect;
+
+                let hpColor = 'var(--hp-high)';
+                if (hpPercent <= 25) hpColor = 'var(--hp-low)';
+                else if (hpPercent <= 50) hpColor = 'var(--hp-medium)';
+
+                const getEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/energy/${ENERGY_MAP[type] || 'エネなし'}.png">`;
+                
+                let wrapper = slotEl.querySelector('.bench-pokemon-wrapper');
+
+                const playAnimationIfNeeded = () => {
+                    if ((isNewCard || forceSlideIn) && !skipSlideIn) {
+                        const needsToWaitForSlideOut = slotEl.classList.contains('anim-slide-out-L') || slotEl.classList.contains('anim-slide-out-R');
+                        const delay = needsToWaitForSlideOut ? 500 : 0;
+                        setTimeout(() => {
+                            const side = slotEl.id.includes('-L') ? 'L' : 'R';
+                            slotEl.classList.add(`anim-slide-in-${side}`);
+                            setTimeout(() => slotEl.classList.remove(`anim-slide-out-${side}`, `anim-slide-in-${side}`), 500);
+                        }, delay);
+                    }
+                };
+
+                if (!wrapper || slotEl.dataset.cardId !== slotData.cardId) {
+                    const toolHtml = `<div class="bench-attached-tool hidden"><img/></div>`;
+                    slotEl.innerHTML = `
+                        <div class="bench-pokemon-wrapper">
+                            <div class="bench-card-image-area">
+                                <img class="bench-pokemon-image">
+                                <div class="bench-attached-energies"></div>
+                                ${toolHtml}
+                            </div>
+                            <div class="bench-info-area">
+                                <div class="bench-pokemon-name">${cardData.name}</div>
+                                <div class="bench-hp-gauge">
+                                    <div class="bench-hp-bar-container">
+                                        <div class="bench-hp-text"></div>
+                                        <div class="bench-hp-bar"></div>
+                                    </div>
+                                </div>
+                                <div class="bench-skills-container"></div>
+                            </div>
+                        </div>`;
+                    wrapper = slotEl.querySelector('.bench-pokemon-wrapper');
+                    slotEl.dataset.cardId = slotData.cardId;
+
+                    const mainImg = wrapper.querySelector('.bench-pokemon-image');
+                    mainImg.style.visibility = 'hidden';
+                    mainImg.onload = () => {
+                        mainImg.style.visibility = 'visible';
+                        playAnimationIfNeeded();
+                        mainImg.onload = null; // Clean up handler
+                    };
+                    mainImg.src = `/assets/ptcg-telop/card_img/${slotData.cardId}.jpg`;
+                } else if (forceSlideIn) {
+                    playAnimationIfNeeded();
+                }
+
+                const hpUpdate = () => {
+                    const hpTextEl = wrapper.querySelector('.bench-hp-text');
+                    animateHp(hpTextEl, startHp, currentHp, startMaxHp, maxHp, 500);
+                    const hpBarEl = wrapper.querySelector('.bench-hp-bar');
+                    hpBarEl.style.width = `${hpPercent}%`;
+                    hpBarEl.style.backgroundColor = hpColor;
+                    if (hpChangeToShow !== 0 && !isEvolution) {
+                        displayHpChangeNumber(slotEl, hpChangeToShow);
+                    }
+                };
+
+                if (isUnderAttack) { setTimeout(hpUpdate, 1100); } else { hpUpdate(); }
+
+                const skillsContainer = wrapper.querySelector('.bench-skills-container');
+                const allSkills = [...(cardData.pokemon.abilities || []), ...(cardData.pokemon.attacks || [])];
+                let skillsHtml = '';
+                allSkills.slice(0, 2).forEach(skill => {
+                    const isAbility = !!skill.text && !skill.cost;
+                    const abilityUsedClass = (isAbility && slotData.abilityUsed) ? 'used' : '';
+                    let tagHtml = '';
+                    if (isAbility) {
+                        tagHtml = `<span class="bench-skill-ability-tag ${abilityUsedClass}">特 性</span>`;
+                    } else {
+                        const cost = skill.cost || [];
+                        const iconsToRender = cost.length > 0 ? cost : [null];
+                        const iconsHtml = iconsToRender.map(getEnergyIcon).join('');
+                        tagHtml = `<div class="bench-energy-cost-container">${iconsHtml}</div>`;
+                    }
+                    skillsHtml += `
+                        <div class="bench-skill-row-wrapper">
+                            ${tagHtml}
+                            <div class="bench-skill">
+                                <div class="bench-skill-name-wrapper"><span class="bench-skill-name ${isAbility ? 'is-ability' : ''} ${abilityUsedClass}">${skill.name}</span></div>
+                                <div class="bench-skill-damage">${sanitizeDamage(skill.damage) || ''}</div>
+                            </div>
+                        </div>`;
+                });
+                skillsContainer.innerHTML = skillsHtml;
+
+                const energyContainer = wrapper.querySelector('.bench-attached-energies');
+                renderAttachedEnergies(energyContainer, slotData.attachedEnergy, getEnergyIcon);
+
+                const toolWrapperEl = wrapper.querySelector('.bench-attached-tool');
+                const toolImg = toolWrapperEl.querySelector('img');
+                if (slotData.attachedToolId && db[slotData.attachedToolId]) {
+                    toolWrapperEl.classList.remove('hidden');
+
+                    if (newToolId && newToolId !== oldToolId) {
+                        // Hide the container to prevent flashing the old image.
+                        toolWrapperEl.style.visibility = 'hidden';
+                        toolImg.onload = () => {
+                            // Once the new image is loaded, make it visible and start the animation.
+                            toolWrapperEl.style.visibility = 'visible';
+                            toolWrapperEl.classList.add('anim-scale-in-tool');
+                            toolWrapperEl.addEventListener('animationend', () => toolWrapperEl.classList.remove('anim-scale-in-tool'), { once: true });
+                            toolImg.onload = null; // Clean up the handler to avoid re-triggering.
+                        };
+                    }
+                    toolImg.src = `/assets/ptcg-telop/card_img/${slotData.attachedToolId}.jpg`;
+                } else {
+                    toolWrapperEl.classList.add('hidden');
+                }
+
+                if (slotData && slotData.evolutionSelect) {
+                    delete slotData.evolutionSelect;
+                } // Clear the evolutionSelect flag after rendering
+                if (slotData && slotData.forceSlideIn) {
+                    delete slotData.forceSlideIn;
+                }
+            }
+            
+            // Preload all FX videos and images on page load
+            const videosToPreload = [
+            '/assets/ptcg-telop/fx/bench_ko.webm',
+            '/assets/ptcg-telop/fx/bench-mega-evolve.webm',
+            '/assets/ptcg-telop/fx/bench-replace.webm',
+            '/assets/ptcg-telop/fx/bench-devolve.webm',
+            '/assets/ptcg-telop/fx/bench-evolve.webm',
+            '/assets/ptcg-telop/fx/hit-colorless.webm',
+            '/assets/ptcg-telop/fx/hit-darkness.webm',
+            '/assets/ptcg-telop/fx/hit-dragon.webm',
+            '/assets/ptcg-telop/fx/hit-fighting.webm',
+            '/assets/ptcg-telop/fx/hit-fire.webm',
+            '/assets/ptcg-telop/fx/hit-grass.webm',
+            '/assets/ptcg-telop/fx/hit-lightning.webm',
+            '/assets/ptcg-telop/fx/hit-metal.webm',
+            '/assets/ptcg-telop/fx/hit-psychic.webm',
+            '/assets/ptcg-telop/fx/hit-water.webm',
+            '/assets/ptcg-telop/fx/tool-attach.webm',
+            '/assets/ptcg-telop/fx/tool-remove.webm'
+            ];
+            const imagesToPreload = [
+                '/assets/ptcg-telop/element/weakness.png'
+            ];
+
+            const preloaderContainer = document.getElementById('video-preloader');
+            if (preloaderContainer) {
+                videosToPreload.forEach(src => {
+                    const video = document.createElement('video');
+                    video.src = src;
+                    video.preload = 'auto';
+                    video.muted = true;
+                    video.load();
+                    preloaderContainer.appendChild(video);
+                });
+
+                imagesToPreload.forEach(src => {
+                    const img = document.createElement('img');
+                    img.src = src;
+                    preloaderContainer.appendChild(img);
+                });
+            }
+
+            function playVideoOnSlot(targetEl, videoSrc) {
+                const imageSelector = '.bench-pokemon-image';
+                const cardImage = targetEl.querySelector(imageSelector);
+                const targetRect = targetEl.getBoundingClientRect();
+                const videoContainer = document.createElement('div');
+                videoContainer.style.position = 'absolute';
+                videoContainer.style.left = `${targetRect.left}px`;
+                videoContainer.style.top = `${targetRect.top}px`;
+                videoContainer.style.width = `${targetRect.width}px`;
+                videoContainer.style.height = `${targetRect.height}px`;
+                videoContainer.style.zIndex = '300';
+                videoContainer.style.overflow = 'hidden';
+                const video = document.createElement('video');
+                video.src = videoSrc;
+                video.muted = true;
+                video.style.width = '100%';
+                video.style.height = '100%';
+                videoContainer.appendChild(video);
+                document.body.appendChild(videoContainer);
+                video.play();
+                setTimeout(() => { if (cardImage) cardImage.style.visibility = 'hidden'; }, REPLACE_ANIMATION_HIDE_MS);
+                setTimeout(() => { if (cardImage) cardImage.style.visibility = 'visible'; }, REPLACE_ANIMATION_SHOW_MS);
+                video.addEventListener('ended', () => videoContainer.remove());
+            }
+
+            const cardDatabase = nodecg.Replicant('cardDatabase');
+            const settingsRep = nodecg.Replicant('ptcg-settings');
+            const replicantList = [cardDatabase, settingsRep];
+            const sides = ['L', 'R'];
+
+            for (let i = 6; i <= 8; i++) {
+                sides.forEach(side => {
+                    replicantList.push(nodecg.Replicant(`live_slot${side}${i}`));
+                });
+            }
+            
+            function getHitVideoSrc(attackerType) {
+                const basePath = '/assets/ptcg-telop/fx/';
+                const typeMap = {
+                    "草": "grass",
+                    "炎": "fire",
+                    "水": "water",
+                    "雷": "lightning",
+                    "超": "psychic",
+                    "闘": "fighting",
+                    "悪": "darkness",
+                    "鋼": "metal",
+                    "竜": "dragon",
+                    "妖": "fairy",
+                    "無": "colorless"
+                };
+                const typeString = typeMap[attackerType] || 'colorless';
+                return `${basePath}hit-${typeString}.webm`;
+            }
+
+            NodeCG.waitForReplicants(...replicantList).then(() => {
+                for (let i = 6; i <= 8; i++) {
+                    sides.forEach(side => {
+                        const replicant = nodecg.Replicant(`live_slot${side}${i}`);
+                        replicant.on('change', (newVal, oldVal) => {
+                            renderSlot(side, i, newVal, oldVal);
+                        });
+                        renderSlot(side, i, replicant.value, null);
+                    });
+                }
+
+                nodecg.listenFor('attack-fx', (data) => {
+                    if (!data || !data.targets) return;
+
+                    const targetsInThisGraphic = data.targets.filter(t => {
+                        return !!document.getElementById(t.targetId.replace('slot', 'slot-'));
+                    });
+
+                    if (targetsInThisGraphic.length === 0) return;
+
+                    targetsInThisGraphic.forEach(targetInfo => {
+                        const targetEl = document.getElementById(targetInfo.targetId.replace('slot', 'slot-'));
+                        if (targetEl) {
+                            g_attackAnimationTargets.add(targetEl.id);
+                        }
+                    });
+
+                    setTimeout(() => {
+                        let animationsToEnd = targetsInThisGraphic.length;
+                        const onHitAnimationEnd = () => {
+                            animationsToEnd--;
+                            if (animationsToEnd === 0) {
+                                g_attackAnimationTargets.clear();
+                            }
+                        };
+
+                        targetsInThisGraphic.forEach(targetInfo => {
+                            const targetEl = document.getElementById(targetInfo.targetId.replace('slot', 'slot-'));
+                            if (!targetEl) {
+                                onHitAnimationEnd();
+                                return;
+                            }
+
+                            const cardImageSelector = '.bench-card-image-area';
+                            const cardImageEl = targetEl.querySelector(cardImageSelector);
+                            if (cardImageEl) {
+                                cardImageEl.classList.add('anim-shake', 'anim-flash-white');
+                                setTimeout(() => cardImageEl.classList.remove('anim-shake', 'anim-flash-white'), 400);
+                                
+                                const imageRect = cardImageEl.getBoundingClientRect();
+                                const videoSize = 200;
+                                const hitVideo = document.createElement('video');
+                                hitVideo.className = 'hit-effect'; // Use class from main.html
+                                hitVideo.src = getHitVideoSrc(data.attackerType);
+                                hitVideo.muted = true;
+                                hitVideo.autoplay = true; // Revert to autoplay like main.html
+                                hitVideo.style.width = `${videoSize}px`;
+                                hitVideo.style.height = `${videoSize}px`;
+                                hitVideo.style.left = `${imageRect.left + (imageRect.width / 2) - (videoSize / 2)}px`;
+                                hitVideo.style.top = `${imageRect.top + (imageRect.height / 2) - (videoSize / 2)}px`;
+                                document.body.appendChild(hitVideo);
+                                
+                                hitVideo.addEventListener('ended', () => {
+                                    hitVideo.remove();
+                                    onHitAnimationEnd();
+                                });
+                            } else {
+                                onHitAnimationEnd();
+                            }
+                        });
+                    }, 1000);
+                });
+
+                nodecg.listenFor('playAnimation', (animation) => {
+                    if (!animation || !animation.type) {
+                        console.error('Invalid animation data received:', animation);
+                        return;
+                    }
+
+                    if (animation.type === 'SWITCH_POKEMON') {
+                        if (!animation.source || !animation.target) {
+                            console.error('Invalid PROMOTE animation data:', animation);
+                            return;
+                        }
+                        const sourceEl = document.getElementById(animation.source);
+                        const targetEl = document.getElementById(animation.target);
+
+                        if (sourceEl && !sourceEl.classList.contains('is-empty')) {
+                            const side = animation.source.includes('-L') ? 'L' : 'R';
+                            sourceEl.classList.add(`anim-slide-out-${side}`);
+                        }
+                        if (targetEl && !targetEl.classList.contains('is-empty')) {
+                            const side = animation.target.includes('-L') ? 'L' : 'R';
+                            targetEl.classList.add(`anim-slide-out-${side}`);
+                        }
+                        return; // End PROMOTE logic here.
+                    }
+
+                    // For all other animations, target is required and must be in this document.
+                    if (!animation.target) {
+                        console.error('Animation requires a target:', animation);
+                        return;
+                    }
+                    const targetEl = document.getElementById(animation.target);
+                    if (!targetEl) {
+                        // This is expected if the target is in the other graphic, so don't log an error.
+                        return;
+                    }
+                    const side = animation.target.includes('-L') ? 'L' : 'R';
+                    targetEl.classList.remove(`anim-slide-in-${side}`, `anim-slide-out-${side}`);
+
+                    if (animation.type === 'EVOLVE_POKEMON') {
+                        const db = cardDatabase.value;
+                        // All slots in extra.html are bench slots.
+                        let videoSrc = '/assets/ptcg-telop/fx/bench-evolve.webm';
+
+                        // Check for Mega Evolution
+                        if (animation.cardId && db && db[animation.cardId]) {
+                            const cardData = db[animation.cardId];
+                            if (cardData.pokemon && cardData.pokemon.option && cardData.pokemon.option.toLowerCase() === 'mega') {
+                                videoSrc = '/assets/ptcg-telop/fx/bench-mega-evolve.webm';
+                            }
+                        }
+                        playVideoOnSlot(targetEl, videoSrc);
+                    } else if (animation.type === 'DEVOLVE_POKEMON') {
+                        const videoSrc = '/assets/ptcg-telop/fx/bench-devolve.webm';
+                        playVideoOnSlot(targetEl, videoSrc);
+                    } else if (animation.type === 'REPLACE_POKEMON') {
+                        const videoSrc = '/assets/ptcg-telop/fx/bench-replace.webm';
+                        playVideoOnSlot(targetEl, videoSrc);
+                    } else if (animation.type === 'KO_POKEMON') {
+                        const videoSrc = '/assets/ptcg-telop/fx/bench_ko.webm';
+                        const imageSelector = '.bench-pokemon-image';
+                        const koVideo = document.createElement('video');
+                        koVideo.src = videoSrc;
+                        koVideo.muted = true;
+                        koVideo.style.position = 'absolute';
+                        koVideo.style.width = '100%';
+                        koVideo.style.height = '100%';
+                        koVideo.style.left ='-4px';
+                        koVideo.style.top = '0';
+                        koVideo.style.zIndex = '200';
+                        targetEl.appendChild(koVideo);
+                        koVideo.play();
+                        setTimeout(() => {
+                            const cardImage = targetEl.querySelector(imageSelector);
+                            if (cardImage) cardImage.style.visibility = 'hidden';
+                        }, 85);
+                        koVideo.addEventListener('ended', () => {
+                            koVideo.remove();
+                            targetEl.classList.add(`anim-slide-out-${side}`);
+                        });
+                    } else if (animation.type === 'ATTACH_TOOL' || animation.type === 'REMOVE_TOOL') {
+                        const isAttach = animation.type === 'ATTACH_TOOL';
+                        const videoSrc = isAttach ? '/assets/ptcg-telop/fx/tool-attach.webm' : '/assets/ptcg-telop/fx/tool-remove.webm';
+                        const toolSelector = '.bench-attached-tool';
+                        const toolEl = targetEl.querySelector(toolSelector);
+                        if (!toolEl) {
+                            console.error('Could not find tool element for animation:', animation.target);
+                            return;
+                        }
+                        requestAnimationFrame(() => {
+                            const toolRect = toolEl.getBoundingClientRect();
+                            if (toolRect.width === 0 && toolRect.height === 0) return;
+                            const video = document.createElement('video');
+                            video.src = videoSrc;
+                            video.muted = true;
+                            video.autoplay = true;
+                            video.style.position = 'absolute';
+                            video.style.zIndex = '400';
+                            video.style.pointerEvents = 'none';
+                            const videoWidth =  78.6;
+                            const videoHeight = 62.9;
+                            video.style.width = `${videoWidth}px`;
+                            video.style.height = `${videoHeight}px`;
+                            const toolCenterX = toolRect.left + toolRect.width / 2;
+                            const toolCenterY = toolRect.top + toolRect.height / 2;
+                            video.style.left = `${toolCenterX - videoWidth / 2}px`;
+                            video.style.top = `${toolCenterY - videoHeight / 2}px`;
+                            document.body.appendChild(video);
+                            // Note: The visual change of the tool card itself (appearing/disappearing)
+                            // is now handled by the CSS animation within the `renderSlot` function when the data replicant changes.
+                            // This old setTimeout logic is no longer needed.
+                            video.addEventListener('ended', () => video.remove());
+                        });
+                    } else if (animation.type === 'EXIT_POKEMON') {
+                        targetEl.classList.add(`anim-slide-out-${side}`);
+                    } else if (animation.type === 'ENTER_POKEMON') {
+                        targetEl.classList.remove('anim-slide-out-L', 'anim-slide-out-R');
+                        const animationClass = `anim-slide-in-${side}`;
+                        targetEl.classList.add(animationClass);
+                        targetEl.addEventListener('animationend', () => {
+                            targetEl.classList.remove(animationClass);
+                        }, { once: true });
+                    }
+                });
+
+                // Fallback cleanup for animation state
+                nodecg.listenFor('attack-fx-complete', () => {
+                    activeAnimations.clear();
+                    g_attackAnimationTargets.clear();
+                });
+                });
+            });
+    </script>
+</body>
+</html>

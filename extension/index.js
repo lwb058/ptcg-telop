@@ -1,0 +1,1071 @@
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const os = require('os'); // Import os for platform detection
+const { exec } = require('child_process'); // Import child_process
+
+module.exports = function (nodecg) {
+	nodecg.log.info('Bundle ptcg-telop starting up.');
+
+	// Centralized settings replicant
+	const ptcgSettings = nodecg.Replicant('ptcg-settings', {
+		defaultValue: {
+			typeColorMap: {
+				"草": { color: "#78c850", opacity: 0.2 },
+				"炎": { color: "#ff2222", opacity: 0.2 },
+				"水": { color: "#6890f0", opacity: 0.2 },
+				"雷": { color: "#f8d030", opacity: 0.2 },
+				"超": { color: "#7038f8", opacity: 0.2 },
+				"闘": { color: "#c07928", opacity: 0.2 },
+				"悪": { color: "#1f405a", opacity: 0.2 },
+				"鋼": { color: "#b8b8d0", opacity: 0.2 },
+				"妖": { color: "#ee99ac", opacity: 0.2 },
+				"竜": { color: "#b4b432", opacity: 0.2 },
+				"無": { color: "#b9b9b9", opacity: 0.2 }
+			},
+			            hotkeys: {
+				discard: 'Escape',
+				apply: 'Control+S'
+			},
+            lostZoneEnabled: false,
+			reverseCardDisplay: false
+		}
+	});
+
+	// Replicants can be declared outside the initialized block.
+	const cardDatabase = nodecg.Replicant('cardDatabase', { defaultValue: {} });
+	const playerL_name = nodecg.Replicant('playerL_name', { defaultValue: '' });
+	const playerR_name = nodecg.Replicant('playerR_name', { defaultValue: '' });
+	const matchInfo = nodecg.Replicant('matchInfo', { defaultValue: { round: '决赛' } });
+	const operationQueue = nodecg.Replicant('operationQueue', { defaultValue: [] });
+	const firstMove = nodecg.Replicant('firstMove', { defaultValue: '' });
+		const cardToShowL = nodecg.Replicant('cardToShowL', { defaultValue: '' });
+	const cardToShowR = nodecg.Replicant('cardToShowR', { defaultValue: '' });
+
+    const live_lostZoneL = nodecg.Replicant('live_lostZoneL', { defaultValue: 0 });
+	const draft_lostZoneL = nodecg.Replicant('draft_lostZoneL', { defaultValue: 0 });
+	const live_lostZoneR = nodecg.Replicant('live_lostZoneR', { defaultValue: 0 });
+	const draft_lostZoneR = nodecg.Replicant('draft_lostZoneR', { defaultValue: 0 });
+	live_lostZoneL.once('change', (newValue) => { if (newValue !== draft_lostZoneL.value) draft_lostZoneL.value = newValue; });
+	live_lostZoneR.once('change', (newValue) => { if (newValue !== draft_lostZoneR.value) draft_lostZoneR.value = newValue; });
+
+    ptcgSettings.on('change', (newValue, oldValue) => {
+        if (!newValue.lostZoneEnabled) {
+            if (live_lostZoneL.value !== 0) live_lostZoneL.value = 0;
+            if (draft_lostZoneL.value !== 0) draft_lostZoneL.value = 0;
+            if (live_lostZoneR.value !== 0) live_lostZoneR.value = 0;
+            if (draft_lostZoneR.value !== 0) draft_lostZoneR.value = 0;
+        }
+    });
+
+    // Stadium
+    const live_stadium = nodecg.Replicant('live_stadium', { defaultValue: { cardId: null, used: false } });
+    const draft_stadium = nodecg.Replicant('draft_stadium', { defaultValue: { cardId: null, used: false } });
+    live_stadium.once('change', (newValue) => { if (JSON.stringify(newValue) !== JSON.stringify(draft_stadium.value)) draft_stadium.value = JSON.parse(JSON.stringify(newValue)); });
+
+    // Side/Prize Card Replicants (Live vs Draft)
+    const live_sideL = nodecg.Replicant('live_sideL', { defaultValue: 6 });
+    const draft_sideL = nodecg.Replicant('draft_sideL', { defaultValue: 6 });
+    const live_sideR = nodecg.Replicant('live_sideR', { defaultValue: 6 });
+    const draft_sideR = nodecg.Replicant('draft_sideR', { defaultValue: 6 });
+    live_sideL.once('change', (newValue) => { if (newValue !== draft_sideL.value) draft_sideL.value = newValue; });
+    live_sideR.once('change', (newValue) => { if (newValue !== draft_sideR.value) draft_sideR.value = newValue; });
+
+    // VSTAR Power Replicants (Live vs Draft)
+    const live_vstar_L = nodecg.Replicant('live_vstar_L', { defaultValue: false });
+    const draft_vstar_L = nodecg.Replicant('draft_vstar_L', { defaultValue: false });
+    const live_vstar_R = nodecg.Replicant('live_vstar_R', { defaultValue: false });
+    const draft_vstar_R = nodecg.Replicant('draft_vstar_R', { defaultValue: false });
+    live_vstar_L.once('change', (newValue) => { if (newValue !== draft_vstar_L.value) draft_vstar_L.value = newValue; });
+    live_vstar_R.once('change', (newValue) => { if (newValue !== draft_vstar_R.value) draft_vstar_R.value = newValue; });
+
+    // Turn & Action Status Replicants (Live vs Draft)
+    const live_currentTurn = nodecg.Replicant('live_currentTurn', { defaultValue: 'L' });
+    const draft_currentTurn = nodecg.Replicant('draft_currentTurn', { defaultValue: 'L' });
+    live_currentTurn.once('change', (newValue) => { if (newValue !== draft_currentTurn.value) draft_currentTurn.value = newValue; });
+
+    // Create individual, independent replicants for each action status
+    const actionTypes = ['energy', 'supporter', 'retreat'];
+    ['L', 'R'].forEach(side => {
+        actionTypes.forEach(action => {
+            const liveRep = nodecg.Replicant(`live_action_${action}_${side}`, { defaultValue: false });
+            const draftRep = nodecg.Replicant(`draft_action_${action}_${side}`, { defaultValue: false });
+            // Ensure draft is in sync with live on startup
+            liveRep.once('change', (newValue) => {
+                if (newValue !== draftRep.value) {
+                    draftRep.value = newValue;
+                }
+            });
+        });
+    });
+
+	// == Player & Board State Replicants ==
+	// Selections
+	const selections = nodecg.Replicant('selections', { defaultValue: [] });
+	const deckIdL = nodecg.Replicant('deckIdL', { defaultValue: '' });
+	const deckIdR = nodecg.Replicant('deckIdR', { defaultValue: '' });
+	const deckL = nodecg.Replicant('deckL', { defaultValue: { name: '', cards: [] } });
+	const deckR = nodecg.Replicant('deckR', { defaultValue: { name: '', cards: [] } });
+
+	// Player Slots (L0/R0 are Battle Slots)
+	// LIVE DATA: Used by graphics
+	// DRAFT DATA: Used by panels for immediate feedback
+	for (let i = 0; i < 9; i++) { // Changed from 6 to 9 to include extra bench
+		const slotDefault = {
+			cardId: null,
+			damage: 0,
+			extraHp: 0,
+			attachedEnergy: [],
+			attachedToolId: null,
+			abilityUsed: false, // Add new property
+		};
+		if (i === 0) {
+			slotDefault.ailments = [];
+		}
+		// Declare both live and draft replicants
+		const liveRep = nodecg.Replicant(`live_slotL${i}`, { defaultValue: slotDefault });
+		const draftRep = nodecg.Replicant(`draft_slotL${i}`, { defaultValue: slotDefault });
+		
+		const liveRepR = nodecg.Replicant(`live_slotR${i}`, { defaultValue: slotDefault });
+		const draftRepR = nodecg.Replicant(`draft_slotR${i}`, { defaultValue: slotDefault });
+
+		// Ensure draft is in sync with live on startup
+		liveRep.once('change', (newValue) => { if (JSON.stringify(newValue) !== JSON.stringify(draftRep.value)) draftRep.value = JSON.parse(JSON.stringify(newValue)); });
+		liveRepR.once('change', (newValue) => { if (JSON.stringify(newValue) !== JSON.stringify(draftRepR.value)) draftRepR.value = JSON.parse(JSON.stringify(newValue)); });
+	}
+	// =====================================
+
+	// --- DEBUG: Moved logic out of 'initialized' event ---
+	nodecg.log.info('[DEBUG_LIFECYCLE] Running initialization logic directly.');
+
+	// Use __dirname to robustly calculate paths, avoiding dependency on the NodeCG lifecycle.
+	// __dirname = /.../NodeCG_PTCG/nodecg/bundles/ptcg-telop/extension
+	const projectRoot = path.join(__dirname, '..', '..', '..', '..');
+	const dbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', 'database.json');
+
+	function loadCardDatabase() {
+		try {
+			nodecg.log.info(`[DB_DEBUG] Attempting to load database. Calculated path: ${dbPath}`);
+
+			const dbDir = path.dirname(dbPath);
+			if (!fs.existsSync(dbDir)) {
+				nodecg.log.warn(`[DB_DEBUG] Database directory does not exist, creating: ${dbDir}`);
+				fs.mkdirSync(dbDir, { recursive: true });
+			}
+			
+			if (!fs.existsSync(dbPath)) {
+				cardDatabase.value = {};
+				nodecg.log.error(`[DB_DEBUG] CRITICAL_PATH_TEST: Card database file does not exist at path: ${dbPath}. Initialized empty.`);
+				return;
+			}
+
+			const fileContent = fs.readFileSync(dbPath, 'utf8');
+			if (!fileContent || fileContent.trim() === '') {
+				nodecg.log.warn(`[DB_DEBUG] Database file is empty. Initializing empty.`);
+				cardDatabase.value = {};
+				return;
+			}
+
+			const dbData = JSON.parse(fileContent);
+			cardDatabase.value = dbData;
+			nodecg.log.info(`[DB_DEBUG] Successfully loaded and parsed database. Total entries: ${Object.keys(dbData).length}`);
+
+		} catch (error) {
+			nodecg.log.error('[DB_DEBUG] CRITICAL: Failed to load or parse card database.', error);
+			cardDatabase.value = {};
+		}
+	}
+
+	// Initial load
+	loadCardDatabase();
+
+	// Listen for messages to process deck codes
+	nodecg.listenFor('setPlayerDeck', ({ side, deckCode }, callback) => {
+		nodecg.log.info(`Received request to process deck code for Player ${side}: ${deckCode}`);
+
+		const pythonDir = path.join(__dirname, '..', 'python');
+		const pythonScriptPath = path.join(pythonDir, 'extract_deck_cards.py');
+		
+		// Determine the correct python command based on the OS
+		const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
+		const command = `${pythonCommand} "${pythonScriptPath}" "${deckCode}"`;
+
+		exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
+			if (error) {
+				nodecg.log.error(`exec error: ${error}`);
+				nodecg.log.error(`Python stderr: ${stderr}`);
+				if (callback) callback({ error: error.message, stderr: stderr });
+				return;
+			}
+			
+			try {
+				// stdout should now be a pure JSON string.
+				const deckCards = JSON.parse(stdout);
+
+				// Determine which player's deck to update
+				const deckReplicant = side === 'L' ? nodecg.Replicant('deckL') : nodecg.Replicant('deckR');
+				
+				nodecg.log.info(`Deck for Player ${side} processed. Reloading database before updating deck replicant.`);
+                
+                // FIRST, reload the main database to ensure it contains any new cards.
+                loadCardDatabase();
+
+                // THEN, update the deck replicant.
+				// Update the replicant with the card list
+				deckReplicant.value = {
+					name: deckCode, // Store the deck code as its name for now
+					cards: deckCards.map(c => c.id) // We only need the unique IDs
+				};
+
+				nodecg.log.info(`Database reloaded and deck for Player ${side} updated.`);
+
+				if (callback) callback(null, `Deck for Player ${side} updated.`);
+
+			} catch (parseError) {
+				nodecg.log.error('Failed to parse python script output:', parseError);
+				nodecg.log.error('Python stdout:', stdout);
+				if (callback) callback({ error: 'Failed to parse script output.', stdout: stdout });
+			}
+		});
+	});
+
+	nodecg.listenFor('addSingleCardToDeck', ({ side, cardId }, callback) => {
+		nodecg.log.info(`Request to add single card ${cardId} to Player ${side}'s deck.`);
+
+		const deckReplicant = side === 'L' ? deckL : deckR;
+		const db = cardDatabase.value;
+
+		// Function to add card to deck and respond
+		const addCardToDeck = () => {
+			// Ensure deck.cards is an array
+			if (!Array.isArray(deckReplicant.value.cards)) {
+				deckReplicant.value.cards = [];
+			}
+			// Add card ID if it's not already in the list
+			if (!deckReplicant.value.cards.includes(cardId)) {
+				deckReplicant.value.cards = [...deckReplicant.value.cards, cardId];
+				nodecg.log.info(`Card ${cardId} added to Player ${side}'s deck.`);
+			} else {
+				nodecg.log.info(`Card ${cardId} is already in Player ${side}'s deck. No changes made.`);
+			}
+			if (callback) callback(null, 'Card added to deck.');
+		};
+
+		// Check if card is in DB
+		if (db && db[cardId] && db[cardId].name) {
+			nodecg.log.info(`Card ${cardId} found in database. Adding to deck.`);
+			addCardToDeck();
+		} else {
+			nodecg.log.info(`Card ${cardId} not in database. Fetching with get_single_card.py...`);
+			
+			const pythonDir = path.join(__dirname, '..', 'python');
+			const pythonScriptPath = path.join(pythonDir, 'get_single_card.py');
+			const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
+			const command = `${pythonCommand} "${pythonScriptPath}" "${cardId}"`;
+
+			exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
+				if (error) {
+					nodecg.log.error(`exec error while fetching single card: ${error}`);
+					nodecg.log.error(`Python stderr: ${stderr}`);
+					if (callback) callback({ error: error.message, stderr: stderr });
+					return;
+				}
+
+				nodecg.log.info(`Python script for ${cardId} finished. Reloading database.`);
+				loadCardDatabase();
+				
+				if (cardDatabase.value && cardDatabase.value[cardId] && cardDatabase.value[cardId].name) {
+					addCardToDeck();
+				} else {
+					nodecg.log.error(`Failed to fetch card ${cardId} with python script. It was not added to the database. Check python script output.`);
+					if (callback) callback({ error: `Failed to fetch card ${cardId}.` });
+				}
+			});
+		}
+	});
+
+	nodecg.listenFor('removeCardFromDeck', ({ side, cardId }, callback) => {
+		nodecg.log.info(`Request to remove card ${cardId} from Player ${side}'s deck.`);
+	
+		const deckReplicant = side === 'L' ? deckL : deckR;
+		const currentCards = deckReplicant.value.cards;
+	
+		if (Array.isArray(currentCards)) {
+			const initialLength = currentCards.length;
+			const newCards = currentCards.filter(id => id !== cardId);
+
+			if (newCards.length < initialLength) {
+				deckReplicant.value.cards = newCards; // Update the replicant
+				nodecg.log.info(`Card ${cardId} removed from Player ${side}'s deck.`);
+				if (callback) callback(null, 'Card removed.');
+			} else {
+				const msg = `Card ${cardId} not found in Player ${side}'s deck.`;
+				nodecg.log.warn(msg);
+				if (callback) callback(new Error(msg));
+			}
+		} else {
+			const msg = `Player ${side}'s deck.cards is not an array.`;
+			nodecg.log.error(msg);
+			if (callback) callback(new Error(msg));
+		}
+	});
+
+	/**
+	 * Applies a single operation object to a given replicant.
+	 * This is a helper function used by both queueOperation and applyQueue.
+	 * @param {object} replicant - The NodeCG replicant to modify.
+	 * @param {object} op - The operation object.
+	 */
+	function applyOperationLogic(replicant, op, mode) {
+		const { type, payload } = op;
+		const { value, cardId, toolId, ailments, energyIndex } = payload;
+
+		// Helper to select replicant prefix based on mode
+		const prefix = mode === 'draft' ? 'draft_' : 'live_';
+
+		// Ensure replicant.value is an object before modification, for slot-based operations.
+		// This check is bypassed for simpler replicants or operations that manage their own replicants.
+		if (type !== 'SET_POKEMON' && type !== 'SWITCH_POKEMON' && type !== 'SET_ACTION_STATUS' && type !== 'SET_TURN' && type !== 'SET_SIDES' && type !== 'ATTACK' && type !== 'SET_STADIUM' && type !== 'SET_STADIUM_USED' && type !== 'SET_ABILITY_USED' && type !== 'SET_VSTAR_STATUS' && type !== 'SET_LOST_ZONE' && (!replicant || typeof replicant.value !== 'object' || replicant.value === null)) {
+			// For PROMOTE, the logic handles its own replicants. For others, if the replicant is not ready, abort.
+			if (type !== 'SWITCH_POKEMON') {
+				nodecg.log.warn(`Operation ${type} aborted: replicant or its value is not a valid object.`);
+				return;
+			}
+		}
+
+		switch(type) {
+			case 'SET_VSTAR_STATUS':
+				replicant.value = payload.used;
+				break;
+			case 'SET_ACTION_STATUS':
+				replicant.value = payload.status;
+				break;
+			case 'SET_SIDES':
+				replicant.value = payload.value;
+				break;
+			case 'SET_LOST_ZONE':
+				replicant.value = payload.value;
+				break;
+			case 'SET_STADIUM':
+				replicant.value = { cardId: payload.cardId, used: false }; // Reset used status when stadium changes
+				break;
+			case 'SET_STADIUM_USED':
+				if (replicant.value) {
+					replicant.value.used = payload.used;
+				}
+				break;
+			case 'SET_ABILITY_USED':
+				if (replicant && replicant.value) {
+					replicant.value.abilityUsed = payload.status;
+				}
+				break;
+			case 'SET_POKEMON':
+				replicant.value = {
+					cardId: cardId, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolId: null,
+					ailments: (payload.target && payload.target.endsWith('0')) ? [] : undefined
+				};
+				// Clean up undefined properties
+				if (replicant.value.ailments === undefined) delete replicant.value.ailments;
+				break;
+			case 'REPLACE_POKEMON':
+				replicant.value.cardId = cardId;
+				// Evolving or Devolving clears status conditions, but replacing does not.
+				if (payload.actionType === 'Evolve' || payload.actionType === 'Devolve') {
+					if (replicant.value.ailments) {
+						replicant.value.ailments = [];
+					}
+				}
+				// Add a unified evolutionSelect flag.
+				replicant.value.evolutionSelect = true;
+				break;
+			case 'SET_DAMAGE':
+				replicant.value.damage = value;
+				break;
+			case 'SET_EXTRA_HP':
+				replicant.value.extraHp = value;
+				break;
+			case 'ATTACH_TOOL':
+				replicant.value.attachedToolId = toolId;
+				break;
+			case 'REMOVE_POKEMON': {
+				// Reset the slot to its default empty state
+				const isBattleSlot = replicant.name.endsWith('0');
+				replicant.value = {
+					cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolId: null,
+					...(isBattleSlot && { ailments: [] })
+				};
+
+				// Queue a simple exit animation for non-KO removal
+				const slotId = replicant.name.replace(/^draft_/, '').replace(/^live_/, '');
+				operationQueue.value.push({
+					type: 'EXIT_POKEMON',
+					payload: { target: slotId },
+					id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+				});
+				break;
+			}
+			case 'KO_POKEMON': {
+				// First, save the cardId
+				const prevCardId = replicant.value.cardId;
+				// Reset the slot to its default empty state, preserving the structure
+				const isBattleSlot = replicant.name.endsWith('0');
+				replicant.value = {
+					cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolId: null,
+					...(isBattleSlot && { ailments: [] })
+				};
+				// Auto-prize card logic
+				const autoSideTake = ptcgSettings.value && ptcgSettings.value.autoSideTake;
+				if (autoSideTake) {
+					// Determine which side was KO'd
+					const slotId = replicant.name.replace(/^draft_/, '').replace(/^live_/, '');
+					const side = slotId.charAt(4); // "slotL3" -> "L" or "R"
+					const isL = side === 'L';
+
+					// As long as a Pokémon is knocked out, the opponent takes prize cards (turn check removed).
+					let prizeCount = 1;
+					if (prevCardId && cardDatabase.value[prevCardId] && cardDatabase.value[prevCardId].addRule) {
+						const addRule = cardDatabase.value[prevCardId].addRule;
+						const m = addRule.match(/がきぜつしたとき、相手はサイドを(\d+)枚とる/);
+						if (m) {
+							prizeCount = parseInt(m[1], 10);
+						}
+						// Compatible with Chinese/English/etc.
+						else if (/2張|2枚奖赏卡|2 Prize/i.test(addRule)) prizeCount = 2;
+						else if (/3張|3枚奖赏卡|3 Prize/i.test(addRule)) prizeCount = 3;
+					}
+					// draft_sideL/draft_sideR
+					const draftSideRep = isL ? draft_sideR : draft_sideL;
+					const sideKey = isL ? 'sideR' : 'sideL';
+					const newValue = Math.max(0, (draftSideRep.value || 0) - prizeCount);
+
+					// Assign immediately to ensure UI sync
+					draftSideRep.value = newValue;
+
+					// Automatically add operation to the queue
+					operationQueue.value.push({
+						type: 'SET_SIDES',
+						payload: { target: sideKey, value: newValue },
+						id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+					});
+				}
+				break;
+			}
+			case 'SET_AILMENTS':
+				if (replicant.name.endsWith('0')) {
+					replicant.value.ailments = [...ailments];
+				}
+				break;
+			case 'SET_ENERGIES':
+				replicant.value.attachedEnergy = [...payload.energies];
+				break;
+			case 'SWITCH_POKEMON': {
+                const { source, target } = payload;
+                if (!source || !target) {
+                    nodecg.log.error('Invalid PROMOTE operation: source or target missing.', payload);
+                    return;
+                }
+
+                const side = source.charAt(4); // "slotL1" -> "L"
+                const sourceRep = nodecg.Replicant(`${prefix}${source}`);
+                const targetRep = nodecg.Replicant(`${prefix}${target}`);
+
+                // Directly get deep copies of the values
+                const sourceVal = JSON.parse(JSON.stringify(sourceRep.value || {}));
+                const targetVal = JSON.parse(JSON.stringify(targetRep.value || {}));
+
+				// Force slide-in animation for both source and target
+				sourceVal.forceSlideIn = true;
+				targetVal.forceSlideIn = true;
+
+
+                // Core logic: When a Pokémon moves into a battle slot (or swaps with it), its ailments are cleared.
+                // Check if the target is a battle slot
+                if (target.endsWith('0')) {
+                    if (sourceVal.cardId) { // Ensure we're not moving an empty slot's "ghost"
+                        sourceVal.ailments = [];
+                    }
+                }
+                // Check if the source is a battle slot and the target is not
+                if (source.endsWith('0') && !target.endsWith('0')) {
+                     if (targetVal.cardId) {
+                        targetVal.ailments = [];
+                    }
+                }
+
+                // Perform the swap
+                sourceRep.value = targetVal;
+                targetRep.value = sourceVal;
+				
+				// --- Auto Retreat Logic ---
+				const autoRetreat = ptcgSettings.value && ptcgSettings.value.autoRetreatToggle;
+				if (autoRetreat) {
+					// Check if it involves the Active Spot
+					if (source === 'slotL0') {
+						nodecg.Replicant('draft_action_retreat_L').value = true;
+						operationQueue.value.push({
+							type: 'SET_ACTION_STATUS',
+							payload: { target: 'action_retreat_L', status: true },
+							id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+						});
+					}
+					if (source === 'slotR0') {
+						nodecg.Replicant('draft_action_retreat_R').value = true;
+						operationQueue.value.push({
+						type: 'SET_ACTION_STATUS',
+						payload: { target: 'action_retreat_R', status: true },
+						id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+					});
+					}
+				}
+                break;
+            }
+            case 'ATTACK': {
+                // This operation is not slot-specific in its call, so it doesn't use the 'replicant' parameter.
+                // It constructs the replicant name itself based on the payload and mode.
+                
+                // Robustness: Handle both single target string and array of targets
+                const targets = Array.isArray(payload.targets) ? payload.targets : [payload.target];
+
+                targets.forEach(slotId => {
+                    if (!slotId) return; // Skip if a target is invalid
+                    const prefix = mode === 'draft' ? 'draft_' : 'live_';
+                    const targetRep = nodecg.Replicant(slotId.replace('slot', prefix + 'slot'));
+                    if (targetRep && targetRep.value) {
+                        // Ensure damage is treated as a number
+                        const currentDamage = Number(targetRep.value.damage) || 0;
+                        const newDamage = Number(payload.damage) || 0;
+                        targetRep.value.damage = currentDamage + newDamage;
+                    }
+                });
+                break;
+            }
+            
+            case 'SET_TURN': {
+                const turnRep = nodecg.Replicant(`${prefix}currentTurn`);
+                turnRep.value = payload.side;
+                // When a turn ends, reset all individual action statuses for both players
+                ['L', 'R'].forEach(side => {
+                    actionTypes.forEach(action => {
+                        nodecg.Replicant(`${prefix}action_${action}_${side}`).value = false;
+                    });
+                });
+                // Also reset all ability used statuses
+                for (let i = 0; i < 9; i++) {
+                    nodecg.Replicant(`${prefix}slotL${i}`).value.abilityUsed = false;
+                    nodecg.Replicant(`${prefix}slotR${i}`).value.abilityUsed = false;
+                }
+                // Reset stadium used status
+                const stadiumRep = nodecg.Replicant(`${prefix}stadium`);
+                if (stadiumRep.value) {
+                    stadiumRep.value = { ...stadiumRep.value, used: false };
+                }
+                break;
+            }
+            case 'SET_ACTION_STATUS': {
+                // The replicant is now found by its target name, e.g., "action_energy_L"
+                const { status } = payload;
+                replicant.value = status;
+                break;
+            }
+
+			case 'EXIT_POKEMON':
+				// This is an animation-only operation, no data logic needed.
+				break;
+
+			default:
+				nodecg.log.warn(`Unknown operation type during logic application: ${type}`);
+		}
+	}
+
+	/**
+	 * Adds an operation to the queue AND applies it to the DRAFT state.
+	 */
+	nodecg.listenFor('queueOperation', (op, callback) => {
+		if (!op || !op.type || !op.payload) {
+			return callback(new Error('Invalid operation object.'));
+		}
+
+		// Apply the logic to the DRAFT state for immediate feedback
+		if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
+			const draftRep = nodecg.Replicant(`draft_${op.payload.target}`);
+			applyOperationLogic(draftRep, op, 'draft');
+		} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
+			applyOperationLogic(draft_stadium, op, 'draft');
+		} else if (op.payload.target && op.payload.target.startsWith('slot')) {
+			const draftRep = nodecg.Replicant(op.payload.target.replace('slot', 'draft_slot'));
+			applyOperationLogic(draftRep, op, 'draft');
+		} else {
+			// Handle other non-slot-based operations
+			applyOperationLogic(null, op, 'draft');
+		}
+
+		// Add the operation to the queue
+		op.id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+		operationQueue.value.push(op);
+		nodecg.log.info(`Operation queued: ${op.type}`);
+		if (callback) callback(null, op.id);
+	});
+
+	/**
+	 * Updates an existing operation in the queue and re-applies the entire queue to the DRAFT state.
+	 */
+	nodecg.listenFor('updateOperation', ({ index, payload }, callback) => {
+		const queue = operationQueue.value;
+		if (!queue || !queue[index]) {
+			const errorMsg = `Invalid index for updateOperation: ${index}`;
+			nodecg.log.error(errorMsg);
+			if (callback) callback(new Error(errorMsg));
+			return;
+		}
+
+		try {
+			// 1. Create a new queue with the updated operation
+            const newQueue = queue.map((op, i) => {
+                if (i === index) {
+                    return { ...op, payload: { ...op.payload, ...payload } };
+                }
+                return op;
+            });
+			operationQueue.value = newQueue;
+
+			// 2. Identify all affected draft replicants
+			const affectedSlots = new Set();
+			newQueue.forEach(op => {
+				if (op.payload.target && op.payload.target.startsWith('slot')) {
+					affectedSlots.add(op.payload.target);
+				}
+				if (op.payload.targets) { // For multi-target ops like ATTACK
+					op.payload.targets.forEach(t => affectedSlots.add(t));
+				}
+			});
+
+			// 3. Reset all affected DRAFT states to their LIVE counterparts
+			affectedSlots.forEach(slotId => {
+				const liveRep = nodecg.Replicant(slotId.replace('slot', 'live_slot'));
+				const draftRep = nodecg.Replicant(slotId.replace('slot', 'draft_slot'));
+				draftRep.value = JSON.parse(JSON.stringify(liveRep.value));
+			});
+			// Also reset turn and action statuses to live state before re-applying queue
+			draft_currentTurn.value = live_currentTurn.value;
+			['L', 'R'].forEach(side => {
+				actionTypes.forEach(action => {
+					const liveRep = nodecg.Replicant(`live_action_${action}_${side}`);
+					const draftRep = nodecg.Replicant(`draft_action_${action}_${side}`);
+					draftRep.value = liveRep.value;
+				});
+                // Reset VSTAR status as well
+                const liveVstarRep = nodecg.Replicant(`live_vstar_${side}`);
+                const draftVstarRep = nodecg.Replicant(`draft_vstar_${side}`);
+                draftVstarRep.value = liveVstarRep.value;
+			});
+            draft_sideL.value = live_sideL.value;
+            draft_sideR.value = live_sideR.value;
+            draft_lostZoneL.value = live_lostZoneL.value;
+            draft_lostZoneR.value = live_lostZoneR.value;
+
+
+			// 4. Re-apply the entire new queue to the DRAFT states
+			newQueue.forEach(op => {
+				// Skip PROMOTE operations as they should not affect the draft state until applied.
+				if (op.type === 'SWITCH_POKEMON') return;
+
+				if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
+					const draftRep = nodecg.Replicant(`draft_${op.payload.target}`);
+					applyOperationLogic(draftRep, op, 'draft');
+				} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
+					applyOperationLogic(draft_stadium, op, 'draft');
+				} else if (op.payload.target && op.payload.target.startsWith('slot')) {
+					const draftRep = nodecg.Replicant(op.payload.target.replace('slot', 'draft_slot'));
+					applyOperationLogic(draftRep, op, 'draft');
+				} else {
+					applyOperationLogic(null, op, 'draft');
+				}
+			});
+
+			nodecg.log.info(`Operation at index ${index} updated and queue re-applied to draft.`);
+			if (callback) callback(null, `Operation at index ${index} updated.`);
+
+		} catch (e) {
+			nodecg.log.error(`Failed to update operation at index ${index}:`, e);
+			if (callback) callback(e);
+		}
+	});
+
+	/**
+	 * Helper function to sync all LIVE replicant values to their DRAFT counterparts.
+	 */
+	function syncLiveToDraft() {
+		for (let i = 0; i < 9; i++) { // Changed from 6 to 9
+			['L', 'R'].forEach(side => {
+				const liveRep = nodecg.Replicant(`live_slot${side}${i}`);
+				const draftRep = nodecg.Replicant(`draft_slot${side}${i}`);
+				draftRep.value = JSON.parse(JSON.stringify(liveRep.value));
+			});
+		}
+		draft_currentTurn.value = live_currentTurn.value;
+		['L', 'R'].forEach(side => {
+			actionTypes.forEach(action => {
+				const liveRep = nodecg.Replicant(`live_action_${action}_${side}`);
+				const draftRep = nodecg.Replicant(`draft_action_${action}_${side}`);
+				draftRep.value = liveRep.value;
+			});
+			// Sync VSTAR status
+			const liveVstarRep = nodecg.Replicant(`live_vstar_${side}`);
+			const draftVstarRep = nodecg.Replicant(`draft_vstar_${side}`);
+			draftVstarRep.value = liveVstarRep.value;
+		});
+		draft_sideL.value = live_sideL.value;
+		draft_sideR.value = live_sideR.value;
+		draft_lostZoneL.value = live_lostZoneL.value;
+		draft_lostZoneR.value = live_lostZoneR.value;
+		// Critical fix: Must use a deep copy for objects to avoid Replicant ownership conflicts
+		draft_stadium.value = JSON.parse(JSON.stringify(live_stadium.value));
+	}
+
+	/**
+	 * Applies all operations in the queue to the LIVE state, with delays for animations.
+	 */
+	nodecg.listenFor('applyQueue', (data, callback) => {
+		const queue = operationQueue.value;
+		nodecg.log.info(`Applying queue with ${queue.length} operations.`);
+
+		try {
+			// 1. Sort queue by priority (lower first), then by time (implicit)
+			const sortedQueue = [...queue].sort((a, b) => (a.payload.priority || 99) - (b.payload.priority || 99));
+
+			// 2. Separate ATTACK operations for grouping, and all other operations
+			const attackOps = sortedQueue.filter(op => op.type === 'ATTACK');
+			const nonAttackOps = sortedQueue.filter(op => op.type !== 'ATTACK');
+
+			// 3. Group attack operations by attacker and move name
+			const attackGroups = new Map();
+			attackOps.forEach(op => {
+				// Correctly read properties from the actual payload structure
+				const { attackerSlotId, attackName, damage, target, targets } = op.payload;
+				const attacker = attackerSlotId;
+				const move = attackName;
+				const groupKey = `${attacker}_${move}`;
+
+				// Guard against malformed operations
+				if (!attacker || !move) {
+					nodecg.log.warn('Skipping malformed attack operation:', op);
+					return;
+				}
+
+				if (!attackGroups.has(groupKey)) {
+					const attackerSide = attacker.charAt(4); // "slotL0" -> "L"
+					attackGroups.set(groupKey, {
+						attacker: attacker,
+						moveName: move,
+						attackerSide: attackerSide,
+						targets: []
+					});
+				}
+
+				const group = attackGroups.get(groupKey);
+				// Robustness: Handle both single target string and array of targets
+				const actualTargets = Array.isArray(targets) ? targets : [target];
+
+				actualTargets.forEach(targetId => {
+					// Guard against undefined entries in the targets array
+					if (!targetId) {
+						nodecg.log.warn('Skipping undefined target in attack operation:', op);
+						return;
+					}
+					const targetSide = targetId.charAt(4);
+					group.targets.push({
+						targetId: targetId,
+						targetSide: targetSide,
+						damage: damage, // Send the intended damage for display
+						isWeakness: op.payload.isWeakness // Pass the weakness flag
+					});
+				});
+			});
+
+			// --- Trigger Animations ---
+			
+			// 4. Trigger the new grouped attack animations
+			attackGroups.forEach(group => {
+				// Get attacker's card data to add name and type to the payload
+				const attackerRep = nodecg.Replicant(`live_${group.attacker}`);
+				if (attackerRep.value && attackerRep.value.cardId) {
+					const cardData = cardDatabase.value[attackerRep.value.cardId];
+					if (cardData) {
+						group.attackerName = cardData.name;
+						// Use the first type for coloring
+						if (cardData.pokemon && cardData.pokemon.color && cardData.pokemon.color.length > 0) {
+							group.attackerType = cardData.pokemon.color[0];
+						} else {
+							group.attackerType = 'Colorless'; // Default
+						}
+					}
+				}
+				
+				nodecg.log.info(`Sending attack-fx for ${group.moveName}`);
+				nodecg.sendMessage('attack-fx', group);
+			});
+
+			// 5. Filter non-attack operations into timed groups (same as before)
+			const promoteOps = nonAttackOps.filter(op => op.type === 'SWITCH_POKEMON');
+			const removeOps = nonAttackOps.filter(op => op.type === 'REMOVE_POKEMON');
+			const koOps = nonAttackOps.filter(op => op.type === 'KO_POKEMON');
+			const replaceOps = nonAttackOps.filter(op => op.type === 'REPLACE_POKEMON');
+			const toolOps = nonAttackOps.filter(op => op.type === 'ATTACH_TOOL');
+			
+			// 6. All remaining operations (including the original ungrouped ATTACKs) will be applied.
+			// This ensures data changes happen correctly.
+			const otherOps = sortedQueue.filter(op => 
+				!promoteOps.includes(op) && 
+				!removeOps.includes(op) && 
+				!koOps.includes(op) && 
+				!replaceOps.includes(op) &&
+				!toolOps.find(toolOp => toolOp.id === op.id)
+			);
+
+			// 7. Trigger animations for non-attack operations (same as before)
+			otherOps.forEach(op => {
+				if (op.type === 'SET_POKEMON' && op.payload.target && op.payload.target.startsWith('slot')) {
+					const liveRep = nodecg.Replicant(`live_${op.payload.target}`);
+					if (liveRep.value && !liveRep.value.cardId) {
+						const side = op.payload.target.charAt(4);
+						const index = op.payload.target.charAt(5);
+						const graphicTargetId = `slot-${side}${index}`;
+						nodecg.sendMessage('playAnimation', { type: 'ENTER_POKEMON', target: graphicTargetId });
+					}
+				}
+			});
+			promoteOps.forEach(op => {
+				const { source, target } = op.payload;
+				if (!source || !target) {
+					nodecg.log.warn('Skipping PROMOTE animation due to missing source/target.');
+					return;
+				}
+				// The animation message needs both source and target to work correctly
+				nodecg.sendMessage('playAnimation', {
+					type: 'SWITCH_POKEMON',
+					source: source.replace('slot', 'slot-'), // convert to DOM ID
+					target: target.replace('slot', 'slot-')  // convert to DOM ID
+				});
+			});
+			removeOps.forEach(op => {
+				const side = op.payload.target.charAt(4);
+				const index = op.payload.target.charAt(5);
+				const graphicTargetId = `slot-${side}${index}`;
+				nodecg.sendMessage('playAnimation', { type: 'EXIT_POKEMON', target: graphicTargetId });
+			});
+			koOps.forEach(op => {
+				const side = op.payload.target.charAt(4);
+				const index = op.payload.target.charAt(5);
+				const graphicTargetId = `slot-${side}${index}`;
+				const animationType = op.type === 'KO_POKEMON' ? 'KO_POKEMON' : 'EXIT_POKEMON';
+				nodecg.sendMessage('playAnimation', { type: animationType, target: graphicTargetId });
+			});
+			replaceOps.forEach(op => {
+				const side = op.payload.target.charAt(4);
+				const index = op.payload.target.charAt(5);
+				const graphicTargetId = `slot-${side}${index}`;
+				let animationType;
+				if (op.payload.actionType === 'Evolve') {
+					animationType = 'EVOLVE_POKEMON';
+				} else if (op.payload.actionType === 'Devolve') {
+					animationType = 'DEVOLVE_POKEMON';
+				} else {
+					animationType = 'REPLACE_POKEMON';
+				}
+				nodecg.sendMessage('playAnimation', {
+					type: animationType,
+					target: graphicTargetId,
+					cardId: op.payload.cardId // Pass the cardId for Mega check
+
+				});
+			});
+			toolOps.forEach(op => {
+				const side = op.payload.target.charAt(4);
+				const index = op.payload.target.charAt(5);
+				const graphicTargetId = `slot-${side}${index}`;
+				const animationType = op.payload.toolId ? 'ATTACH_TOOL' : 'REMOVE_TOOL';
+				nodecg.sendMessage('playAnimation', { type: animationType, target: graphicTargetId });
+			});
+
+			// --- Apply Data Changes ---
+			// 8. Apply all non-delayed operations immediately. This includes ATTACK ops.
+			otherOps.forEach(op => {
+				if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
+					const liveRep = nodecg.Replicant(`live_${op.payload.target}`);
+					applyOperationLogic(liveRep, op, 'live');
+				} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
+					applyOperationLogic(live_stadium, op, 'live');
+				} else if (op.payload.target && op.payload.target.startsWith('slot')) {
+					const liveRep = nodecg.Replicant(op.payload.target.replace('slot', 'live_slot'));
+					applyOperationLogic(liveRep, op, 'live');
+				} else {
+					// This handles operations like ATTACK which don't have a single `target`.
+					applyOperationLogic(null, op, 'live');
+				}
+			});
+
+			// 9. Schedule delayed data changes (same as before)
+			let maxDelay = 0;
+			// Add a small base delay for attack animations to start
+			if (attackGroups.size > 0) {
+				maxDelay = Math.max(maxDelay, 2000); // Placeholder for attack animation duration
+			}
+
+			if (promoteOps.length > 0 || removeOps.length > 0) {
+				const delay = 500;
+				maxDelay = Math.max(maxDelay, delay);
+				setTimeout(() => {
+					promoteOps.forEach(op => applyOperationLogic(null, op, 'live'));
+					removeOps.forEach(op => {
+						const liveRep = nodecg.Replicant(op.payload.target.replace('slot', 'live_slot'));
+						applyOperationLogic(liveRep, op, 'live');
+					});
+				}, delay);
+			}
+			if (koOps.length > 0) {
+				const delay = 1500;
+				maxDelay = Math.max(maxDelay, delay);
+				setTimeout(() => {
+					koOps.forEach(op => {
+						const liveRep = nodecg.Replicant(op.payload.target.replace('slot', 'live_slot'));
+						applyOperationLogic(liveRep, op, 'live');
+					});
+				}, delay);
+			}
+			if (replaceOps.length > 0) {
+				const delay = 500;
+				maxDelay = Math.max(maxDelay, delay);
+				setTimeout(() => {
+					replaceOps.forEach(op => {
+						const liveRep = nodecg.Replicant(op.payload.target.replace('slot', 'live_slot'));
+						applyOperationLogic(liveRep, op, 'live');
+					});
+				}, delay);
+			}
+			if (toolOps.length > 0) {
+				const delay = 100;
+				maxDelay = Math.max(maxDelay, delay);
+				setTimeout(() => {
+					toolOps.forEach(op => {
+						const liveRep = nodecg.Replicant(op.payload.target.replace('slot', 'live_slot'));
+						applyOperationLogic(liveRep, op, 'live');
+					});
+				}, delay);
+			}
+
+			// 10. Schedule queue clearing and state sync after the longest delay
+			if (maxDelay > 0) {
+				setTimeout(() => {
+					operationQueue.value = [];
+					syncLiveToDraft();
+					nodecg.log.info('Queue applied (with animation delay) and states synced.');
+					if (callback) callback(null, 'Queue applied successfully.');
+				}, maxDelay);
+			} else {
+				operationQueue.value = [];
+				syncLiveToDraft();
+				nodecg.log.info('Queue applied and states synced.');
+				if (callback) callback(null, 'Queue applied successfully.');
+			}
+
+		} catch (e) {
+			nodecg.log.error('Failed to apply queue:', e);
+			if (callback) callback(e);
+		}
+	});
+
+	/**
+	 * Discards the queue and reverts DRAFT state to LIVE state.
+	 */
+	nodecg.listenFor('discardQueue', (data, callback) => {
+		// 1. Clear the queue
+		operationQueue.value = [];
+
+		// 2. Revert draft state by copying live state over
+		syncLiveToDraft();
+
+		nodecg.log.info('Operation queue discarded and draft state reverted.');
+		if (callback) callback(null, 'Queue discarded.');
+	});
+
+	// Listen for a message to reset the entire board state
+	nodecg.listenFor('resetSystem', (data, callback) => {
+		nodecg.log.warn('!!! Received request to reset system state !!!');
+
+		try {
+			// Reset Operation Queue
+			operationQueue.value = [];
+
+			// Reset Selections
+			selections.value = [];
+
+			// Reset Decks
+			deckL.value = { name: '', cards: [] };
+			deckR.value = { name: '', cards: [] };
+
+			// Reset all player slots (both LIVE and DRAFT)
+			for (let i = 0; i < 9; i++) { // Changed from 6 to 9
+				const slotDefault = {
+					cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolId: null, abilityUsed: false,
+				};
+				if (i === 0) {
+					slotDefault.ailments = [];
+				}
+				nodecg.Replicant(`live_slotL${i}`).value = JSON.parse(JSON.stringify(slotDefault));
+				nodecg.Replicant(`draft_slotL${i}`).value = JSON.parse(JSON.stringify(slotDefault));
+				nodecg.Replicant(`live_slotR${i}`).value = JSON.parse(JSON.stringify(slotDefault));
+				nodecg.Replicant(`draft_slotR${i}`).value = JSON.parse(JSON.stringify(slotDefault));
+			}
+
+			// Reset Turn and Action Status (both LIVE and DRAFT)
+			live_currentTurn.value = 'L';
+			draft_currentTurn.value = 'L';
+			['L', 'R'].forEach(side => {
+				actionTypes.forEach(action => {
+					nodecg.Replicant(`live_action_${action}_${side}`).value = false;
+					nodecg.Replicant(`draft_action_${action}_${side}`).value = false;
+				});
+				// Reset VSTAR status
+				nodecg.Replicant(`live_vstar_${side}`).value = false;
+				nodecg.Replicant(`draft_vstar_${side}`).value = false;
+			});
+
+			// Reset Side/Prize Replicants
+			live_sideL.value = 6;
+			draft_sideL.value = 6;
+			live_sideR.value = 6;
+			draft_sideR.value = 6;
+
+			// Reset Lost Zone
+			nodecg.Replicant('live_lostZoneL').value = 0;
+			nodecg.Replicant('draft_lostZoneL').value = 0;
+			nodecg.Replicant('live_lostZoneR').value = 0;
+			nodecg.Replicant('draft_lostZoneR').value = 0;
+
+			// Reset Stadium
+			live_stadium.value = { cardId: null };
+			draft_stadium.value = { cardId: null };
+			
+			nodecg.log.info('System state has been completely reset.');
+			if (callback) callback(null, 'System reset successfully.');
+
+		} catch (e) {
+			nodecg.log.error('Failed to reset system state:', e);
+			if (callback) callback(e.toString());
+		}
+	});
+
+    };
+
+
+// --- Helper Functions for Replicant Sync ---
+function syncReplicant(nodecg, liveName, draftName, defaultValue) {
+    const liveRep = nodecg.Replicant(liveName, { defaultValue });
+    const draftRep = nodecg.Replicant(draftName, { defaultValue });
+    liveRep.once('change', (newValue) => {
+        if (JSON.stringify(newValue) !== JSON.stringify(draftRep.value)) {
+            draftRep.value = JSON.parse(JSON.stringify(newValue));
+        }
+    });
+}

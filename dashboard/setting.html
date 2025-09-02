@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Global Settings</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; color: #333; margin: 15px; font-size: 14px; }
+        .panel-section { background-color: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .panel-section h3 { margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; font-size: 16px; color: #555; }
+        
+        #color-settings-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 8px;
+        }
+
+        .form-group {
+            display: grid;
+            grid-template-columns: 20px 40px 1fr 50px; 
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 0;
+        }
+
+        .form-group label { font-weight: bold; }
+        .form-group input[type="color"], .form-group input[type="range"] {
+            width: 100%;
+            min-height: 32px;
+            padding: 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-group input[type="color"] { padding: 2px; }
+        
+        .form-group .opacity-input-number {
+            width: 100%;
+            height: 32px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            -moz-appearance: textfield; /* Firefox */
+        }
+        .form-group .opacity-input-number::-webkit-outer-spin-button,
+        .form-group .opacity-input-number::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .btn { display: block; width: 100%; padding: 10px; border: none; border-radius: 5px; background-color: #2196F3; color: white; font-size: 16px; cursor: pointer; transition: background-color 0.2s; }
+        .btn:hover { background-color: #1976D2; }
+
+        .collapsible-content {
+            padding-top: 10px;
+        }
+
+        .setting-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        .form-group-hotkey {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            align-items: center;
+            gap: 10px;
+        }
+        .form-group-hotkey label {
+            font-weight: bold;
+        }
+        .form-group-hotkey input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .horizontal-panels {
+            display: flex;
+            flex-wrap: wrap; /* 允许面板在小屏幕上换行 */
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .horizontal-panels > .panel-section {
+            /* flex: 1; -> flex: 1 1 320px; */
+            flex: 1 1 320px; /* 允许面板伸缩，并设置一个基础宽度为320px */
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="horizontal-panels">
+        <div class="panel-section">
+            <h3>Basic</h3>
+            <div class="collapsible-content">
+                <div class="setting-grid">
+                    <div class="form-group-hotkey">
+                        <label for="auto-sided-take">Auto Side Take</label>
+                        <input type="checkbox" id="auto-sided-take" style="width: auto; height: auto; justify-self: end;">
+                    </div>
+                    <div class="form-group-hotkey">
+                        <label for="auto-retreat-toggle">Auto Retreat</label>
+                        <input type="checkbox" id="auto-retreat-toggle" style="width: auto; height: auto; justify-self: end;">
+                    </div>
+                    <div class="form-group-hotkey">
+                        <label for="show-deck-energy-only-toggle">Show Deck Energy Only</label>
+                        <input type="checkbox" id="show-deck-energy-only-toggle" style="width: auto; height: auto; justify-self: end;">
+                    </div>
+                    <div class="form-group-hotkey">
+                        <label for="reverse-card-display-toggle">Reverse Card Display</label>
+                        <input type="checkbox" id="reverse-card-display-toggle" style="width: auto; height: auto; justify-self: end;">
+                    </div>
+                    <div class="form-group-hotkey">
+                        <label for="type-stroke-toggle">Type-Colored Borders</label>
+                        <input type="checkbox" id="type-stroke-toggle" style="width: auto; height: auto; justify-self: end;">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-section">
+            <h3>Regulation</h3>
+            <div class="collapsible-content">
+                <div class="setting-grid">
+                    <div class="form-group-hotkey">
+                        <label for="lost-zone-toggle">Enable Lost Zone</label>
+                        <input type="checkbox" id="lost-zone-toggle" style="width: auto; height: auto; justify-self: end;">
+                    </div>
+                    <div class="form-group-hotkey">
+                        <label for="vstar-toggle">Enable VSTAR Power</label>
+                        <input type="checkbox" id="vstar-toggle" style="width: auto; height: auto; justify-self: end;">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-section">
+            <h3>Hotkey</h3>
+            <div class="collapsible-content">
+                <div class="setting-grid">
+                    <div class="form-group-hotkey">
+                        <label for="discard-hotkey-input">Discard Queue</label>
+                        <input type="text" id="discard-hotkey-input" placeholder="e.g., Escape, Alt+D">
+                    </div>
+                    <div class="form-group-hotkey">
+                        <label for="apply-hotkey-input">Apply Queue</label>
+                        <input type="text" id="apply-hotkey-input" placeholder="e.g., Ctrl+S, F1">
+                    </div>
+                    <div class="form-group-hotkey">
+                        <label for="clear-card-hotkey-input">Clear Card</label>
+                        <input type="text" id="clear-card-hotkey-input" placeholder="e.g., Space, C">
+                    </div>
+                    <div class="form-group-hotkey">
+                        <label for="clear-selection-hotkey-input">Clear Selection</label>
+                        <input type="text" id="clear-selection-hotkey-input" placeholder="e.g., Escape">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-section">
+        <h3>Type Color</h3>
+        <div class="collapsible-content">
+            <div id="color-settings-container">
+                <!-- Color settings will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-section">
+        <button id="save-settings-btn" class="btn">Save All Settings</button>
+    </div>
+
+    <script>
+        NodeCG.waitForReplicants(
+            nodecg.Replicant('ptcg-settings')
+        ).then(() => {
+            const settingsRep = nodecg.Replicant('ptcg-settings');
+            
+            // --- Element References ---
+            const colorContainer = document.getElementById('color-settings-container');
+            const typeStrokeToggle = document.getElementById('type-stroke-toggle');
+            const vstarToggle = document.getElementById('vstar-toggle');
+            const autoRetreatToggle = document.getElementById('auto-retreat-toggle');
+            const autoSideTake = document.getElementById('auto-sided-take');
+            const lostZoneToggle = document.getElementById('lost-zone-toggle');
+            const reverseCardDisplayToggle = document.getElementById('reverse-card-display-toggle');
+            const showDeckEnergyOnlyToggle = document.getElementById('show-deck-energy-only-toggle');
+            const discardHotkeyInput = document.getElementById('discard-hotkey-input');
+            const applyHotkeyInput = document.getElementById('apply-hotkey-input');
+            const clearCardHotkeyInput = document.getElementById('clear-card-hotkey-input');
+            const clearSelectionHotkeyInput = document.getElementById('clear-selection-hotkey-input');
+            const saveBtn = document.getElementById('save-settings-btn');
+            
+            let renderedColorElements = {};
+
+            function renderAll(settings) {
+                // 1. Render Color Settings
+                colorContainer.innerHTML = '';
+                renderedColorElements = {};
+                const colorMap = (settings && settings.typeColorMap) ? settings.typeColorMap : {};
+
+                // A master list of all possible types and their UI defaults.
+                const allPossibleTypes = {
+                    '草': { color: '#4DAD5B', opacity: 1.0 }, '炎': { color: '#F4813E', opacity: 1.0 },
+                    '水': { color: '#4299E1', opacity: 1.0 }, '雷': { color: '#FBD100', opacity: 1.0 },
+                    '超': { color: '#9A549A', opacity: 1.0 }, '闘': { color: '#C46A3A', opacity: 1.0 },
+                    '悪': { color: '#705848', opacity: 1.0 }, '鋼': { color: '#B8B8D0', opacity: 1.0 },
+                    '無': { color: '#A8A878', opacity: 1.0 }, 
+                    '妖': { color: '#E08EE0', opacity: 1.0 }, '竜': { color: '#7038F8', opacity: 1.0 },
+                };
+
+                // Use only the keys from the master list to render the UI.
+                const typeKeys = Object.keys(allPossibleTypes);
+
+                typeKeys.forEach(type => {
+                    // Use the value from the replicant if it exists, otherwise fall back to the master list.
+                    const setting = colorMap[type] || allPossibleTypes[type] || { color: '#ffffff', opacity: 1.0 };
+                    const colorValue = setting.color;
+                    const opacityValue = setting.opacity;
+                    const opacityPercent = Math.round(opacityValue * 100);
+
+                    const formGroup = document.createElement('div');
+                    formGroup.classList.add('form-group');
+
+                    const label = document.createElement('label');
+                    label.textContent = type;
+
+                    const colorInput = document.createElement('input');
+                    colorInput.type = 'color';
+                    colorInput.value = colorValue;
+
+                    const opacitySlider = document.createElement('input');
+                    opacitySlider.type = 'range';
+                    opacitySlider.min = 0;
+                    opacitySlider.max = 100;
+                    opacitySlider.step = 1;
+                    opacitySlider.value = opacityPercent;
+                    
+                    const opacityNumberInput = document.createElement('input');
+                    opacityNumberInput.type = 'number';
+                    opacityNumberInput.min = 0;
+                    opacityNumberInput.max = 100;
+                    opacityNumberInput.value = opacityPercent;
+                    opacityNumberInput.classList.add('opacity-input-number');
+
+                    opacitySlider.addEventListener('input', () => { opacityNumberInput.value = opacitySlider.value; });
+                    opacityNumberInput.addEventListener('input', () => { opacitySlider.value = opacityNumberInput.value; });
+                    opacityNumberInput.addEventListener('change', () => {
+                        let value = parseInt(opacityNumberInput.value, 10);
+                        if (isNaN(value) || value < 0) value = 0;
+                        if (value > 100) value = 100;
+                        opacityNumberInput.value = value;
+                        opacitySlider.value = value;
+                    });
+
+                    formGroup.appendChild(label);
+                    formGroup.appendChild(colorInput);
+                    formGroup.appendChild(opacitySlider);
+                    formGroup.appendChild(opacityNumberInput);
+                    // FIX: Use the correct variable 'colorContainer'
+                    colorContainer.appendChild(formGroup);
+
+                    renderedColorElements[type] = { colorInput, opacityNumberInput };
+                });
+
+                // 2. Render Appearance Settings
+                typeStrokeToggle.checked = !!(settings && settings.useTypeStroke);
+                vstarToggle.checked = !!(settings && settings.vstarEnabled);
+                autoRetreatToggle.checked = !!(settings && settings.autoRetreatToggle);
+                autoSideTake.checked = !!(settings && settings.autoSideTake);
+                lostZoneToggle.checked = !!(settings && settings.lostZoneEnabled);
+                reverseCardDisplayToggle.checked = !!(settings && settings.reverseCardDisplay);
+                showDeckEnergyOnlyToggle.checked = !!(settings && settings.showDeckEnergyOnly);
+
+                // 3. Render Hotkey Settings
+                const hotkeys = (settings && settings.hotkeys) ? settings.hotkeys : {};
+                discardHotkeyInput.value = hotkeys.discard || 'Escape';
+                applyHotkeyInput.value = hotkeys.apply || 'Control+S';
+                clearCardHotkeyInput.value = hotkeys.clearCard || 'Space'; // Default to Space
+                clearSelectionHotkeyInput.value = hotkeys.clearSelection || 'Escape';
+            }
+
+            settingsRep.on('change', (newValue) => {
+                renderAll(newValue);
+            });
+
+            saveBtn.addEventListener('click', () => {
+                // --- Gather Color Settings ---
+                const newColorMap = {};
+                const types = Object.keys(renderedColorElements);
+                
+                types.forEach(type => {
+                    const elements = renderedColorElements[type];
+                    if (elements && elements.colorInput && elements.opacityNumberInput) {
+                        let value = parseInt(elements.opacityNumberInput.value, 10);
+                        if (isNaN(value) || value < 0) value = 0;
+                        if (value > 100) value = 100;
+
+                        newColorMap[type] = {
+                            color: elements.colorInput.value,
+                            opacity: value / 100
+                        };
+                    }
+                });
+
+                // --- Gather Hotkey Settings ---
+                const newHotkeys = {
+                    discard: discardHotkeyInput.value.trim() || 'Escape',
+                    apply: applyHotkeyInput.value.trim() || 'Control+S',
+                    clearCard: clearCardHotkeyInput.value.trim() || 'Space',
+                    clearSelection: clearSelectionHotkeyInput.value.trim() || 'Escape'
+                };
+
+                // --- Gather Appearance Settings ---
+                const newUseTypeStroke = typeStrokeToggle.checked;
+                const newVstarEnabled = vstarToggle.checked;
+                const newAutoRetreatToggle = autoRetreatToggle.checked;
+                const newAutoSideTake = autoSideTake.checked;
+                const newLostZoneEnabled = lostZoneToggle.checked;
+                const newReverseCardDisplay = reverseCardDisplayToggle.checked;
+                const newShowDeckEnergyOnly = showDeckEnergyOnlyToggle.checked;
+                
+                
+                // --- Update Replicant ---
+                const currentSettings = settingsRep.value || {};
+                settingsRep.value = { 
+                    ...currentSettings, 
+                    typeColorMap: newColorMap,
+                    hotkeys: newHotkeys,
+                    useTypeStroke: newUseTypeStroke,
+                    vstarEnabled: newVstarEnabled,
+                    autoRetreatToggle: newAutoRetreatToggle,
+                    autoSideTake: newAutoSideTake,
+                    lostZoneEnabled: newLostZoneEnabled,
+                    reverseCardDisplay: newReverseCardDisplay,
+                    showDeckEnergyOnly: newShowDeckEnergyOnly
+                };
+
+                saveBtn.textContent = 'Saved!';
+                setTimeout(() => {
+                    saveBtn.textContent = 'Save All Settings';
+                }, 1500);
+            });
+        });
+    </script>
+</body>
+</html>

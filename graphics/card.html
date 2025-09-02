@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Display</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 1920px; height: 1080px; background-color: transparent; overflow: hidden; }
+        .overlay-frame { width: 100%; height: 100%; display: flex; justify-content: space-between; position: relative; overflow: hidden; }
+        
+        /* Wrappers are positioned on-screen but are invisible by default */
+        #animation-wrapper-L,
+        #animation-wrapper-R {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .player-area { 
+            width: 406px; 
+            height: 560px; 
+            transform: translateY(475px);
+            display: flex; 
+            justify-content: center;
+            align-items: center;
+            padding: 5px; 
+            box-sizing: border-box; 
+            background-image: url('/assets/ptcg-telop/element/card-bg.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .card-container {
+            width: 95%; 
+                    }
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 22px;
+        }
+
+        /* Animation Keyframes */
+        @keyframes slide-out-left {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(-150%); opacity: 0; }
+        }
+        @keyframes slide-in-left {
+            0%, 15% { transform: translateX(-150%); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slide-out-right {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(150%); opacity: 0; }
+        }
+        @keyframes slide-in-right {
+            0%, 15% { transform: translateX(150%); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Animation Classes */
+        .slide-out-left, .slide-out-right {
+            animation-duration: 0.5s;
+            animation-fill-mode: forwards;
+        }
+        .slide-in-left, .slide-in-right {
+            animation-duration: 0.5s;
+            animation-fill-mode: forwards;
+            pointer-events: auto; /* Make it interactive during/after slide-in */
+        }
+        .slide-out-left { animation-name: slide-out-left; }
+        .slide-in-left { animation-name: slide-in-left; }
+        .slide-out-right { animation-name: slide-out-right; }
+        .slide-in-right { animation-name: slide-in-right; }
+
+    </style>
+</head>
+<body>
+    <div class="overlay-frame">
+        <div id="animation-wrapper-L">
+            <div class="player-area" id="player-L-area">
+                <div id="card-container-L" class="card-container">
+                    <img id="card-image-L" class="card-image" src="/assets/ptcg-telop/element/default.jpg" alt="Left Card Image">
+                </div>
+            </div>
+        </div>
+        <div id="animation-wrapper-R">
+            <div class="player-area" id="player-R-area">
+                <div id="card-container-R" class="card-container">
+                    <img id="card-image-R" class="card-image" src="/assets/ptcg-telop/element/default.jpg" alt="Right Card Image">
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+         const animationWrapperL = document.getElementById('animation-wrapper-L');
+         const animationWrapperR = document.getElementById('animation-wrapper-R');
+         const cardImageL = document.getElementById('card-image-L');
+         const cardImageR = document.getElementById('card-image-R');
+         const defaultImage = '/assets/ptcg-telop/element/default.jpg';
+ 
+         // State object to track visibility and animation status for each side
+         const cardState = {
+             left: { isVisible: false, isAnimating: false },
+             right: { isVisible: false, isAnimating: false }
+         };
+ 
+         // Helper function to promisify animationend event
+         function onAnimationEnd(element) {
+             return new Promise(resolve => {
+                 element.addEventListener('animationend', resolve, { once: true });
+             });
+         }
+ 
+         async function handleCardUpdate(animatedContainer, image, newValue, side) {
+            const state = cardState[side];
+            if (state.isAnimating) {
+                console.warn(`Animation for ${side} side is already in progress. Request ignored.`);
+                return;
+            }
+            state.isAnimating = true;
+
+            const wantsToShow = !!newValue;
+            const newSrc = newValue || defaultImage;
+
+            try {
+                // Case 1: Hide the card
+                if (!wantsToShow && state.isVisible) {
+                    animatedContainer.classList.remove(`slide-in-${side}`); // Clean up previous state
+                    animatedContainer.classList.add(`slide-out-${side}`);
+                    await onAnimationEnd(animatedContainer);
+                    // DO NOT remove the slide-out class. It keeps the element off-screen.
+                    image.src = defaultImage;
+                    state.isVisible = false;
+                } 
+                // Case 2: Show or Update the card
+                else if (wantsToShow) {
+                    // If it's an update (already visible), slide it out first.
+                    if (state.isVisible) {
+                        animatedContainer.classList.remove(`slide-in-${side}`);
+                        animatedContainer.classList.add(`slide-out-${side}`);
+                        await onAnimationEnd(animatedContainer);
+                    }
+
+                    // Now it's off-screen. Change image, then clean up and slide in.
+                    image.src = newSrc;
+                    animatedContainer.classList.remove(`slide-out-${side}`); // "Self-cleanup" before sliding in
+                    
+                    animatedContainer.classList.add(`slide-in-${side}`);
+                    await onAnimationEnd(animatedContainer);
+                    
+                    // Leave the slide-in class on to keep it visible. It will be cleaned up by the next operation.
+                    state.isVisible = true;
+                }
+            } finally {
+                state.isAnimating = false;
+            }
+         }
+ 
+        const cardToShowL = nodecg.Replicant('cardToShowL');
+        const cardToShowR = nodecg.Replicant('cardToShowR');
+        const settingsRep = nodecg.Replicant('ptcg-settings');
+
+        let isReversed = false;
+
+        settingsRep.on('change', (newValue) => {
+            if (newValue) {
+                isReversed = !!newValue.reverseCardDisplay;
+            }
+        });
+
+        cardToShowL.on('change', (newValue) => {
+            if (isReversed) {
+                handleCardUpdate(animationWrapperR, cardImageR, newValue, 'right');
+            } else {
+                handleCardUpdate(animationWrapperL, cardImageL, newValue, 'left');
+            }
+        });
+ 
+        cardToShowR.on('change', (newValue) => {
+            if (isReversed) {
+                handleCardUpdate(animationWrapperL, cardImageL, newValue, 'left');
+            } else {
+                handleCardUpdate(animationWrapperR, cardImageR, newValue, 'right');
+            }
+        });
+    </script>
+</body>
+</html>

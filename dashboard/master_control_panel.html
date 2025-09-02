@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Master Control Panel</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 15px;
+            font-size: 14px;
+        }
+        .panel-section {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 5px;
+        }
+        .panel-section h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            border-bottom: none;
+            padding-bottom: 0;
+            font-size: 13px;
+            font-weight: bold;
+            color: #555;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        .select-zone-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+        }
+        .btn {
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .select-btn {
+            padding: 12px 8px;
+            font-size: 12px;
+        }
+        .btn:hover {
+            background-color: #f5f5f5;
+            color: black;
+        }
+        .btn-primary {
+            background-color: #4a69bd;
+            color: white;
+            border-color: #4a69bd;
+        }
+        .btn-primary:hover {
+            background-color: #3b5998;
+        }
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+            border-color: #e74c3c;
+        }
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        .btn-info {
+            background-color: #5bc0de;
+            color: white;
+            border-color: #46b8da;
+        }
+        .btn-info:hover {
+            background-color: #31b0d5;
+            border-color: #269abc;
+        }
+        .btn-left {
+            background-color: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+        .btn-left:hover {
+            background-color: #2980b9;
+        }
+        .btn-right {
+            background-color: #e74c3c;
+            color: white;
+            border-color: #c0392b;
+        }
+        .btn-right:hover {
+            background-color: #c0392b;
+        }
+        .btn-grass {
+            background-color: #299100;
+            color: white;
+        }
+        .btn-fire {
+            background-color: #bb0000;
+            color: white;
+        }
+        .btn-water {
+            background-color: #003bbb;
+            color: white;
+        }
+        .btn-lightning {
+            background-color: #ffee00;
+            color: black;
+        }
+        .btn-psychic {
+            background-color: #65007e;
+            color: white;
+        }
+        .btn-fighting {
+            background-color: #bd5f06;
+            color: white;
+        }
+        .btn-dark {
+            background-color: #16436d;
+            color: white;
+        }
+        .btn-metal {
+            background-color: #767880;
+            color: white;
+        }
+        .btn-colorless {
+            background-color: #ffffff;
+        }
+        .btn-black {
+            background-color: #000000;
+            color: white;
+        }
+        .btn-rainbow {
+            background: linear-gradient(to bottom right, red, orange, yellow, green, blue, indigo, violet);
+            color: white;
+        }
+        .btn-rainbow:hover {
+            background: linear-gradient(to bottom right, black,white);
+        }
+        .info-zone p {
+            margin: 0 0 5px 0;
+        }
+        .info-zone span {
+            font-weight: bold;
+        }
+        .energy-btn-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        .energy-btn {
+            padding: 8px;
+            font-size: 12px;
+        }
+        .energy-icon {
+            width: 30px;
+            height: 30px;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        .energy-container {
+            flex-grow: 1;
+            display: flex;
+            gap: 5px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 5px;
+            min-height: 25px; /* Match button height */
+            background: #fafafa;
+            scrollbar-width: thin;
+            scrollbar-color: #ccc #f0f2f5;
+        }
+        .energy-container::-webkit-scrollbar { height: 5px; }
+        .energy-container::-webkit-scrollbar-track { background: #f0f2f5; }
+        .energy-container::-webkit-scrollbar-thumb { background-color: #ccc; border-radius: 2px; }
+        .form-group {
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+        }
+        .form-group label {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .compact-input {
+            flex-grow: 0 !important;
+            width: 80px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .operation-queue {
+            height: 150px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 5px;
+            overflow-y: auto;
+            background-color: #fafafa;
+            margin-bottom: 10px;
+        }
+        .operation-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .operation-item:last-child {
+            border-bottom: none;
+        }
+        .operation-item.selected {
+            background-color: #d4e6ff;
+        }
+        .flex-container {
+            display: flex;
+            gap: 10px;
+        }
+        .flex-container > * {
+            flex: 1;
+        }
+        .truncate-select {
+            min-width: 0; /* Allow the element to shrink below its content size */
+            text-overflow: ellipsis; /* Add ellipsis for overflowed text */
+        }
+        #attack-zone-flex-container > .form-group {
+            min-width: 0; /* Allow the form group (flex item) to shrink */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="panel-section info-zone">
+        <h3>Info Module</h3>
+        <div class="flex-container" style="align-items: flex-start;">
+            <div>
+                <p>Total Pokemons: <span id="total-pokemons">0</span></p>
+                <p>Selected: <span id="selected-pokemons">None</span></p>
+            </div>
+            <div class="form-group" style="margin-left: auto; flex-grow: 0; align-items: center;">
+                <label for="stadium-select">Stadium:</label>
+                <select id="stadium-select" style="margin-right: 10px;"></select>
+                <input type="checkbox" id="stadium-used-checkbox" style="transform: scale(1.2);">
+                <label for="stadium-used-checkbox" style="margin-left: 5px;">Used</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-section">
+        <h3>Energy Module</h3>
+        <div id="energy-buttons" class="energy-btn-grid">
+            <button class="btn btn-grass" data-energy-type="草">草</button>
+            <button class="btn btn-fire" data-energy-type="炎">炎</button>
+            <button class="btn btn-water" data-energy-type="水">水</button>
+            <button class="btn btn-lightning" data-energy-type="雷">雷</button>
+            <button class="btn btn-psychic" data-energy-type="超">超</button>
+            <button class="btn btn-fighting" data-energy-type="闘">闘</button>
+            <button class="btn btn-dark" data-energy-type="悪">悪</button>
+            <button class="btn btn-metal" data-energy-type="鋼">鋼</button>
+            <button class="btn btn-colorless" data-energy-type="無">無</button>
+            <button class="btn btn-rainbow" data-energy-type="全">全</button>
+            <select id="special-energy-select" class="btn energy-btn">
+                <option value="">特殊</option>
+                <option value="超悪">超悪</option>
+                <option value="妖">妖</option>
+                <option value="竜">竜</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Attached:</label>
+            <div id="added-energy-container" class="energy-container">
+                <!-- Energy icons will be added here -->
+            </div>
+            <div style="margin-left: 10px; display: flex; gap: 5px; align-items: center;">
+                <button id="energy-current-battle-btn" class="btn btn-primary" style="flex: 1;">Attacker</button>
+                <button id="energy-clear-btn" class="btn btn-black" style="flex: 1;">Clear</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="panel-section">
+        <h3>Select Module</h3>
+        <div class="select-zone-grid">
+            <button id="select-left-battle-btn" class="btn select-btn btn-left">L-Battle</button>
+            <button id="select-left-bench-btn" class="btn select-btn btn-left">L-Bench</button>
+            <button id="select-left-all-btn" class="btn select-btn btn-left">L-All</button>
+            <button id="select-right-all-btn" class="btn select-btn btn-right">R-All</button>
+            <button id="select-right-bench-btn" class="btn select-btn btn-right">R-Bench</button>
+            <button id="select-right-battle-btn" class="btn select-btn btn-right">R-Battle</button>
+            <button id="select-all-btn" class="btn select-all-btn">All</button>
+            <button id="select-clear-btn" class="btn btn-black">Clear</button>
+            <button id="select-reverse-btn" class="btn select-btn">Reverse</button>
+            <button id="select-with-energy-btn" class="btn select-btn">エネ付き</button>
+            <button id="select-with-ability-btn" class="btn select-btn">特性あり</button>
+            <button id="select-with-rule-btn" class="btn select-btn">ルール持ち</button>
+        </div>
+    </div>
+
+    <div class="panel-section">
+        <h3>Attack Module</h3>
+        <div id="attack-zone-flex-container" class="flex-container">
+            <div class="form-group" style="flex-grow: 3;">
+                <label for="attacker">Attacker:</label>
+                <select id="attacker" class="truncate-select"></select>
+            </div>
+            <div class="form-group" style="flex-grow: 2;">
+                <label for="attack-select">Move:</label>
+                <select id="attack-select" class="truncate-select"></select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="target">Target:</label>
+            <textarea id="target" readonly></textarea>
+        </div>
+        <div class="flex-container" style="align-items: center; gap: 15px;">
+            <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
+                <label for="damage">Damage:</label>
+                <input type="number" id="damage" class="compact-input" value="0" min="0" step="10">
+            </div>
+            <div class="form-group" style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
+                <label for="weakness-check" style="margin-right: 5px;">Weakness</label>
+                <input type="checkbox" id="weakness-check" style="transform: scale(1.2);">
+            </div>
+            <button id="aim-btn" class="btn btn-info" style="flex-grow: 2; height: fit-content;">Aim</button>
+            <button id="attack-btn" class="btn btn-lightning" style="flex-grow: 2; height: fit-content;">Attack</button>
+        </div>
+    </div>
+
+    <div class="panel-section">
+        <h3>Turn Module</h3>
+        <div class="flex-container" style="justify-content: center; align-items: center;">
+            <label id="turn-l-label"><input type="radio" name="turn" id="turn-l" value="L"> Left Player</label>
+            <button id="end-turn-btn" class="btn btn-metal" style="margin: 0 20px;">End Turn</button>
+            <label id="turn-r-label"><input type="radio" name="turn" id="turn-r" value="R"> Right Player</label>
+        </div>
+    </div>
+    
+    <div class="panel-section">
+        <h3>Operation Queue</h3>
+        <div class="flex-container" style="margin-bottom: 10px;">
+            <button id="discard-op-btn" class="btn btn-danger">Discard (Esc)</button>
+            <button id="apply-op-btn" class="btn btn-primary">Apply (Ctrl+S)</button>
+        </div>
+        <div class="operation-queue" id="operation-queue">
+            <!-- Operations will be listed here -->
+        </div>
+    </div>
+
+    <div class="panel-section">
+        <h3>Danger Zone</h3>
+        <div class="flex-container" style="align-items: center;">
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <label for="first-player-select">First Move:</label>
+                <select id="first-player-select">
+                    <option value="">--Select--</option>
+                    <option value="L">Left Player</option>
+                    <option value="R">Right Player</option>
+                </select>
+            </div>
+            <button id="reset-system-btn" class="btn btn-danger" style="flex: 1;">Reset System</button>
+        </div>
+    </div>
+
+    <script>
+        NodeCG.waitForReplicants(
+            nodecg.Replicant('playerL_name'),
+            nodecg.Replicant('playerR_name'),
+            nodecg.Replicant('cardDatabase'),
+            nodecg.Replicant('selections'),
+            nodecg.Replicant('operationQueue'),
+            nodecg.Replicant('deckL'),
+            nodecg.Replicant('deckR'),
+            nodecg.Replicant('draft_stadium'),
+            nodecg.Replicant('ptcg-settings'), // Listen for settings
+            ...Array(18).fill(0).map((_, i) => { // Changed from 12 to 18
+                const side = i < 9 ? 'L' : 'R';
+                const index = i % 9;
+                return nodecg.Replicant(`draft_slot${side}${index}`);
+            })
+        ).then(() => {
+            
+            // --- Replicant Setup ---
+            const playerL_name = nodecg.Replicant('playerL_name');
+            const playerR_name = nodecg.Replicant('playerR_name');
+            const firstMove = nodecg.Replicant('firstMove');
+            const cardDatabase = nodecg.Replicant('cardDatabase');
+            const selections = nodecg.Replicant('selections');
+            const operationQueue = nodecg.Replicant('operationQueue');
+            const draft_currentTurn = nodecg.Replicant('draft_currentTurn');
+            const deckL = nodecg.Replicant('deckL');
+            const deckR = nodecg.Replicant('deckR');
+            const draft_stadium = nodecg.Replicant('draft_stadium');
+            const settingsRep = nodecg.Replicant('ptcg-settings');
+            const slots = [];
+            for (let i = 0; i < 9; i++) { // Changed from 6 to 9
+                slots.push(nodecg.Replicant(`draft_slotL${i}`));
+                slots.push(nodecg.Replicant(`draft_slotR${i}`));
+            }
+
+            // --- DOM Element Setup ---
+            const totalPokemonsEl = document.getElementById('total-pokemons');
+            const selectedPokemonsEl = document.getElementById('selected-pokemons');
+            const firstPlayerSelect = document.getElementById('first-player-select');
+            const operationQueueEl = document.getElementById('operation-queue');
+            const discardOpBtn = document.getElementById('discard-op-btn');
+            const applyOpBtn = document.getElementById('apply-op-btn');
+            const resetSystemBtn = document.getElementById('reset-system-btn');
+
+            // --- Select Module Buttons ---
+            const btnSelectAll = document.getElementById('select-all-btn');
+            const btnSelectClear = document.getElementById('select-clear-btn');
+            const btnSelectReverse = document.getElementById('select-reverse-btn');
+            const btnSelectLeftAll = document.getElementById('select-left-all-btn');
+            const btnSelectRightAll = document.getElementById('select-right-all-btn');
+            const btnSelectLeftBattle = document.getElementById('select-left-battle-btn');
+            const btnSelectRightBattle = document.getElementById('select-right-battle-btn');
+            const btnSelectLeftBench = document.getElementById('select-left-bench-btn');
+            const btnSelectRightBench = document.getElementById('select-right-bench-btn');
+            const btnSelectWithEnergy = document.getElementById('select-with-energy-btn');
+            const btnSelectWithAbility = document.getElementById('select-with-ability-btn');
+            const btnSelectWithRule = document.getElementById('select-with-rule-btn');
+
+            /**
+             * Queues an operation to be sent to the backend.
+             */
+            function queueOperation(type, payload) {
+                nodecg.sendMessage('queueOperation', { type, payload })
+                    .catch(e => console.error(`Failed to queue operation ${type}`, e));
+            }
+
+            /**
+             * For operations that set a numeric value (like damage or HP), this function checks
+             * if an operation of the same type for the same target already exists in the queue.
+             * If so, it updates the existing operation; otherwise, it adds a new one.
+             */
+            function queueOrUpdateOperation(type, payload) {
+                const queue = operationQueue.value;
+                if (Array.isArray(queue)) {
+                    const existingOpIndex = queue.findIndex(op =>
+                        op.type === type &&
+                        op.payload.target === payload.target
+                    );
+
+                    if (existingOpIndex > -1) {
+                        nodecg.sendMessage('updateOperation', { index: existingOpIndex, payload })
+                            .catch(e => console.error(`Failed to update operation ${type}`, e));
+                        return;
+                    }
+                }
+                queueOperation(type, payload);
+            }
+            
+            // --- Helper Functions ---
+            const getOccupiedSlots = () => slots.filter(s => s.value && s.value.cardId).map(s => s.name.replace('draft_', ''));
+            const getCardName = (slotId) => {
+                const db = cardDatabase.value;
+                const slot = slots.find(s => s.name === `draft_${slotId}`);
+                if (slot && slot.value && slot.value.cardId && db && db[slot.value.cardId]) {
+                    return db[slot.value.cardId].name;
+                }
+                return slotId; // Fallback to slotId if name not found
+            };
+
+            // --- UI Update Functions ---
+            const updateTotalPokemons = () => {
+                totalPokemonsEl.textContent = getOccupiedSlots().length;
+            };
+            const updateSelectedPokemons = () => {
+                const currentSelections = selections.value;
+                if (!currentSelections || currentSelections.length === 0) {
+                    selectedPokemonsEl.textContent = 'None';
+                    return;
+                }
+                const selectedNames = currentSelections.map(getCardName);
+                selectedPokemonsEl.textContent = selectedNames.join(', ');
+            };
+
+            function updateFirstPlayerDropdown() {
+                const lName = playerL_name.value || 'Left Player';
+                const rName = playerR_name.value || 'Right Player';
+                const currentValue = firstPlayerSelect.value;
+
+                firstPlayerSelect.innerHTML = `
+                    <option value="">--Select--</option>
+                    <option value="L">${lName}</option>
+                    <option value="R">${rName}</option>
+                `;
+                firstPlayerSelect.value = currentValue;
+            }
+
+            /**
+             * Formats an operation object into a human-readable string.
+             * @param {object} op The operation object.
+             * @returns {string} A user-friendly description of the operation.
+             */
+            function formatOperation(op) {
+                const { type, payload } = op;
+                const targetName = payload.target ? getCardName(payload.target) : '';
+
+                switch (type) {
+                    case 'SET_POKEMON':
+                        return `<b>${payload.target}</b>: Set <b>${getCardName(payload.target)}</b>`;
+                    case 'REPLACE_POKEMON':
+                        return `<b>${targetName}</b>: ${payload.actionType} to <b>${getCardName(payload.target)}</b>`;
+                    case 'SET_DAMAGE':
+                        return `<b>${targetName}</b>: Set DMG to <b>${payload.value}</b>`;
+                    case 'SET_EXTRA_HP':
+                        return `<b>${targetName}</b>: Set Ex.HP to <b>${payload.value}</b>`;
+                    case 'ATTACH_TOOL':
+                        const toolName = payload.toolId ? cardDatabase.value[payload.toolId]?.name : 'None';
+                        return `<b>${targetName}</b>: Attach Tool <b>${toolName}</b>`;
+                    case 'REMOVE_POKEMON':
+                        return `<b>${targetName}</b>: Remove from play`;
+                    case 'KO_POKEMON':
+                        return `<b>${targetName}</b>: K.O.`;
+                    case 'SET_AILMENTS':
+                        return `<b>${targetName}</b>: Set Ailments to <b>[${payload.ailments.join(', ')}]</b>`;
+                    case 'SET_ABILITY_USED':
+                        return `<b>${targetName}</b>: Ability status set to <b>${payload.status}</b>`;
+                    case 'SET_ENERGIES':
+                        return `<b>${targetName}</b>: Set Energies (<b>${payload.energies.length} total</b>)`;
+                    case 'SWITCH_POKEMON':
+                        return `<b>${targetName}</b>: Switch to <b>${payload.target}</b>`;
+                    case 'ATTACK':
+                        const attackerName = getCardName(payload.attackerSlotId);
+                        const targetNames = payload.targets && payload.targets.length > 0
+                            ? payload.targets.map(getCardName).join(', ')
+                            : null;
+
+                        let description = `<b>${attackerName}</b> uses <b>${payload.attackName}</b>`;
+
+                        if (targetNames) {
+                            description += ` on <b>${targetNames}</b>`;
+                        }
+
+                        if (payload.damage > 0) {
+                            description += ` for <b>${payload.damage}</b> DMG`;
+                            if (payload.isWeakness) {
+                                description += ` (Weakness)`;
+                            }
+                        }
+                        return description;
+                    case 'SET_TURN':
+                        const turnPlayer = payload.side === 'L' ? (playerL_name.value || 'Left') : (playerR_name.value || 'Right');
+                        return `<b>TURN</b>: Set turn to <b>${turnPlayer}</b>`;
+                    case 'SET_ACTION_STATUS':
+                        return `<b>${payload.target.replace('_', ' ')}</b>: Set to <b>${payload.status}</b>`;
+                    case 'SET_SIDES':
+                        return `<b>${payload.target}</b>: Set remaining to <b>${payload.value}</b>`;
+                    case 'SET_STADIUM':
+                        const stadiumName = payload.cardId ? cardDatabase.value[payload.cardId]?.name : 'None';
+                        return `<b>STADIUM</b>: Set to <b>${stadiumName}</b>`;
+                    default:
+                        return `<b>${op.type}</b>: ${JSON.stringify(op.payload)}`;
+                }
+            }
+
+            const renderQueue = () => {
+                operationQueueEl.innerHTML = '';
+                if (!operationQueue.value) return;
+
+                operationQueue.value.forEach(op => {
+                    const item = document.createElement('div');
+                    item.classList.add('operation-item');
+                    item.dataset.opId = op.id;
+                    item.innerHTML = formatOperation(op); // Use innerHTML to render bold tags
+                    operationQueueEl.appendChild(item);
+                });
+            };
+
+            // --- Event Listeners for UI Updates ---
+            slots.forEach(slot => slot.on('change', updateTotalPokemons));
+            selections.on('change', updateSelectedPokemons);
+            cardDatabase.on('change', () => {
+                updateSelectedPokemons();
+                renderQueue(); // Re-render queue if card names change
+            });
+            operationQueue.on('change', renderQueue);
+            playerL_name.on('change', () => {
+                renderQueue();
+                updateFirstPlayerDropdown();
+            });
+            playerR_name.on('change', () => {
+                renderQueue();
+                updateFirstPlayerDropdown();
+            });
+
+            firstPlayerSelect.addEventListener('change', (e) => {
+                firstMove.value = e.target.value;
+            });
+
+            firstMove.on('change', (newValue) => {
+                firstPlayerSelect.value = newValue;
+            });
+
+            // --- Selection Button Logic ---
+            btnSelectAll.addEventListener('click', () => {
+                selections.value = getOccupiedSlots();
+            });
+            btnSelectClear.addEventListener('click', () => {
+                selections.value = [];
+            });
+            btnSelectReverse.addEventListener('click', () => {
+                const allSlots = getOccupiedSlots();
+                const current = selections.value || [];
+                selections.value = allSlots.filter(id => !current.includes(id));
+            });
+            btnSelectLeftAll.addEventListener('click', () => {
+                selections.value = getOccupiedSlots().filter(id => id.startsWith('slotL'));
+            });
+            btnSelectRightAll.addEventListener('click', () => {
+                selections.value = getOccupiedSlots().filter(id => id.startsWith('slotR'));
+            });
+            btnSelectLeftBattle.addEventListener('click', () => {
+                selections.value = getOccupiedSlots().filter(id => id === 'slotL0');
+            });
+            btnSelectRightBattle.addEventListener('click', () => {
+                selections.value = getOccupiedSlots().filter(id => id === 'slotR0');
+            });
+            btnSelectLeftBench.addEventListener('click', () => {
+                selections.value = getOccupiedSlots().filter(id => id.startsWith('slotL') && id !== 'slotL0');
+            });
+            btnSelectRightBench.addEventListener('click', () => {
+                selections.value = getOccupiedSlots().filter(id => id.startsWith('slotR') && id !== 'slotR0');
+            });
+            btnSelectWithEnergy.addEventListener('click', () => {
+                const selected = [];
+                slots.forEach(slot => {
+                    if (slot.value && slot.value.cardId && slot.value.attachedEnergy && slot.value.attachedEnergy.length > 0) {
+                        selected.push(slot.name.replace('draft_', ''));
+                    }
+                });
+                selections.value = selected;
+            });
+            btnSelectWithAbility.addEventListener('click', () => {
+                const db = cardDatabase.value;
+                if (!db) return;
+                const selected = [];
+                slots.forEach(slot => {
+                    const card = slot.value && slot.value.cardId ? db[slot.value.cardId] : null;
+                    if (card && card.pokemon && card.pokemon.abilities && card.pokemon.abilities.length > 0) {
+                        selected.push(slot.name.replace('draft_', ''));
+                    }
+                });
+                selections.value = selected;
+            });
+            btnSelectWithRule.addEventListener('click', () => {
+                const db = cardDatabase.value;
+                if (!db) return;
+                const ruleSubtypes = ['ex', 'VSTAR', 'VMAX', 'V-UNION', 'V', 'GX', 'EX', 'BREAK'];
+                const selected = [];
+                slots.forEach(slot => {
+                    const card = slot.value && slot.value.cardId ? db[slot.value.cardId] : null;
+                    if (card && card.subtype && ruleSubtypes.includes(card.subtype)) {
+                        selected.push(slot.name.replace('draft_', ''));
+                    }
+                });
+                selections.value = selected;
+            });
+
+            // --- Energy Module Logic ---
+            const energyButtonsContainer = document.getElementById('energy-buttons');
+            const specialEnergySelect = document.getElementById('special-energy-select');
+            const addedEnergyContainer = document.getElementById('added-energy-container');
+            const energyCurrentBattleBtn = document.getElementById('energy-current-battle-btn');
+            const energyClearBtn = document.getElementById('energy-clear-btn');
+            let energyHistory = []; // This will now track all energies added in this "draft" session.
+
+            // Add listeners for the new shortcut buttons in the energy Module
+            energyCurrentBattleBtn.addEventListener('click', () => {
+                const currentTurn = draft_currentTurn.value;
+                if (currentTurn === 'L') {
+                    btnSelectLeftBattle.click();
+                } else if (currentTurn === 'R') {
+                    btnSelectRightBattle.click();
+                } else {
+                    alert('No current turn player to select battle Pokémon.');
+                }
+            });
+            energyClearBtn.addEventListener('click', () => btnSelectClear.click());
+
+            function renderEnergyHistory() {
+                addedEnergyContainer.innerHTML = '';
+                energyHistory.forEach((energy) => {
+                    const energyImg = document.createElement('img');
+                    energyImg.src = `/assets/ptcg-telop/energy/${energy}.png`;
+                    energyImg.classList.add('energy-icon');
+                    energyImg.title = energy;
+                    addedEnergyContainer.appendChild(energyImg);
+                });
+            }
+
+            function handleEnergyButtonClick(energyType) {
+                const targets = selections.value;
+                if (!targets || targets.length === 0) {
+                    alert('Please select a Pokémon to attach energy to.');
+                    return;
+                }
+
+                // For each selected Pokémon, update its energy in the operation queue
+                targets.forEach(slotId => {
+                    const slotReplicant = slots.find(s => s.name === `draft_${slotId}`);
+                    if (!slotReplicant || !slotReplicant.value || !slotReplicant.value.cardId) return;
+
+                    const currentEnergies = slotReplicant.value.attachedEnergy || [];
+                    const finalEnergies = [...currentEnergies, energyType];
+
+                    queueOrUpdateOperation('SET_ENERGIES', {
+                        target: slotId,
+                        energies: finalEnergies
+                    });
+                });
+
+                // Add to history and re-render the history view
+                energyHistory.push(energyType);
+                renderEnergyHistory();
+            }
+
+            energyButtonsContainer.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON' && e.target.dataset.energyType) {
+                    handleEnergyButtonClick(e.target.dataset.energyType);
+                }
+            });
+
+            specialEnergySelect.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    handleEnergyButtonClick(e.target.value);
+                    e.target.value = ''; // Reset select
+                }
+            });
+
+            // Clear the energy history when the main operation queue is cleared (on Apply or Discard)
+            operationQueue.on('change', (newValue) => {
+                if (!newValue || newValue.length === 0) {
+                    energyHistory = [];
+                    renderEnergyHistory();
+                }
+            });
+
+            // Initial render
+            renderEnergyHistory();
+
+            function updateEnergyButtonVisibility() {
+                const settings = settingsRep.value || {};
+                const db = cardDatabase.value;
+                const deckLVal = deckL.value;
+                const deckRVal = deckR.value;
+
+                const energyButtons = energyButtonsContainer.querySelectorAll('[data-energy-type]');
+
+                if (!settings.showDeckEnergyOnly || !db || !deckLVal || !deckRVal) {
+                    // If setting is off or data is missing, show all buttons
+                    energyButtons.forEach(btn => btn.style.display = '');
+                    return;
+                }
+
+                const deckEnergies = new Set();
+                const combinedCards = [...(deckLVal.cards || []), ...(deckRVal.cards || [])];
+                const uniqueCardIds = [...new Set(combinedCards)];
+
+                uniqueCardIds.forEach(id => {
+                    const card = db[id];
+                    // Correctly identify basic energy cards
+                    if (card && card.supertype === 'energy' && card.subtype === 'basic energy') {
+                        // Extract the energy type from the name (e.g., "基本草エネルギー" -> "草")
+                        const energyType = card.name.replace(/基本|エネルギー/g, '').trim();
+                        if (energyType) {
+                            deckEnergies.add(energyType);
+                        }
+                    }
+                });
+
+                energyButtons.forEach(btn => {
+                    const energyType = btn.dataset.energyType;
+                    // Always show Colorless and Rainbow, otherwise check if it's in the deck energies
+                    if (energyType === '無' || energyType === '全' || deckEnergies.has(energyType)) {
+                        btn.style.display = '';
+                    } else {
+                        btn.style.display = 'none';
+                    }
+                });
+
+                // Always ensure the special energy dropdown is visible
+                specialEnergySelect.style.display = '';
+            }
+
+            // Listen for changes that could affect energy button visibility
+            settingsRep.on('change', updateEnergyButtonVisibility);
+            deckL.on('change', updateEnergyButtonVisibility);
+            deckR.on('change', updateEnergyButtonVisibility);
+            cardDatabase.on('change', updateEnergyButtonVisibility);
+
+
+            // --- Attack Module Logic ---
+            const attackerSelect = document.getElementById('attacker');
+            const attackSelect = document.getElementById('attack-select');
+            const damageInput = document.getElementById('damage');
+            const weaknessCheck = document.getElementById('weakness-check');
+            const targetTextarea = document.getElementById('target');
+            const attackBtn = document.getElementById('attack-btn');
+            const aimBtn = document.getElementById('aim-btn');
+            const stadiumSelect = document.getElementById('stadium-select');
+            const stadiumUsedCheckbox = document.getElementById('stadium-used-checkbox');
+
+            /**
+             * Automatically populates the damage input based on the selected attack.
+             * - Uses the number directly if the damage value is a number.
+             * - Extracts the number from strings (e.g., "20+", "60x").
+             * - Fills with 0 for moves with no damage.
+             */
+            function updateDamageInput() {
+                const db = cardDatabase.value;
+                const attackerSlotId = attackerSelect.value;
+                const attackName = attackSelect.value;
+
+                // Reset damage if essential data is missing
+                if (!db || !attackerSlotId || !attackName) {
+                    damageInput.value = 0;
+                    return;
+                }
+
+                const attackerSlotReplicant = slots.find(s => s.name === `draft_${attackerSlotId}`);
+                const attackerCardId = attackerSlotReplicant?.value?.cardId;
+                const attachedToolId = attackerSlotReplicant?.value?.attachedToolId;
+
+                if (!attackerCardId || !db[attackerCardId]) {
+                    damageInput.value = 0;
+                    return;
+                }
+
+                // Consolidate all possible attacks from the Pokémon and its tool
+                const cardData = db[attackerCardId];
+                let allAttacks = [];
+                if (cardData.pokemon?.attacks) {
+                    allAttacks.push(...cardData.pokemon.attacks);
+                }
+                if (attachedToolId && db[attachedToolId]?.trainer?.attacks) {
+                    allAttacks.push(...db[attachedToolId].trainer.attacks);
+                }
+
+                const selectedAttack = allAttacks.find(attack => attack.name === attackName);
+
+                if (selectedAttack) {
+                    if (selectedAttack.damage) {
+                        // Original logic: Extract digits from the damage string (e.g., "120+", "60x")
+                        const damageString = String(selectedAttack.damage);
+                        const match = damageString.match(/\d+/);
+                        damageInput.value = match ? parseInt(match[0], 10) : 0;
+                    } else if (selectedAttack.text) {
+                        // New logic: Extract damage from attack text if damage field is empty.
+                        // Rule: Look for a number between "匹に、" and "ダメージ。", ignoring an optional "それぞれ".
+                        const regex = /匹に、(?:それぞれ)?(\d+)ダメージ。/;
+                        const textMatch = selectedAttack.text.match(regex);
+                        if (textMatch && textMatch[1]) {
+                            damageInput.value = parseInt(textMatch[1], 10);
+                        } else {
+                            damageInput.value = 0;
+                        }
+                    } else {
+                        // If attack has no damage value or text, set to 0
+                        damageInput.value = 0;
+                    }
+                } else {
+                    // If no attack is found, set to 0
+                    damageInput.value = 0;
+                }
+            }
+
+            /**
+             * Automatically checks for weakness based on the attacker and the selected battle zone target.
+             */
+            function updateWeaknessCheckbox() {
+                const db = cardDatabase.value;
+                const weaknessCheck = document.getElementById('weakness-check');
+                if (!db) { weaknessCheck.checked = false; return; }
+
+                // 获取攻击方信息
+                const attackerSlotId = attackerSelect.value;
+                if (!attackerSlotId) { weaknessCheck.checked = false; return; }
+                const attackerSlotReplicant = slots.find(s => s.name === `draft_${attackerSlotId}`);
+                const attackerCardId = attackerSlotReplicant?.value?.cardId;
+                const attackerCard = attackerCardId ? db[attackerCardId] : null;
+                const attackerTypes = attackerCard?.pokemon?.color;
+                if (!attackerTypes || attackerTypes.length === 0) { weaknessCheck.checked = false; return; }
+
+                // Get info for the selected battle zone target
+                const currentSelections = selections.value || [];
+                const targetSlotId = currentSelections.find(id => id.endsWith('0')); // Only care about the Pokémon in the battle slot
+                if (!targetSlotId) { weaknessCheck.checked = false; return; }
+                const targetSlotReplicant = slots.find(s => s.name === `draft_${targetSlotId}`);
+                const targetCardId = targetSlotReplicant?.value?.cardId;
+                const targetCard = targetCardId ? db[targetCardId] : null;
+                const targetWeaknesses = targetCard?.pokemon?.weaknesses;
+                if (!targetWeaknesses || targetWeaknesses.length === 0) { weaknessCheck.checked = false; return; }
+
+                // Weakness check: if any of the attacker's types match any of the target's weaknesses
+                const weaknessTypes = targetWeaknesses.map(w => w.type);
+                const isWeak = attackerTypes.some(type => weaknessTypes.includes(type));
+
+                weaknessCheck.checked = isWeak;
+            }
+
+            /**
+             * Finds all attacks for a Pokémon and its entire pre-evolution line by
+             * searching within the combined decks. This version correctly handles multiple
+             * cards with the same name (e.g., different Ralts cards).
+             * @param {string} cardId - The starting card ID from the slot.
+             * @param {object} db - The full card database.
+             * @param {Array<string>} deckCardIds - An array of all card IDs in both decks.
+             * @returns {Array} An array of attack objects.
+             */
+            function getAllAttacksForPokemon(cardId, db, deckCardIds) {
+                const startCardData = db[cardId];
+                if (!cardId || !db || !startCardData) {
+                    return [];
+                }
+
+                let allAttacks = [];
+                // 1. Add attacks from the starting Pokémon, tagging them with the source name.
+                if (startCardData.pokemon?.attacks) {
+                    const attacksWithSource = startCardData.pokemon.attacks.map(attack => ({
+                        ...attack,
+                        source: startCardData.name
+                    }));
+                    allAttacks.push(...attacksWithSource);
+                }
+
+                // 2. Prepare a queue to process the names of all pre-evolutions.
+                const namesToProcess = new Set();
+                if (startCardData.pokemon?.evolvesFrom) {
+                    startCardData.pokemon.evolvesFrom.forEach(name => namesToProcess.add(name));
+                }
+                
+                const processedNames = new Set();
+
+                // 3. Iterate through the pre-evolution name queue, finding all matching cards in the deck.
+                while (namesToProcess.size > 0) {
+                    // Get the next name from the queue
+                    const currentName = namesToProcess.values().next().value;
+                    namesToProcess.delete(currentName);
+
+                    // If this name has already been processed, skip to prevent infinite loops.
+                    if (processedNames.has(currentName)) {
+                        continue;
+                    }
+                    processedNames.add(currentName);
+
+                    // Find all cards in the deck with the same name as the current pre-evolution.
+                    const matchingPreEvoIds = deckCardIds.filter(id => db[id] && db[id].name === currentName);
+
+                    matchingPreEvoIds.forEach(preEvoCardId => {
+                        const cardData = db[preEvoCardId];
+                        if (cardData) {
+                            // Add its attacks, tagging them with the source name.
+                            if (cardData.pokemon?.attacks) {
+                                const attacksWithSource = cardData.pokemon.attacks.map(attack => ({
+                                    ...attack,
+                                    source: cardData.name
+                                }));
+                                allAttacks.push(...attacksWithSource);
+                            }
+                            // Add its pre-evolution names to the queue for the next round of processing.
+                            if (cardData.pokemon?.evolvesFrom) {
+                                cardData.pokemon.evolvesFrom.forEach(name => {
+                                    if (!processedNames.has(name)) { // Optimization
+                                        namesToProcess.add(name);
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+                return allAttacks;
+            }
+
+
+            function updateAttackDropdown() {
+                attackSelect.innerHTML = ''; // Clear it
+
+                const attackerSlotId = attackerSelect.value;
+                if (!attackerSlotId) {
+                    damageInput.value = 0; // Also clear damage if no attacker
+                    return;
+                }
+
+                const db = cardDatabase.value;
+                const attackerSlotReplicant = slots.find(s => s.name === `draft_${attackerSlotId}`);
+                if (!attackerSlotReplicant || !attackerSlotReplicant.value) return;
+                
+                const attackerCardId = attackerSlotReplicant.value.cardId;
+                const attachedToolId = attackerSlotReplicant.value.attachedToolId;
+
+                if (!attackerCardId || !db) return;
+
+                const attackerCardData = db[attackerCardId];
+                if (!attackerCardData) return;
+                const attackerName = attackerCardData.name;
+
+                // Combine cards from both decks for an efficient search scope.
+                const deckLIds = deckL.value?.cards || [];
+                const deckRIds = deckR.value?.cards || [];
+                const combinedDeckIds = [...new Set([...deckLIds, ...deckRIds])];
+
+                // Use the new function to get all attacks from the evolution line
+                let allAttacks = getAllAttacksForPokemon(attackerCardId, db, combinedDeckIds);
+
+                // Check for tool cards that grant attacks
+                if (attachedToolId && db[attachedToolId]) {
+                    const toolData = db[attachedToolId];
+                    // Check if the tool is a "Technical Machine" and has attacks
+                    if (toolData.trainer?.attacks) {
+                        const toolAttacks = toolData.trainer.attacks.map(attack => ({
+                            ...attack,
+                            source: 'ワザマシン'
+                        }));
+                        allAttacks.push(...toolAttacks);
+                    }
+                }
+
+                if (allAttacks.length > 0) {
+                    const uniqueAttackNames = new Set();
+                    const uniqueAttacks = allAttacks.filter(attack => {
+                        if (attack.name && !uniqueAttackNames.has(attack.name)) {
+                            uniqueAttackNames.add(attack.name);
+                            return true;
+                        }
+                        return false;
+                    });
+
+                    // Group attacks by their source for the dropdown
+                    const groupedAttacks = uniqueAttacks.reduce((acc, attack) => {
+                        const source = attack.source;
+                        if (!acc[source]) {
+                            acc[source] = [];
+                        }
+                        acc[source].push(attack);
+                        return acc;
+                    }, {});
+
+                    // 1. Add attacks from the current Pokémon (no group)
+                    if (groupedAttacks[attackerName]) {
+                        groupedAttacks[attackerName].forEach(attack => {
+                            const option = document.createElement('option');
+                            option.value = attack.name;
+                            option.textContent = attack.name;
+                            attackSelect.appendChild(option);
+                        });
+                        delete groupedAttacks[attackerName]; // Remove from map to avoid re-processing
+                    }
+
+                    // 2. Add attacks from "ワザマシン" (Technical Machine)
+                    const technicalMachine = 'ワザマシン';
+                    if (groupedAttacks[technicalMachine]) {
+                        const optgroup = document.createElement('optgroup');
+                        optgroup.label = technicalMachine;
+                        groupedAttacks[technicalMachine].forEach(attack => {
+                            const option = document.createElement('option');
+                            option.value = attack.name;
+                            option.textContent = attack.name;
+                            optgroup.appendChild(option);
+                        });
+                        attackSelect.appendChild(optgroup);
+                        delete groupedAttacks[technicalMachine]; // Remove from map to avoid re-processing
+                    }
+
+                    // 3. Add attacks from other sources (pre-evolutions) in optgroups
+                    Object.keys(groupedAttacks).forEach(sourceName => {
+                        const optgroup = document.createElement('optgroup');
+                        optgroup.label = sourceName;
+                        groupedAttacks[sourceName].forEach(attack => {
+                            const option = document.createElement('option');
+                            option.value = attack.name;
+                            option.textContent = attack.name;
+                            optgroup.appendChild(option);
+                        });
+                        attackSelect.appendChild(optgroup);
+                    });
+
+                    if (attackSelect.options.length > 0) {
+                        attackSelect.selectedIndex = 0;
+                    }
+                }
+                // After updating attacks, also update the damage input
+                updateDamageInput();
+            }
+
+            function updateAttackerDropdown() {
+                const db = cardDatabase.value;
+                const turn = draft_currentTurn.value;
+                if (!db || !turn) return;
+
+                const currentValue = attackerSelect.value;
+                attackerSelect.innerHTML = '<option value="">Select Attacker</option>';
+                
+                const availableAttackers = getOccupiedSlots().filter(slotId => slotId.startsWith(`slot${turn}`));
+
+                availableAttackers.forEach(slotId => {
+                    const option = document.createElement('option');
+                    option.value = slotId;
+                    option.textContent = `${slotId}: ${getCardName(slotId)}`;
+                    attackerSelect.appendChild(option);
+                });
+
+                const battleSlot = `slot${turn}0`;
+                if (availableAttackers.includes(battleSlot)) {
+                    attackerSelect.value = battleSlot;
+                } else {
+                    attackerSelect.value = currentValue;
+                }
+                // Update attacks when attacker changes
+                updateAttackDropdown();
+                // Manually trigger weakness check since programmatic change doesn't fire event
+                updateWeaknessCheckbox();
+            }
+
+            function updateTargetTextarea() {
+                const currentSelections = selections.value || [];
+                targetTextarea.value = currentSelections.map(id => `${id}: ${getCardName(id)}`).join('\n');
+            }
+
+            attackerSelect.addEventListener('change', () => {
+                updateAttackDropdown();
+                updateWeaknessCheckbox();
+            });
+
+            aimBtn.addEventListener('click', () => {
+                const currentTurn = draft_currentTurn.value;
+                if (currentTurn === 'L') {
+                    btnSelectRightBattle.click(); // Aim at opponent's battle pokemon
+                } else if (currentTurn === 'R') {
+                    btnSelectLeftBattle.click(); // Aim at opponent's battle pokemon
+                }
+            });
+
+            attackSelect.addEventListener('change', updateDamageInput);
+
+            attackBtn.addEventListener('click', () => {
+                const attackerSlotId = attackerSelect.value;
+                const attackName = attackSelect.value;
+                const targets = selections.value;
+                const damage = parseInt(damageInput.value, 10);
+                const isWeakness = weaknessCheck.checked;
+
+                if (!attackerSlotId) {
+                    alert('No attacker selected!');
+                    return;
+                }
+
+                if (!attackName) {
+                    alert('No attack selected!');
+                    return;
+                }
+
+                if (isNaN(damage) || damage < 0) {
+                    alert('Please enter a valid damage amount.');
+                    return;
+                }
+
+                const attackerSlotReplicant = slots.find(s => s.name === `draft_${attackerSlotId}`);
+                const attackerCardId = attackerSlotReplicant ? attackerSlotReplicant.value.cardId : null;
+
+                if (!attackerCardId) {
+                    alert('Attacker slot is empty or invalid data.');
+                    return;
+                }
+
+                queueOperation('ATTACK', {
+                    attackerSlotId: attackerSlotId,
+                    attackerCardId: attackerCardId,
+                    attackName: attackName,
+                    targets: targets || [],
+                    damage: damage,
+                    isWeakness: isWeakness
+                });
+            });
+
+            // --- Stadium Logic ---
+            function updateStadiumDropdown() {
+                const db = cardDatabase.value;
+                const deckLVal = deckL.value;
+                const deckRVal = deckR.value;
+                if (!db || !deckLVal || !deckRVal) return;
+
+                const combinedCards = [...(deckLVal.cards || []), ...(deckRVal.cards || [])];
+                const uniqueCardIds = [...new Set(combinedCards)];
+
+                const stadiumCards = uniqueCardIds
+                    .map(id => ({ id, data: db[id] }))
+                    .filter(card => card.data && card.data.subtype === 'stadium');
+
+                const currentStadiumId = draft_stadium.value ? draft_stadium.value.cardId : "";
+                stadiumSelect.innerHTML = '<option value="">Select Stadium</option>';
+
+                stadiumCards.forEach(card => {
+                    const option = document.createElement('option');
+                    option.value = card.id;
+                    option.textContent = card.data.name;
+                    stadiumSelect.appendChild(option);
+                });
+
+                stadiumSelect.value = currentStadiumId;
+            }
+
+            stadiumSelect.addEventListener('change', (e) => {
+                const newStadiumId = e.target.value;
+                queueOrUpdateOperation('SET_STADIUM', { cardId: newStadiumId || null });
+            });
+
+            stadiumUsedCheckbox.addEventListener('change', (e) => {
+                const isUsed = e.target.checked;
+                queueOrUpdateOperation('SET_STADIUM_USED', { used: isUsed });
+            });
+
+            deckL.on('change', updateStadiumDropdown);
+            deckR.on('change', updateStadiumDropdown);
+            cardDatabase.on('change', updateStadiumDropdown);
+            draft_stadium.on('change', (newVal) => {
+                const pendingOp = operationQueue.value.find(op => op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED');
+                if (!pendingOp) {
+                    stadiumSelect.value = newVal ? newVal.cardId : "";
+                    stadiumUsedCheckbox.checked = newVal ? newVal.used : false;
+                }
+                // Disable checkbox if no stadium is selected
+                stadiumUsedCheckbox.disabled = !newVal || !newVal.cardId;
+            });
+
+            // --- Turn Module Logic ---
+            const turnLRadio = document.getElementById('turn-l');
+            const turnRRadio = document.getElementById('turn-r');
+            const turnLLabel = document.getElementById('turn-l-label');
+            const turnRLabel = document.getElementById('turn-r-label');
+            const endTurnBtn = document.getElementById('end-turn-btn');
+
+            playerL_name.on('change', (newName) => {
+                const radio = turnLLabel.querySelector('input');
+                turnLLabel.textContent = ''; // Clear existing content
+                turnLLabel.appendChild(radio);
+                turnLLabel.append(` ${newName || 'Left Player'}`);
+            });
+
+            playerR_name.on('change', (newName) => {
+                const radio = turnRLabel.querySelector('input');
+                turnRLabel.textContent = ''; // Clear existing content
+                turnRLabel.appendChild(radio);
+                turnRLabel.append(` ${newName || 'Right Player'}`);
+            });
+
+            draft_currentTurn.on('change', (newVal) => {
+                if (newVal === 'L') {
+                    turnLRadio.checked = true;
+                } else {
+                    turnRRadio.checked = true;
+                }
+                updateAttackerDropdown();
+            });
+
+            turnLRadio.addEventListener('change', () => {
+                if (turnLRadio.checked) queueOrUpdateOperation('SET_TURN', { side: 'L' });
+            });
+            turnRRadio.addEventListener('change', () => {
+                if (turnRRadio.checked) queueOrUpdateOperation('SET_TURN', { side: 'R' });
+            });
+            endTurnBtn.addEventListener('click', () => {
+                const currentTurn = draft_currentTurn.value;
+                const nextTurn = currentTurn === 'L' ? 'R' : 'L';
+                // Reuse the SET_TURN operation and use queueOrUpdate to ensure there's only one turn-change command in the queue
+                queueOrUpdateOperation('SET_TURN', { side: nextTurn });
+            });
+
+
+            // --- Main Action Buttons & Global Handlers ---
+            function handleDiscard() {
+                nodecg.sendMessage('discardQueue').catch(e => console.error("Failed to discard queue", e));
+            }
+
+            function handleApply() {
+                nodecg.sendMessage('applyQueue').catch(e => console.error("Failed to apply queue", e));
+            }
+
+            discardOpBtn.addEventListener('click', handleDiscard);
+            applyOpBtn.addEventListener('click', handleApply);
+
+            resetSystemBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to completely reset the system? This will clear all pokemon, decks, and pending operations. This action cannot be undone.')) {
+                    nodecg.sendMessage('resetSystem').catch(e => console.error("Failed to reset system", e));
+                }
+            });
+
+            // --- Unified Hotkey Handling ---
+            let hotkeys = { discard: 'Escape', apply: 'Control+S' };
+
+            function updateButtonLabels() {
+                discardOpBtn.textContent = `Discard (${hotkeys.discard})`;
+                applyOpBtn.textContent = `Apply (${hotkeys.apply})`;
+            }
+
+            settingsRep.on('change', (newValue) => {
+                if (newValue && newValue.hotkeys) {
+                    hotkeys = newValue.hotkeys;
+                } else {
+                    hotkeys = { discard: 'Escape', apply: 'Control+S' };
+                }
+                updateButtonLabels();
+            });
+            
+            // Initial label update
+            if (settingsRep.value && settingsRep.value.hotkeys) {
+                hotkeys = settingsRep.value.hotkeys;
+            }
+            updateButtonLabels();
+
+
+            nodecg.listenFor('hotkeyFired', (command) => {
+                console.log(`Master panel received hotkey command: ${command}`);
+                if (command === 'discard') {
+                    handleDiscard();
+                } else if (command === 'apply') {
+                    handleApply();
+                }
+            });
+
+            // --- Event Listeners for UI Updates ---
+            slots.forEach(slot => slot.on('change', () => {
+                updateTotalPokemons();
+                updateAttackerDropdown();
+                updateTargetTextarea(); // Selections might refer to a card that was just removed
+                updateWeaknessCheckbox();
+            }));
+            selections.on('change', () => {
+                updateSelectedPokemons();
+                updateTargetTextarea();
+                updateWeaknessCheckbox();
+            });
+            cardDatabase.on('change', () => {
+                updateSelectedPokemons();
+                updateAttackerDropdown();
+                updateTargetTextarea();
+                updateWeaknessCheckbox();
+            });
+            operationQueue.on('change', renderQueue);
+
+
+            // Initial UI Update ---
+            updateTotalPokemons();
+            updateSelectedPokemons();
+            updateFirstPlayerDropdown();
+            renderQueue();
+            updateAttackerDropdown();
+            updateTargetTextarea();
+            updateEnergyButtonVisibility();
+
+            // --- Hotkey Sender (for this panel) ---
+            function checkHotkey(e, hotkeyString) {
+                if (!hotkeyString || typeof hotkeyString !== 'string') return false;
+                
+                const parts = hotkeyString.toLowerCase().split('+').map(p => p.trim());
+                const key = parts.pop();
+
+                if (e.key.toLowerCase() !== key) return false;
+                if (parts.includes('ctrl') !== e.ctrlKey) return false;
+                if (parts.includes('alt') !== e.altKey) return false;
+                if (parts.includes('shift') !== e.shiftKey) return false;
+                if (parts.includes('meta') !== e.metaKey) return false; // For Command key on Mac
+
+                return true;
+            }
+
+            document.addEventListener('keydown', (e) => {
+                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') {
+                    return;
+                }
+
+                if (checkHotkey(e, hotkeys.discard)) {
+                    e.preventDefault();
+                    nodecg.sendMessage('hotkeyFired', 'discard').catch(err => console.error("Error sending discard hotkey signal", err));
+                } else if (checkHotkey(e, hotkeys.apply)) {
+                    e.preventDefault();
+                    nodecg.sendMessage('hotkeyFired', 'apply').catch(err => console.error("Error sending apply hotkey signal", err));
+                } else if (checkHotkey(e, hotkeys.clearSelection)) {
+                    e.preventDefault();
+                    btnSelectClear.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
