@@ -149,18 +149,22 @@
         }
         .energy-btn-grid {
             display: grid;
-            grid-template-columns: repeat(8, 1fr);
+            grid-template-columns: repeat(7, 1fr);
             gap: 5px;
             margin-bottom: 10px;
         }
         .energy-btn {
             padding: 8px;
             font-size: 12px;
+            border: 1px solid #ccc;
+            border-radius: 15px;
+        }
+        .energy-btn:hover {
+            background-color: #9b9b9b;
         }
         .energy-icon {
-            width: 30px;
-            height: 30px;
-            margin-right: 5px;
+            width: 50px;
+            height: 50px;
             vertical-align: middle;
         }
         .energy-container {
@@ -238,6 +242,10 @@
         #attack-zone-flex-container > .form-group {
             min-width: 0; /* Allow the form group (flex item) to shrink */
         }
+        .battle-zone-pokemon {
+            border: 2px solid #ffc107 !important; /* Gold border */
+            box-shadow: 0 0 8px rgba(255, 193, 7, 0.6);
+        }
     </style>
 </head>
 <body>
@@ -259,34 +267,28 @@
     </div>
 
     <div class="panel-section">
-        <h3>Energy Module</h3>
-        <div id="energy-buttons" class="energy-btn-grid">
-            <button class="btn btn-grass" data-energy-type="草">草</button>
-            <button class="btn btn-fire" data-energy-type="炎">炎</button>
-            <button class="btn btn-water" data-energy-type="水">水</button>
-            <button class="btn btn-lightning" data-energy-type="雷">雷</button>
-            <button class="btn btn-psychic" data-energy-type="超">超</button>
-            <button class="btn btn-fighting" data-energy-type="闘">闘</button>
-            <button class="btn btn-dark" data-energy-type="悪">悪</button>
-            <button class="btn btn-metal" data-energy-type="鋼">鋼</button>
-            <button class="btn btn-colorless" data-energy-type="無">無</button>
-            <button class="btn btn-rainbow" data-energy-type="全">全</button>
-            <select id="special-energy-select" class="btn energy-btn">
-                <option value="">特殊</option>
-                <option value="超悪">超悪</option>
-                <option value="妖">妖</option>
-                <option value="竜">竜</option>
-            </select>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h3>Energy Module</h3>
+            <div class="form-group" style="margin-bottom: 0;">
+                <input type="checkbox" id="show-opponent-field-checkbox" style="transform: scale(1.2);">
+                <label for="show-opponent-field-checkbox" style="margin-left: 5px;">Show Opponent</label>
+            </div>
         </div>
-        <div class="form-group">
-            <label>Attached:</label>
-            <div id="added-energy-container" class="energy-container">
-                <!-- Energy icons will be added here -->
-            </div>
-            <div style="margin-left: 10px; display: flex; gap: 5px; align-items: center;">
-                <button id="energy-current-battle-btn" class="btn btn-primary" style="flex: 1;">Attacker</button>
-                <button id="energy-clear-btn" class="btn btn-black" style="flex: 1;">Clear</button>
-            </div>
+        <div id="energy-buttons" class="energy-btn-grid">
+            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/草.png" title="草" class="energy-icon" data-energy-type="草" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/炎.png" title="炎" class="energy-icon" data-energy-type="炎" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/水.png" title="水" class="energy-icon" data-energy-type="水" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/雷.png" title="雷" class="energy-icon" data-energy-type="雷" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/超.png" title="超" class="energy-icon" data-energy-type="超" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/闘.png" title="闘" class="energy-icon" data-energy-type="闘" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/悪.png" title="悪" class="energy-icon" data-energy-type="悪" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/鋼.png" title="鋼" class="energy-icon" data-energy-type="鋼" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/妖.png" title="妖" class="energy-icon" data-energy-type="妖" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/無.png" title="無" class="energy-icon" data-energy-type="無" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/全.png" title="全" class="energy-icon" data-energy-type="全" draggable="true"></button>
+        </div>
+        <div id="current-player-field" style="margin-top: 10px;">
+             <!-- Pokémon will be rendered here by JavaScript -->
         </div>
     </div>
     
@@ -299,7 +301,7 @@
             <button id="select-right-all-btn" class="btn select-btn btn-right">R-All</button>
             <button id="select-right-bench-btn" class="btn select-btn btn-right">R-Bench</button>
             <button id="select-right-battle-btn" class="btn select-btn btn-right">R-Battle</button>
-            <button id="select-all-btn" class="btn select-all-btn">All</button>
+            <button id="select-attacker-btn" class="btn btn-primary">Attacker</button>
             <button id="select-clear-btn" class="btn btn-black">Clear</button>
             <button id="select-reverse-btn" class="btn select-btn">Reverse</button>
             <button id="select-with-energy-btn" class="btn select-btn">エネ付き</button>
@@ -417,9 +419,186 @@
             const discardOpBtn = document.getElementById('discard-op-btn');
             const applyOpBtn = document.getElementById('apply-op-btn');
             const resetSystemBtn = document.getElementById('reset-system-btn');
+            const showOpponentCheckbox = document.getElementById('show-opponent-field-checkbox');
+
+            // --- Drag & Drop Field ---
+            const currentPlayerField = document.getElementById('current-player-field');
+
+
+            /**
+             * Renders the current turn player's field in the drop target area.
+             */
+            function renderCurrentPlayerField() {
+                const baseTurn = draft_currentTurn.value;
+                const db = cardDatabase.value;
+                const isOpponentView = showOpponentCheckbox.checked;
+
+                let displayTurn = baseTurn;
+                if (isOpponentView && baseTurn) {
+                    displayTurn = baseTurn === 'L' ? 'R' : 'L';
+                }
+
+                // Clear the field first, but keep the title
+                currentPlayerField.innerHTML = '<h3>↓↓↓ Drag & Drop ↓↓↓</h3>';
+
+                if (!displayTurn || !db) {
+                    currentPlayerField.innerHTML += '<p style="color: #888; text-align: center;">No player to display.</p>';
+                    return;
+                }
+
+                const playerPrefix = `slot${displayTurn}`;
+
+                // Main Row (Battle + Bench 1-5)
+                const mainRowContainer = document.createElement('div');
+                mainRowContainer.style.display = 'grid';
+                mainRowContainer.style.gridTemplateColumns = 'repeat(6, 1fr)';
+                mainRowContainer.style.gap = '10px';
+                mainRowContainer.style.padding = '5px';
+
+                // Slot 0 (Battle)
+                const battleSlot = slots.find(s => s.name === `draft_${playerPrefix}0`);
+                if (battleSlot && battleSlot.value && battleSlot.value.cardId) {
+                    mainRowContainer.appendChild(createPokemonCardElement(battleSlot.value, `${playerPrefix}0`));
+                } else {
+                    mainRowContainer.appendChild(createEmptySlotElement(`${playerPrefix}0`));
+                }
+
+                // Slots 1-5 (Bench)
+                for (let i = 1; i <= 5; i++) {
+                    const benchSlot = slots.find(s => s.name === `draft_${playerPrefix}${i}`);
+                    if (benchSlot && benchSlot.value && benchSlot.value.cardId) {
+                        mainRowContainer.appendChild(createPokemonCardElement(benchSlot.value, `${playerPrefix}${i}`));
+                    } else {
+                        mainRowContainer.appendChild(createEmptySlotElement(`${playerPrefix}${i}`));
+                    }
+                }
+                currentPlayerField.appendChild(mainRowContainer);
+
+                // Extra Row (Bench 6-8)
+                const extraRowContainer = document.createElement('div');
+                extraRowContainer.style.display = 'grid';
+                extraRowContainer.style.gridTemplateColumns = 'repeat(6, 1fr)'; // Keep same grid for alignment
+                extraRowContainer.style.gap = '10px';
+                extraRowContainer.style.padding = '5px';
+                extraRowContainer.style.marginTop = '10px';
+
+                let hasExtraBenchPokemon = false;
+                for (let i = 6; i <= 8; i++) {
+                    const extraBenchSlot = slots.find(s => s.name === `draft_${playerPrefix}${i}`);
+                    if (extraBenchSlot && extraBenchSlot.value && extraBenchSlot.value.cardId) {
+                        extraRowContainer.appendChild(createPokemonCardElement(extraBenchSlot.value, `${playerPrefix}${i}`));
+                        hasExtraBenchPokemon = true;
+                    } else {
+                         // Add a placeholder to keep alignment
+                        const placeholder = document.createElement('div');
+                        extraRowContainer.appendChild(placeholder);
+                    }
+                }
+
+                if (hasExtraBenchPokemon) {
+                    currentPlayerField.appendChild(extraRowContainer);
+                }
+            }
+
+            /**
+             * Creates a DOM element for a Pokémon card.
+             * @param {object} slotValue - The value of the slot replicant.
+             * @param {string} slotId - The ID of the slot (e.g., 'slotL0').
+             * @returns {HTMLElement} The created element.
+             */
+            function createPokemonCardElement(slotValue, slotId) {
+                const cardData = cardDatabase.value[slotValue.cardId];
+                const cardEl = document.createElement('div');
+                cardEl.className = 'pokemon-drop-target';
+                if (slotId.endsWith('0')) {
+                    cardEl.classList.add('battle-zone-pokemon');
+                }
+                cardEl.dataset.slotId = slotId;
+                cardEl.style.border = '1px solid #ccc';
+                cardEl.style.borderRadius = '5px';
+                cardEl.style.padding = '5px';
+                cardEl.style.textAlign = 'center';
+                cardEl.style.position = 'relative'; // For the 1/turn icon
+
+                const img = document.createElement('img');
+                img.src = `/assets/ptcg-telop/card_img/${slotValue.cardId}.jpg`;
+                img.style.width = '100%';
+                img.style.borderRadius = '4px';
+                cardEl.appendChild(img);
+
+                // --- Display attached energies instead of name ---
+                const energyContainer = document.createElement('div');
+                energyContainer.className = 'attached-energy-container';
+                Object.assign(energyContainer.style, {
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    justifyContent: 'center',
+                    gap: '2px',
+                    marginTop: '4px',
+                    minHeight: '18px' // Reserve space even if empty
+                });
+
+                const attachedEnergies = slotValue.attachedEnergy || [];
+                attachedEnergies.forEach((energy, index) => {
+                    const energyImg = document.createElement('img');
+                    energyImg.src = `/assets/ptcg-telop/energy/${energy}.png`;
+                    energyImg.className = 'attached-energy-icon';
+                    energyImg.style.width = '16px';
+                    energyImg.style.height = '16px';
+                    energyImg.draggable = true;
+                    energyImg.dataset.energyType = energy;
+                    energyImg.dataset.sourceSlot = slotId;
+                    energyImg.dataset.energyIndex = index;
+                    energyContainer.appendChild(energyImg);
+                });
+                cardEl.appendChild(energyContainer);
+                
+                // Add the special drop zone for "manual turn attachment"
+                const manualAttachZone = document.createElement('div');
+                manualAttachZone.className = 'manual-attach-zone';
+                manualAttachZone.textContent = '手貼';
+                manualAttachZone.title = 'Set as Turn Energy';
+                Object.assign(manualAttachZone.style, {
+                    position: 'absolute',
+                    top: '2px',
+                    right: '2px',
+                    width: '36px',
+                    height: '20px',
+                    backgroundColor: 'rgba(0, 123, 255, 0.8)',
+                    color: 'white',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '10px',
+                    cursor: 'pointer',
+                    border: '1px solid white'
+                });
+                cardEl.appendChild(manualAttachZone);
+
+                return cardEl;
+            }
+            
+            function createEmptySlotElement(slotId) {
+                const emptyEl = document.createElement('div');
+                emptyEl.className = 'pokemon-drop-target empty-slot';
+                 if (slotId.endsWith('0')) {
+                    emptyEl.classList.add('battle-zone-pokemon');
+                }
+                emptyEl.dataset.slotId = slotId;
+                emptyEl.style.border = '2px dashed #ddd';
+                emptyEl.style.borderRadius = '5px';
+                emptyEl.style.minHeight = '100px';
+                emptyEl.style.display = 'flex';
+                emptyEl.style.alignItems = 'center';
+                emptyEl.style.justifyContent = 'center';
+                emptyEl.style.color = '#aaa';
+                emptyEl.textContent = slotId.endsWith('0') ? 'Battle' : 'Bench';
+                return emptyEl;
+            }
 
             // --- Select Module Buttons ---
-            const btnSelectAll = document.getElementById('select-all-btn');
+            const btnSelectAttacker = document.getElementById('select-attacker-btn');
             const btnSelectClear = document.getElementById('select-clear-btn');
             const btnSelectReverse = document.getElementById('select-reverse-btn');
             const btnSelectLeftAll = document.getElementById('select-left-all-btn');
@@ -581,13 +760,21 @@
             };
 
             // --- Event Listeners for UI Updates ---
-            slots.forEach(slot => slot.on('change', updateTotalPokemons));
+            slots.forEach(slot => slot.on('change', () => {
+                updateTotalPokemons();
+                renderCurrentPlayerField();
+            }));
             selections.on('change', updateSelectedPokemons);
             cardDatabase.on('change', () => {
                 updateSelectedPokemons();
                 renderQueue(); // Re-render queue if card names change
+                renderCurrentPlayerField();
             });
             operationQueue.on('change', renderQueue);
+            showOpponentCheckbox.addEventListener('change', () => {
+                renderCurrentPlayerField();
+                updateEnergyButtonVisibility();
+            });
             playerL_name.on('change', () => {
                 renderQueue();
                 updateFirstPlayerDropdown();
@@ -606,8 +793,15 @@
             });
 
             // --- Selection Button Logic ---
-            btnSelectAll.addEventListener('click', () => {
-                selections.value = getOccupiedSlots();
+            btnSelectAttacker.addEventListener('click', () => {
+                const currentTurn = draft_currentTurn.value;
+                if (currentTurn === 'L') {
+                    btnSelectLeftBattle.click();
+                } else if (currentTurn === 'R') {
+                    btnSelectRightBattle.click();
+                } else {
+                    alert('No current turn player to select battle Pokémon.');
+                }
             });
             btnSelectClear.addEventListener('click', () => {
                 selections.value = [];
@@ -670,111 +864,153 @@
                 selections.value = selected;
             });
 
-            // --- Energy Module Logic ---
+            // --- Energy Module Logic (Drag and Drop) ---
             const energyButtonsContainer = document.getElementById('energy-buttons');
-            const specialEnergySelect = document.getElementById('special-energy-select');
-            const addedEnergyContainer = document.getElementById('added-energy-container');
-            const energyCurrentBattleBtn = document.getElementById('energy-current-battle-btn');
-            const energyClearBtn = document.getElementById('energy-clear-btn');
-            let energyHistory = []; // This will now track all energies added in this "draft" session.
 
-            // Add listeners for the new shortcut buttons in the energy Module
-            energyCurrentBattleBtn.addEventListener('click', () => {
-                const currentTurn = draft_currentTurn.value;
-                if (currentTurn === 'L') {
-                    btnSelectLeftBattle.click();
-                } else if (currentTurn === 'R') {
-                    btnSelectRightBattle.click();
-                } else {
-                    alert('No current turn player to select battle Pokémon.');
+            // 1. DRAG START: Set data when dragging an energy
+            energyButtonsContainer.addEventListener('dragstart', (e) => {
+                if (e.target.tagName === 'IMG' && e.target.dataset.energyType) {
+                    e.dataTransfer.setData('application/ptcg-energy-drag', 'true'); // Custom identifier
+                    e.dataTransfer.setData('text/plain', e.target.dataset.energyType);
+                    e.dataTransfer.effectAllowed = 'copy';
                 }
             });
-            energyClearBtn.addEventListener('click', () => btnSelectClear.click());
 
-            function renderEnergyHistory() {
-                addedEnergyContainer.innerHTML = '';
-                energyHistory.forEach((energy) => {
-                    const energyImg = document.createElement('img');
-                    energyImg.src = `/assets/ptcg-telop/energy/${energy}.png`;
-                    energyImg.classList.add('energy-icon');
-                    energyImg.title = energy;
-                    addedEnergyContainer.appendChild(energyImg);
-                });
-            }
+            // Listen for drag start on the field itself (for moving attached energies)
+            currentPlayerField.addEventListener('dragstart', (e) => {
+                const target = e.target;
+                if (target.classList.contains('attached-energy-icon')) {
+                    const moveData = {
+                        type: 'move',
+                        sourceSlot: target.dataset.sourceSlot,
+                        energyIndex: parseInt(target.dataset.energyIndex, 10),
+                        energyType: target.dataset.energyType
+                    };
+                    e.dataTransfer.setData('application/ptcg-energy-drag', 'true'); // Custom identifier
+                    e.dataTransfer.setData('application/json', JSON.stringify(moveData));
+                    e.dataTransfer.effectAllowed = 'move';
+                }
+            });
 
-            function handleEnergyButtonClick(energyType) {
-                const targets = selections.value;
-                if (!targets || targets.length === 0) {
-                    alert('Please select a Pokémon to attach energy to.');
+            // 2. DRAG OVER: Allow dropping and provide visual feedback
+            currentPlayerField.addEventListener('dragover', (e) => {
+                const target = e.target.closest('.pokemon-drop-target:not(.empty-slot)');
+                if (target) {
+                    e.preventDefault(); // Allow drop
+                    target.style.boxShadow = '0 0 10px 3px #4a69bd'; // Highlight
+                }
+            });
+
+            currentPlayerField.addEventListener('dragleave', (e) => {
+                const target = e.target.closest('.pokemon-drop-target');
+                if (target) {
+                    target.style.boxShadow = ''; // Remove highlight
+                }
+            });
+
+            // 3. DROP: Handle the energy attachment
+            currentPlayerField.addEventListener('drop', (e) => {
+                // First, check if the drop is from a valid source within our application
+                if (!e.dataTransfer.types.includes('application/ptcg-energy-drag')) {
+                    e.preventDefault();
                     return;
                 }
 
-                // For each selected Pokémon, update its energy in the operation queue
-                targets.forEach(slotId => {
-                    const slotReplicant = slots.find(s => s.name === `draft_${slotId}`);
-                    if (!slotReplicant || !slotReplicant.value || !slotReplicant.value.cardId) return;
+                e.preventDefault();
+                const dropTarget = e.target.closest('.pokemon-drop-target');
+                if (!dropTarget) return;
+
+                dropTarget.style.boxShadow = ''; // Remove highlight on drop
+                const destinationSlotId = dropTarget.dataset.slotId;
+                if (!destinationSlotId) return;
+
+                const moveDataJSON = e.dataTransfer.getData('application/json');
+
+                if (moveDataJSON) {
+                    // --- Handle MOVE operation ---
+                    const moveData = JSON.parse(moveDataJSON);
+                    const { sourceSlot, energyIndex, energyType } = moveData;
+
+                    if (sourceSlot === destinationSlotId) return; // Do nothing if dropped on itself
+
+                    // 1. Remove energy from source
+                    const sourceReplicant = slots.find(s => s.name === `draft_${sourceSlot}`);
+                    if (sourceReplicant && sourceReplicant.value) {
+                        const sourceEnergies = [...(sourceReplicant.value.attachedEnergy || [])];
+                        sourceEnergies.splice(energyIndex, 1);
+                        queueOrUpdateOperation('SET_ENERGIES', { target: sourceSlot, energies: sourceEnergies });
+                    }
+
+                    // 2. Add energy to destination
+                    const destReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
+                    if (destReplicant && destReplicant.value) {
+                        const destEnergies = [...(destReplicant.value.attachedEnergy || []), energyType];
+                        queueOrUpdateOperation('SET_ENERGIES', { target: destinationSlotId, energies: destEnergies });
+                    }
+
+                } else {
+                    // --- Handle COPY operation (from energy grid) ---
+                    const energyType = e.dataTransfer.getData('text/plain');
+                    if (!energyType) return;
+
+                    const slotReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
+                    if (!slotReplicant || !slotReplicant.value || !slotReplicant.value.cardId) {
+                        console.warn(`Attempted to drop energy on empty slot ${destinationSlotId}`);
+                        return;
+                    }
+
+                    const isManualAttach = e.target.classList.contains('manual-attach-zone');
 
                     const currentEnergies = slotReplicant.value.attachedEnergy || [];
                     const finalEnergies = [...currentEnergies, energyType];
 
                     queueOrUpdateOperation('SET_ENERGIES', {
-                        target: slotId,
+                        target: destinationSlotId,
                         energies: finalEnergies
                     });
-                });
 
-                // Add to history and re-render the history view
-                energyHistory.push(energyType);
-                renderEnergyHistory();
-            }
-
-            energyButtonsContainer.addEventListener('click', (e) => {
-                if (e.target.tagName === 'BUTTON' && e.target.dataset.energyType) {
-                    handleEnergyButtonClick(e.target.dataset.energyType);
+                    if (isManualAttach) {
+                        const turn = draft_currentTurn.value;
+                        const actionStatusTarget = `action_energy_${turn}`;
+                        queueOperation('SET_ACTION_STATUS', { target: actionStatusTarget, status: true });
+                    }
                 }
             });
 
-            specialEnergySelect.addEventListener('change', (e) => {
-                if (e.target.value) {
-                    handleEnergyButtonClick(e.target.value);
-                    e.target.value = ''; // Reset select
-                }
-            });
-
-            // Clear the energy history when the main operation queue is cleared (on Apply or Discard)
-            operationQueue.on('change', (newValue) => {
-                if (!newValue || newValue.length === 0) {
-                    energyHistory = [];
-                    renderEnergyHistory();
-                }
-            });
-
-            // Initial render
-            renderEnergyHistory();
+            
 
             function updateEnergyButtonVisibility() {
                 const settings = settingsRep.value || {};
                 const db = cardDatabase.value;
                 const deckLVal = deckL.value;
                 const deckRVal = deckR.value;
+                const baseTurn = draft_currentTurn.value;
+                const isOpponentView = showOpponentCheckbox.checked;
 
-                const energyButtons = energyButtonsContainer.querySelectorAll('[data-energy-type]');
+                let displayTurn = baseTurn;
+                if (isOpponentView && baseTurn) {
+                    displayTurn = baseTurn === 'L' ? 'R' : 'L';
+                }
 
-                if (!settings.showDeckEnergyOnly || !db || !deckLVal || !deckRVal) {
-                    // If setting is off or data is missing, show all buttons
-                    energyButtons.forEach(btn => btn.style.display = '');
+                const energyIcons = energyButtonsContainer.querySelectorAll('img[data-energy-type]');
+
+                if (!settings.showDeckEnergyOnly || !db || !deckLVal || !deckRVal || !displayTurn) {
+                    // If setting is off, data is missing, or turn is not set, show all buttons as a fallback.
+                    energyIcons.forEach(icon => {
+                        if (icon.parentElement.tagName === 'BUTTON') {
+                            icon.parentElement.style.display = '';
+                        }
+                    });
                     return;
                 }
 
                 const deckEnergies = new Set();
-                const combinedCards = [...(deckLVal.cards || []), ...(deckRVal.cards || [])];
-                const uniqueCardIds = [...new Set(combinedCards)];
+                const targetDeck = displayTurn === 'L' ? deckLVal.cards : deckRVal.cards;
+                const uniqueCardIds = [...new Set(targetDeck || [])];
 
                 uniqueCardIds.forEach(id => {
                     const card = db[id];
-                    // Correctly identify basic energy cards
                     if (card && card.supertype === 'energy' && card.subtype === 'basic energy') {
-                        // Extract the energy type from the name (e.g., "基本草エネルギー" -> "草")
                         const energyType = card.name.replace(/基本|エネルギー/g, '').trim();
                         if (energyType) {
                             deckEnergies.add(energyType);
@@ -782,18 +1018,18 @@
                     }
                 });
 
-                energyButtons.forEach(btn => {
-                    const energyType = btn.dataset.energyType;
-                    // Always show Colorless and Rainbow, otherwise check if it's in the deck energies
+                energyIcons.forEach(icon => {
+                    const energyType = icon.dataset.energyType;
+                    const parentButton = icon.parentElement;
+
+                    if (parentButton.tagName !== 'BUTTON') return; // Safety check
+
                     if (energyType === '無' || energyType === '全' || deckEnergies.has(energyType)) {
-                        btn.style.display = '';
+                        parentButton.style.display = '';
                     } else {
-                        btn.style.display = 'none';
+                        parentButton.style.display = 'none';
                     }
                 });
-
-                // Always ensure the special energy dropdown is visible
-                specialEnergySelect.style.display = '';
             }
 
             // Listen for changes that could affect energy button visibility
@@ -1264,6 +1500,8 @@
                     turnRRadio.checked = true;
                 }
                 updateAttackerDropdown();
+                renderCurrentPlayerField();
+                updateEnergyButtonVisibility();
             });
 
             turnLRadio.addEventListener('change', () => {
@@ -1360,6 +1598,7 @@
             updateAttackerDropdown();
             updateTargetTextarea();
             updateEnergyButtonVisibility();
+            renderCurrentPlayerField();
 
             // --- Hotkey Sender (for this panel) ---
             function checkHotkey(e, hotkeyString) {

@@ -35,10 +35,10 @@
     ],
     "dashboardPanels": [
       {
-        "name": "master-control-panel",
+        "name": "master-panel",
         "title": "Master Control",
         "width": 4,
-        "file": "master_control_panel.html",
+        "file": "master_panel.html",
         "headerColor": "#607D8B"
       },
       {
