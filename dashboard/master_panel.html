@@ -549,6 +549,16 @@
                     energyImg.dataset.energyType = energy;
                     energyImg.dataset.sourceSlot = slotId;
                     energyImg.dataset.energyIndex = index;
+                    energyImg.title = `Click to remove ${energy}`;
+                    energyImg.style.cursor = 'pointer';
+                    energyImg.addEventListener('click', () => {
+                        const currentEnergies = [...(slotValue.attachedEnergy || [])];
+                        currentEnergies.splice(index, 1);
+                        queueOrUpdateOperation('SET_ENERGIES', {
+                            target: slotId,
+                            energies: currentEnergies
+                        });
+                    });
                     energyContainer.appendChild(energyImg);
                 });
                 cardEl.appendChild(energyContainer);
