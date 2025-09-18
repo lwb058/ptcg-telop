@@ -167,6 +167,25 @@
             height: 50px;
             vertical-align: middle;
         }
+        .tool-btn-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .tool-btn {
+            padding: 5px;
+            font-size: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .tool-btn:hover {
+            background-color: #9b9b9b;
+        }
+        .tool-icon {
+            height: 70px;
+            vertical-align: middle;
+        }
         .energy-container {
             flex-grow: 1;
             display: flex;
@@ -268,7 +287,7 @@
 
     <div class="panel-section">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-            <h3>Energy Module</h3>
+            <h3>Energy & Tool Module</h3>
             <div class="form-group" style="margin-bottom: 0;">
                 <input type="checkbox" id="show-opponent-field-checkbox" style="transform: scale(1.2);">
                 <label for="show-opponent-field-checkbox" style="margin-left: 5px;">Show Opponent</label>
@@ -289,6 +308,11 @@
         </div>
         <div id="current-player-field" style="margin-top: 10px;">
              <!-- Pokémon will be rendered here by JavaScript -->
+        </div>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
+        <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 12px; font-weight: bold; color: #555;">Tools</h4>
+        <div id="tool-buttons" class="tool-btn-grid">
+            <!-- Tool cards will be rendered here by JavaScript -->
         </div>
     </div>
     
@@ -526,7 +550,7 @@
                 img.style.borderRadius = '4px';
                 cardEl.appendChild(img);
 
-                // --- Display attached energies instead of name ---
+                // --- Display attached energies ---
                 const energyContainer = document.createElement('div');
                 energyContainer.className = 'attached-energy-container';
                 Object.assign(energyContainer.style, {
@@ -562,6 +586,67 @@
                     energyContainer.appendChild(energyImg);
                 });
                 cardEl.appendChild(energyContainer);
+
+                // --- Display attached tool ---
+                const toolContainer = document.createElement('div');
+                toolContainer.className = 'attached-tool-container';
+                Object.assign(toolContainer.style, {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    gap: '2px',
+                    marginTop: '2px',
+                    minHeight: '28px', // Reserve space for the larger icon
+                    padding: '2px 0'
+                });
+
+                if (slotValue.attachedToolId) {
+                    const toolData = cardDatabase.value[slotValue.attachedToolId];
+                    if (toolData) {
+                        const toolIconDiv = document.createElement('div');
+                        toolIconDiv.className = 'attached-tool-icon';
+                        toolIconDiv.title = `Click to remove ${toolData.name}`;
+                        toolIconDiv.style.cursor = 'pointer';
+                        
+                        // Apply styles for cropped background image
+                        Object.assign(toolIconDiv.style, {
+                            width: '100%',
+                            height: '36px',
+                            borderRadius: '2px',
+                            border: '2px solid #888',
+                            backgroundImage: `url('/assets/ptcg-telop/card_img/${slotValue.attachedToolId}.jpg')`,
+                            backgroundSize: '118%', // Zoom in on the card art
+                            backgroundPosition: 'center 23%', // Position to show the top-center part of the art
+                            backgroundRepeat: 'no-repeat',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                        });
+
+                        toolIconDiv.addEventListener('click', () => {
+                            queueOrUpdateOperation('ATTACH_TOOL', {
+                                target: slotId,
+                                toolId: null
+                            });
+                        });
+                        toolContainer.appendChild(toolIconDiv);
+                    }
+                } else {
+                    const toolPlaceholder = document.createElement('div');
+                    toolPlaceholder.className = 'tool-placeholder';
+                    toolPlaceholder.textContent = 'Tool';
+                    Object.assign(toolPlaceholder.style, {
+                        width: '100%',
+                        height: '36px',
+                        borderRadius: '2px',
+                        border: '2px dashed #ccc',
+                        boxSizing: 'border-box',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#aaa',
+                        fontSize: '12px'
+                    });
+                    toolContainer.appendChild(toolPlaceholder);
+                }
+                cardEl.appendChild(toolContainer);
                 
                 // Add the special drop zone for "manual turn attachment"
                 const manualAttachZone = document.createElement('div');
@@ -784,6 +869,7 @@
             showOpponentCheckbox.addEventListener('change', () => {
                 renderCurrentPlayerField();
                 updateEnergyButtonVisibility();
+                updateToolButtonVisibility(); // <-- FIX: Added this call
             });
             playerL_name.on('change', () => {
                 renderQueue();
@@ -874,14 +960,23 @@
                 selections.value = selected;
             });
 
-            // --- Energy Module Logic (Drag and Drop) ---
+            // --- Energy & Tool Module Logic (Drag and Drop) ---
             const energyButtonsContainer = document.getElementById('energy-buttons');
+            const toolButtonsContainer = document.getElementById('tool-buttons');
 
-            // 1. DRAG START: Set data when dragging an energy
+            // 1. DRAG START: Set data when dragging an energy or tool
             energyButtonsContainer.addEventListener('dragstart', (e) => {
                 if (e.target.tagName === 'IMG' && e.target.dataset.energyType) {
-                    e.dataTransfer.setData('application/ptcg-energy-drag', 'true'); // Custom identifier
+                    e.dataTransfer.setData('application/ptcg-energy-drag', 'true');
                     e.dataTransfer.setData('text/plain', e.target.dataset.energyType);
+                    e.dataTransfer.effectAllowed = 'copy';
+                }
+            });
+
+            toolButtonsContainer.addEventListener('dragstart', (e) => {
+                if (e.target.tagName === 'IMG' && e.target.dataset.toolId) {
+                    e.dataTransfer.setData('application/ptcg-tool-drag', 'true'); // New, specific data type for tools
+                    e.dataTransfer.setData('text/plain', e.target.dataset.toolId);
                     e.dataTransfer.effectAllowed = 'copy';
                 }
             });
@@ -896,7 +991,7 @@
                         energyIndex: parseInt(target.dataset.energyIndex, 10),
                         energyType: target.dataset.energyType
                     };
-                    e.dataTransfer.setData('application/ptcg-energy-drag', 'true'); // Custom identifier
+                    e.dataTransfer.setData('application/ptcg-energy-drag', 'true');
                     e.dataTransfer.setData('application/json', JSON.stringify(moveData));
                     e.dataTransfer.effectAllowed = 'move';
                 }
@@ -904,8 +999,11 @@
 
             // 2. DRAG OVER: Allow dropping and provide visual feedback
             currentPlayerField.addEventListener('dragover', (e) => {
+                const isEnergyDrag = e.dataTransfer.types.includes('application/ptcg-energy-drag');
+                const isToolDrag = e.dataTransfer.types.includes('application/ptcg-tool-drag');
                 const target = e.target.closest('.pokemon-drop-target:not(.empty-slot)');
-                if (target) {
+                
+                if (target && (isEnergyDrag || isToolDrag)) {
                     e.preventDefault(); // Allow drop
                     target.style.boxShadow = '0 0 10px 3px #4a69bd'; // Highlight
                 }
@@ -918,14 +1016,8 @@
                 }
             });
 
-            // 3. DROP: Handle the energy attachment
+            // 3. DROP: Handle the attachment
             currentPlayerField.addEventListener('drop', (e) => {
-                // First, check if the drop is from a valid source within our application
-                if (!e.dataTransfer.types.includes('application/ptcg-energy-drag')) {
-                    e.preventDefault();
-                    return;
-                }
-
                 e.preventDefault();
                 const dropTarget = e.target.closest('.pokemon-drop-target');
                 if (!dropTarget) return;
@@ -934,60 +1026,115 @@
                 const destinationSlotId = dropTarget.dataset.slotId;
                 if (!destinationSlotId) return;
 
-                const moveDataJSON = e.dataTransfer.getData('application/json');
+                const isEnergyDrag = e.dataTransfer.types.includes('application/ptcg-energy-drag');
+                const isToolDrag = e.dataTransfer.types.includes('application/ptcg-tool-drag');
 
-                if (moveDataJSON) {
-                    // --- Handle MOVE operation ---
-                    const moveData = JSON.parse(moveDataJSON);
-                    const { sourceSlot, energyIndex, energyType } = moveData;
+                if (isToolDrag) {
+                    // --- Handle TOOL attachment ---
+                    const toolId = e.dataTransfer.getData('text/plain');
+                    if (!toolId) return;
 
-                    if (sourceSlot === destinationSlotId) return; // Do nothing if dropped on itself
-
-                    // 1. Remove energy from source
-                    const sourceReplicant = slots.find(s => s.name === `draft_${sourceSlot}`);
-                    if (sourceReplicant && sourceReplicant.value) {
-                        const sourceEnergies = [...(sourceReplicant.value.attachedEnergy || [])];
-                        sourceEnergies.splice(energyIndex, 1);
-                        queueOrUpdateOperation('SET_ENERGIES', { target: sourceSlot, energies: sourceEnergies });
-                    }
-
-                    // 2. Add energy to destination
-                    const destReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
-                    if (destReplicant && destReplicant.value) {
-                        const destEnergies = [...(destReplicant.value.attachedEnergy || []), energyType];
-                        queueOrUpdateOperation('SET_ENERGIES', { target: destinationSlotId, energies: destEnergies });
-                    }
-
-                } else {
-                    // --- Handle COPY operation (from energy grid) ---
-                    const energyType = e.dataTransfer.getData('text/plain');
-                    if (!energyType) return;
-
-                    const slotReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
-                    if (!slotReplicant || !slotReplicant.value || !slotReplicant.value.cardId) {
-                        console.warn(`Attempted to drop energy on empty slot ${destinationSlotId}`);
-                        return;
-                    }
-
-                    const isManualAttach = e.target.classList.contains('manual-attach-zone');
-
-                    const currentEnergies = slotReplicant.value.attachedEnergy || [];
-                    const finalEnergies = [...currentEnergies, energyType];
-
-                    queueOrUpdateOperation('SET_ENERGIES', {
+                    // Use queueOrUpdateOperation to replace any existing tool on the target
+                    queueOrUpdateOperation('ATTACH_TOOL', {
                         target: destinationSlotId,
-                        energies: finalEnergies
+                        toolId: toolId
                     });
 
-                    if (isManualAttach) {
-                        const turn = draft_currentTurn.value;
-                        const actionStatusTarget = `action_energy_${turn}`;
-                        queueOperation('SET_ACTION_STATUS', { target: actionStatusTarget, status: true });
+                } else if (isEnergyDrag) {
+                    // --- Handle ENERGY attachment ---
+                    const moveDataJSON = e.dataTransfer.getData('application/json');
+
+                    if (moveDataJSON) {
+                        // Handle MOVE operation
+                        const moveData = JSON.parse(moveDataJSON);
+                        const { sourceSlot, energyIndex, energyType } = moveData;
+
+                        if (sourceSlot === destinationSlotId) return; // Do nothing if dropped on itself
+
+                        const sourceReplicant = slots.find(s => s.name === `draft_${sourceSlot}`);
+                        if (sourceReplicant && sourceReplicant.value) {
+                            const sourceEnergies = [...(sourceReplicant.value.attachedEnergy || [])];
+                            sourceEnergies.splice(energyIndex, 1);
+                            queueOrUpdateOperation('SET_ENERGIES', { target: sourceSlot, energies: sourceEnergies });
+                        }
+
+                        const destReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
+                        if (destReplicant && destReplicant.value) {
+                            const destEnergies = [...(destReplicant.value.attachedEnergy || []), energyType];
+                            queueOrUpdateOperation('SET_ENERGIES', { target: destinationSlotId, energies: destEnergies });
+                        }
+
+                    } else {
+                        // Handle COPY operation (from energy grid)
+                        const energyType = e.dataTransfer.getData('text/plain');
+                        if (!energyType) return;
+
+                        const slotReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
+                        if (!slotReplicant || !slotReplicant.value || !slotReplicant.value.cardId) {
+                            console.warn(`Attempted to drop energy on empty slot ${destinationSlotId}`);
+                            return;
+                        }
+
+                        const isManualAttach = e.target.classList.contains('manual-attach-zone');
+                        const currentEnergies = slotReplicant.value.attachedEnergy || [];
+                        const finalEnergies = [...currentEnergies, energyType];
+
+                        queueOrUpdateOperation('SET_ENERGIES', {
+                            target: destinationSlotId,
+                            energies: finalEnergies
+                        });
+
+                        if (isManualAttach) {
+                            const turn = draft_currentTurn.value;
+                            const actionStatusTarget = `action_energy_${turn}`;
+                            queueOperation('SET_ACTION_STATUS', { target: actionStatusTarget, status: true });
+                        }
                     }
                 }
             });
 
-            
+            function updateToolButtonVisibility() {
+                const db = cardDatabase.value;
+                const deckLVal = deckL.value;
+                const deckRVal = deckR.value;
+                const baseTurn = draft_currentTurn.value;
+                const isOpponentView = showOpponentCheckbox.checked;
+
+                toolButtonsContainer.innerHTML = ''; // Clear existing tools
+
+                let displayTurn = baseTurn;
+                if (isOpponentView && baseTurn) {
+                    displayTurn = baseTurn === 'L' ? 'R' : 'L';
+                }
+
+                if (!db || !deckLVal || !deckRVal || !displayTurn) {
+                    return; // Exit if data is not ready
+                }
+
+                const targetDeck = displayTurn === 'L' ? deckLVal.cards : deckRVal.cards;
+                if (!targetDeck) return;
+
+                const uniqueToolIds = [...new Set(targetDeck)].filter(id => {
+                    const card = db[id];
+                    return card && card.supertype === 'trainer' && card.subtype === 'tool';
+                });
+
+                uniqueToolIds.forEach(id => {
+                    const card = db[id];
+                    const btn = document.createElement('button');
+                    btn.className = 'tool-btn'; // Reuse style
+                    
+                    const img = document.createElement('img');
+                    img.src = `/assets/ptcg-telop/card_img/${id}.jpg`; // Use card image for tools
+                    img.title = card.name;
+                    img.className = 'tool-icon'; // Reuse style
+                    img.dataset.toolId = id;
+                    img.draggable = true;
+
+                    btn.appendChild(img);
+                    toolButtonsContainer.appendChild(btn);
+                });
+            }
 
             function updateEnergyButtonVisibility() {
                 const settings = settingsRep.value || {};
@@ -1042,11 +1189,19 @@
                 });
             }
 
-            // Listen for changes that could affect energy button visibility
-            settingsRep.on('change', updateEnergyButtonVisibility);
-            deckL.on('change', updateEnergyButtonVisibility);
-            deckR.on('change', updateEnergyButtonVisibility);
-            cardDatabase.on('change', updateEnergyButtonVisibility);
+            // Listen for changes that could affect button visibility
+            settingsRep.on('change', () => {
+                updateEnergyButtonVisibility();
+                updateToolButtonVisibility();
+            });
+            deckL.on('change', () => {
+                updateEnergyButtonVisibility();
+                updateToolButtonVisibility();
+            });
+            deckR.on('change', () => {
+                updateEnergyButtonVisibility();
+                updateToolButtonVisibility();
+            });
 
 
             // --- Attack Module Logic ---
@@ -1512,6 +1667,7 @@
                 updateAttackerDropdown();
                 renderCurrentPlayerField();
                 updateEnergyButtonVisibility();
+                updateToolButtonVisibility(); // <-- FIX: Added this call
             });
 
             turnLRadio.addEventListener('change', () => {
@@ -1608,6 +1764,7 @@
             updateAttackerDropdown();
             updateTargetTextarea();
             updateEnergyButtonVisibility();
+            updateToolButtonVisibility(); // <-- FIX: Added this call
             renderCurrentPlayerField();
 
             // --- Hotkey Sender (for this panel) ---
