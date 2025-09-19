@@ -265,6 +265,103 @@
             border: 2px solid #ffc107 !important; /* Gold border */
             box-shadow: 0 0 8px rgba(255, 193, 7, 0.6);
         }
+        /* Styles for Energy & Tool Module */
+        #current-player-field h3 {
+            color: #888;
+            text-align: center;
+            font-weight: normal;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        .pokemon-field-row {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            padding: 5px;
+        }
+        .pokemon-field-row + .pokemon-field-row {
+            margin-top: 10px;
+        }
+        .pokemon-drop-target {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 5px;
+            text-align: center;
+            position: relative;
+        }
+        .pokemon-drop-target > img {
+            width: 100%;
+            border-radius: 4px;
+        }
+        .empty-slot {
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+        }
+        .attached-energy-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2px;
+            margin-top: 4px;
+            min-height: 18px;
+        }
+        .attached-energy-icon {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .attached-tool-container {
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+            margin-top: 2px;
+            min-height: 28px;
+            padding: 2px 0;
+        }
+        .attached-tool-icon {
+            cursor: pointer;
+            width: 100%;
+            height: 36px;
+            border-radius: 2px;
+            border: 2px solid #888;
+            background-size: 118%;
+            background-position: center 23%;
+            background-repeat: no-repeat;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .tool-placeholder {
+            width: 100%;
+            height: 36px;
+            border-radius: 2px;
+            border: 2px dashed #ccc;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+            font-size: 12px;
+        }
+        .manual-attach-zone {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 36px;
+            height: 20px;
+            background-color: rgba(0, 123, 255, 0.8);
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            border: 1px solid white;
+        }
     </style>
 </head>
 <body>
@@ -474,10 +571,7 @@
 
                 // Main Row (Battle + Bench 1-5)
                 const mainRowContainer = document.createElement('div');
-                mainRowContainer.style.display = 'grid';
-                mainRowContainer.style.gridTemplateColumns = 'repeat(6, 1fr)';
-                mainRowContainer.style.gap = '10px';
-                mainRowContainer.style.padding = '5px';
+                mainRowContainer.className = 'pokemon-field-row';
 
                 // Slot 0 (Battle)
                 const battleSlot = slots.find(s => s.name === `draft_${playerPrefix}0`);
@@ -500,11 +594,7 @@
 
                 // Extra Row (Bench 6-8)
                 const extraRowContainer = document.createElement('div');
-                extraRowContainer.style.display = 'grid';
-                extraRowContainer.style.gridTemplateColumns = 'repeat(6, 1fr)'; // Keep same grid for alignment
-                extraRowContainer.style.gap = '10px';
-                extraRowContainer.style.padding = '5px';
-                extraRowContainer.style.marginTop = '10px';
+                extraRowContainer.className = 'pokemon-field-row';
 
                 let hasExtraBenchPokemon = false;
                 for (let i = 6; i <= 8; i++) {
@@ -538,43 +628,25 @@
                     cardEl.classList.add('battle-zone-pokemon');
                 }
                 cardEl.dataset.slotId = slotId;
-                cardEl.style.border = '1px solid #ccc';
-                cardEl.style.borderRadius = '5px';
-                cardEl.style.padding = '5px';
-                cardEl.style.textAlign = 'center';
-                cardEl.style.position = 'relative'; // For the 1/turn icon
 
                 const img = document.createElement('img');
                 img.src = `/assets/ptcg-telop/card_img/${slotValue.cardId}.jpg`;
-                img.style.width = '100%';
-                img.style.borderRadius = '4px';
                 cardEl.appendChild(img);
 
                 // --- Display attached energies ---
                 const energyContainer = document.createElement('div');
                 energyContainer.className = 'attached-energy-container';
-                Object.assign(energyContainer.style, {
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    justifyContent: 'center',
-                    gap: '2px',
-                    marginTop: '4px',
-                    minHeight: '18px' // Reserve space even if empty
-                });
 
                 const attachedEnergies = slotValue.attachedEnergy || [];
                 attachedEnergies.forEach((energy, index) => {
                     const energyImg = document.createElement('img');
                     energyImg.src = `/assets/ptcg-telop/energy/${energy}.png`;
                     energyImg.className = 'attached-energy-icon';
-                    energyImg.style.width = '16px';
-                    energyImg.style.height = '16px';
                     energyImg.draggable = true;
                     energyImg.dataset.energyType = energy;
                     energyImg.dataset.sourceSlot = slotId;
                     energyImg.dataset.energyIndex = index;
                     energyImg.title = `Click to remove ${energy}`;
-                    energyImg.style.cursor = 'pointer';
                     energyImg.addEventListener('click', () => {
                         const currentEnergies = [...(slotValue.attachedEnergy || [])];
                         currentEnergies.splice(index, 1);
@@ -590,14 +662,6 @@
                 // --- Display attached tool ---
                 const toolContainer = document.createElement('div');
                 toolContainer.className = 'attached-tool-container';
-                Object.assign(toolContainer.style, {
-                    display: 'flex',
-                    justifyContent: 'center',
-                    gap: '2px',
-                    marginTop: '2px',
-                    minHeight: '28px', // Reserve space for the larger icon
-                    padding: '2px 0'
-                });
 
                 if (slotValue.attachedToolId) {
                     const toolData = cardDatabase.value[slotValue.attachedToolId];
@@ -605,20 +669,9 @@
                         const toolIconDiv = document.createElement('div');
                         toolIconDiv.className = 'attached-tool-icon';
                         toolIconDiv.title = `Click to remove ${toolData.name}`;
-                        toolIconDiv.style.cursor = 'pointer';
                         
                         // Apply styles for cropped background image
-                        Object.assign(toolIconDiv.style, {
-                            width: '100%',
-                            height: '36px',
-                            borderRadius: '2px',
-                            border: '2px solid #888',
-                            backgroundImage: `url('/assets/ptcg-telop/card_img/${slotValue.attachedToolId}.jpg')`,
-                            backgroundSize: '118%', // Zoom in on the card art
-                            backgroundPosition: 'center 23%', // Position to show the top-center part of the art
-                            backgroundRepeat: 'no-repeat',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
-                        });
+                        toolIconDiv.style.backgroundImage = `url('/assets/ptcg-telop/card_img/${slotValue.attachedToolId}.jpg')`;
 
                         toolIconDiv.addEventListener('click', () => {
                             queueOrUpdateOperation('ATTACH_TOOL', {
@@ -632,18 +685,6 @@
                     const toolPlaceholder = document.createElement('div');
                     toolPlaceholder.className = 'tool-placeholder';
                     toolPlaceholder.textContent = 'Tool';
-                    Object.assign(toolPlaceholder.style, {
-                        width: '100%',
-                        height: '36px',
-                        borderRadius: '2px',
-                        border: '2px dashed #ccc',
-                        boxSizing: 'border-box',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#aaa',
-                        fontSize: '12px'
-                    });
                     toolContainer.appendChild(toolPlaceholder);
                 }
                 cardEl.appendChild(toolContainer);
@@ -653,22 +694,6 @@
                 manualAttachZone.className = 'manual-attach-zone';
                 manualAttachZone.textContent = '手貼';
                 manualAttachZone.title = 'Set as Turn Energy';
-                Object.assign(manualAttachZone.style, {
-                    position: 'absolute',
-                    top: '2px',
-                    right: '2px',
-                    width: '36px',
-                    height: '20px',
-                    backgroundColor: 'rgba(0, 123, 255, 0.8)',
-                    color: 'white',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '10px',
-                    cursor: 'pointer',
-                    border: '1px solid white'
-                });
                 cardEl.appendChild(manualAttachZone);
 
                 return cardEl;
@@ -681,13 +706,6 @@
                     emptyEl.classList.add('battle-zone-pokemon');
                 }
                 emptyEl.dataset.slotId = slotId;
-                emptyEl.style.border = '2px dashed #ddd';
-                emptyEl.style.borderRadius = '5px';
-                emptyEl.style.minHeight = '100px';
-                emptyEl.style.display = 'flex';
-                emptyEl.style.alignItems = 'center';
-                emptyEl.style.justifyContent = 'center';
-                emptyEl.style.color = '#aaa';
                 emptyEl.textContent = slotId.endsWith('0') ? 'Battle' : 'Bench';
                 return emptyEl;
             }
