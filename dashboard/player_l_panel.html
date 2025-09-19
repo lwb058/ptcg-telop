@@ -143,6 +143,48 @@
         }
         /* Utility class to hide elements */
         .hidden { display: none; }
+
+        .tool-display {
+            flex-grow: 0;
+            cursor: pointer;
+            /* New styles for multi-tool */
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 2px 5px;
+            min-height: 42px; /* To match energy container feel */
+            background: #f9f9f9;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #ccc #f0f2f5;
+        }
+        .tool-display::-webkit-scrollbar { height: 5px; }
+        .tool-display::-webkit-scrollbar-track { background: #f0f2f5; }
+        .tool-display::-webkit-scrollbar-thumb { background-color: #ccc; border-radius: 2px; }
+
+        .tool-placeholder {
+            border: 2px dashed #ccc;
+            text-align: center;
+            padding: 8px;
+            color: #aaa;
+            font-size: 12px;
+            line-height: 1.4;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        .tool-icon-image {
+            width: 48px; /* Change width to fixed */
+            flex-shrink: 0; /* Prevent icons from shrinking */
+            height: 36px;
+            border-radius: 2px;
+            border: 2px solid #888;
+            background-size: 151%;
+            background-position: center 22%;
+            background-repeat: no-repeat;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body>
@@ -205,7 +247,7 @@
                 <div class="form-group tool-energy-row">
                     <div class="tool-wrapper">
                         <label>Tool:</label>
-                        <select class="tool-select"><option value="">None</option></select>
+                        <div class="tool-display" title="Click to remove tool"></div>
                     </div>
                     <div class="energy-wrapper">
                         <label>ENE:</label>
@@ -213,6 +255,14 @@
                     </div>
                 </div>
                 <div class="actions">
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle swap-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            逃げ
+                        </button>
+                        <ul class="dropdown-menu swap-menu">
+                            <!-- Menu items will be dynamically generated -->
+                        </ul>
+                    </div>
                     <div class="ailment-icons">
                         <img src="/assets/ptcg-telop/status/Poisoned.png" class="ailment-icon" data-ailment="Poisoned" title="Poisoned">
                         <img src="/assets/ptcg-telop/status/Burned.png" class="ailment-icon" data-ailment="Burned" title="Burned">
@@ -221,14 +271,6 @@
                         <img src="/assets/ptcg-telop/status/Confused.png" class="ailment-icon" data-ailment="Confused" title="Confused">
                     </div>
                     <div class="d-flex gap-2">
-                        <div class="dropdown">
-                            <button class="btn dropdown-toggle swap-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                逃げ
-                            </button>
-                            <ul class="dropdown-menu swap-menu">
-                                <!-- Menu items will be dynamically generated -->
-                            </ul>
-                        </div>
                         <label><input type="checkbox" class="ko-checkbox"> K.O</label>
                         <button class="btn btn-danger remove-btn">Remove</button>
                     </div>
@@ -267,7 +309,7 @@
                 <div class="form-group tool-energy-row">
                     <div class="tool-wrapper">
                         <label>Tool:</label>
-                        <select class="tool-select"><option value="">None</option></select>
+                        <div class="tool-display" title="Click to remove tool"></div>
                     </div>
                     <div class="energy-wrapper">
                         <label>ENE:</label>
@@ -318,7 +360,7 @@
                 <div class="form-group tool-energy-row">
                     <div class="tool-wrapper">
                         <label>Tool:</label>
-                        <select class="tool-select"><option value="">None</option></select>
+                        <div class="tool-display" title="Click to remove tool"></div>
                     </div>
                     <div class="energy-wrapper">
                         <label>ENE:</label>
@@ -369,7 +411,7 @@
                 <div class="form-group tool-energy-row">
                     <div class="tool-wrapper">
                         <label>Tool:</label>
-                        <select class="tool-select"><option value="">None</option></select>
+                        <div class="tool-display" title="Click to remove tool"></div>
                     </div>
                     <div class="energy-wrapper">
                         <label>ENE:</label>
@@ -420,7 +462,7 @@
                 <div class="form-group tool-energy-row">
                     <div class="tool-wrapper">
                         <label>Tool:</label>
-                        <select class="tool-select"><option value="">None</option></select>
+                        <div class="tool-display" title="Click to remove tool"></div>
                     </div>
                     <div class="energy-wrapper">
                         <label>ENE:</label>
@@ -471,7 +513,7 @@
                 <div class="form-group tool-energy-row">
                     <div class="tool-wrapper">
                         <label>Tool:</label>
-                        <select class="tool-select"><option value="">None</option></select>
+                        <div class="tool-display" title="Click to remove tool"></div>
                     </div>
                     <div class="energy-wrapper">
                         <label>ENE:</label>
@@ -532,7 +574,7 @@
                         <div class="form-group tool-energy-row">
                             <div class="tool-wrapper">
                                 <label>Tool:</label>
-                                <select class="tool-select"><option value="">None</option></select>
+                                <div class="tool-display" title="Click to remove tool"></div>
                             </div>
                             <div class="energy-wrapper">
                                 <label>ENE:</label>
@@ -583,7 +625,7 @@
                         <div class="form-group tool-energy-row">
                             <div class="tool-wrapper">
                                 <label>Tool:</label>
-                                <select class="tool-select"><option value="">None</option></select>
+                                <div class="tool-display" title="Click to remove tool"></div>
                             </div>
                             <div class="energy-wrapper">
                                 <label>ENE:</label>
@@ -634,7 +676,7 @@
                         <div class="form-group tool-energy-row">
                             <div class="tool-wrapper">
                                 <label>Tool:</label>
-                                <select class="tool-select"><option value="">None</option></select>
+                                <div class="tool-display" title="Click to remove tool"></div>
                             </div>
                             <div class="energy-wrapper">
                                 <label>ENE:</label>
@@ -1010,8 +1052,30 @@
                 pokemonView.querySelector('.damage-input').value = slotData.damage || 0;
                 pokemonView.querySelector('.extrahp-input').value = slotData.extraHp || 0;
                 
-                const toolSelect = pokemonView.querySelector('.tool-select');
-                toolSelect.value = slotData.attachedToolId || "";
+                const toolDisplay = pokemonView.querySelector('.tool-display');
+                if (toolDisplay) {
+                    toolDisplay.innerHTML = ''; // Always clear the container first
+
+                    // Prepare for multi-tool by treating the single toolId as an array
+                    const attachedTools = slotData.attachedToolId ? [slotData.attachedToolId] : [];
+
+                    if (attachedTools.length > 0) {
+                        attachedTools.forEach(toolId => {
+                            if (db && db[toolId]) {
+                                const toolData = db[toolId];
+                                const toolIconDiv = document.createElement('div');
+                                toolIconDiv.title = `[${toolData.name}] - Click to remove`;
+                                toolIconDiv.className = 'tool-icon-image';
+                                toolIconDiv.style.backgroundImage = `url('/assets/ptcg-telop/card_img/${toolId}.jpg')`;
+                                // Add data attribute to identify which tool is clicked
+                                toolIconDiv.dataset.toolId = toolId;
+                                toolDisplay.appendChild(toolIconDiv);
+                            }
+                        });
+                    } else {
+                        toolDisplay.innerHTML = '<div class="tool-placeholder">Empty</div>';
+                    }
+                }
 
                 const evolutionSelect = pokemonView.querySelector('.evolution-select');
                 // Clear and rebuild the dropdown list
@@ -1128,9 +1192,19 @@
                     queueOrUpdateOperation('SET_ABILITY_USED', { target: slotId, status: newStatus });
                 });
 
-                pokemonView.querySelector('.tool-select').addEventListener('change', (e) => {
-                    queueOperation('ATTACH_TOOL', { target: slotId, toolId: e.target.value || null });
-                });
+                const toolDisplay = pokemonView.querySelector('.tool-display');
+                if (toolDisplay) {
+                    toolDisplay.addEventListener('click', (e) => {
+                        // Check if an actual tool icon was clicked
+                        const clickedIcon = e.target.closest('.tool-icon-image');
+                        if (clickedIcon) {
+                            // For now, since we only have one tool, this is simple.
+                            // When multi-tool is implemented, this will need to read the
+                            // clickedIcon.dataset.toolId and remove it from an array.
+                            queueOrUpdateOperation('ATTACH_TOOL', { target: slotId, toolId: null });
+                        }
+                    });
+                }
 
 
                 pokemonView.querySelector('.evolution-select').addEventListener('change', (e) => {
@@ -1295,33 +1369,7 @@
                 });
             };
 
-            /**
-             * Populates all tool dropdowns with data from the deck.
-             * Called when the deck or database changes.
-             */
-            function updateAllToolDropdowns() {
-                const deck = deckL.value;
-                const db = cardDatabase.value;
-                if (!deck || !deck.cards || !db || Object.keys(db).length === 0) return;
 
-                // Filter all tool cards from the deck.
-                const toolCardsInDeck = deck.cards
-                    .map(cardId => ({ id: cardId, data: db[cardId] }))
-                    .filter(item => item.data && item.data.supertype === 'trainer' && item.data.subtype === 'tool');
-
-                // Use the filtered tool cards to populate all tool dropdowns on the page.
-                document.querySelectorAll('.tool-select').forEach(select => {
-                    const currentValue = select.value;
-                    select.innerHTML = '<option value="">None</option>'; // Keep the "None" option
-                    toolCardsInDeck.forEach(item => {
-                        const option = document.createElement('option');
-                        option.value = item.id;
-                        option.textContent = `${item.data.name} (${item.id})`;
-                        select.appendChild(option);
-                    });
-                    select.value = currentValue; // Restore the previously selected value
-                });
-            }
 
             function syncCheckboxesWithSelections() {
                 const currentSelections = selections.value || [];
@@ -1413,11 +1461,9 @@
             // --- Initialization & Listeners ---
             deckL.on('change', () => {
                 updateAllEmptySlotDropdowns();
-                updateAllToolDropdowns();
             });
             cardDatabase.on('change', () => {
                 updateAllEmptySlotDropdowns();
-                updateAllToolDropdowns();
             });
             selections.on('change', syncCheckboxesWithSelections);
 

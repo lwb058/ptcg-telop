@@ -102,7 +102,7 @@
             white-space: nowrap;
             display: flex;
             justify-content: center;
-            align-items: center; 
+            align-items: center;
             gap: 10px;
         }
         .actions { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
@@ -143,6 +143,48 @@
         }
         /* Utility class to hide elements */
         .hidden { display: none; }
+
+        .tool-display {
+            flex-grow: 0;
+            cursor: pointer;
+            /* New styles for multi-tool */
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 2px 5px;
+            min-height: 42px; /* To match energy container feel */
+            background: #f9f9f9;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #ccc #f0f2f5;
+        }
+        .tool-display::-webkit-scrollbar { height: 5px; }
+        .tool-display::-webkit-scrollbar-track { background: #f0f2f5; }
+        .tool-display::-webkit-scrollbar-thumb { background-color: #ccc; border-radius: 2px; }
+
+        .tool-placeholder {
+            border: 2px dashed #ccc;
+            text-align: center;
+            padding: 8px;
+            color: #aaa;
+            font-size: 12px;
+            line-height: 1.4;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        .tool-icon-image {
+            width: 48px; /* Change width to fixed */
+            flex-shrink: 0; /* Prevent icons from shrinking */
+            height: 36px;
+            border-radius: 2px;
+            border: 2px solid #888;
+            background-size: 151%;
+            background-position: center 22%;
+            background-repeat: no-repeat;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body>
@@ -157,7 +199,7 @@
             <input type="text" id="deck-id-r">
             <button id="set-deck-btn-r" class="btn" style="margin-left: 5px;">Set</button>
         </div>
-        
+
         <div class="flex-container">
             <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
                 <label for="player-name-r">Player:</label>
@@ -205,7 +247,7 @@
                 <div class="form-group tool-energy-row">
                     <div class="tool-wrapper">
                         <label>Tool:</label>
-                        <select class="tool-select"><option value="">None</option></select>
+                        <div class="tool-display" title="Click to remove tool"></div>
                     </div>
                     <div class="energy-wrapper">
                         <label>ENE:</label>
@@ -213,6 +255,14 @@
                     </div>
                 </div>
                 <div class="actions">
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle swap-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            逃げ
+                        </button>
+                        <ul class="dropdown-menu swap-menu">
+                            <!-- Menu items will be dynamically generated -->
+                        </ul>
+                    </div>
                     <div class="ailment-icons">
                         <img src="/assets/ptcg-telop/status/Poisoned.png" class="ailment-icon" data-ailment="Poisoned" title="Poisoned">
                         <img src="/assets/ptcg-telop/status/Burned.png" class="ailment-icon" data-ailment="Burned" title="Burned">
@@ -221,14 +271,6 @@
                         <img src="/assets/ptcg-telop/status/Confused.png" class="ailment-icon" data-ailment="Confused" title="Confused">
                     </div>
                     <div class="d-flex gap-2">
-                        <div class="dropdown">
-                            <button class="btn dropdown-toggle swap-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                逃げ
-                            </button>
-                            <ul class="dropdown-menu swap-menu">
-                                <!-- Menu items will be dynamically generated -->
-                            </ul>
-                        </div>
                         <label><input type="checkbox" class="ko-checkbox"> K.O</label>
                         <button class="btn btn-danger remove-btn">Remove</button>
                     </div>
@@ -267,7 +309,7 @@
                 <div class="form-group tool-energy-row">
                     <div class="tool-wrapper">
                         <label>Tool:</label>
-                        <select class="tool-select"><option value="">None</option></select>
+                        <div class="tool-display" title="Click to remove tool"></div>
                     </div>
                     <div class="energy-wrapper">
                         <label>ENE:</label>
@@ -318,7 +360,7 @@
                 <div class="form-group tool-energy-row">
                     <div class="tool-wrapper">
                         <label>Tool:</label>
-                        <select class="tool-select"><option value="">None</option></select>
+                        <div class="tool-display" title="Click to remove tool"></div>
                     </div>
                     <div class="energy-wrapper">
                         <label>ENE:</label>
@@ -369,7 +411,7 @@
                 <div class="form-group tool-energy-row">
                     <div class="tool-wrapper">
                         <label>Tool:</label>
-                        <select class="tool-select"><option value="">None</option></select>
+                        <div class="tool-display" title="Click to remove tool"></div>
                     </div>
                     <div class="energy-wrapper">
                         <label>ENE:</label>
@@ -420,7 +462,7 @@
                 <div class="form-group tool-energy-row">
                     <div class="tool-wrapper">
                         <label>Tool:</label>
-                        <select class="tool-select"><option value="">None</option></select>
+                        <div class="tool-display" title="Click to remove tool"></div>
                     </div>
                     <div class="energy-wrapper">
                         <label>ENE:</label>
@@ -471,7 +513,7 @@
                 <div class="form-group tool-energy-row">
                     <div class="tool-wrapper">
                         <label>Tool:</label>
-                        <select class="tool-select"><option value="">None</option></select>
+                        <div class="tool-display" title="Click to remove tool"></div>
                     </div>
                     <div class="energy-wrapper">
                         <label>ENE:</label>
@@ -509,17 +551,17 @@
     <!-- ======================================================================= -->
     <div class="panel-section">
         <details>
-            <summary>Extra Bench <button id="toggle-extra-bench-r" class="btn btn-sm" style="margin-left: auto;">Show</button></summary>
+            <summary>Extra Bench <button id="toggle-extra-bench-r" class="btn" style="margin-left: auto;">Show</button></summary>
             <div id="extra-bench-container-r" style="padding-top: 10px;">
                 <!-- SLOT 6-8 (Extra Bench Slots) -->
                 <div id="slot-R6" class="pokemon-slot">
                     <div class="pokemon-view hidden">
                         <div class="pokemon-header">
                             <div class="name-container">
-                                <label>
-                                    <input type="checkbox" class="selection-checkbox">
-                                    <span class="name"></span>
-                                </label>
+                        <label>
+                            <input type="checkbox" class="selection-checkbox">
+                            <span class="name"></span>
+                        </label>
                             </div>
                             <div class="ability-checkbox-wrapper hidden"></div>
                             <div class="hp-remain"></div>
@@ -532,7 +574,7 @@
                         <div class="form-group tool-energy-row">
                             <div class="tool-wrapper">
                                 <label>Tool:</label>
-                                <select class="tool-select"><option value="">None</option></select>
+                                <div class="tool-display" title="Click to remove tool"></div>
                             </div>
                             <div class="energy-wrapper">
                                 <label>ENE:</label>
@@ -583,7 +625,7 @@
                         <div class="form-group tool-energy-row">
                             <div class="tool-wrapper">
                                 <label>Tool:</label>
-                                <select class="tool-select"><option value="">None</option></select>
+                                <div class="tool-display" title="Click to remove tool"></div>
                             </div>
                             <div class="energy-wrapper">
                                 <label>ENE:</label>
@@ -634,7 +676,7 @@
                         <div class="form-group tool-energy-row">
                             <div class="tool-wrapper">
                                 <label>Tool:</label>
-                                <select class="tool-select"><option value="">None</option></select>
+                                <div class="tool-display" title="Click to remove tool"></div>
                             </div>
                             <div class="energy-wrapper">
                                 <label>ENE:</label>
@@ -741,6 +783,7 @@
                     right: !currentVisibility.right
                 };
             });
+
 
             // --- Turn Highlight Logic ---
             function updateTurnHighlight(currentTurn) {
@@ -860,6 +903,7 @@
                 });
             });
 
+
             // --- Action Status Management (Independent Replicants) ---
             // Each checkbox now controls its own independent replicant.
 
@@ -912,13 +956,13 @@
 
                     if (existingOpIndex > -1) {
                         // If an existing operation is found, send an update message
-                        nodecg.sendMessage('updateOperation', { index: existingOpIndex, payload }) 
+                        nodecg.sendMessage('updateOperation', { index: existingOpIndex, payload })
                             .catch(e => console.error(`Failed to update operation ${type}`, e));
                         return;
                     }
                 }
                 // Otherwise, queue a new operation
-                queueOperation(type, payload); 
+                queueOperation(type, payload);
             }
 
             setDeckBtn.addEventListener('click', () => {
@@ -938,8 +982,7 @@
                 const slotEl = document.getElementById(`slot-R${index}`);
                 if (!slotEl) return;
 
-                // Always reset background color at the start of a render
-                slotEl.style.backgroundColor = '';
+                slotEl.style.backgroundColor = ''; // Always reset background color
 
                 const pokemonView = slotEl.querySelector('.pokemon-view');
                 const emptyView = slotEl.querySelector('.empty-view');
@@ -976,7 +1019,7 @@
                         }
                     }
                 }
-
+                
                 if (!cardInfo || !cardInfo.pokemon) {
                     pokemonView.querySelector('.name').textContent = 'Error: Invalid Card Data';
                     return;
@@ -1009,10 +1052,33 @@
                 pokemonView.querySelector('.damage-input').value = slotData.damage || 0;
                 pokemonView.querySelector('.extrahp-input').value = slotData.extraHp || 0;
                 
-                const toolSelect = pokemonView.querySelector('.tool-select');
-                toolSelect.value = slotData.attachedToolId || "";
+                const toolDisplay = pokemonView.querySelector('.tool-display');
+                if (toolDisplay) {
+                    toolDisplay.innerHTML = ''; // Always clear the container first
+
+                    // Prepare for multi-tool by treating the single toolId as an array
+                    const attachedTools = slotData.attachedToolId ? [slotData.attachedToolId] : [];
+
+                    if (attachedTools.length > 0) {
+                        attachedTools.forEach(toolId => {
+                            if (db && db[toolId]) {
+                                const toolData = db[toolId];
+                                const toolIconDiv = document.createElement('div');
+                                toolIconDiv.title = `[${toolData.name}] - Click to remove`;
+                                toolIconDiv.className = 'tool-icon-image';
+                                toolIconDiv.style.backgroundImage = `url('/assets/ptcg-telop/card_img/${toolId}.jpg')`;
+                                // Add data attribute to identify which tool is clicked
+                                toolIconDiv.dataset.toolId = toolId;
+                                toolDisplay.appendChild(toolIconDiv);
+                            }
+                        });
+                    } else {
+                        toolDisplay.innerHTML = '<div class="tool-placeholder">Empty</div>';
+                    }
+                }
 
                 const evolutionSelect = pokemonView.querySelector('.evolution-select');
+                // Clear and rebuild the dropdown list
                 evolutionSelect.innerHTML = '<option value="">Select...</option>';
 
                 if (deck && deck.cards && db && cardInfo.pokemon) {
@@ -1020,10 +1086,12 @@
                     const currentCardId = slotData.cardId;
                     const currentCardEvolvesFrom = cardInfo.pokemon.evolvesFrom || [];
 
+                    // 1. Filter all Pokémon from the deck (excluding self)
                     const allPokemonInDeck = deck.cards
                         .map(cardId => ({ id: cardId, data: db[cardId] }))
                         .filter(item => item.data && item.data.pokemon && item.data.pokemon.hp && item.id !== currentCardId);
 
+                    // 2. Categorize
                     const evolutions = allPokemonInDeck.filter(item => item.data.pokemon.evolvesFrom?.includes(currentCardName));
                     const devolutions = allPokemonInDeck.filter(item => currentCardEvolvesFrom.includes(item.data.name));
                     
@@ -1031,6 +1099,7 @@
                     const devolutionIds = devolutions.map(p => p.id);
                     const others = allPokemonInDeck.filter(item => !evolutionIds.includes(item.id) && !devolutionIds.includes(item.id));
 
+                    // 3. Dynamically create and add options
                     const addOptionsToSelect = (groupLabel, items, actionType) => {
                         if (items.length > 0) {
                             const optgroup = document.createElement('optgroup');
@@ -1039,7 +1108,7 @@
                                 const option = document.createElement('option');
                                 option.value = item.id;
                                 option.textContent = item.data.name;
-                                option.dataset.actionType = actionType;
+                                option.dataset.actionType = actionType; // Attach action type
                                 optgroup.appendChild(option);
                             });
                             evolutionSelect.appendChild(optgroup);
@@ -1061,11 +1130,13 @@
                         energyImg.title = `Click to remove ${energyType}`;
                         energyImg.addEventListener('click', () => {
                             // Create a copy of the current energy array
-                            const currentEnergies = [...(slotData.attachedEnergy || [])]; 
+                            const currentEnergies = [...(slotData.attachedEnergy || [])];
+                            // Remove the clicked energy from the copy
                             currentEnergies.splice(energyIndex, 1);
+                            // Use the new energy array to set the final state via queueOrUpdate
                             queueOrUpdateOperation('SET_ENERGIES', { 
-                                target: `slotR${index}`,  // Use the new energy array to set the final state via queueOrUpdate
-                                energies: currentEnergies  
+                                target: `slotR${index}`, 
+                                energies: currentEnergies 
                             });
                         });
                         energyContainer.appendChild(energyImg);
@@ -1121,9 +1192,19 @@
                     queueOrUpdateOperation('SET_ABILITY_USED', { target: slotId, status: newStatus });
                 });
 
-                pokemonView.querySelector('.tool-select').addEventListener('change', (e) => {
-                    queueOperation('ATTACH_TOOL', { target: slotId, toolId: e.target.value || null });
-                });
+                const toolDisplay = pokemonView.querySelector('.tool-display');
+                if (toolDisplay) {
+                    toolDisplay.addEventListener('click', (e) => {
+                        // Check if an actual tool icon was clicked
+                        const clickedIcon = e.target.closest('.tool-icon-image');
+                        if (clickedIcon) {
+                            // For now, since we only have one tool, this is simple.
+                            // When multi-tool is implemented, this will need to read the
+                            // clickedIcon.dataset.toolId and remove it from an array.
+                            queueOrUpdateOperation('ATTACH_TOOL', { target: slotId, toolId: null });
+                        }
+                    });
+                }
 
 
                 pokemonView.querySelector('.evolution-select').addEventListener('change', (e) => {
@@ -1134,15 +1215,17 @@
                         const selectedOption = select.options[select.selectedIndex];
                         const actionType = selectedOption.dataset.actionType;
                         
+                        // Use the new unified operation type
                         queueOperation('REPLACE_POKEMON', { 
                             target: slotId, 
                             cardId: newCardId,
                             actionType: actionType
                         });
-
+                        
                         // When a Pokemon is evolved/replaced, its ability usage for the turn should be reset.
                         queueOrUpdateOperation('SET_ABILITY_USED', { target: slotId, status: false });
-                        
+
+                        // Reset the dropdown to prevent accidental operations
                         select.value = "";
                     }
                 });
@@ -1286,33 +1369,7 @@
                 });
             };
 
-            /**
-             * Populates all tool dropdowns with data from the deck.
-             * Called when the deck or database changes.
-             */
-            function updateAllToolDropdowns() {
-                const deck = deckR.value;
-                const db = cardDatabase.value;
-                if (!deck || !deck.cards || !db || Object.keys(db).length === 0) return;
 
-                // Filter all tool cards from the deck.
-                const toolCardsInDeck = deck.cards
-                    .map(cardId => ({ id: cardId, data: db[cardId] }))
-                    .filter(item => item.data && item.data.supertype === 'trainer' && item.data.subtype === 'tool');
-
-                // Use the filtered tool cards to populate all tool dropdowns on the page.
-                document.querySelectorAll('.tool-select').forEach(select => {
-                    const currentValue = select.value;
-                    select.innerHTML = '<option value="">None</option>'; // Keep the "None" option
-                    toolCardsInDeck.forEach(item => {
-                        const option = document.createElement('option');
-                        option.value = item.id;
-                        option.textContent = `${item.data.name} (${item.id})`;
-                        select.appendChild(option);
-                    });
-                    select.value = currentValue; // Restore the previously selected value
-                });
-            }
 
             function syncCheckboxesWithSelections() {
                 const currentSelections = selections.value || [];
@@ -1404,11 +1461,9 @@
             // --- Initialization & Listeners ---
             deckR.on('change', () => {
                 updateAllEmptySlotDropdowns();
-                updateAllToolDropdowns();
             });
             cardDatabase.on('change', () => {
                 updateAllEmptySlotDropdowns();
-                updateAllToolDropdowns();
             });
             selections.on('change', syncCheckboxesWithSelections);
 
