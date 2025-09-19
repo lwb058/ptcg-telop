@@ -346,14 +346,14 @@ def get_card_details(card_id, html_content=None):
                 tds = data_row.find_all('td')
                 if len(tds) == 3:
                     w_text = parse_energy_icons(tds[0])
-                    w_match = re.match(r'\[(.+?)\]×(\d+)', w_text)
+                    w_match = re.match(r'【(.+?)】×(\d+)', w_text)
                     if w_match: card_details['pokemon']['weaknesses'] = [{"type": w_match.group(1), "calc":"multiply", "value": w_match.group(2)}]
                     
                     r_text = parse_energy_icons(tds[1])
-                    r_match = re.match(r'\[(.+?)\]－\s*(\d+)', r_text)
+                    r_match = re.match(r'【(.+?)】－\s*(\d+)', r_text)
                     if r_match: card_details['pokemon']['resistances'] = [{"type": r_match.group(1), "calc":"minus", "value": r_match.group(2)}]
 
-                    retreat_costs = re.findall(r'\[(.+?)\]', parse_energy_icons(tds[2]))
+                    retreat_costs = re.findall(r'【(.+?)】', parse_energy_icons(tds[2]))
                     if retreat_costs: card_details['pokemon']['retreats'] = retreat_costs
 
         elif card_details['supertype'] == 'trainer':
