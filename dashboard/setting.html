@@ -105,6 +105,14 @@
                         <input type="checkbox" id="auto-retreat-toggle" style="width: auto; height: auto; justify-self: end;">
                     </div>
                     <div class="form-group-hotkey">
+                        <label for="auto-check-supporter-toggle">Auto-check Supporter</label>
+                        <input type="checkbox" id="auto-check-supporter-toggle" style="width: auto; height: auto; justify-self: end;">
+                    </div>
+                    <div class="form-group-hotkey">
+                        <label for="auto-trash-tm-toggle">Auto-Trash TM</label>
+                        <input type="checkbox" id="auto-trash-tm-toggle" style="width: auto; height: auto; justify-self: end;">
+                    </div>
+                    <div class="form-group-hotkey">
                         <label for="show-deck-energy-only-toggle">Show Deck Energy Only</label>
                         <input type="checkbox" id="show-deck-energy-only-toggle" style="width: auto; height: auto; justify-self: end;">
                     </div>
@@ -115,6 +123,10 @@
                     <div class="form-group-hotkey">
                         <label for="type-stroke-toggle">Type-Colored Borders</label>
                         <input type="checkbox" id="type-stroke-toggle" style="width: auto; height: auto; justify-self: end;">
+                    </div>
+                    <div class="form-group-hotkey">
+                        <label for="tool-limit-input">Tool Carry Limit</label>
+                        <input type="number" id="tool-limit-input" min="1" max="10" step="1" style="width: 60px; justify-self: end;">
                     </div>
                 </div>
             </div>
@@ -187,10 +199,13 @@
             const lostZoneToggle = document.getElementById('lost-zone-toggle');
             const reverseCardDisplayToggle = document.getElementById('reverse-card-display-toggle');
             const showDeckEnergyOnlyToggle = document.getElementById('show-deck-energy-only-toggle');
+            const autoCheckSupporterToggle = document.getElementById('auto-check-supporter-toggle');
+            const autoTrashTmToggle = document.getElementById('auto-trash-tm-toggle');
             const discardHotkeyInput = document.getElementById('discard-hotkey-input');
             const applyHotkeyInput = document.getElementById('apply-hotkey-input');
             const clearCardHotkeyInput = document.getElementById('clear-card-hotkey-input');
             const clearSelectionHotkeyInput = document.getElementById('clear-selection-hotkey-input');
+            const toolLimitInput = document.getElementById('tool-limit-input');
             const saveBtn = document.getElementById('save-settings-btn');
             
             let renderedColorElements = {};
@@ -273,6 +288,9 @@
                 lostZoneToggle.checked = !!(settings && settings.lostZoneEnabled);
                 reverseCardDisplayToggle.checked = !!(settings && settings.reverseCardDisplay);
                 showDeckEnergyOnlyToggle.checked = !!(settings && settings.showDeckEnergyOnly);
+                autoCheckSupporterToggle.checked = !!(settings && settings.autoCheckSupporter);
+                autoTrashTmToggle.checked = !!(settings && settings.autoTrashTM);
+                toolLimitInput.value = (settings && settings.toolLimit) ? settings.toolLimit : 4;
 
                 // 3. Render Hotkey Settings
                 const hotkeys = (settings && settings.hotkeys) ? settings.hotkeys : {};
@@ -321,6 +339,9 @@
                 const newLostZoneEnabled = lostZoneToggle.checked;
                 const newReverseCardDisplay = reverseCardDisplayToggle.checked;
                 const newShowDeckEnergyOnly = showDeckEnergyOnlyToggle.checked;
+                const newAutoCheckSupporter = autoCheckSupporterToggle.checked;
+                const newAutoTrashTM = autoTrashTmToggle.checked;
+                const newToolLimit = parseInt(toolLimitInput.value, 10) || 4;
                 
                 
                 // --- Update Replicant ---
@@ -335,7 +356,10 @@
                     autoSideTake: newAutoSideTake,
                     lostZoneEnabled: newLostZoneEnabled,
                     reverseCardDisplay: newReverseCardDisplay,
-                    showDeckEnergyOnly: newShowDeckEnergyOnly
+                    showDeckEnergyOnly: newShowDeckEnergyOnly,
+                    autoCheckSupporter: newAutoCheckSupporter,
+                    autoTrashTM: newAutoTrashTM,
+                    toolLimit: newToolLimit
                 };
 
                 saveBtn.textContent = 'Saved!';

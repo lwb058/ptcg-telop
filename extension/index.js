@@ -24,12 +24,18 @@ module.exports = function (nodecg) {
 				"竜": { color: "#b4b432", opacity: 0.2 },
 				"無": { color: "#b9b9b9", opacity: 0.2 }
 			},
-			            hotkeys: {
+            hotkeys: {
 				discard: 'Escape',
 				apply: 'Control+S'
 			},
             lostZoneEnabled: false,
-			reverseCardDisplay: false
+			reverseCardDisplay: false,
+            autoSideTake: true,
+            autoRetreatToggle: true,
+            showDeckEnergyOnly: true,
+            autoCheckSupporter: true,
+            autoTrashTM: true,
+            toolLimit: 4
 		}
 	});
 
@@ -117,7 +123,7 @@ module.exports = function (nodecg) {
 			damage: 0,
 			extraHp: 0,
 			attachedEnergy: [],
-			attachedToolId: null,
+			attachedToolIds: [],
 			abilityUsed: false, // Add new property
 		};
 		if (i === 0) {
@@ -362,7 +368,7 @@ module.exports = function (nodecg) {
 				break;
 			case 'SET_POKEMON':
 				replicant.value = {
-					cardId: cardId, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolId: null,
+					cardId: cardId, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [],
 					ailments: (payload.target && payload.target.endsWith('0')) ? [] : undefined
 				};
 				// Clean up undefined properties
@@ -385,14 +391,32 @@ module.exports = function (nodecg) {
 			case 'SET_EXTRA_HP':
 				replicant.value.extraHp = value;
 				break;
-			case 'ATTACH_TOOL':
-				replicant.value.attachedToolId = toolId;
-				break;
+                                    case 'SET_TOOLS': {
+                const toolLimit = (ptcgSettings.value && ptcgSettings.value.toolLimit) || 4;
+                const currentTools = replicant.value.attachedToolIds || [];
+                const newTools = payload.tools || [];
+
+                // Check if this is an addition
+                if (newTools.length > currentTools.length) {
+                    // It's an addition, so we must respect the limit.
+                    if (newTools.length <= toolLimit) {
+                        replicant.value.attachedToolIds = [...newTools];
+                        nodecg.log.info(`SET_TOOLS (add): target=${payload.target}, current=${JSON.stringify(replicant.value.attachedToolIds)}`);
+                    } else {
+                        nodecg.log.warn(`SET_TOOLS_FAILED (add): Limit of ${toolLimit} reached. Cannot add.`);
+                    }
+                } else {
+                    // It's a removal or reorder, which should always be allowed.
+                    replicant.value.attachedToolIds = [...newTools];
+                    nodecg.log.info(`SET_TOOLS (remove/reorder): target=${payload.target}, current=${JSON.stringify(replicant.value.attachedToolIds)}`);
+                }
+                break;
+            }
 			case 'REMOVE_POKEMON': {
 				// Reset the slot to its default empty state
 				const isBattleSlot = replicant.name.endsWith('0');
 				replicant.value = {
-					cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolId: null,
+					cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [],
 					...(isBattleSlot && { ailments: [] })
 				};
 
@@ -411,7 +435,7 @@ module.exports = function (nodecg) {
 				// Reset the slot to its default empty state, preserving the structure
 				const isBattleSlot = replicant.name.endsWith('0');
 				replicant.value = {
-					cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolId: null,
+					cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [],
 					...(isBattleSlot && { ailments: [] })
 				};
 				// Auto-prize card logic
@@ -541,7 +565,7 @@ module.exports = function (nodecg) {
                 break;
             }
             
-            case 'SET_TURN': {
+                        case 'SET_TURN': {
                 const turnRep = nodecg.Replicant(`${prefix}currentTurn`);
                 turnRep.value = payload.side;
                 // When a turn ends, reset all individual action statuses for both players
@@ -559,6 +583,35 @@ module.exports = function (nodecg) {
                 const stadiumRep = nodecg.Replicant(`${prefix}stadium`);
                 if (stadiumRep.value) {
                     stadiumRep.value = { ...stadiumRep.value, used: false };
+                }
+
+                // Auto-trash Technical Machines if the setting is enabled
+                if (ptcgSettings.value.autoTrashTM) {
+                    const db = cardDatabase.value;
+                    for (let i = 0; i < 9; i++) {
+                        ['L', 'R'].forEach(side => {
+                            const slotId = `slot${side}${i}`;
+                            const slotRep = nodecg.Replicant(`${prefix}${slotId}`);
+                            if (slotRep.value && slotRep.value.attachedToolIds && slotRep.value.attachedToolIds.length > 0) {
+                                const initialTools = slotRep.value.attachedToolIds;
+                                const toolsToKeep = initialTools.filter(toolId => {
+                                    const cardData = db[toolId];
+                                    return !(cardData && cardData.name && cardData.name.includes('ワザマシン'));
+                                });
+
+                                if (initialTools.length !== toolsToKeep.length) {
+                                    // Use queueOperation directly to add a new, distinct operation
+                                    nodecg.sendMessage('queueOperation', {
+                                        type: 'SET_TOOLS',
+                                        payload: {
+                                            target: slotId,
+                                            tools: toolsToKeep
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }
                 }
                 break;
             }
@@ -811,7 +864,7 @@ module.exports = function (nodecg) {
 			const removeOps = nonAttackOps.filter(op => op.type === 'REMOVE_POKEMON');
 			const koOps = nonAttackOps.filter(op => op.type === 'KO_POKEMON');
 			const replaceOps = nonAttackOps.filter(op => op.type === 'REPLACE_POKEMON');
-			const toolOps = nonAttackOps.filter(op => op.type === 'ATTACH_TOOL');
+			const toolOps = nonAttackOps.filter(op => op.type === 'ATTACH_TOOL' || op.type === 'REMOVE_TOOL');
 			
 			// 6. All remaining operations (including the original ungrouped ATTACKs) will be applied.
 			// This ensures data changes happen correctly.
@@ -884,7 +937,7 @@ module.exports = function (nodecg) {
 				const side = op.payload.target.charAt(4);
 				const index = op.payload.target.charAt(5);
 				const graphicTargetId = `slot-${side}${index}`;
-				const animationType = op.payload.toolId ? 'ATTACH_TOOL' : 'REMOVE_TOOL';
+				const animationType = op.type === 'ATTACH_TOOL' ? 'ATTACH_TOOL' : 'REMOVE_TOOL';
 				nodecg.sendMessage('playAnimation', { type: animationType, target: graphicTargetId });
 			});
 
@@ -1007,7 +1060,7 @@ module.exports = function (nodecg) {
 			// Reset all player slots (both LIVE and DRAFT)
 			for (let i = 0; i < 9; i++) { // Changed from 6 to 9
 				const slotDefault = {
-					cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolId: null, abilityUsed: false,
+					cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [], abilityUsed: false,
 				};
 				if (i === 0) {
 					slotDefault.ailments = [];
@@ -1055,6 +1108,39 @@ module.exports = function (nodecg) {
 			if (callback) callback(e.toString());
 		}
 	});
+
+	// Helper function to handle the logic for auto-checking supporter action
+	function handleCardToShowChange(cardUrl, side) {
+		if (!ptcgSettings.value.autoCheckSupporter) return;
+		if (!cardUrl) return;
+
+		const match = cardUrl.match(/\/(\d{5,})\.(jpg|png)$/);
+		if (!match) return;
+
+		const cardId = match[1];
+		const db = cardDatabase.value;
+		const cardData = db[cardId];
+
+		if (cardData && cardData.supertype === 'trainer' && cardData.subtype === 'supporter') {
+			const currentTurn = draft_currentTurn.value;
+			if (currentTurn === side) {
+				const actionStatusTarget = `action_supporter_${side}`;
+				// Use queueOrUpdateOperation to avoid duplicate operations
+				nodecg.sendMessage('queueOperation', {
+					type: 'SET_ACTION_STATUS',
+					payload: {
+						target: actionStatusTarget,
+						status: true
+					}
+				});
+				nodecg.log.info(`Auto-checked supporter for Player ${side} due to viewing card ${cardId}.`);
+			}
+		}
+	}
+
+	// Listen for changes on the card-to-show replicants
+	cardToShowL.on('change', (newValue) => handleCardToShowChange(newValue, 'L'));
+	cardToShowR.on('change', (newValue) => handleCardToShowChange(newValue, 'R'));
 
     };
 

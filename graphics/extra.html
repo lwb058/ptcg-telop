@@ -392,8 +392,10 @@
                 const skipSlideIn = slotData && slotData.evolutionSelect;
                 const isNewCard = hasCard && (!oldSlotData || slotData.cardId !== oldSlotData.cardId);
 
-                const oldToolId = oldSlotData ? oldSlotData.attachedToolId : null;
-                const newToolId = slotData ? slotData.attachedToolId : null;
+                const oldToolIds = oldSlotData ? oldSlotData.attachedToolIds || [] : [];
+                const newToolIds = slotData ? slotData.attachedToolIds || [] : [];
+                const oldToolId = oldToolIds.length > 0 ? oldToolIds[oldToolIds.length - 1] : null;
+                const newToolId = newToolIds.length > 0 ? newToolIds[newToolIds.length - 1] : null;
 
                 const sanitizeDamage = (damage) => {
                     if (typeof damage !== 'string') return damage || '';
@@ -539,7 +541,7 @@
 
                 const toolWrapperEl = wrapper.querySelector('.bench-attached-tool');
                 const toolImg = toolWrapperEl.querySelector('img');
-                if (slotData.attachedToolId && db[slotData.attachedToolId]) {
+                if (newToolId && db[newToolId]) {
                     toolWrapperEl.classList.remove('hidden');
 
                     if (newToolId && newToolId !== oldToolId) {
@@ -553,7 +555,7 @@
                             toolImg.onload = null; // Clean up the handler to avoid re-triggering.
                         };
                     }
-                    toolImg.src = `/assets/ptcg-telop/card_img/${slotData.attachedToolId}.jpg`;
+                    toolImg.src = `/assets/ptcg-telop/card_img/${newToolId}.jpg`;
                 } else {
                     toolWrapperEl.classList.add('hidden');
                 }

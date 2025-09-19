@@ -153,7 +153,7 @@
             align-items: center;
             border: 1px solid #ccc;
             border-radius: 4px;
-            padding: 2px 5px;
+            padding: 2px;
             min-height: 42px; /* To match energy container feel */
             background: #f9f9f9;
             overflow-x: auto;
@@ -167,21 +167,21 @@
         .tool-placeholder {
             border: 2px dashed #ccc;
             text-align: center;
-            padding: 8px;
+            padding: 8px 6px;
             color: #aaa;
             font-size: 12px;
-            line-height: 1.4;
+            line-height: 1.0;
             height: 100%;
             box-sizing: border-box;
         }
         .tool-icon-image {
             width: 48px; /* Change width to fixed */
             flex-shrink: 0; /* Prevent icons from shrinking */
-            height: 36px;
+            height: 33px;
             border-radius: 2px;
             border: 2px solid #888;
-            background-size: 151%;
-            background-position: center 22%;
+            background-size: 127%;
+            background-position: center 21%;
             background-repeat: no-repeat;
             box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
@@ -767,6 +767,7 @@
             const toggleExtraBenchBtn = document.getElementById('toggle-extra-bench-l');
 
             const extraBenchVisible = nodecg.Replicant('extraBenchVisible');
+            const renderSlotDebounce = {};
 
             // --- Extra Bench Toggle --- 
             extraBenchVisible.on('change', (newValue) => {
@@ -1054,10 +1055,12 @@
                 
                 const toolDisplay = pokemonView.querySelector('.tool-display');
                 if (toolDisplay) {
-                    toolDisplay.innerHTML = ''; // Always clear the container first
+                    // Robustly clear the container
+                    while (toolDisplay.firstChild) {
+                        toolDisplay.removeChild(toolDisplay.firstChild);
+                    }
 
-                    // Prepare for multi-tool by treating the single toolId as an array
-                    const attachedTools = slotData.attachedToolId ? [slotData.attachedToolId] : [];
+                    const attachedTools = slotData.attachedToolIds || [];
 
                     if (attachedTools.length > 0) {
                         attachedTools.forEach(toolId => {
@@ -1067,13 +1070,15 @@
                                 toolIconDiv.title = `[${toolData.name}] - Click to remove`;
                                 toolIconDiv.className = 'tool-icon-image';
                                 toolIconDiv.style.backgroundImage = `url('/assets/ptcg-telop/card_img/${toolId}.jpg')`;
-                                // Add data attribute to identify which tool is clicked
                                 toolIconDiv.dataset.toolId = toolId;
                                 toolDisplay.appendChild(toolIconDiv);
                             }
                         });
                     } else {
-                        toolDisplay.innerHTML = '<div class="tool-placeholder">Empty</div>';
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'tool-placeholder';
+                        placeholder.textContent = 'Empty';
+                        toolDisplay.appendChild(placeholder);
                     }
                 }
 
@@ -1195,13 +1200,23 @@
                 const toolDisplay = pokemonView.querySelector('.tool-display');
                 if (toolDisplay) {
                     toolDisplay.addEventListener('click', (e) => {
-                        // Check if an actual tool icon was clicked
                         const clickedIcon = e.target.closest('.tool-icon-image');
                         if (clickedIcon) {
-                            // For now, since we only have one tool, this is simple.
-                            // When multi-tool is implemented, this will need to read the
-                            // clickedIcon.dataset.toolId and remove it from an array.
-                            queueOrUpdateOperation('ATTACH_TOOL', { target: slotId, toolId: null });
+                            const toolIdToRemove = clickedIcon.dataset.toolId;
+                            if (toolIdToRemove) {
+                                const slotReplicant = nodecg.Replicant(`draft_${slotId}`);
+                                const currentTools = slotReplicant.value.attachedToolIds || [];
+                                const indexToRemove = currentTools.indexOf(toolIdToRemove);
+
+                                if (indexToRemove > -1) {
+                                    const newTools = [...currentTools];
+                                    newTools.splice(indexToRemove, 1);
+                                    queueOrUpdateOperation('SET_TOOLS', { 
+                                        target: slotId, 
+                                        tools: newTools 
+                                    });
+                                }
+                            }
                         }
                     });
                 }
@@ -1478,7 +1493,12 @@
             for (let i = 0; i < 9; i++) {
                 const slotReplicant = nodecg.Replicant(`draft_slotL${i}`); // <-- LISTEN TO DRAFT
                 slotReplicant.on('change', (newValue) => {
-                    renderSlot(i, newValue, deckL.value, cardDatabase.value);
+                    if (renderSlotDebounce[i]) {
+                        clearTimeout(renderSlotDebounce[i]);
+                    }
+                    renderSlotDebounce[i] = setTimeout(() => {
+                        renderSlot(i, newValue, deckL.value, cardDatabase.value);
+                    }, 16); // Debounce with a timeout roughly equivalent to one frame
                 });
                 renderSlot(i, slotReplicant.value, deckL.value, cardDatabase.value);
                 setupSlotEventListeners(i);
