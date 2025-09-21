@@ -1033,9 +1033,9 @@
                 const currentHp = (baseHp + extraHp) - damage;
                 pokemonView.querySelector('.hp-remain').textContent = `HP: ${currentHp}`;
 
-                // Automatically check the K.O. box if HP is zero or less.
+                // The K.O. checkbox is now driven by the replicant state.
                 const koCheckbox = pokemonView.querySelector('.ko-checkbox');
-                koCheckbox.checked = currentHp <= 0;
+                koCheckbox.checked = slotData.isKO || false;
 
                 // --- Ability Checkbox Logic ---
                 const abilityCheckboxWrapper = pokemonView.querySelector('.ability-checkbox-wrapper');
@@ -1246,17 +1246,20 @@
                 });
 
                 pokemonView.querySelector('.remove-btn').addEventListener('click', () => {
-                    const koCheckbox = pokemonView.querySelector('.ko-checkbox');
-                    if (koCheckbox.checked) {
+                    const slotReplicant = nodecg.Replicant(`draft_${slotId}`);
+                    if (slotReplicant.value && slotReplicant.value.isKO) {
                         queueOperation('KO_POKEMON', { target: slotId });
                     } else {
                         queueOperation('REMOVE_POKEMON', { target: slotId });
                     }
                 });
 
-                // The K.O. checkbox no longer triggers an operation directly; it only acts as a state toggle.
+                // The K.O. checkbox now queues an operation to update the draft state.
                 const koCheckbox = pokemonView.querySelector('.ko-checkbox');
-                koCheckbox.addEventListener('change', (e) => {});
+                koCheckbox.addEventListener('change', (e) => {
+                    const isChecked = e.target.checked;
+                    queueOrUpdateOperation('SET_KO_STATUS', { target: slotId, status: isChecked });
+                });
 
                 // REMOVED OLD PROMOTE BTN LOGIC
                 // if (index > 0) {

@@ -125,6 +125,7 @@ module.exports = function (nodecg) {
 			attachedEnergy: [],
 			attachedToolIds: [],
 			abilityUsed: false, // Add new property
+			isKO: false, // Add new property for KO checkbox state
 		};
 		if (i === 0) {
 			slotDefault.ailments = [];
@@ -332,7 +333,7 @@ module.exports = function (nodecg) {
 
 		// Ensure replicant.value is an object before modification, for slot-based operations.
 		// This check is bypassed for simpler replicants or operations that manage their own replicants.
-		if (type !== 'SET_POKEMON' && type !== 'SWITCH_POKEMON' && type !== 'SET_ACTION_STATUS' && type !== 'SET_TURN' && type !== 'SET_SIDES' && type !== 'ATTACK' && type !== 'SET_STADIUM' && type !== 'SET_STADIUM_USED' && type !== 'SET_ABILITY_USED' && type !== 'SET_VSTAR_STATUS' && type !== 'SET_LOST_ZONE' && (!replicant || typeof replicant.value !== 'object' || replicant.value === null)) {
+		if (type !== 'SET_POKEMON' && type !== 'SWITCH_POKEMON' && type !== 'SET_ACTION_STATUS' && type !== 'SET_TURN' && type !== 'SET_SIDES' && type !== 'ATTACK' && type !== 'SET_STADIUM' && type !== 'SET_STADIUM_USED' && type !== 'SET_ABILITY_USED' && type !== 'SET_VSTAR_STATUS' && type !== 'SET_LOST_ZONE' && type !== 'SET_KO_STATUS' && (!replicant || typeof replicant.value !== 'object' || replicant.value === null)) {
 			// For PROMOTE, the logic handles its own replicants. For others, if the replicant is not ready, abort.
 			if (type !== 'SWITCH_POKEMON') {
 				nodecg.log.warn(`Operation ${type} aborted: replicant or its value is not a valid object.`);
@@ -341,6 +342,11 @@ module.exports = function (nodecg) {
 		}
 
 		switch(type) {
+			case 'SET_KO_STATUS':
+				if (replicant && replicant.value) {
+					replicant.value.isKO = payload.status;
+				}
+				break;
 			case 'SET_VSTAR_STATUS':
 				replicant.value = payload.used;
 				break;
@@ -387,6 +393,18 @@ module.exports = function (nodecg) {
 				break;
 			case 'SET_DAMAGE':
 				replicant.value.damage = value;
+				const db = cardDatabase.value;
+				if (replicant.value.cardId && db && db[replicant.value.cardId]) {
+					const card = db[replicant.value.cardId];
+					if (card && card.pokemon) {
+						const baseHp = parseInt(card.pokemon.hp || 0, 10);
+						const extraHp = parseInt(replicant.value.extraHp || 0, 10);
+						const currentHp = (baseHp + extraHp) - replicant.value.damage;
+						if (currentHp <= 0) {
+							replicant.value.isKO = true;
+						}
+					}
+				}
 				break;
 			case 'SET_EXTRA_HP':
 				replicant.value.extraHp = value;
@@ -560,6 +578,20 @@ module.exports = function (nodecg) {
                         const currentDamage = Number(targetRep.value.damage) || 0;
                         const newDamage = Number(payload.damage) || 0;
                         targetRep.value.damage = currentDamage + newDamage;
+
+                        // After applying damage, check if the Pokémon is knocked out.
+                        const db = cardDatabase.value;
+                        if (targetRep.value.cardId && db && db[targetRep.value.cardId]) {
+                            const card = db[targetRep.value.cardId];
+                            if (card && card.pokemon) {
+                                const baseHp = parseInt(card.pokemon.hp || 0, 10);
+                                const extraHp = parseInt(targetRep.value.extraHp || 0, 10);
+                                const currentHp = (baseHp + extraHp) - targetRep.value.damage;
+                                if (currentHp <= 0) {
+                                    targetRep.value.isKO = true;
+                                }
+                            }
+                        }
                     }
                 });
                 break;

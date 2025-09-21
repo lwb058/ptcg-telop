@@ -417,24 +417,6 @@
             <!-- Tool cards will be rendered here by JavaScript -->
         </div>
     </div>
-    
-    <div class="panel-section">
-        <h3>Select Module</h3>
-        <div class="select-zone-grid">
-            <button id="select-left-battle-btn" class="btn select-btn btn-left">L-Battle</button>
-            <button id="select-left-bench-btn" class="btn select-btn btn-left">L-Bench</button>
-            <button id="select-left-all-btn" class="btn select-btn btn-left">L-All</button>
-            <button id="select-right-all-btn" class="btn select-btn btn-right">R-All</button>
-            <button id="select-right-bench-btn" class="btn select-btn btn-right">R-Bench</button>
-            <button id="select-right-battle-btn" class="btn select-btn btn-right">R-Battle</button>
-            <button id="select-attacker-btn" class="btn btn-primary">Attacker</button>
-            <button id="select-clear-btn" class="btn btn-black">Clear</button>
-            <button id="select-reverse-btn" class="btn select-btn">Reverse</button>
-            <button id="select-with-energy-btn" class="btn select-btn">エネ付き</button>
-            <button id="select-with-ability-btn" class="btn select-btn">特性あり</button>
-            <button id="select-with-rule-btn" class="btn select-btn">ルール持ち</button>
-        </div>
-    </div>
 
     <div class="panel-section">
         <h3>Attack Module</h3>
@@ -465,7 +447,21 @@
             <button id="attack-btn" class="btn btn-lightning" style="flex-grow: 2; height: fit-content;">Attack</button>
         </div>
     </div>
-
+    
+    <div class="panel-section">
+        <h3>Shortcut Module</h3>
+        <div class="select-zone-grid">
+            <button id="select-attacker-btn" class="btn btn-primary">Attacker</button>
+            <button id="select-clear-btn" class="btn btn-black">Clear</button>
+            <button id="select-reverse-btn" class="btn select-btn">Reverse</button>
+            <button id="select-with-energy-btn" class="btn select-btn">エネ付き</button>
+            <button id="select-with-ability-btn" class="btn select-btn">特性あり</button>
+            <button id="select-with-rule-btn" class="btn select-btn">ルール持ち</button>
+        </div>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
+            <button id="ko-0hp-btn" class="btn btn-danger">Remove K.O</button>
+    </div>
+    
     <div class="panel-section">
         <h3>Turn Module</h3>
         <div class="flex-container" style="justify-content: center; align-items: center;">
@@ -734,15 +730,10 @@
             const btnSelectAttacker = document.getElementById('select-attacker-btn');
             const btnSelectClear = document.getElementById('select-clear-btn');
             const btnSelectReverse = document.getElementById('select-reverse-btn');
-            const btnSelectLeftAll = document.getElementById('select-left-all-btn');
-            const btnSelectRightAll = document.getElementById('select-right-all-btn');
-            const btnSelectLeftBattle = document.getElementById('select-left-battle-btn');
-            const btnSelectRightBattle = document.getElementById('select-right-battle-btn');
-            const btnSelectLeftBench = document.getElementById('select-left-bench-btn');
-            const btnSelectRightBench = document.getElementById('select-right-bench-btn');
             const btnSelectWithEnergy = document.getElementById('select-with-energy-btn');
             const btnSelectWithAbility = document.getElementById('select-with-ability-btn');
             const btnSelectWithRule = document.getElementById('select-with-rule-btn');
+            const btnKo0hp = document.getElementById('ko-0hp-btn');
 
             /**
              * Queues an operation to be sent to the backend.
@@ -930,9 +921,9 @@
             btnSelectAttacker.addEventListener('click', () => {
                 const currentTurn = draft_currentTurn.value;
                 if (currentTurn === 'L') {
-                    btnSelectLeftBattle.click();
+                    selections.value = getOccupiedSlots().filter(id => id === 'slotL0');
                 } else if (currentTurn === 'R') {
-                    btnSelectRightBattle.click();
+                    selections.value = getOccupiedSlots().filter(id => id === 'slotR0');
                 } else {
                     alert('No current turn player to select battle Pokémon.');
                 }
@@ -944,24 +935,6 @@
                 const allSlots = getOccupiedSlots();
                 const current = selections.value || [];
                 selections.value = allSlots.filter(id => !current.includes(id));
-            });
-            btnSelectLeftAll.addEventListener('click', () => {
-                selections.value = getOccupiedSlots().filter(id => id.startsWith('slotL'));
-            });
-            btnSelectRightAll.addEventListener('click', () => {
-                selections.value = getOccupiedSlots().filter(id => id.startsWith('slotR'));
-            });
-            btnSelectLeftBattle.addEventListener('click', () => {
-                selections.value = getOccupiedSlots().filter(id => id === 'slotL0');
-            });
-            btnSelectRightBattle.addEventListener('click', () => {
-                selections.value = getOccupiedSlots().filter(id => id === 'slotR0');
-            });
-            btnSelectLeftBench.addEventListener('click', () => {
-                selections.value = getOccupiedSlots().filter(id => id.startsWith('slotL') && id !== 'slotL0');
-            });
-            btnSelectRightBench.addEventListener('click', () => {
-                selections.value = getOccupiedSlots().filter(id => id.startsWith('slotR') && id !== 'slotR0');
             });
             btnSelectWithEnergy.addEventListener('click', () => {
                 const selected = [];
@@ -996,6 +969,14 @@
                     }
                 });
                 selections.value = selected;
+            });
+
+            btnKo0hp.addEventListener('click', () => {
+                slots.forEach(slot => {
+                    if (slot.value && slot.value.cardId && slot.value.isKO) {
+                        queueOperation('KO_POKEMON', { target: slot.name.replace('draft_', '') });
+                    }
+                });
             });
 
             // --- Energy & Tool Module Logic (Drag and Drop) ---
@@ -1592,9 +1573,9 @@
             aimBtn.addEventListener('click', () => {
                 const currentTurn = draft_currentTurn.value;
                 if (currentTurn === 'L') {
-                    btnSelectRightBattle.click(); // Aim at opponent's battle pokemon
+                    selections.value = getOccupiedSlots().filter(id => id === 'slotR0'); // Aim at opponent's battle pokemon
                 } else if (currentTurn === 'R') {
-                    btnSelectLeftBattle.click(); // Aim at opponent's battle pokemon
+                    selections.value = getOccupiedSlots().filter(id => id === 'slotL0'); // Aim at opponent's battle pokemon
                 }
             });
 
