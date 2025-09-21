@@ -864,7 +864,6 @@ module.exports = function (nodecg) {
 			const removeOps = nonAttackOps.filter(op => op.type === 'REMOVE_POKEMON');
 			const koOps = nonAttackOps.filter(op => op.type === 'KO_POKEMON');
 			const replaceOps = nonAttackOps.filter(op => op.type === 'REPLACE_POKEMON');
-			const toolOps = nonAttackOps.filter(op => op.type === 'ATTACH_TOOL' || op.type === 'REMOVE_TOOL');
 			
 			// 6. All remaining operations (including the original ungrouped ATTACKs) will be applied.
 			// This ensures data changes happen correctly.
@@ -872,8 +871,7 @@ module.exports = function (nodecg) {
 				!promoteOps.includes(op) && 
 				!removeOps.includes(op) && 
 				!koOps.includes(op) && 
-				!replaceOps.includes(op) &&
-				!toolOps.find(toolOp => toolOp.id === op.id)
+				!replaceOps.includes(op)
 			);
 
 			// 7. Trigger animations for non-attack operations (same as before)
@@ -933,13 +931,7 @@ module.exports = function (nodecg) {
 
 				});
 			});
-			toolOps.forEach(op => {
-				const side = op.payload.target.charAt(4);
-				const index = op.payload.target.charAt(5);
-				const graphicTargetId = `slot-${side}${index}`;
-				const animationType = op.type === 'ATTACH_TOOL' ? 'ATTACH_TOOL' : 'REMOVE_TOOL';
-				nodecg.sendMessage('playAnimation', { type: animationType, target: graphicTargetId });
-			});
+
 
 			// --- Apply Data Changes ---
 			// 8. Apply all non-delayed operations immediately. This includes ATTACK ops.
@@ -996,16 +988,7 @@ module.exports = function (nodecg) {
 					});
 				}, delay);
 			}
-			if (toolOps.length > 0) {
-				const delay = 100;
-				maxDelay = Math.max(maxDelay, delay);
-				setTimeout(() => {
-					toolOps.forEach(op => {
-						const liveRep = nodecg.Replicant(op.payload.target.replace('slot', 'live_slot'));
-						applyOperationLogic(liveRep, op, 'live');
-					});
-				}, delay);
-			}
+
 
 			// 10. Schedule queue clearing and state sync after the longest delay
 			if (maxDelay > 0) {

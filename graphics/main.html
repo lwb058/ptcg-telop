@@ -161,25 +161,39 @@
             border: 1px solid var(--module-color-border);
             box-shadow: 1px 1px 3px rgba(0,0,0,0.6);
         }
-        .battle-attached-tool { 
-            position: absolute; 
-            bottom: 5px; 
-            right: 5px; 
+        .battle-attached-tool-item {
             width: 80px;
             height: 50px;
-            z-index: 10; 
-            overflow: hidden; /* Hide the part of the image that overflows the container, achieving a crop effect */
+            z-index: 10;
+            overflow: hidden;
             border-radius: 4px;
-            border: var(--module-border) solid var(--module-color-border); 
+            border: var(--module-border) solid var(--module-color-border);
             box-shadow: 2px 2px 5px rgba(0,0,0,0.7);
+            position: relative;
         }
-        .battle-attached-tool img { 
-            position: absolute; 
-            width: 95.25px; 
-            height: auto; 
-            left: -7.57px; 
-            top: -18.87px; 
+        .battle-attached-tool-item img {
+            position: absolute;
+            width: 95.25px;
+            height: auto;
+            left: -7.57px;
+            top: -64.87px;
+            transform: rotate(180deg); /* Flip the item content back to normal */
         }
+
+        .battle-attached-tools-wrapper {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            z-index: 10;
+            display: grid;
+            /* Revert to column-based template */
+            grid-template-columns: repeat(2, 80px);
+            /* End revert */
+            justify-items: start;
+            gap: 3px 6px;
+            transform: rotate(180deg);
+        }
+
         .battle-hp-gauge { display: flex; align-items: center; }
         .battle-hp-text {
             position: absolute;
@@ -363,24 +377,36 @@
             font-size: 14px;
             padding-right: 4px;
         }
-        .bench-attached-tool { 
-            position: absolute; 
-            bottom: 2px; 
-            right: 2px; 
-            width: 40px;
-            height: 25px;
-            overflow: hidden; /* Achieve cropping */
+        .bench-attached-tool-item {
+            width: 36px;
+            height: 23px;
+            overflow: hidden;
             border-radius: 3px;
             border: var(--module-border) solid var(--module-color-border); 
             box-shadow: 2px 2px 5px rgba(0,0,0,0.7);
+            position: relative;
         }
-        .bench-attached-tool img { 
+        .bench-attached-tool-item img { 
             position: absolute; 
-            width: 47.63px; 
+            width: 42.63px; 
             height: auto; 
             left: -3.79px; 
-            top: -9.44px; 
+            top: -28.44px; 
+            transform: rotate(180deg); /* Flip the item content back to normal */
         }
+
+        .bench-attached-tools-wrapper {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: repeat(2, 36px);
+            justify-items: start;
+            gap: 2px 6px;
+            transform: rotate(180deg);
+        }
+
         .bench-info-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 4px; overflow: hidden; }
         .bench-pokemon-name { font-size: 16px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 21px; display: flex; align-items: flex-end; }
         .bench-hp-gauge { display: flex; align-items: center; }
@@ -666,15 +692,34 @@
         }
         
         /* --- Animation for Tool Card Attachment --- */
+        @keyframes tool-appear {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .anim-tool-appear {
+            animation: tool-appear 0.3s ease-out forwards;
+        }
+
+        @keyframes tool-disappear {
+            from { transform: scale(1); opacity: 1; }
+            to { transform: scale(0.5); opacity: 0; }
+        }
+        .anim-tool-disappear {
+            animation: tool-disappear 0.3s ease-in forwards;
+        }
+
+        @keyframes container-fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .tools-fade-in {
+            animation: container-fade-in 0.2s ease-out forwards;
+        }
+
+        /* This is the old animation, we keep it for now for other graphics if they use it, but new logic uses appear/disappear */
         @keyframes scale-in-tool {
-            from {
-                transform: scale(1.1);
-                opacity: 0;
-            }
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
+            from { transform: scale(1.1); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
         .anim-scale-in-tool {
             animation: scale-in-tool 0.1s ease-out forwards;
@@ -889,7 +934,7 @@
                         <img class="battle-pokemon-image">
                         <div class="battle-status-ailment"></div>
                         <div class="battle-attached-energies"></div>
-                        <div class="battle-attached-tool"><img/></div>
+                        <div class="battle-attached-tools-wrapper"></div>
                     </div>
                     <div class="battle-hp-gauge">
                         <div class="battle-hp-bar-container">
@@ -899,7 +944,7 @@
                     </div>
                     <div class="battle-skills-container"></div>
                 </div>
-            </div>
+                    </div>
             <div class="bench-slots">
                 <div class="bench-slot" id="slot-L1"></div>
                 <div class="bench-slot" id="slot-L2"></div>
@@ -927,7 +972,7 @@
                         <img class="battle-pokemon-image">
                         <div class="battle-status-ailment"></div>
                         <div class="battle-attached-energies"></div>
-                        <div class="battle-attached-tool"><img/></div>
+                        <div class="battle-attached-tools-wrapper"></div>
                     </div>
                     <div class="battle-hp-gauge">
                         <div class="battle-hp-bar-container">
@@ -1286,6 +1331,148 @@
             }
         }
 
+        function playToolAnimation(targetEl, isBattleSlot, isAttach) {
+            if (!targetEl) return;
+ 
+            const videoSrc = isAttach ? '/assets/ptcg-telop/fx/tool-attach.webm' : '/assets/ptcg-telop/fx/tool-remove.webm';
+            
+            const targetRect = targetEl.getBoundingClientRect();
+            if (targetRect.width === 0 && targetRect.height === 0) return;
+
+            const video = document.createElement('video');
+            video.src = videoSrc;
+            video.muted = true;
+            video.autoplay = true;
+            video.style.position = 'absolute';
+            video.style.zIndex = '400';
+            video.style.pointerEvents = 'none';
+
+            const videoWidth = isBattleSlot ? 150 : 70;
+            const videoHeight = isBattleSlot ? 120 : 56;
+            video.style.width = `${videoWidth}px`;
+            video.style.height = `${videoHeight}px`;
+
+            const targetCenterX = targetRect.left + targetRect.width / 2;
+            const targetCenterY = targetRect.top + targetRect.height / 2;
+            video.style.left = `${targetCenterX - videoWidth / 2}px`;
+            video.style.top = `${targetCenterY - videoHeight / 2}px`;
+
+            document.body.appendChild(video);
+            video.addEventListener('ended', () => video.remove());
+        }
+
+        function updateAttachedTools(slotEl, newToolIds, oldToolIds, isBattleSlot) {
+            const db = cardDatabase.value;
+            const wrapperSelector = isBattleSlot ? '.battle-attached-tools-wrapper' : '.bench-attached-tools-wrapper';
+            const itemClass = isBattleSlot ? 'battle-attached-tool-item' : 'bench-attached-tool-item';
+            const wrapperEl = slotEl.querySelector(wrapperSelector);
+            if (!wrapperEl) return;
+ 
+            const toolsToRemove = [];
+            const toolsToAdd = [];
+ 
+            // New diffing logic to prioritize removing newest items (at the end of the array)
+            const oldWithKept = oldToolIds.map(id => ({ id, kept: false }));
+            const tempNewIdsForConsumption = [...newToolIds];
+ 
+            // First pass: find all items that are kept by consuming from tempNewIds
+            oldWithKept.forEach(item => {
+                const idxInNew = tempNewIdsForConsumption.indexOf(item.id);
+                if (idxInNew > -1) {
+                    item.kept = true;
+                    tempNewIdsForConsumption.splice(idxInNew, 1); // Consume it
+                }
+            });
+ 
+            // The remaining items in tempNewIds are the ones to add.
+            toolsToAdd.push(...tempNewIdsForConsumption);
+ 
+            // Find the indices of the items to remove, prioritizing the newest ones (end of the array).
+            for (let i = oldWithKept.length - 1; i >= 0; i--) {
+                if (!oldWithKept[i].kept) {
+                    toolsToRemove.push({ id: oldWithKept[i].id, index: i });
+                }
+            }
+
+            const hasRemovals = toolsToRemove.length > 0;
+            const hasAdditions = toolsToAdd.length > 0;
+
+            // A reorder is needed if the new list is not a perfect prefix of the old list.
+            let reorderNeeded = false;
+            if (hasRemovals) {
+                let isPrefix = newToolIds.length <= oldToolIds.length;
+                if (isPrefix) {
+                    for (let i = 0; i < newToolIds.length; i++) {
+                        if (newToolIds[i] !== oldToolIds[i]) {
+                            isPrefix = false;
+                            break;
+                        }
+                    }
+                }
+                if (!isPrefix) {
+                    reorderNeeded = true;
+                }
+            }
+
+            // --- Main Logic ---
+            if (hasRemovals) {
+                if (reorderNeeded) {
+                    // --- Reorder logic: Animate specific items out, then fade-in the new container state ---
+                    const allElements = [...wrapperEl.querySelectorAll(`.${itemClass}`)];
+                    toolsToRemove.forEach(item => {
+                        const el = allElements[item.index];
+                        if (el && !el.classList.contains('anim-tool-disappear')) {
+                            el.classList.add('anim-tool-disappear');
+                            playToolAnimation(el, isBattleSlot, false);
+                        }
+                    });
+
+                    setTimeout(() => {
+                        wrapperEl.innerHTML = ''; // Clear old layout
+                        newToolIds.forEach(toolId => {
+                            if (db[toolId]) {
+                                const toolItem = document.createElement('div');
+                                toolItem.className = itemClass;
+                                toolItem.dataset.toolId = toolId;
+                                const toolImg = document.createElement('img');
+                                toolImg.src = `/assets/ptcg-telop/card_img/${toolId}.jpg`;
+                                toolItem.appendChild(toolImg);
+                                wrapperEl.appendChild(toolItem);
+                            }
+                        });
+                        wrapperEl.classList.add('tools-fade-in');
+                        wrapperEl.addEventListener('animationend', () => wrapperEl.classList.remove('tools-fade-in'), { once: true });
+                    }, 300);
+                } else {
+                    // --- No reorder: Just animate the last items out ---
+                    const allElements = [...wrapperEl.querySelectorAll(`.${itemClass}`)];
+                    toolsToRemove.forEach(item => {
+                        const el = allElements[item.index];
+                        if (el) {
+                            el.classList.add('anim-tool-disappear');
+                            playToolAnimation(el, isBattleSlot, false);
+                            el.addEventListener('animationend', () => el.remove(), { once: true });
+                        }
+                    });
+                }
+            } else if (hasAdditions) {
+                // --- Additions only ---
+                toolsToAdd.forEach(id => {
+                    if (db[id]) {
+                        const toolItem = document.createElement('div');
+                        toolItem.className = `${itemClass} anim-tool-appear`;
+                        toolItem.dataset.toolId = id;
+                        const toolImg = document.createElement('img');
+                        toolImg.src = `/assets/ptcg-telop/card_img/${id}.jpg`;
+                        toolItem.appendChild(toolImg);
+                        wrapperEl.appendChild(toolItem);
+                        toolItem.addEventListener('animationstart', () => playToolAnimation(toolItem, isBattleSlot, true), { once: true });
+                        toolItem.addEventListener('animationend', () => toolItem.classList.remove('anim-tool-appear'), { once: true });
+                    }
+                });
+            }
+        }
+
         function renderSlot(side, index, slotData, oldSlotData) {
             const slotEl = document.getElementById(`slot-${side}${index}`);
             const db = cardDatabase.value;
@@ -1324,11 +1511,8 @@
                 };
 
                 if (isSlidingOut) {
-                    // If the slot is currently animating (sliding out), wait for the animation to finish
-                    // before clearing its content and marking it as empty.
                     setTimeout(clearSlot, 500); 
                 } else {
-                    // Otherwise, clear it immediately.
                     clearSlot();
                 }
                 return;
@@ -1337,13 +1521,11 @@
 
             const isUnderAttack = g_attackAnimationTargets.has(slotEl.id);
 
-            // --- Border and Background Color Logic ---
             const useTypeStroke = settings.useTypeStroke;
             const typeColorMap = settings.typeColorMap || {};
             const imageArea = slotEl.querySelector('.battle-card-image-area, .bench-card-image-area');
             const cardData = db[slotData.cardId];
 
-            // Always reset border color to default first
             slotEl.style.borderColor = 'var(--module-color-border)';
             if (imageArea) imageArea.style.borderColor = 'var(--module-color-border)';
 
@@ -1359,16 +1541,14 @@
             } else {
                 slotEl.style.backgroundColor = 'var(--color-bg-module)';
             }
-            // --- End Color Logic ---
 
+            // The 'oldSlotData' check is now only for HP animation, not for tools.
             if (oldSlotData && oldSlotData.cardId !== slotData.cardId) {
                 oldSlotData = null;
             }
 
-            const oldToolIds = oldSlotData ? oldSlotData.attachedToolIds || [] : [];
-            const newToolIds = slotData.attachedToolIds || [];
-            const oldToolId = oldToolIds.length > 0 ? oldToolIds[oldToolIds.length - 1] : null;
-            const newToolId = newToolIds.length > 0 ? newToolIds[newToolIds.length - 1] : null;
+            const oldToolIds = oldSlotData ? (oldSlotData.attachedToolIds || []) : [];
+            const newToolIds = slotData ? (slotData.attachedToolIds || []) : [];
 
             if (!cardData || !cardData.pokemon) return;
             const baseHp = parseInt(cardData.pokemon.hp || 0, 10);
@@ -1377,29 +1557,18 @@
             const maxHp = baseHp + extraHp;
             const currentHp = Math.max(0, maxHp - damage);
 
-            // --- HP Change Number Logic ---
             let hpChangeToShow = 0;
             if (oldSlotData) {
                 const oldDamage = parseInt(oldSlotData.damage || 0, 10);
                 const oldExtraHp = parseInt(oldSlotData.extraHp || 0, 10);
                 const oldMaxHp = baseHp + oldExtraHp;
                 const oldHp = Math.max(0, oldMaxHp - oldDamage);
-
-                const damageDiff = damage - oldDamage; // Positive if damaged, negative if healed
-                
-                if (damageDiff > 0) { // Damaged
-                    hpChangeToShow = -damageDiff;
-                } else if (damageDiff < 0) { // Healed
-                    // We show the actual amount healed, not just the difference to 0 damage.
-                    hpChangeToShow = -damageDiff;
-                }
-                // If only extraHp changes, we don't show a number unless it results in a currentHp change.
-                else if (extraHp !== oldExtraHp) {
-                    hpChangeToShow = currentHp - oldHp;
-                }
+                const damageDiff = damage - oldDamage;
+                if (damageDiff > 0) { hpChangeToShow = -damageDiff; }
+                else if (damageDiff < 0) { hpChangeToShow = -damageDiff; }
+                else if (extraHp !== oldExtraHp) { hpChangeToShow = currentHp - oldHp; }
             }
             
-            // --- HP Bar Animation Logic ---
             let startHp = currentHp, startMaxHp = maxHp;
             if (oldSlotData) {
                 const oldExtraHp = parseInt(oldSlotData.extraHp || 0, 10);
@@ -1413,6 +1582,9 @@
             if (hpPercent <= 25) hpColor = 'var(--hp-low)';
             else if (hpPercent <= 50) hpColor = 'var(--hp-medium)';
             const getEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/energy/${ENERGY_MAP[type] || 'エネなし'}.png">`;
+
+            updateAttachedTools(slotEl, newToolIds, oldToolIds, index === 0);
+
             if (index === 0) {
                 const wrapper = slotEl.querySelector('.active-pokemon-wrapper');
                 wrapper.classList.remove('hidden');
@@ -1436,7 +1608,7 @@
                     img.onload = () => {
                         img.style.visibility = 'visible';
                         playAnimationIfNeeded();
-                        img.onload = null; // Clean up handler
+                        img.onload = null;
                     };
                 }
                 img.src = `/assets/ptcg-telop/card_img/${slotData.cardId}.jpg`;
@@ -1455,26 +1627,7 @@
 
                 const energyContainer = wrapper.querySelector('.battle-attached-energies');
                 renderAttachedEnergies(energyContainer, slotData.attachedEnergy, getEnergyIcon);
-                const toolEl = wrapper.querySelector('.battle-attached-tool');
-                if (newToolId && db[newToolId]) {
-                    toolEl.classList.remove('hidden');
-                    const toolImg = toolEl.querySelector('img');
 
-                    if (newToolId && newToolId !== oldToolId) {
-                        // Hide the container to prevent flashing the old image.
-                        toolEl.style.visibility = 'hidden';
-                        toolImg.onload = () => {
-                            // Once the new image is loaded, make it visible and start the animation.
-                            toolEl.style.visibility = 'visible';
-                            toolEl.classList.add('anim-scale-in-tool');
-                            toolEl.addEventListener('animationend', () => toolEl.classList.remove('anim-scale-in-tool'), { once: true });
-                            toolImg.onload = null; // Clean up the handler to avoid re-triggering.
-                        };
-                    }
-                    toolImg.src = `/assets/ptcg-telop/card_img/${newToolId}.jpg`;
-                } else {
-                    toolEl.classList.add('hidden');
-                }
                 const ailmentEl = wrapper.querySelector('.battle-status-ailment');
                 ailmentEl.innerHTML = '';
                 if (slotData.ailments && slotData.ailments.length > 0) {
@@ -1534,15 +1687,12 @@
                 };
 
                 if (!wrapper || slotEl.dataset.cardId !== slotData.cardId) {
-                    const toolHtml = newToolId && db[newToolId]
-                        ? `<div class="bench-attached-tool"><img/></div>` // src is set later via JS
-                        : '<div class="bench-attached-tool hidden"><img/></div>';
                     slotEl.innerHTML = `
                         <div class="bench-pokemon-wrapper">
                             <div class="bench-card-image-area">
                                 <img class="bench-pokemon-image">
                                 <div class="bench-attached-energies"></div>
-                                ${toolHtml}
+                                <div class="bench-attached-tools-wrapper"></div>
                             </div>
                             <div class="bench-info-area">
                                 <div class="bench-pokemon-name">${cardData.name}</div>
@@ -1563,12 +1713,10 @@
                     mainImg.onload = () => {
                         mainImg.style.visibility = 'visible';
                         playAnimationIfNeeded();
-                        mainImg.onload = null; // Clean up handler
+                        mainImg.onload = null;
                     };
                     mainImg.src = `/assets/ptcg-telop/card_img/${slotData.cardId}.jpg`;
                 } else if (forceSlideIn) {
-                    // Card is not new, but we need to force a slide-in animation.
-                    // Since the image is already loaded, we can just play the animation.
                     playAnimationIfNeeded();
                 }
                 wrapper.classList.remove('hidden');
@@ -1613,30 +1761,10 @@
                 const energyContainer = wrapper.querySelector('.bench-attached-energies');
                 const getBenchEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/energy/${ENERGY_MAP[type] || 'エネなし'}.png">`;
                 renderAttachedEnergies(energyContainer, slotData.attachedEnergy, getBenchEnergyIcon);
-                const toolWrapperEl = wrapper.querySelector('.bench-attached-tool');
-                const toolImg = toolWrapperEl.querySelector('img');
-                if (newToolId && db[newToolId]) {
-                    toolWrapperEl.classList.remove('hidden');
-
-                    if (newToolId && newToolId !== oldToolId) {
-                        // Hide the container to prevent flashing the old image.
-                        toolWrapperEl.style.visibility = 'hidden';
-                        toolImg.onload = () => {
-                            // Once the new image is loaded, make it visible and start the animation.
-                            toolWrapperEl.style.visibility = 'visible';
-                            toolWrapperEl.classList.add('anim-scale-in-tool');
-                            toolWrapperEl.addEventListener('animationend', () => toolWrapperEl.classList.remove('anim-scale-in-tool'), { once: true });
-                            toolImg.onload = null; // Clean up the handler to avoid re-triggering.
-                        };
-                    }
-                    toolImg.src = `/assets/ptcg-telop/card_img/${newToolId}.jpg`;
-                } else {
-                    toolWrapperEl.classList.add('hidden');
-                }
             }
             if (slotData && slotData.evolutionSelect) {
                 delete slotData.evolutionSelect;
-            }  // Clear the evolutionSelect flag after rendering
+            }
             if (slotData && slotData.forceSlideIn) {
                 delete slotData.forceSlideIn;
             }
@@ -1927,45 +2055,7 @@
                         koVideo.remove();
                         targetEl.classList.add(`anim-slide-out-${side}`);
                     });
-                } else if (animation.type === 'ATTACH_TOOL' || animation.type === 'REMOVE_TOOL') {
-                    const isAttach = animation.type === 'ATTACH_TOOL';
-                    const videoSrc = isAttach ? '/assets/ptcg-telop/fx/tool-attach.webm' : '/assets/ptcg-telop/fx/tool-remove.webm';
-                    const isBattleSlot = animation.target.endsWith('0');
-                    const toolSelector = isBattleSlot ? '.battle-attached-tool' : '.bench-attached-tool';
-                    const toolEl = targetEl.querySelector(toolSelector);
-                    if (!toolEl) {
-                        console.error('Could not find tool element for animation:', animation.target);
-                        return;
-                    }
-                    requestAnimationFrame(() => {
-                        const toolRect = toolEl.getBoundingClientRect();
-                        if (toolRect.width === 0 && toolRect.height === 0) return;
-                        const video = document.createElement('video');
-                        video.src = videoSrc;
-                        video.muted = true;
-                        video.autoplay = true;
-                        video.style.position = 'absolute';
-                        video.style.zIndex = '400';
-                        video.style.pointerEvents = 'none';
-                        const videoWidth = isBattleSlot ? 150 : 78.6;
-                        const videoHeight = isBattleSlot ? 120 : 62.9;
-                        video.style.width = `${videoWidth}px`;
-                        video.style.height = `${videoHeight}px`;
-                        const toolCenterX = toolRect.left + toolRect.width / 2;
-                        const toolCenterY = toolRect.top + toolRect.height / 2;
-                        video.style.left = `${toolCenterX - videoWidth / 2}px`;
-                        video.style.top = `${toolCenterY - videoHeight / 2}px`;
-                        document.body.appendChild(video);
-                        setTimeout(() => {
-                            const toolImg = toolEl.querySelector('img');
-                            if (toolImg && !isAttach) toolImg.style.opacity = '0';
-                        }, 120);
-                        setTimeout(() => {
-                            const toolImg = toolEl.querySelector('img');
-                            if (toolImg) toolImg.style.opacity = '1';
-                        }, 150);
-                        video.addEventListener('ended', () => video.remove());
-                    });
+
                 } else if (animation.type === 'EXIT_POKEMON') {
                     targetEl.classList.add(`anim-slide-out-${side}`);
                 } else if (animation.type === 'ENTER_POKEMON') {
