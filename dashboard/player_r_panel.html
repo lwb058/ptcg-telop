@@ -733,6 +733,8 @@
             nodecg.Replicant('draft_lostZoneR'),
             nodecg.Replicant('ptcg-settings'),
             nodecg.Replicant('draft_vstar_R'),
+            nodecg.Replicant('deckLoadingStatus'),
+            nodecg.Replicant('assetPaths'),
             ...Array(9).fill(0).map((_, i) => nodecg.Replicant(`draft_slotR${i}`))
         ).then(() => {
             // --- Replicants ---
@@ -750,6 +752,8 @@
             const draft_action_retreat_R = nodecg.Replicant('draft_action_retreat_R');
             const settingsRep = nodecg.Replicant('ptcg-settings');
             const draft_vstar_R = nodecg.Replicant('draft_vstar_R');
+            const deckLoadingStatus = nodecg.Replicant('deckLoadingStatus');
+            const assetPaths = nodecg.Replicant('assetPaths');
 
             // --- DOM Elements ---
             const playerNameInput = document.getElementById('player-name-r');
@@ -768,6 +772,19 @@
 
             const extraBenchVisible = nodecg.Replicant('extraBenchVisible');
             const renderSlotDebounce = {};
+
+            deckLoadingStatus.on('change', (newStatus) => {
+                const isLoading = newStatus.loading;
+                const loadingSide = newStatus.side;
+                // Disable this panel's button if the *other* panel is loading.
+                if (isLoading && loadingSide === 'L') {
+                    setDeckBtn.disabled = true;
+                    setDeckBtn.textContent = 'Loading...';
+                } else if (!isLoading) {
+                    setDeckBtn.disabled = false;
+                    setDeckBtn.textContent = 'Set';
+                }
+            });
 
             // --- Extra Bench Toggle --- 
             extraBenchVisible.on('change', (newValue) => {
@@ -1069,7 +1086,7 @@
                                 const toolIconDiv = document.createElement('div');
                                 toolIconDiv.title = `[${toolData.name}] - Click to remove`;
                                 toolIconDiv.className = 'tool-icon-image';
-                                toolIconDiv.style.backgroundImage = `url('/assets/ptcg-telop/card_img/${toolId}.jpg')`;
+                                toolIconDiv.style.backgroundImage = `url('/${assetPaths.value.cardImgPath}${toolId}.jpg')`;
                                 toolIconDiv.dataset.toolId = toolId;
                                 toolDisplay.appendChild(toolIconDiv);
                             }

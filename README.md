@@ -62,7 +62,7 @@ PTCG-Telopは、[NodeCG](https://www.nodecg.dev/)フレームワークをベー�
     cd bundles/ptcg-telop/python
     pip install -r requirements.txt
     ```
-    *もし`requirements.txt`がなければ、`card_utils.py`や`extract_deck_cards.py`でimportしているライブラリ（例: `requests`, `beautifulsoup4`など）を手動でインストールしてください。*
+    *もし`requirements.txt`がなければ、`card_utils_jp.py`や`extract_deck_cards_jp.py`でimportしているライブラリ（例: `requests`, `beautifulsoup4`など）を手動でインストールしてください。*
 
 ## 使用方法
 

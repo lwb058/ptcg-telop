@@ -149,6 +149,7 @@
         const playerR_name = nodecg.Replicant('playerR_name');
         const database = nodecg.Replicant('cardDatabase');
         const settingsRep = nodecg.Replicant('ptcg-settings');
+        const assetPaths = nodecg.Replicant('assetPaths');
 
         const deckLBody = document.getElementById('deckL-body');
         const deckRBody = document.getElementById('deckR-body');
@@ -217,6 +218,11 @@
 
         deckR.on('change', (newValue) => {
             renderDeck(newValue, deckRBody, database.value, 'R');
+        });
+
+        assetPaths.on('change', () => {
+            renderDeck(deckL.value, deckLBody, database.value, 'L');
+            renderDeck(deckR.value, deckRBody, database.value, 'R');
         });
 
         // --- Hotkey Logic ---
@@ -307,16 +313,17 @@
 
                 const imgCell = document.createElement('td');
                 const img = document.createElement('img');
-                img.src = `/assets/ptcg-telop/card_img/${card.id}.png`;
+                const basePath = assetPaths.value.cardImgPath || 'assets/ptcg-telop/card_img_jp/';
+                img.src = `/${basePath}${card.id}.png`;
                 img.title = 'クリックして表示 (Click to show)';
                 img.onerror = () => { 
-                    img.src = `/assets/ptcg-telop/card_img/${card.id}.jpg`; 
-                    img.onerror = () => { img.src = '/assets/ptcg-telop/card_img/default.jpg'; };
+                    img.src = `/${basePath}${card.id}.jpg`; 
+                    img.onerror = () => { img.src = '/assets/ptcg-telop/element/default.jpg'; };
                 }; 
                 img.onclick = () => {
                     const targetReplicant = (side === 'L') ? cardToShowL : cardToShowR;
-                    let cardImageUrlPng = `/assets/ptcg-telop/card_img/${card.id}.png`;
-                    let cardImageUrlJpg = `/assets/ptcg-telop/card_img/${card.id}.jpg`;
+                    let cardImageUrlPng = `/${basePath}${card.id}.png`;
+                    let cardImageUrlJpg = `/${basePath}${card.id}.jpg`;
 
                     const tempImg = new Image();
                     tempImg.src = cardImageUrlPng;

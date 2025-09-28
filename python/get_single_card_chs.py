@@ -1,0 +1,1 @@
+# Placeholder for Simplified Chinese single card fetching logic

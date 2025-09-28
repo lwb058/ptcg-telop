@@ -508,6 +508,7 @@
             nodecg.Replicant('deckR'),
             nodecg.Replicant('draft_stadium'),
             nodecg.Replicant('ptcg-settings'), // Listen for settings
+            nodecg.Replicant('assetPaths'),
             ...Array(18).fill(0).map((_, i) => { // Changed from 12 to 18
                 const side = i < 9 ? 'L' : 'R';
                 const index = i % 9;
@@ -527,6 +528,7 @@
             const deckR = nodecg.Replicant('deckR');
             const draft_stadium = nodecg.Replicant('draft_stadium');
             const settingsRep = nodecg.Replicant('ptcg-settings');
+            const assetPaths = nodecg.Replicant('assetPaths');
             const slots = [];
             for (let i = 0; i < 9; i++) { // Changed from 6 to 9
                 slots.push(nodecg.Replicant(`draft_slotL${i}`));
@@ -629,7 +631,7 @@
                 cardEl.dataset.slotId = slotId;
 
                 const img = document.createElement('img');
-                img.src = `/assets/ptcg-telop/card_img/${slotValue.cardId}.jpg`;
+                img.src = `/${assetPaths.value.cardImgPath}${slotValue.cardId}.jpg`;
                 cardEl.appendChild(img);
 
                 // --- Display attached energies ---
@@ -672,7 +674,7 @@
                         const toolIconDiv = document.createElement('div');
                         toolIconDiv.className = 'attached-tool-icon';
                         toolIconDiv.title = `Click to remove ${toolData.name}`;
-                        toolIconDiv.style.backgroundImage = `url('/assets/ptcg-telop/card_img/${toolId}.jpg')`;
+                        toolIconDiv.style.backgroundImage = `url('/${assetPaths.value.cardImgPath}${toolId}.jpg')`;
                         toolIconDiv.dataset.toolId = toolId;
                         toolContainer.appendChild(toolIconDiv);
                     }
@@ -1155,7 +1157,7 @@
                     btn.className = 'tool-btn'; // Reuse style
                     
                     const img = document.createElement('img');
-                    img.src = `/assets/ptcg-telop/card_img/${id}.jpg`; // Use card image for tools
+                    img.src = `/${assetPaths.value.cardImgPath}${id}.jpg`; // Use card image for tools
                     img.title = card.name;
                     img.className = 'tool-icon'; // Reuse style
                     img.dataset.toolId = id;
@@ -1230,6 +1232,11 @@
             });
             deckR.on('change', () => {
                 updateEnergyButtonVisibility();
+                updateToolButtonVisibility();
+            });
+
+            assetPaths.on('change', () => {
+                renderCurrentPlayerField();
                 updateToolButtonVisibility();
             });
 

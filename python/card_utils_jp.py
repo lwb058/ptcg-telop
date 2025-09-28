@@ -2,13 +2,13 @@ import requests, re, json, os, time, sys
 from bs4 import BeautifulSoup
 
 # Calculate the absolute path of the project root
-# __file__ is the path of the current script, e.g., /path/to/project/python/card_utils.py
+# __file__ is the path of the current script, e.g., /path/to/project/python/card_utils_jp.py
 # os.path.dirname(__file__) is .../ptcg-telop/python
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 # Paths are now absolute paths built from the project root
-DATABASE_FILE = os.path.join(PROJECT_ROOT, 'assets', 'ptcg-telop', 'database.json')
-CARD_IMG_DIR = os.path.join(PROJECT_ROOT, 'assets', 'ptcg-telop', 'card_img')
+DATABASE_FILE = os.path.join(PROJECT_ROOT, 'nodecg', 'assets', 'ptcg-telop', 'database_jp.json')
+CARD_IMG_DIR = os.path.join(PROJECT_ROOT, 'nodecg', 'assets', 'ptcg-telop', 'card_img_jp')
 
 # Mapping from energy icons to text
 ENERGY_ICON_MAP = {
@@ -45,32 +45,34 @@ RARITY_ICON_MAP = {
     # More rarity icons can be added as needed
 }
 
-def load_database():
+def load_database(db_path=None):
     """
     Loads the card database from a local JSON file.
     """
-    if not os.path.exists(DATABASE_FILE) or os.path.getsize(DATABASE_FILE) == 0:
+    target_path = db_path if db_path else DATABASE_FILE
+    if not os.path.exists(target_path) or os.path.getsize(target_path) == 0:
         return {}
-    with open(DATABASE_FILE, 'r', encoding='utf-8') as f:
+    with open(target_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
-def save_database(data):
+def save_database(data, db_path=None):
     """
     Saves the card database to a local JSON file.
     """
+    target_path = db_path if db_path else DATABASE_FILE
     print(f"DEBUG: save_database called. Data keys count: {len(data)}", file=sys.stderr)
     if not data:
         print("DEBUG: Data to be saved is empty!", file=sys.stderr)
         return # Avoid writing an empty file if data is unexpectedly empty
 
     # Use a temporary file for atomic writing
-    temp_file_path = DATABASE_FILE + '.tmp'
+    temp_file_path = target_path + '.tmp'
     print(f"DEBUG: Attempting to save to temporary file: {os.path.abspath(temp_file_path)}", file=sys.stderr)
-    print(f"DEBUG: Target database file: {os.path.abspath(DATABASE_FILE)}", file=sys.stderr)
+    print(f"DEBUG: Target database file: {os.path.abspath(target_path)}", file=sys.stderr)
 
     try:
         # Ensure the directory exists
-        os.makedirs(os.path.dirname(DATABASE_FILE), exist_ok=True)
+        os.makedirs(os.path.dirname(target_path), exist_ok=True)
         
         with open(temp_file_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
@@ -78,16 +80,16 @@ def save_database(data):
         print(f"DEBUG: Temporary file written. Size: {os.path.getsize(temp_file_path)} bytes.", file=sys.stderr)
 
         # After successful writing, rename the temporary file to the target file
-        os.replace(temp_file_path, DATABASE_FILE)
-        print(f"DEBUG: Successfully replaced {os.path.basename(temp_file_path)} with {os.path.basename(DATABASE_FILE)}", file=sys.stderr)
+        os.replace(temp_file_path, target_path)
+        print(f"DEBUG: Successfully replaced {os.path.basename(temp_file_path)} with {os.path.basename(target_path)}", file=sys.stderr)
         
         # Immediately try to reload the database to verify the write
         time.sleep(1) # Give OS a moment to sync
-        reloaded_data = load_database()
+        reloaded_data = load_database(db_path=target_path)
         print(f"DEBUG: Reloaded database immediately after save. Keys count: {len(reloaded_data)}", file=sys.stderr)
 
     except Exception as e:
-        print(f"ERROR: Failed to save database to {DATABASE_FILE}: {e}", file=sys.stderr)
+        print(f"ERROR: Failed to save database to {target_path}: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc(file=sys.stderr)
     finally:
@@ -388,13 +390,16 @@ def get_card_details(card_id, html_content=None):
         traceback.print_exc(file=sys.stderr)
         return None
 
-def download_card_image(card_id, image_url):
+def download_card_image(card_id, image_url, language='jp'):
     if not image_url: return
-    # Use the new CARD_IMG_DIR variable
-    os.makedirs(CARD_IMG_DIR, exist_ok=True)
-    # Infer image format from server URL, default to .png if not inferable
-    file_extension = os.path.splitext(image_url)[1] or '.png'
-    image_path = os.path.join(CARD_IMG_DIR, f"{card_id}{file_extension}")
+    # Construct the language-specific directory name
+    card_img_dir_name = f"card_img_{language}"
+    target_dir = os.path.join(PROJECT_ROOT, 'nodecg', 'assets', 'ptcg-telop', card_img_dir_name)
+
+    os.makedirs(target_dir, exist_ok=True)
+    # Infer image format from server URL, default to .jpg as it's most common
+    file_extension = os.path.splitext(image_url)[1] or '.jpg'
+    image_path = os.path.join(target_dir, f"{card_id}{file_extension}")
     if not os.path.exists(image_path):
         try:
             response = requests.get(image_url, stream=True)
@@ -406,7 +411,7 @@ def download_card_image(card_id, image_url):
         except requests.exceptions.RequestException as e:
             print(f"Error downloading card image {card_id}: {e}", file=sys.stderr)
 
-def _core_process_card(card_id, card_database, overwrite=True, html_content=None):
+def _core_process_card(card_id, card_database, overwrite=True, html_content=None, language='jp'):
     if not overwrite and card_id in card_database and card_database[card_id].get('name'):
         print(f"Card ID {card_id} already exists, skipping.", file=sys.stderr)
         return card_database[card_id], 'skipped'
@@ -421,16 +426,16 @@ def _core_process_card(card_id, card_database, overwrite=True, html_content=None
         print(f"Could not retrieve or parse information for card ID {card_id}.", file=sys.stderr)
         return card_database.get(card_id), 'failed'
 
-    download_card_image(card_id, card_info.get('image_url'))
+    download_card_image(card_id, card_info.get('image_url'), language=language)
     return card_info, 'updated'
 
-def add_card_to_database(card_id, overwrite=True, html_content=None):
-    card_database = load_database()
-    card_info, status = _core_process_card(card_id, card_database, overwrite, html_content)
+def add_card_to_database(card_id, overwrite=True, html_content=None, db_path=None, language='jp'):
+    card_database = load_database(db_path=db_path)
+    card_info, status = _core_process_card(card_id, card_database, overwrite, html_content, language=language)
 
     if status == 'updated':
         card_database[card_id] = card_info
-        save_database(card_database)
+        save_database(card_database, db_path=db_path)
         print(f"Card ID {card_id} has been added/updated in the database.", file=sys.stderr)
         return card_info, True
     

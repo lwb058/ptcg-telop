@@ -1,15 +1,16 @@
 import requests, re, time, argparse, sys, json
 from bs4 import BeautifulSoup
 # Explicitly import path variables for consistency
-from card_utils import load_database, save_database, _core_process_card, DATABASE_FILE, CARD_IMG_DIR
+from card_utils_jp import load_database, save_database, _core_process_card
 
-def extract_deck_cards(deck_id, overwrite=True):
+def extract_deck_cards(deck_id, overwrite=True, db_path=None, language='jp'):
     """
     Extracts all card IDs from a Pokémon deck page and batch updates the database.
 
     Args:
         deck_id (str): The ID of the Pokémon deck.
         overwrite (bool): Whether to overwrite existing entries in the database.
+        db_path (str, optional): Path to the database file. Defaults to None.
 
     Returns:
         list: A list of dictionaries containing all card information. Returns an empty list on failure.
@@ -19,7 +20,7 @@ def extract_deck_cards(deck_id, overwrite=True):
     all_cards_details = []
     
     # 1. Load the database once
-    card_database = load_database()
+    card_database = load_database(db_path=db_path)
     db_was_updated = False
 
     try:
@@ -55,7 +56,7 @@ def extract_deck_cards(deck_id, overwrite=True):
 
         # 2. Process all cards in memory
         for card_id, quantity in deck_list_with_quantity.items():
-            card_info, status = _core_process_card(card_id, card_database, overwrite)
+            card_info, status = _core_process_card(card_id, card_database, overwrite, language=language)
             
             if status == 'updated':
                 card_database[card_id] = card_info
@@ -78,7 +79,7 @@ def extract_deck_cards(deck_id, overwrite=True):
     # 3. Save the database once after all cards have been processed
     if db_was_updated:
         print("Writing updates to the database...", file=sys.stderr)
-        save_database(card_database)
+        save_database(card_database, db_path=db_path)
         print("Database saved successfully.", file=sys.stderr)
 
     return all_cards_details
@@ -86,6 +87,8 @@ def extract_deck_cards(deck_id, overwrite=True):
 def main(deck_id_arg=None):
     parser = argparse.ArgumentParser(description="Extract all card information from a Pokémon deck page and update the database.")
     parser.add_argument("deck_id", nargs='?', default=None, help="The Pokémon deck ID to fetch (prompts if not provided).")
+    parser.add_argument("--database-path", type=str, default=None, help="Path to the database JSON file.")
+    parser.add_argument("--card-img-path", type=str, default=None, help="Path to the card image directory.")
     
     overwrite_group = parser.add_mutually_exclusive_group()
     overwrite_group.add_argument("--overwrite", dest="overwrite", action="store_true", help="Force overwrite if card exists in the database (default behavior).")
@@ -102,7 +105,7 @@ def main(deck_id_arg=None):
             sys.exit(1)
 
     print(f"Extracting all cards for deck ID '{deck_id}' from the website...", file=sys.stderr)
-    cards = extract_deck_cards(deck_id, args.overwrite)
+    cards = extract_deck_cards(deck_id, args.overwrite, db_path=args.database_path)
 
     if cards:
         # Prepare a simplified list with only ID and quantity for machine parsing

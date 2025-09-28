@@ -35,12 +35,15 @@ module.exports = function (nodecg) {
             showDeckEnergyOnly: true,
             autoCheckSupporter: true,
             autoTrashTM: true,
-            toolLimit: 4
+            toolLimit: 4,
+			language: "jp"
 		}
 	});
 
 	// Replicants can be declared outside the initialized block.
 	const cardDatabase = nodecg.Replicant('cardDatabase', { defaultValue: {} });
+	const assetPaths = nodecg.Replicant('assetPaths', { defaultValue: {} });
+	const deckLoadingStatus = nodecg.Replicant('deckLoadingStatus', { defaultValue: { loading: false, side: null } });
 	const playerL_name = nodecg.Replicant('playerL_name', { defaultValue: '' });
 	const playerR_name = nodecg.Replicant('playerR_name', { defaultValue: '' });
 	const matchInfo = nodecg.Replicant('matchInfo', { defaultValue: { round: '决赛' } });
@@ -63,6 +66,21 @@ module.exports = function (nodecg) {
             if (live_lostZoneR.value !== 0) live_lostZoneR.value = 0;
             if (draft_lostZoneR.value !== 0) draft_lostZoneR.value = 0;
         }
+
+		const newLang = (newValue && newValue.language) || 'jp';
+		const oldLang = (oldValue && oldValue.language) || 'jp';
+
+		// Update asset path for card images
+		const newCardImgPath = `assets/ptcg-telop/card_img_${newLang}/`;
+		if (assetPaths.value.cardImgPath !== newCardImgPath) {
+			assetPaths.value.cardImgPath = newCardImgPath;
+			nodecg.log.info(`Asset path for card images updated to: ${newCardImgPath}`);
+		}
+
+		if (newValue && oldLang !== newLang) {
+			nodecg.log.info('Language setting changed. Reloading card database.');
+			loadCardDatabase();
+		}
     });
 
     // Stadium
@@ -149,10 +167,12 @@ module.exports = function (nodecg) {
 	// Use __dirname to robustly calculate paths, avoiding dependency on the NodeCG lifecycle.
 	// __dirname = /.../NodeCG_PTCG/nodecg/bundles/ptcg-telop/extension
 	const projectRoot = path.join(__dirname, '..', '..', '..', '..');
-	const dbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', 'database.json');
 
 	function loadCardDatabase() {
 		try {
+			const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
+			const dbFileName = `database_${lang}.json`;
+			const dbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
 			nodecg.log.info(`[DB_DEBUG] Attempting to load database. Calculated path: ${dbPath}`);
 
 			const dbDir = path.dirname(dbPath);
@@ -186,52 +206,60 @@ module.exports = function (nodecg) {
 
 	// Initial load
 	loadCardDatabase();
+	// Manually populate assetPaths on startup
+	const initialLang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
+	assetPaths.value.cardImgPath = `assets/ptcg-telop/card_img_${initialLang}/`;
 
 	// Listen for messages to process deck codes
 	nodecg.listenFor('setPlayerDeck', ({ side, deckCode }, callback) => {
 		nodecg.log.info(`Received request to process deck code for Player ${side}: ${deckCode}`);
+		deckLoadingStatus.value = { loading: true, side: side };
 
 		const pythonDir = path.join(__dirname, '..', 'python');
-		const pythonScriptPath = path.join(pythonDir, 'extract_deck_cards.py');
+		const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
+
+		const scriptMap = {
+			jp: 'extract_deck_cards_jp.py',
+			chs: 'extract_deck_cards_chs.py',
+			cht: 'extract_deck_cards_cht.py',
+			en: 'extract_deck_cards_en.py',
+		};
+		const pythonScriptFile = scriptMap[lang] || scriptMap.jp;
+		const pythonScriptPath = path.join(pythonDir, pythonScriptFile);
+
+		const dbFileName = `database_${lang}.json`;
+		const absoluteDbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
+		const cardImgDirName = `card_img_${lang}`;
+		const absoluteCardImgPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', cardImgDirName);
 		
-		// Determine the correct python command based on the OS
 		const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
-		const command = `${pythonCommand} "${pythonScriptPath}" "${deckCode}"`;
+		const command = `${pythonCommand} "${pythonScriptPath}" "${deckCode}" --database-path "${absoluteDbPath}"`;
 
 		exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
 			if (error) {
 				nodecg.log.error(`exec error: ${error}`);
 				nodecg.log.error(`Python stderr: ${stderr}`);
+				deckLoadingStatus.value = { loading: false, side: null };
 				if (callback) callback({ error: error.message, stderr: stderr });
 				return;
 			}
 			
 			try {
-				// stdout should now be a pure JSON string.
 				const deckCards = JSON.parse(stdout);
-
-				// Determine which player's deck to update
 				const deckReplicant = side === 'L' ? nodecg.Replicant('deckL') : nodecg.Replicant('deckR');
-				
 				nodecg.log.info(`Deck for Player ${side} processed. Reloading database before updating deck replicant.`);
-                
-                // FIRST, reload the main database to ensure it contains any new cards.
                 loadCardDatabase();
-
-                // THEN, update the deck replicant.
-				// Update the replicant with the card list
 				deckReplicant.value = {
-					name: deckCode, // Store the deck code as its name for now
-					cards: deckCards.map(c => c.id) // We only need the unique IDs
+					name: deckCode, 
+					cards: deckCards.map(c => c.id)
 				};
-
 				nodecg.log.info(`Database reloaded and deck for Player ${side} updated.`);
-
+				deckLoadingStatus.value = { loading: false, side: null };
 				if (callback) callback(null, `Deck for Player ${side} updated.`);
-
 			} catch (parseError) {
 				nodecg.log.error('Failed to parse python script output:', parseError);
 				nodecg.log.error('Python stdout:', stdout);
+				deckLoadingStatus.value = { loading: false, side: null };
 				if (callback) callback({ error: 'Failed to parse script output.', stdout: stdout });
 			}
 		});
@@ -243,13 +271,10 @@ module.exports = function (nodecg) {
 		const deckReplicant = side === 'L' ? deckL : deckR;
 		const db = cardDatabase.value;
 
-		// Function to add card to deck and respond
 		const addCardToDeck = () => {
-			// Ensure deck.cards is an array
 			if (!Array.isArray(deckReplicant.value.cards)) {
 				deckReplicant.value.cards = [];
 			}
-			// Add card ID if it's not already in the list
 			if (!deckReplicant.value.cards.includes(cardId)) {
 				deckReplicant.value.cards = [...deckReplicant.value.cards, cardId];
 				nodecg.log.info(`Card ${cardId} added to Player ${side}'s deck.`);
@@ -259,7 +284,6 @@ module.exports = function (nodecg) {
 			if (callback) callback(null, 'Card added to deck.');
 		};
 
-		// Check if card is in DB
 		if (db && db[cardId] && db[cardId].name) {
 			nodecg.log.info(`Card ${cardId} found in database. Adding to deck.`);
 			addCardToDeck();
@@ -267,9 +291,22 @@ module.exports = function (nodecg) {
 			nodecg.log.info(`Card ${cardId} not in database. Fetching with get_single_card.py...`);
 			
 			const pythonDir = path.join(__dirname, '..', 'python');
-			const pythonScriptPath = path.join(pythonDir, 'get_single_card.py');
+			const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
+
+			const scriptMap = {
+				jp: 'get_single_card_jp.py',
+				chs: 'get_single_card_chs.py',
+				cht: 'get_single_card_cht.py',
+				en: 'get_single_card_en.py',
+			};
+			const pythonScriptFile = scriptMap[lang] || scriptMap.jp;
+			const pythonScriptPath = path.join(pythonDir, pythonScriptFile);
+
+			const dbFileName = `database_${lang}.json`;
+			const absoluteDbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
+
 			const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
-			const command = `${pythonCommand} "${pythonScriptPath}" "${cardId}"`;
+			const command = `${pythonCommand} "${pythonScriptPath}" "${cardId}" --database-path "${absoluteDbPath}"`;
 
 			exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
 				if (error) {
@@ -1058,8 +1095,8 @@ module.exports = function (nodecg) {
 	});
 
 	// Listen for a message to reset the entire board state
-	nodecg.listenFor('resetSystem', (data, callback) => {
-		nodecg.log.warn('!!! Received request to reset system state !!!');
+	function executeResetSystem(callback) {
+		nodecg.log.warn('!!! Executing system state reset !!!');
 
 		try {
 			// Reset Operation Queue
@@ -1122,6 +1159,10 @@ module.exports = function (nodecg) {
 			nodecg.log.error('Failed to reset system state:', e);
 			if (callback) callback(e.toString());
 		}
+	}
+
+	nodecg.listenFor('resetSystem', (data, callback) => {
+		executeResetSystem(callback);
 	});
 
 	// Helper function to handle the logic for auto-checking supporter action
@@ -1156,6 +1197,47 @@ module.exports = function (nodecg) {
 	// Listen for changes on the card-to-show replicants
 	cardToShowL.on('change', (newValue) => handleCardToShowChange(newValue, 'L'));
 	cardToShowR.on('change', (newValue) => handleCardToShowChange(newValue, 'R'));
+
+	nodecg.listenFor('clearDatabase', (data, callback) => {
+		nodecg.log.warn('!!! Received request to clear database and card images !!!');
+		try {
+			const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
+
+			// 1. Clear card images
+			const cardImgDirName = `card_img_${lang}`;
+			const cardImgDir = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', cardImgDirName);
+			if (fs.existsSync(cardImgDir)) {
+				const files = fs.readdirSync(cardImgDir);
+				for (const file of files) {
+					fs.unlinkSync(path.join(cardImgDir, file));
+				}
+				nodecg.log.info(`All files in ${cardImgDirName} directory have been deleted.`);
+			} else {
+				nodecg.log.warn(`Card image directory for language '${lang}' not found. Skipping deletion.`);
+			}
+
+			// 2. Clear database file
+			const dbFileName = `database_${lang}.json`;
+			const dbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
+			if (fs.existsSync(dbPath)) {
+			    fs.writeFileSync(dbPath, '{}', 'utf8');
+			    nodecg.log.info(`Database file at ${dbPath} has been cleared.`);
+			} else {
+			    nodecg.log.warn(`Database file for language '${lang}' not found. Skipping clear.`);
+			}
+
+			// 3. Reload in-memory database
+			loadCardDatabase();
+
+			// 4. Execute system reset
+			executeResetSystem(); // This function handles its own logging.
+
+			if (callback) callback(null, 'Database cleared and system reset successfully.');
+		} catch (e) {
+			nodecg.log.error('Failed to clear database and reset system:', e);
+			if (callback) callback(e);
+		}
+	});
 
     };
 

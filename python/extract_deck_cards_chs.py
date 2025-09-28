@@ -1,0 +1,1 @@
+# Placeholder for Simplified Chinese deck extraction logic

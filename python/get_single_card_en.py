@@ -1,0 +1,1 @@
+# Placeholder for English single card fetching logic

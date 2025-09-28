@@ -457,7 +457,7 @@
                                     toolItem.className = itemClass;
                                     toolItem.dataset.toolId = toolId;
                                     const toolImg = document.createElement('img');
-                                    toolImg.src = `/assets/ptcg-telop/card_img/${toolId}.jpg`;
+                                    toolImg.src = `/${assetPaths.value.cardImgPath}${toolId}.jpg`;
                                     toolItem.appendChild(toolImg);
                                     wrapperEl.appendChild(toolItem);
                                 }
@@ -485,7 +485,7 @@
                             toolItem.className = `${itemClass} anim-tool-appear`;
                             toolItem.dataset.toolId = id;
                             const toolImg = document.createElement('img');
-                            toolImg.src = `/assets/ptcg-telop/card_img/${id}.jpg`;
+                            toolImg.src = `/${assetPaths.value.cardImgPath}${id}.jpg`;
                             toolItem.appendChild(toolImg);
                             wrapperEl.appendChild(toolItem);
                             toolItem.addEventListener('animationstart', () => playToolAnimation(toolItem, isBattleSlot, true), { once: true });
@@ -658,7 +658,7 @@
                         playAnimationIfNeeded();
                         mainImg.onload = null; // Clean up handler
                     };
-                    mainImg.src = `/assets/ptcg-telop/card_img/${slotData.cardId}.jpg`;
+                    mainImg.src = `/${assetPaths.value.cardImgPath}${slotData.cardId}.jpg`;
                 } else if (forceSlideIn) {
                     playAnimationIfNeeded();
                 }
@@ -775,7 +775,8 @@
 
             const cardDatabase = nodecg.Replicant('cardDatabase');
             const settingsRep = nodecg.Replicant('ptcg-settings');
-            const replicantList = [cardDatabase, settingsRep];
+            const assetPaths = nodecg.Replicant('assetPaths');
+            const replicantList = [cardDatabase, settingsRep, assetPaths];
             const sides = ['L', 'R'];
 
             for (let i = 6; i <= 8; i++) {
@@ -813,6 +814,15 @@
                         renderSlot(side, i, replicant.value, null);
                     });
                 }
+
+                assetPaths.on('change', () => {
+                    for (let i = 6; i <= 8; i++) {
+                        sides.forEach(side => {
+                            const replicant = nodecg.Replicant(`live_slot${side}${i}`);
+                            renderSlot(side, i, replicant.value, null);
+                        });
+                    }
+                });
 
                 nodecg.listenFor('attack-fx', (data) => {
                     if (!data || !data.targets) return;

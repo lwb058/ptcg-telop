@@ -1,12 +1,13 @@
 import sys
 import argparse
 import os
-from card_utils import add_card_to_database, get_card_details, save_database, load_database
+from card_utils_jp import add_card_to_database, get_card_details, save_database, load_database
 
 def main(card_id_arg=None):
     parser = argparse.ArgumentParser(description="Fetches detailed information for a single card and updates the database.")
     
     parser.add_argument("card_id", nargs='?', default=None, help="The ID of the card to fetch.")
+    parser.add_argument("--database-path", type=str, default=None, help="Path to the database JSON file.")
     
     parser.add_argument(
         "--file",
@@ -50,13 +51,13 @@ def main(card_id_arg=None):
         card_info = get_card_details(card_id, html_content=html_content)
         
         if card_info:
-            db = load_database()
+            db = load_database(db_path=args.database_path)
             existing_card = db.get(card_id)
             
             if args.overwrite or not existing_card or not existing_card.get('name'):
                 print("Updating database...")
                 db[card_id] = card_info
-                save_database(db)
+                save_database(db, db_path=args.database_path)
                 updated = True
             else:
                 print("Card already exists in the database and --keep is set, not updating.")
@@ -69,7 +70,7 @@ def main(card_id_arg=None):
                 print("No Card ID entered, exiting.")
                 sys.exit(1)
         
-        card_info, updated = add_card_to_database(card_id, args.overwrite)
+        card_info, updated = add_card_to_database(card_id, args.overwrite, db_path=args.database_path)
 
     if card_info:
         if updated:

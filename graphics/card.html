@@ -111,6 +111,19 @@
              });
          }
  
+        const cardToShowL = nodecg.Replicant('cardToShowL');
+        const cardToShowR = nodecg.Replicant('cardToShowR');
+        const settingsRep = nodecg.Replicant('ptcg-settings');
+        const assetPaths = nodecg.Replicant('assetPaths');
+
+        let isReversed = false;
+
+        settingsRep.on('change', (newValue) => {
+            if (newValue) {
+                isReversed = !!newValue.reverseCardDisplay;
+            }
+        });
+
          async function handleCardUpdate(animatedContainer, image, newValue, side) {
             const state = cardState[side];
             if (state.isAnimating) {
@@ -120,7 +133,19 @@
             state.isAnimating = true;
 
             const wantsToShow = !!newValue;
-            const newSrc = newValue || defaultImage;
+            let newSrc = newValue || defaultImage;
+
+            // Logic to construct the correct image path from the second function definition
+            if (wantsToShow && assetPaths.value && assetPaths.value.cardImgPath) {
+                const cardIdMatch = newValue.match(/(\d{5,})\.(jpg|png)$/);
+                if (cardIdMatch) {
+                    const cardId = cardIdMatch[1];
+                    newSrc = `/${assetPaths.value.cardImgPath}${cardId}.jpg`;
+                } else {
+                    // Fallback to original value if parsing fails, but still check if it's a valid path
+                    newSrc = newValue;
+                }
+            }
 
             try {
                 // Case 1: Hide the card
@@ -155,18 +180,6 @@
                 state.isAnimating = false;
             }
          }
- 
-        const cardToShowL = nodecg.Replicant('cardToShowL');
-        const cardToShowR = nodecg.Replicant('cardToShowR');
-        const settingsRep = nodecg.Replicant('ptcg-settings');
-
-        let isReversed = false;
-
-        settingsRep.on('change', (newValue) => {
-            if (newValue) {
-                isReversed = !!newValue.reverseCardDisplay;
-            }
-        });
 
         cardToShowL.on('change', (newValue) => {
             if (isReversed) {

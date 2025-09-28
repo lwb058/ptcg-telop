@@ -169,6 +169,23 @@
                 </div>
             </div>
         </div>
+        <div class="panel-section">
+            <h3>System</h3>
+            <div class="collapsible-content">
+                <div class="setting-grid">
+                    <div class="form-group-hotkey">
+                        <label for="language-select">Language</label>
+                        <select id="language-select" class="form-select">
+                            <option value="jp">日本語</option>
+                            <option value="chs">简体中文</option>
+                            <option value="cht">繁体中文</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                    <button id="clear-database-btn" class="btn" style="background-color: #E74C3C; justify-self: end; width: auto;">Clear Database</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="panel-section">
@@ -182,6 +199,16 @@
 
     <div class="panel-section">
         <button id="save-settings-btn" class="btn">Save All Settings</button>
+    </div>
+
+    <div class="panel-section" style="text-align: center; background-color: #f8f9fa;">
+        <p style="margin: 0; font-size: 12px; color: #6c757d;">
+            ptcg-telop v1.1.1</br>
+            Developed by ミニ49. </br>
+            <a href="https://github.com/lwb058/ptcg-telop" target="_blank">GitHub</a> | 
+            <a href="mailto:lwb058@gmail.com">Email</a> | 
+            <a href="https://x.com/i/user/437555697" target="_blank">X (Twitter)</a>
+        </p>
     </div>
 
     <script>
@@ -206,8 +233,24 @@
             const clearCardHotkeyInput = document.getElementById('clear-card-hotkey-input');
             const clearSelectionHotkeyInput = document.getElementById('clear-selection-hotkey-input');
             const toolLimitInput = document.getElementById('tool-limit-input');
+            const languageSelect = document.getElementById('language-select');
             const saveBtn = document.getElementById('save-settings-btn');
+            const clearDbBtn = document.getElementById('clear-database-btn');
             
+            clearDbBtn.addEventListener('click', () => {
+                const confirmation = confirm("Are you sure you want to clear the entire card database and all downloaded images? This cannot be undone.");
+                if (confirmation) {
+                    nodecg.sendMessage('clearDatabase')
+                        .then(() => {
+                            alert('Database and card images have been cleared.');
+                        })
+                        .catch(e => {
+                            console.error("Failed to clear database:", e);
+                            alert(`Failed to clear database: ${e.message}`);
+                        });
+                }
+            });
+
             let renderedColorElements = {};
 
             function renderAll(settings) {
@@ -291,6 +334,7 @@
                 autoCheckSupporterToggle.checked = !!(settings && settings.autoCheckSupporter);
                 autoTrashTmToggle.checked = !!(settings && settings.autoTrashTM);
                 toolLimitInput.value = (settings && settings.toolLimit) ? settings.toolLimit : 4;
+                languageSelect.value = (settings && settings.language) ? settings.language : "jp";
 
                 // 3. Render Hotkey Settings
                 const hotkeys = (settings && settings.hotkeys) ? settings.hotkeys : {};
@@ -342,12 +386,13 @@
                 const newAutoCheckSupporter = autoCheckSupporterToggle.checked;
                 const newAutoTrashTM = autoTrashTmToggle.checked;
                 const newToolLimit = parseInt(toolLimitInput.value, 10) || 4;
+                const newLanguage = languageSelect.value;
                 
                 
                 // --- Update Replicant ---
                 const currentSettings = settingsRep.value || {};
                 settingsRep.value = { 
-                    ...currentSettings, 
+                    ...currentSettings,
                     typeColorMap: newColorMap,
                     hotkeys: newHotkeys,
                     useTypeStroke: newUseTypeStroke,
@@ -359,9 +404,9 @@
                     showDeckEnergyOnly: newShowDeckEnergyOnly,
                     autoCheckSupporter: newAutoCheckSupporter,
                     autoTrashTM: newAutoTrashTM,
-                    toolLimit: newToolLimit
+                    toolLimit: newToolLimit,
+                    language: newLanguage
                 };
-
                 saveBtn.textContent = 'Saved!';
                 setTimeout(() => {
                     saveBtn.textContent = 'Save All Settings';
