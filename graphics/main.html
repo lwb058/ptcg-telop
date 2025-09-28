@@ -866,6 +866,20 @@
             animation: text-movement 1000ms linear forwards; 
         }
 
+        /* --- Animation for Status Icons --- */
+        @keyframes status-appear {
+            from { transform: scale(1.2); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .anim-status-appear {
+            animation: status-appear 0.3s ease-out forwards;
+        }
+        @keyframes status-disappear {
+            from { transform: scale(1); opacity: 1; }
+            to { transform: scale(1.2); opacity: 0; }
+        }
+        .anim-status-disappear { animation: status-disappear 0.3s ease-in forwards; }
+
         /* --- Preloader --- */
         #video-preloader {
             position: absolute;
@@ -1473,6 +1487,40 @@
             }
         }
 
+        function updateStatusAilments(containerEl, newAilments, oldAilments) {
+            if (!containerEl) return;
+
+            const currentIcons = new Set(Array.from(containerEl.children).map(el => el.dataset.ailment));
+            const newIcons = new Set(newAilments);
+            const oldIcons = new Set(oldAilments);
+
+            // Icons to remove
+            oldIcons.forEach(ailment => {
+                if (!newIcons.has(ailment)) {
+                    const iconEl = containerEl.querySelector(`[data-ailment="${ailment}"]`);
+                    if (iconEl) {
+                        iconEl.classList.add('anim-status-disappear');
+                        iconEl.addEventListener('animationend', () => iconEl.remove(), { once: true });
+                    }
+                }
+            });
+
+            // Icons to add
+            newIcons.forEach(ailment => {
+                if (!currentIcons.has(ailment)) {
+                    const iconWrapper = document.createElement('div');
+                    iconWrapper.className = 'status-icon-wrapper anim-status-appear';
+                    iconWrapper.dataset.ailment = ailment;
+                    const iconImg = document.createElement('img');
+                    iconImg.src = `/assets/ptcg-telop/status/${ailment}.png`;
+                    iconImg.className = 'status-icon';
+                    iconWrapper.appendChild(iconImg);
+                    containerEl.appendChild(iconWrapper);
+                    iconWrapper.addEventListener('animationend', () => iconWrapper.classList.remove('anim-status-appear'), { once: true });
+                }
+            });
+        }
+
         function renderSlot(side, index, slotData, oldSlotData) {
             const slotEl = document.getElementById(`slot-${side}${index}`);
             const db = cardDatabase.value;
@@ -1543,12 +1591,21 @@
             }
 
             // The 'oldSlotData' check is now only for HP animation, not for tools.
-            if (oldSlotData && oldSlotData.cardId !== slotData.cardId) {
-                oldSlotData = null;
-            }
-
             const oldToolIds = oldSlotData ? (oldSlotData.attachedToolIds || []) : [];
             const newToolIds = slotData ? (slotData.attachedToolIds || []) : [];
+            const ailmentsBeforeChange = oldSlotData ? (oldSlotData.ailments || []) : [];
+            const newAilments = slotData ? (slotData.ailments || []) : [];
+
+            // If the card ID changes (evolution, devolution) or if the Pokémon is no longer active,
+            // it loses all status ailments. We clear oldAilments to ensure the UI updates correctly.
+            const isCardChanged = oldSlotData && oldSlotData.cardId !== slotData.cardId;
+            const isNoLongerActive = index !== 0 && oldSlotData && oldSlotData.active; // Moved from active to bench
+            
+            if (isCardChanged || isNoLongerActive) {
+                // When a card changes, it loses all ailments. The new state has no ailments.
+                // The old state is what we just captured in `ailmentsBeforeChange`.
+                oldSlotData = null; // Also nullify oldSlotData to prevent incorrect HP animation
+            }
 
             if (!cardData || !cardData.pokemon) return;
             const baseHp = parseInt(cardData.pokemon.hp || 0, 10);
@@ -1628,22 +1685,7 @@
                 const energyContainer = wrapper.querySelector('.battle-attached-energies');
                 renderAttachedEnergies(energyContainer, slotData.attachedEnergy, getEnergyIcon);
 
-                const ailmentEl = wrapper.querySelector('.battle-status-ailment');
-                ailmentEl.innerHTML = '';
-                if (slotData.ailments && slotData.ailments.length > 0) {
-                    slotData.ailments.forEach(ailment => {
-                        const iconWrapper = document.createElement('div');
-                        iconWrapper.classList.add('status-icon-wrapper');
-                        const iconImg = document.createElement('img');
-                        iconImg.src = `/assets/ptcg-telop/status/${ailment}.png`;
-                        iconImg.classList.add('status-icon');
-                        iconWrapper.appendChild(iconImg);
-                        ailmentEl.appendChild(iconWrapper);
-                    });
-                    ailmentEl.classList.remove('hidden');
-                } else {
-                    ailmentEl.classList.add('hidden');
-                }
+                updateStatusAilments(wrapper.querySelector('.battle-status-ailment'), newAilments, ailmentsBeforeChange);
                 const skillsContainer = wrapper.querySelector('.battle-skills-container');
                 skillsContainer.innerHTML = '';
                 const allSkills = [...(cardData.pokemon.abilities || []), ...(cardData.pokemon.attacks || [])];
