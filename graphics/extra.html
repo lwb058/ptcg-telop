@@ -776,7 +776,9 @@
             const cardDatabase = nodecg.Replicant('cardDatabase');
             const settingsRep = nodecg.Replicant('ptcg-settings');
             const assetPaths = nodecg.Replicant('assetPaths');
-            const replicantList = [cardDatabase, settingsRep, assetPaths];
+            const deckL = nodecg.Replicant('deckL');
+            const deckR = nodecg.Replicant('deckR');
+            const replicantList = [cardDatabase, settingsRep, assetPaths, deckL, deckR];
             const sides = ['L', 'R'];
 
             for (let i = 6; i <= 8; i++) {
@@ -805,6 +807,30 @@
             }
 
             NodeCG.waitForReplicants(...replicantList).then(() => {
+                const preloaderContainer = document.getElementById('video-preloader');
+                function preloadDeckImages(deck) {
+                    if (!deck || !deck.cards || !assetPaths.value.cardImgPath || !preloaderContainer) return;
+                    
+                    const cardImgPath = `/${assetPaths.value.cardImgPath}`;
+
+                    deck.cards.forEach(cardId => {
+                        // Check if image is already preloading/preloaded to avoid duplicates
+                        if (!preloaderContainer.querySelector(`img[src="${cardImgPath}${cardId}.jpg"]`)) {
+                            const img = document.createElement('img');
+                            img.src = `${cardImgPath}${cardId}.jpg`;
+                            preloaderContainer.appendChild(img);
+                        }
+                    });
+                }
+
+                // Initial preload for both decks
+                preloadDeckImages(deckL.value);
+                preloadDeckImages(deckR.value);
+
+                // Listen for changes in both decks
+                deckL.on('change', (newVal) => preloadDeckImages(newVal));
+                deckR.on('change', (newVal) => preloadDeckImages(newVal));
+
                 for (let i = 6; i <= 8; i++) {
                     sides.forEach(side => {
                         const replicant = nodecg.Replicant(`live_slot${side}${i}`);

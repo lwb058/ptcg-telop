@@ -1903,6 +1903,8 @@
         const firstMove = nodecg.Replicant('firstMove');
         const live_lostZoneL = nodecg.Replicant('live_lostZoneL');
         const live_lostZoneR = nodecg.Replicant('live_lostZoneR');
+        const deckL = nodecg.Replicant('deckL');
+        const deckR = nodecg.Replicant('deckR');
         const actionTypes = ['energy', 'supporter', 'retreat'];
         const sides = ['L', 'R'];
         const live_slotReplicants = {};
@@ -1910,7 +1912,8 @@
             cardDatabase, assetPaths, playerL_name, playerR_name,
             vstarUsedL, vstarUsedR,
             live_sideL, live_sideR, live_stadium, live_currentTurn, settingsRep, firstMove,
-            live_lostZoneL, live_lostZoneR
+            live_lostZoneL, live_lostZoneR,
+            deckL, deckR
         ];
         sides.forEach(side => {
             actionTypes.forEach(action => {
@@ -1987,6 +1990,30 @@
             updateLostZoneCounter('R', live_lostZoneR.value);
             live_lostZoneL.on('change', (val) => updateLostZoneCounter('L', val));
             live_lostZoneR.on('change', (val) => updateLostZoneCounter('R', val));
+
+            const preloaderContainer = document.getElementById('video-preloader');
+            function preloadDeckImages(deck) {
+                if (!deck || !deck.cards || !assetPaths.value.cardImgPath || !preloaderContainer) return;
+                
+                const cardImgPath = `/${assetPaths.value.cardImgPath}`;
+
+                deck.cards.forEach(cardId => {
+                    // Check if image is already preloading/preloaded to avoid duplicates
+                    if (!preloaderContainer.querySelector(`img[src="${cardImgPath}${cardId}.jpg"]`)) {
+                        const img = document.createElement('img');
+                        img.src = `${cardImgPath}${cardId}.jpg`;
+                        preloaderContainer.appendChild(img);
+                    }
+                });
+            }
+
+            // Initial preload for both decks
+            preloadDeckImages(deckL.value);
+            preloadDeckImages(deckR.value);
+
+            // Listen for changes in both decks
+            deckL.on('change', (newVal) => preloadDeckImages(newVal));
+            deckR.on('change', (newVal) => preloadDeckImages(newVal));
 
             // Listener for VSTAR enabled/disabled setting
             const handleVstarVisibility = (settings) => {

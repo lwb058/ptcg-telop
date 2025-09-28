@@ -91,6 +91,7 @@
             </div>
         </div>
     </div>
+    <div id="video-preloader" style="position: absolute; width: 1px; height: 1px; overflow: hidden; left: -9999px; top: -9999px; visibility: hidden; pointer-events: none;"></div>
     <script>
          const animationWrapperL = document.getElementById('animation-wrapper-L');
          const animationWrapperR = document.getElementById('animation-wrapper-R');
@@ -115,8 +116,39 @@
         const cardToShowR = nodecg.Replicant('cardToShowR');
         const settingsRep = nodecg.Replicant('ptcg-settings');
         const assetPaths = nodecg.Replicant('assetPaths');
+        const deckL = nodecg.Replicant('deckL');
+        const deckR = nodecg.Replicant('deckR');
 
         let isReversed = false;
+
+        // --- Deck Card Preloading Logic ---
+        const preloaderContainer = document.getElementById('video-preloader');
+        function preloadDeckImages(deck) {
+            if (!deck || !deck.cards || !assetPaths.value || !assetPaths.value.cardImgPath || !preloaderContainer) return;
+            
+            const cardImgPath = `/${assetPaths.value.cardImgPath}`;
+
+            deck.cards.forEach(cardId => {
+                // Check if image is already preloading/preloaded to avoid duplicates
+                if (!preloaderContainer.querySelector(`img[src="${cardImgPath}${cardId}.jpg"]`)) {
+                    const img = document.createElement('img');
+                    img.src = `${cardImgPath}${cardId}.jpg`;
+                    preloaderContainer.appendChild(img);
+                }
+            });
+        }
+
+        // Wait for replicants to be ready before preloading
+        NodeCG.waitForReplicants(assetPaths, deckL, deckR).then(() => {
+            // Initial preload for both decks
+            preloadDeckImages(deckL.value);
+            preloadDeckImages(deckR.value);
+
+            // Listen for changes in both decks
+            deckL.on('change', (newVal) => preloadDeckImages(newVal));
+            deckR.on('change', (newVal) => preloadDeckImages(newVal));
+        });
+        // --- End Preloading Logic ---
 
         settingsRep.on('change', (newValue) => {
             if (newValue) {
