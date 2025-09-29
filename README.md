@@ -53,7 +53,7 @@ nodecg/
 -   [Node.js](https://nodejs.org/) (v22.19.0 LTSでテスト済み)
 -   [NodeCG](https://www.nodecg.dev/docs/installing) (`nodecg-cli`を含む)
 -   [Python](https://www.python.org/) (v3.13でテスト済み)
--   [Git](https://git-scm.com/)(任意。プロジェクトの更新に使用します)
+-   [Git](https://git-scm.com/) (任意。プロジェクトの更新に使用します)
 
 ## インストール方法
 
