@@ -8,6 +8,14 @@ const { exec } = require('child_process'); // Import child_process
 module.exports = function (nodecg) {
 	nodecg.log.info('Bundle ptcg-telop starting up.');
 
+	// Read package.json for version info
+	const pjson = require('../package.json');
+	const bundleVersion = pjson.version;
+
+	nodecg.listenFor('getBundleVersion', (data, callback) => {
+		callback(null, bundleVersion);
+	});
+
 	// Centralized settings replicant
 	const ptcgSettings = nodecg.Replicant('ptcg-settings', {
 		defaultValue: {

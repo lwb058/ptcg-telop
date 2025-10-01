@@ -203,7 +203,7 @@
 
     <div class="panel-section" style="text-align: center; background-color: #f8f9fa;">
         <p style="margin: 0; font-size: 12px; color: #6c757d;">
-            ptcg-telop v1.1.1</br>
+            ptcg-telop v<span id="bundle-version">11.45.14</span></br>
             Developed by ミニ49. </br>
             <a href="https://github.com/lwb058/ptcg-telop" target="_blank">GitHub</a> | 
             <a href="mailto:lwb058@gmail.com">Email</a> | 
@@ -412,6 +412,19 @@
                     saveBtn.textContent = 'Save All Settings';
                 }, 1500);
             });
+            // --- Get Bundle Version ---
+            const versionSpan = document.getElementById('bundle-version');
+            if (versionSpan) {
+                nodecg.sendMessage('getBundleVersion', (err, version) => {
+                    if (err) {
+                        console.error("Failed to get bundle version:", err);
+                        return;
+                    }
+                    if (version) {
+                        versionSpan.textContent = version;
+                    }
+                });
+            }
         });
     </script>
 </body>

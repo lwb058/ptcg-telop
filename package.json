@@ -1,6 +1,6 @@
 {
   "name": "ptcg-telop",
-  "version": "1.0.0",
+  "version": "1.1.2",
   "description": "Pokemon TCG Telop System",
   "main": "extension/index.js",
   "nodecg": {
