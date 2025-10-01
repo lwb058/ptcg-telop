@@ -215,7 +215,7 @@ def _parse_template_A(soup, card_details):
                     evolves_from_link = supertype_element.select_one('a')
                     if evolves_from_link:
                         evolves_from_name = evolves_from_link.get_text(strip=True)
-                        card_details['pokemon']['evolvesFrom'] = [evolves_from_name]
+                        card_details['pokemon']['evolvesFrom'] = evolves_from_name
 
                     card_details['subtype'] = pokemon_subtype
 
@@ -230,8 +230,41 @@ def _parse_template_A(soup, card_details):
                 
                 elif supertype_en == 'trainer':
                     card_details['subtype'] = TRAINER_SUBTYPE_MAP.get(detail_text, detail_text)
+                    
+                    # --- Final logic for trainer text ---
+                    paper_container = soup.select_one('div.mantine-Paper-root')
+                    if paper_container:
+                        first_divider = paper_container.select_one('div.mantine-Divider-root')
+                        if first_divider:
+                            text_container = first_divider.find_next_sibling('div')
+                            if text_container:
+                                trainer_text = _parse_text_with_icons(text_container, ENERGY_CHS_MAP)
+                                if trainer_text:
+                                    if 'trainer' not in card_details or card_details['trainer'] is None:
+                                        card_details['trainer'] = {}
+                                    # Normalize whitespace to a single space
+                                    card_details['trainer']['text'] = ' '.join(trainer_text.split())
+
                 elif supertype_en == 'energy':
-                    card_details['subtype'] = ENERGY_SUBTYPE_MAP.get(detail_text, detail_text)
+                    subtype = ENERGY_SUBTYPE_MAP.get(detail_text, detail_text)
+                    card_details['subtype'] = subtype
+
+                    if subtype == 'basic energy':
+                        card_details['energy'] = {}
+                    elif subtype == 'special energy':
+                        # --- Logic for special energy text ---
+                        paper_container = soup.select_one('div.mantine-Paper-root')
+                        if paper_container:
+                            first_divider = paper_container.select_one('div.mantine-Divider-root')
+                            if first_divider:
+                                text_container = first_divider.find_next_sibling('div')
+                                if text_container:
+                                    energy_text = _parse_text_with_icons(text_container, ENERGY_CHS_MAP)
+                                    if energy_text:
+                                        if 'energy' not in card_details or card_details['energy'] is None:
+                                            card_details['energy'] = {}
+                                        # Normalize whitespace to a single space
+                                        card_details['energy']['text'] = ' '.join(energy_text.split())
 
         # --- Rarity Extraction ---
         rarity_text_node = soup.find(string=re.compile(r'稀有度:'))
