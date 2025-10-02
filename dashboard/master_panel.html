@@ -1211,9 +1211,23 @@
 
                 uniqueCardIds.forEach(id => {
                     const card = db[id];
-                    if (card && card.supertype === 'energy' && card.subtype === 'basic energy') {
-                        const energyType = card.name.replace(/基本|エネルギー/g, '').trim();
-                        if (energyType) {
+                    if (card && card.supertype === 'energy' && card.subtype === 'basic energy') { 
+                        // Updated logic to support Japanese and Chinese basic energy names
+                        const energyTypeRaw = card.name.replace(/基本|能量|エネルギー/g, '').trim();
+                        
+                        if (energyTypeRaw) {
+                            // Map from Simplified Chinese type characters to Japanese type characters
+                            const typeConversionMap = {
+                                '火': '炎',
+                                '斗': '闘',
+                                '恶': '悪',
+                                '钢': '鋼',
+                                '龙': '竜'
+                            };
+                            
+                            // Convert if it's a Chinese character, otherwise use the original
+                            const energyType = typeConversionMap[energyTypeRaw] || energyTypeRaw;
+
                             deckEnergies.add(energyType);
                         }
                     }

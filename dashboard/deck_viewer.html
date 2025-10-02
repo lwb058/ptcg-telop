@@ -291,10 +291,21 @@
                 if (supertypeComparison !== 0) return supertypeComparison;
 
                 if (aData.supertype === 'pokemon') {
-                    const aType = aData.pokemon && aData.pokemon.color && aData.pokemon.color.length > 0 ? aData.pokemon.color[0] : null;
-                    const bType = bData.pokemon && bData.pokemon.color && bData.pokemon.color.length > 0 ? bData.pokemon.color[0] : null;
-                    const pokemonTypeComparison = (pokemonTypeOrder[aType] || 99) - (pokemonTypeOrder[bType] || 99);
+                    const typeConversionMap = { '火': '炎', '斗': '闘', '恶': '悪', '钢': '鋼', '龙': '竜' };
+
+                    const getSortableType = (card) => {
+                        if (card && card.pokemon && card.pokemon.color && card.pokemon.color.length > 0) {
+                            const originalType = card.pokemon.color[0];
+                            return typeConversionMap[originalType] || originalType;
+                        }
+                        return null;
+                    };
+
+                    const aSortType = getSortableType(aData);
+                    const bSortType = getSortableType(bData);
+                    const pokemonTypeComparison = (pokemonTypeOrder[aSortType] || 99) - (pokemonTypeOrder[bSortType] || 99);
                     if (pokemonTypeComparison !== 0) return pokemonTypeComparison;
+
                 }
                 else if (aData.supertype === 'trainer') {
                     const trainerSubtypeComparison = (trainerSubtypeOrder[aData.subtype] || 99) - (trainerSubtypeOrder[bData.subtype] || 99);
