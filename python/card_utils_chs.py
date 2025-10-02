@@ -1,43 +1,21 @@
 import requests, re, json, os, time, sys
-from bs4 import BeautifulSoup, Tag
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 # --- Constants and Paths ---
-# Calculate the absolute path of the project root
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
-
-# Paths for Simplified Chinese data
 DATABASE_FILE = os.path.join(PROJECT_ROOT, 'nodecg', 'assets', 'ptcg-telop', 'database_chs.json')
 CARD_IMG_DIR = os.path.join(PROJECT_ROOT, 'nodecg', 'assets', 'ptcg-telop', 'card_img_chs')
+CARD_PACKS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'card_packs.json')
 
-# --- Mappings (Placeholders for CHS version) ---
-# These will need to be adapted based on the structure of tcg.mik.moe
-SUPERTYPE_MAP = {
-    "宝可梦": "pokemon",
-    "训练家": "trainer",
-    "能量": "energy"
-}
+# --- Cache ---
+_SET_NAME_CACHE = None
+
+# --- Mappings ---
 EVOLUTION_STAGE_MAP = {
-    "基础": "たね",
-    "1阶进化": "1 進化",
-    "2阶进化": "2 進化",
+    "Basic": "たね",
+    "Stage 1": "1 進化",
+    "Stage 2": "2 進化",
     "VSTAR": "V進化",
     "VMAX": "V進化"
-
-}
-TRAINER_SUBTYPE_MAP = {
-    "物品": "item",
-    "宝可梦道具": "tool",
-    "支援者": "supporter",
-    "竞技场": "stadium"
-}
-ENERGY_SUBTYPE_MAP = {
-    "基本能量": "basic energy",
-    "特殊能量": "special energy"
 }
 ENERGY_ICON_MAP = {
     "g": "草",
@@ -65,37 +43,74 @@ ENERGY_CHS_MAP = {
     "n": "龙",
     "y": "妖",
 }
-RARITY_ICON_MAP = {
-    # Example: "C": "C"
-}
 
-# --- Helper for parsing text with icons ---
-def _parse_text_with_icons(element, icon_map=ENERGY_ICON_MAP):
-    """Recursively parses an element, converting styled font icons to text."""
-    if not element:
-        return ""
-    
-    result_string = ""
-    # Handle cases where element might not have .contents (e.g., it's a string itself)
-    if isinstance(element, str):
-        return element
+# --- Core Functions ---
+def fetch_card_packs():
+    """
+    从 tcg.mik.moe API 获取卡包列表并保存到文件。
+    """
+    url = "https://tcg.mik.moe/api/v3/card/product-list"
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
+    }
+    data = {}
 
-    for content in element.contents:
-        if isinstance(content, str):
-            result_string += content
-        elif isinstance(content, Tag):
-            # Check if the tag is a styled icon
-            if 'font-family: ptcg-font-19' in content.get('style', ''):
-                icon_char = content.get_text(strip=True).lower()
-                # Use the provided map, with a fallback for unknown icons
-                result_string += icon_map.get(icon_char, f'[{icon_char}]')
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()
+        response.encoding = 'utf-8'
+        card_packs_data = response.json()
+
+        if card_packs_data.get("code") == 200:
+            pack_list = card_packs_data.get("data", {}).get("list", [])
+            
+            if pack_list:
+                print(f"成功获取到 {len(pack_list)} 个卡包的信息。", file=sys.stderr)
+                
+                with open(CARD_PACKS_FILE, "w", encoding="utf-8") as f:
+                    json.dump(pack_list, f, ensure_ascii=False, indent=4)
+                print(f"数据已成功保存到 {CARD_PACKS_FILE} 文件。", file=sys.stderr)
+
             else:
-                # Recursively parse nested tags
-                result_string += _parse_text_with_icons(content, icon_map)
-    return result_string
+                print("API返回成功，但卡包列表为空。", file=sys.stderr)
+
+        else:
+            print(f"API 返回错误: {card_packs_data.get('msg')}", file=sys.stderr)
+
+    except requests.exceptions.RequestException as e:
+        print(f"请求过程中发生网络错误: {e}", file=sys.stderr)
+    except json.JSONDecodeError:
+        print("解析返回的JSON数据失败，请检查API响应内容。", file=sys.stderr)
+    except Exception as e:
+        print(f"发生未知错误: {e}", file=sys.stderr)
 
 
-# --- Core Functions (Copied from _jp) ---
+def _get_set_name_map():
+    """Lazy loads the set code to set name mapping, fetching if necessary."""
+    global _SET_NAME_CACHE
+    if _SET_NAME_CACHE is not None:
+        return _SET_NAME_CACHE
+
+    if not os.path.exists(CARD_PACKS_FILE):
+        print("card_packs.json not found, fetching from API...", file=sys.stderr)
+        fetch_card_packs() # This function from get_set_info_chs should create the file
+
+    if os.path.exists(CARD_PACKS_FILE):
+        try:
+            with open(CARD_PACKS_FILE, 'r', encoding='utf-8') as f:
+                set_list = json.load(f)
+                _SET_NAME_CACHE = {item['setCode']: item['name'] for item in set_list}
+                return _SET_NAME_CACHE
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Error reading or parsing card_packs.json: {e}", file=sys.stderr)
+            _SET_NAME_CACHE = {}
+            return _SET_NAME_CACHE
+    else:
+        print("Failed to create or find card_packs.json.", file=sys.stderr)
+        _SET_NAME_CACHE = {}
+        return _SET_NAME_CACHE
+
 def load_database(db_path=None):
     """
     Loads the card database from a local JSON file.
@@ -123,301 +138,114 @@ def save_database(data, db_path=None):
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
-# --- CHS Specific Parsing Logic ---
+def _transform_api_data(api_data, card_details, set_name_map):
+    """Transforms the JSON data from the API into the desired card_details format."""
+    data = api_data.get('data', {})
+    if not data:
+        return
 
-def _extract_name_and_subtype(soup):
-    """
-    Extracts the card's full name, base name, and subtype from the soup object.
-    Handles special font conversions (e.g., 'e' -> 'ex') and name suffixes (e.g., 'V', 'VMAX').
-    """
-    font_map = {'e': 'ex', 'X': 'GX'}
-    suffix_subtypes = ["VSTAR", "VMAX", "V"]
-
-    base_name = ""
-    full_name = ""
-    subtype = None
+    set_code = data.get('setCode')
+    card_details['name'] = data.get('name')
+    card_details['rarity'] = data.get('rarity')
+    card_details['author'] = data.get('artist')
+    card_details['set_name'] = set_name_map.get(set_code)
     
-    try:
-        # This logic is for the old template (e.g., '喷火龙ex')
-        name_container_span = soup.select_one('h2 span[style*="white-space: pre-wrap"]')
+    card_index = data.get('cardIndex')
+    if set_code and card_index:
+        card_details['image_url'] = f"https://tcg.mik.moe/static/img/{set_code}/{card_index}.png"
 
-        if name_container_span:
-            # Priority 1: Check for special font span
-            special_span = name_container_span.select_one('span[style*="font-family: ptcg-font-19"]')
-            
-            if special_span:
-                for content in name_container_span.contents:
-                    if isinstance(content, str) and content.strip():
-                        base_name = content.strip()
-                        break
-                
-                char_to_convert = special_span.get_text(strip=True)
-                subtype = font_map.get(char_to_convert)
-                full_name = base_name + (subtype if subtype else "")
+    supertype_api = data.get('cardType')
 
-            else:
-                # Priority 2: Check for name suffixes
-                raw_name_text = name_container_span.get_text(strip=True)
-                found_suffix = False
-                for suffix in suffix_subtypes:
-                    if raw_name_text.endswith(suffix):
-                        subtype = suffix
-                        base_name = raw_name_text[:-len(suffix)]
-                        full_name = raw_name_text
-                        found_suffix = True
-                        break
-                
-                # Priority 3: No special font or suffix
-                if not found_suffix:
-                    base_name = raw_name_text
-                    full_name = base_name
-                    subtype = None
-            
-            return {'full_name': full_name, 'base_name': base_name, 'subtype': subtype}
-
-    except Exception as e:
-        print(f"An error occurred during name extraction: {e}", file=sys.stderr)
-
-    return {'full_name': None, 'base_name': None, 'subtype': None}
-
-def _parse_template_A(soup, card_details):
-    """Parses the card details from the Mantine-based template (e.g., 喷火龙ex)."""
-    try:
-        # --- Name and Subtype (for Pokemon) Extraction ---
-        name_data = _extract_name_and_subtype(soup)
-        card_details['name'] = name_data.get('full_name')
-        pokemon_subtype = name_data.get('subtype')
-
-        # --- Image URL Extraction ---
-        alt_text = card_details["set_code"] + '-' + card_details["card_number"]
-        image_element = soup.select_one(f'img[alt="{alt_text}"]')
-        if image_element and image_element.has_attr('src'):
-            from urllib.parse import urljoin
-            base_url = f"https://tcg.mik.moe/cards/{card_details['set_code']}/{card_details['card_number']}"
-            image_url = urljoin(base_url, image_element['src'])
-            card_details['image_url'] = image_url
-
-        # --- Supertype, Evolves, and Trainer/Energy Subtype Extraction ---
-        supertype_element = soup.select_one('div.mantine-Paper-root p:nth-of-type(2) > span')
-        if supertype_element:
-            parts = supertype_element.get_text(strip=True).split('|')
-            raw_supertype = parts[0].strip()
-            supertype_en = SUPERTYPE_MAP.get(raw_supertype, raw_supertype)
-            card_details['supertype'] = supertype_en
-            
-            if len(parts) > 1:
-                detail_text = parts[1].strip()
-                if supertype_en == 'pokemon':
-                    if card_details.get('pokemon') is None: card_details['pokemon'] = {}
-                    card_details['pokemon']['evolves'] = EVOLUTION_STAGE_MAP.get(detail_text, detail_text)
-
-                    # Extract the name of the pokemon it evolves from
-                    evolves_from_link = supertype_element.select_one('a')
-                    if evolves_from_link:
-                        evolves_from_name = evolves_from_link.get_text(strip=True)
-                        card_details['pokemon']['evolvesFrom'] = evolves_from_name
-
-                    card_details['subtype'] = pokemon_subtype
-
-                    # --- Add Rule based on subtype ---
-                    if pokemon_subtype in ['ex', 'V', 'VSTAR']:
-                        card_details['addRule'] = f"当宝可梦{pokemon_subtype}昏厥时，对手将拿取2张奖赏卡。"
-                    elif pokemon_subtype == 'VMAX':
-                        card_details['addRule'] = f"当宝可梦VMAX昏厥时，对手将拿取3张奖赏卡。"
-
-                    # --- Color, HP, Abilities, Attacks, Rules ---
-                    _parse_pokemon_details_template_A(soup, card_details)
-                
-                elif supertype_en == 'trainer':
-                    card_details['subtype'] = TRAINER_SUBTYPE_MAP.get(detail_text, detail_text)
-                    
-                    # --- Final logic for trainer text ---
-                    paper_container = soup.select_one('div.mantine-Paper-root')
-                    if paper_container:
-                        first_divider = paper_container.select_one('div.mantine-Divider-root')
-                        if first_divider:
-                            text_container = first_divider.find_next_sibling('div')
-                            if text_container:
-                                trainer_text = _parse_text_with_icons(text_container, ENERGY_CHS_MAP)
-                                if trainer_text:
-                                    if 'trainer' not in card_details or card_details['trainer'] is None:
-                                        card_details['trainer'] = {}
-                                    # Normalize whitespace to a single space
-                                    card_details['trainer']['text'] = ' '.join(trainer_text.split())
-
-                elif supertype_en == 'energy':
-                    subtype = ENERGY_SUBTYPE_MAP.get(detail_text, detail_text)
-                    card_details['subtype'] = subtype
-
-                    if subtype == 'basic energy':
-                        card_details['energy'] = {}
-                    elif subtype == 'special energy':
-                        # --- Logic for special energy text ---
-                        paper_container = soup.select_one('div.mantine-Paper-root')
-                        if paper_container:
-                            first_divider = paper_container.select_one('div.mantine-Divider-root')
-                            if first_divider:
-                                text_container = first_divider.find_next_sibling('div')
-                                if text_container:
-                                    energy_text = _parse_text_with_icons(text_container, ENERGY_CHS_MAP)
-                                    if energy_text:
-                                        if 'energy' not in card_details or card_details['energy'] is None:
-                                            card_details['energy'] = {}
-                                        # Normalize whitespace to a single space
-                                        card_details['energy']['text'] = ' '.join(energy_text.split())
-
-        # --- Rarity Extraction ---
-        rarity_text_node = soup.find(string=re.compile(r'稀有度:'))
-        if rarity_text_node:
-            rarity_span = rarity_text_node.find_parent('span')
-            if rarity_span:
-                rarity_value_span = rarity_span.find('span')
-                if rarity_value_span:
-                    card_details['rarity'] = rarity_value_span.get_text(strip=True)
-                
-        return True
-    except Exception as e:
-        print(f"Error parsing template A: {e}", file=sys.stderr)
-        return False
-
-def _parse_pokemon_details_template_A(soup, card_details):
-    """Helper to parse specific pokemon details for template A."""
-    # Color
-    color_element = soup.select_one('div.mantine-Paper-root p:nth-of-type(1) > span:nth-of-type(2)')
-    if color_element:
-        raw_color = color_element.get_text(strip=True).lower()
-        card_details['pokemon']['color'] = [ENERGY_ICON_MAP.get(raw_color, raw_color)]
-
-    # HP
-    hp_element = soup.select_one('div.mantine-Paper-root p:nth-of-type(1) > span:nth-of-type(3)')
-    if hp_element and 'HP' in hp_element.get_text(strip=True):
-        try:
-            card_details['pokemon']['hp'] = int(re.search(r'\d+', hp_element.get_text(strip=True)).group())
-        except (ValueError, TypeError, AttributeError):
-            pass # Ignore if HP is not a number
-
-    all_stacks = soup.select('div.mantine-Paper-root div.mantine-Stack-root')
-
-    # Abilities, Attacks are in the first stack
-    if len(all_stacks) > 0:
-        details_container = all_stacks[0]
-        for item in details_container.find_all('div', recursive=False):
-            text_content_raw = item.get_text(strip=True)
-            
-            if text_content_raw.startswith('太晶'):
-                card_details['pokemon']['option'] = "Terastal"
-            
-            elif "特性:" in text_content_raw:
-                if 'abilities' not in card_details['pokemon']:
-                    card_details['pokemon']['abilities'] = []
-                spans = item.find_all('span')
-                if spans:
-                    ability_name_raw = spans[0].get_text(strip=True)
-                    ability_name = ability_name_raw.split(':', 1)[1].strip() if ':' in ability_name_raw else ability_name_raw
-                    br = item.find('br')
-                    ability_text = _parse_text_with_icons(br.next_sibling, ENERGY_CHS_MAP) if br else ''
-                    card_details['pokemon']['abilities'].append({"name": ability_name, "text": ability_text.strip()})
-
-            elif item.select('span[style*="font-family: ptcg-font-19"]'):
-                if 'attacks' not in card_details['pokemon']:
-                    card_details['pokemon']['attacks'] = []
-
-                # Create a mini-soup of the content before the <br> to isolate cost icons
-                br = item.find('br')
-                cost_html_content = ""
-                for content in item.contents:
-                    if isinstance(content, Tag) and content.name == 'br':
-                        break
-                    cost_html_content += str(content)
-                
-                cost_soup = BeautifulSoup(cost_html_content, 'html.parser')
-                cost_spans = cost_soup.select('span[style*="font-family: ptcg-font-19"]')
-                cost = [ENERGY_ICON_MAP.get(s.get_text(strip=True).lower(), s.get_text(strip=True)) for s in cost_spans]
-
-                # Use original logic for name and damage, which is generally reliable
-                text_spans = item.select('span.mantine-Text-root')
-                attack_name, damage = "", ""
-                if len(text_spans) > 1:
-                    # The first span is the cost container, the second should be the name
-                    attack_name = text_spans[1].get_text(strip=True)
-                    if len(text_spans) > 2:
-                        damage = text_spans[2].get_text(strip=True)
-                
-                description = _parse_text_with_icons(br.next_sibling, ENERGY_CHS_MAP) if br else ''
-                card_details['pokemon']['attacks'].append({"cost": cost, "name": attack_name, "damage": damage, "text": description.strip()})
-
-    # --- Weakness, Resistance, Retreat Cost are in the second stack --- 
-    if len(all_stacks) > 1:
-        wrr_container = all_stacks[1]
-        # Initialize with correct keys
-        card_details['pokemon']['weaknesses'] = []
-        card_details['pokemon']['resistances'] = []
-        card_details['pokemon']['retreats'] = []
-
-        for p_tag in wrr_container.find_all('p', recursive=False):
-            text = p_tag.get_text(strip=True)
-            
-            if text.startswith("弱点"):
-                icons = p_tag.select('span[style*="font-family: ptcg-font-19"]')
-                if icons:
-                    w_type_char = icons[0].get_text(strip=True)
-                    w_type = ENERGY_ICON_MAP.get(w_type_char.lower(), w_type_char)
-                    
-                    value_str = text.replace("弱点:", "").replace(w_type_char, "").strip()
-                    calc = None
-                    value = ""
-                    if '×' in value_str:
-                        calc = "multiply"
-                        value = value_str.replace('×', '').strip()
-                    elif '-' in value_str:
-                        calc = "minus"
-                        value = value_str.replace('-', '').strip()
-                    elif '+' in value_str:
-                        calc = "plus"
-                        value = value_str.replace('+', '').strip()
-                    
-                    if calc:
-                        card_details['pokemon']['weaknesses'].append({"type": w_type, "calc": calc, "value": value})
-
-            elif text.startswith("抗性"):
-                icons = p_tag.select('span[style*="font-family: ptcg-font-19"]')
-                if icons:
-                    r_type_char = icons[0].get_text(strip=True)
-                    r_type = ENERGY_ICON_MAP.get(r_type_char.lower(), r_type_char)
-
-                    value_str = text.replace("抗性:", "").replace(r_type_char, "").strip()
-                    calc = None
-                    value = ""
-                    if '×' in value_str:
-                        calc = "multiply"
-                        value = value_str.replace('×', '').strip()
-                    elif '-' in value_str:
-                        calc = "minus"
-                        value = value_str.replace('-', '').strip()
-                    elif '+' in value_str:
-                        calc = "plus"
-                        value = value_str.replace('+', '').strip()
-
-                    if calc:
-                        card_details['pokemon']['resistances'].append({"type": r_type, "calc": calc, "value": value})
-
-            elif text.startswith("撤退"):
-                icons = p_tag.select('span[style*="font-family: ptcg-font-19"]')
-                if icons:
-                    retreat_cost = [ENERGY_ICON_MAP.get(icon.get_text(strip=True).lower(), icon.get_text(strip=True)) for icon in icons]
-                    card_details['pokemon']['retreats'] = retreat_cost
+    if supertype_api == "Pokemon":
+        card_details['supertype'] = 'pokemon'
+        card_details['pokemon'] = {}
+        card_details['subtype'] = data.get('mechanic')
         
-        # Clean up empty lists
-        if not card_details['pokemon']['weaknesses']:
-            del card_details['pokemon']['weaknesses']
-        if not card_details['pokemon']['resistances']:
-            del card_details['pokemon']['resistances']
-        if not card_details['pokemon']['retreats']:
-            del card_details['pokemon']['retreats']
+        if card_details['subtype'] in ['ex', 'V', 'VSTAR']:
+            card_details['addRule'] = f"当宝可梦{card_details['subtype']}昏厥时，对手将拿取2张奖赏卡。"
+        elif card_details['subtype'] == 'VMAX':
+            card_details['addRule'] = f"当宝可梦VMAX昏厥时，对手将拿取3张奖赏卡。"
+
+        pokemon_attr = data.get('pokemonAttr', {})
+        if pokemon_attr:
+            card_details['pokemon']['evolves'] = EVOLUTION_STAGE_MAP.get(pokemon_attr.get('stage'))
+            card_details['pokemon']['evolvesFrom'] = [pokemon_attr.get('evolvesFrom')]
+            card_details['pokemon']['hp'] = pokemon_attr.get('hp')
+            
+            if pokemon_attr.get('energyType'):
+                card_details['pokemon']['color'] = [ENERGY_ICON_MAP.get(pokemon_attr['energyType'].lower())]
+
+            # Abilities
+            if pokemon_attr.get('ability'):
+                card_details['pokemon']['abilities'] = []
+                for ability in pokemon_attr['ability']:
+                    new_ability = {
+                        "name": ability.get('name'),
+                        "text": ability.get('text', '').strip()
+                    }
+                    if ability.get('isVStarPower'):
+                        new_ability['option'] = 'Vstar'
+                    card_details['pokemon']['abilities'].append(new_ability)
+
+            # Attacks
+            if pokemon_attr.get('attack'):
+                card_details['pokemon']['attacks'] = []
+                for attack in pokemon_attr['attack']:
+                    cost = [ENERGY_ICON_MAP.get(c.lower()) for c in attack.get('cost', '')]
+                    new_attack = {
+                        "cost": cost,
+                        "name": attack.get('name'),
+                        "damage": attack.get('damage'),
+                        "text": attack.get('text', '').strip()
+                    }
+                    if attack.get('isVStarPower'):
+                        new_attack['option'] = 'Vstar'
+                    card_details['pokemon']['attacks'].append(new_attack)
+
+            # Weakness, Resistance, Retreat
+            if pokemon_attr.get('weakness'):
+                w = pokemon_attr['weakness']
+                value = w.get('value', '').replace('×', '').strip()
+                card_details['pokemon']['weaknesses'] = [{"type": ENERGY_ICON_MAP.get(w.get('energy').lower()), "calc": "multiply", "value": value}]
+            
+            if pokemon_attr.get('resistance'):
+                r = pokemon_attr['resistance']
+                value = r.get('value', '').replace('-', '').strip()
+                card_details['pokemon']['resistances'] = [{"type": ENERGY_ICON_MAP.get(r.get('energy').lower()), "calc": "minus", "value": value}]
+
+            if pokemon_attr.get('retreatCost') is not None:
+                card_details['pokemon']['retreats'] = [ENERGY_ICON_MAP.get('c')] * pokemon_attr['retreatCost']
+
+            if pokemon_attr.get('ancientTrait') == 'Tera':
+                card_details['pokemon']['option'] = "Terastal"
+
+    elif supertype_api in ["Trainer", "Stadium", "Supporter", "Item", "Tool"]:
+        card_details['supertype'] = 'trainer'
+        card_details['trainer'] = {'text': ' '.join(data.get('description', '').split())}
+        
+        if supertype_api in ["Stadium", "Supporter", "Item", "Tool"]:
+            card_details['subtype'] = supertype_api.lower()
+        else:
+            desc = data.get('description', '')
+            if "宝可梦道具" in desc: card_details['subtype'] = 'tool'
+            elif "支援者" in desc: card_details['subtype'] = 'supporter'
+            elif "竞技场" in desc: card_details['subtype'] = 'stadium'
+            else: card_details['subtype'] = 'item'
+
+    elif supertype_api in ["Energy", "Basic Energy", "Special Energy"]:
+        card_details['supertype'] = 'energy'
+        card_details['subtype'] = supertype_api.lower()
+        if card_details['subtype'] == 'special energy':
+            card_details['energy'] = {'text': ' '.join(data.get('description', '').split())}
+        else:
+            card_details['energy'] = {}
+    
+    else:
+        card_details['supertype'] = supertype_api.lower() if supertype_api else None
 
 def get_card_details(card_id, html_content=None):
     """
-    Extracts detailed information from tcg.mik.moe.
+    Extracts detailed information by calling the tcg.mik.moe API.
     The card_id is expected in the format 'SET_CODE/CARD_NUMBER', e.g., 'CSV5C/019'.
     """
     if '/' not in card_id:
@@ -429,7 +257,7 @@ def get_card_details(card_id, html_content=None):
     card_details = {
         "name": None, 
         "set_code": set_code, 
-        "set_name": None, 
+        "set_name": None, # API does not provide this, can be added later if needed
         "card_number": card_number,
         "image_url": None, 
         "supertype": None, 
@@ -442,61 +270,54 @@ def get_card_details(card_id, html_content=None):
         "author": None
     }
 
-    soup = None
+    # If html_content is provided, it means we are in a testing/mocking context.
+    # We will parse it as JSON instead of making a live request.
     if html_content:
-        soup = BeautifulSoup(html_content, 'html.parser')
-    else:
-        options = Options()
-        options.add_argument('--headless')
-        options.add_argument('--disable-gpu')
-        driver = None
-        detail_url = f"https://tcg.mik.moe/cards/{card_id}"
-        try:
-            driver = webdriver.Chrome(options=options)
-            driver.get(detail_url)
-            # IMPORTANT: The target site uses a skeleton loader while content is fetched dynamically.
-            # We must wait for the skeleton to become *invisible* to ensure the page is fully loaded.
-            # Waiting for a container element to be *present* can cause a race condition where we get the container
-            # with the loading skeleton inside, leading to parsing failures.
-            WebDriverWait(driver, 15).until(
-                EC.invisibility_of_element_located((By.CSS_SELECTOR, "div.mantine-Skeleton-root[data-visible='true']"))
-            )
-            soup = BeautifulSoup(driver.page_source, 'html.parser')
-
-        except Exception as e:
-            print(f"Selenium request error for {detail_url}: {e}", file=sys.stderr)
+        try: api_response = json.loads(html_content)
+        except json.JSONDecodeError:
+            print(f"Error: Provided html_content is not valid JSON.", file=sys.stderr)
             return None
-        finally:
-            if driver: driver.quit()
+    else:
+        url = "https://tcg.mik.moe/api/v3/card/card-detail"
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
+        }
+        payload = {"setCode": set_code, "cardIndex": card_number}
+        
+        try:
+            response = requests.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            response.encoding = 'utf-8'
+            api_response = response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"API request error for {card_id}: {e}", file=sys.stderr)
+            return None
+        except json.JSONDecodeError:
+            print(f"Failed to decode JSON from API response for {card_id}.", file=sys.stderr)
+            return None
 
-    if not soup:
+    if api_response and api_response.get("code") == 200:
+        set_name_map = _get_set_name_map()
+        _transform_api_data(api_response, card_details, set_name_map)
+        return card_details
+    else:
+        print(f"API returned an error for {card_id}: {api_response.get('msg')}", file=sys.stderr)
         return None
-
-    # --- Template Dispatcher ---
-    # Template A (Mantine) has h2 titles, Template B (Semantic) has h1
-    if soup.select_one("h2.mantine-Title-root"):
-        if _parse_template_A(soup, card_details):
-            return card_details
-    # else:
-        # Placeholder for Template B parser
-        # if _parse_template_B(soup, card_details):
-        #     return card_details
-
-    return None # Return None if no suitable template was found or parsing failed
 
 def download_card_image(card_id, image_url):
     """
     Downloads the card image for the CHS version.
     """
-    if not image_url: return
+    if not image_url or not card_id: return
     
     os.makedirs(CARD_IMG_DIR, exist_ok=True)
-    
-    # The card_id 'CSV5C/019' is not a valid filename. We need to replace '/'.
-    safe_card_id = card_id.replace('/', '_')
-    
-    file_extension = os.path.splitext(image_url)[1] or '.jpg'
-    image_path = os.path.join(CARD_IMG_DIR, f"{safe_card_id}{file_extension}")
+    # The card_id passed in should be the internal format 'SET-NUM'
+    internal_card_id = card_id
+    file_extension = os.path.splitext(image_url)[1] or '.png'
+    if '?' in file_extension: file_extension = file_extension.split('?')[0]
+
+    image_path = os.path.join(CARD_IMG_DIR, f"{internal_card_id}{file_extension}")
     
     if not os.path.exists(image_path):
         try:
@@ -513,34 +334,44 @@ def _core_process_card(card_id, card_database, overwrite=True, html_content=None
     """
     Core processing logic for a single CHS card.
     """
-    if not overwrite and card_id in card_database and card_database[card_id].get('name'):
-        print(f"Card ID {card_id} already exists, skipping.", file=sys.stderr)
-        return card_database[card_id], 'skipped'
+    # Convert external 'SET/NUM' to internal 'SET-NUM' for database operations
+    internal_card_id = card_id.replace('/', '-')
 
-    if card_id in card_database and not card_database[card_id].get('name'):
+    if not overwrite and internal_card_id in card_database and card_database[internal_card_id].get('name'):
+        print(f"Card ID {card_id} already exists, skipping.", file=sys.stderr)
+        return card_database[internal_card_id], 'skipped'
+
+    if internal_card_id in card_database and not card_database[internal_card_id].get('name'):
         print(f"Warning: Card ID {card_id} has corrupted data, forcing re-fetch...", file=sys.stderr)
     
     print(f"Processing CHS card ID {card_id}...", file=sys.stderr)
+    # get_card_details still uses the original 'SET/NUM' format for the API call
     card_info = get_card_details(card_id, html_content=html_content)
     
     if not card_info or not card_info.get('name'):
         print(f"Could not retrieve or parse information for CHS card ID {card_id}.", file=sys.stderr)
-        return card_database.get(card_id), 'failed'
+        return card_database.get(internal_card_id), 'failed'
 
-    download_card_image(card_id, card_info.get('image_url'))
+    # Use the internal ID for downloading the image
+    download_card_image(internal_card_id, card_info.get('image_url'))
     return card_info, 'updated'
 
 def add_card_to_database(card_id, overwrite=True, html_content=None, db_path=None):
     """
     Adds a single CHS card to the database.
     """
+    internal_card_id = card_id.replace('/', '-')
     card_database = load_database(db_path=db_path)
     card_info, status = _core_process_card(card_id, card_database, overwrite, html_content)
 
     if status == 'updated':
-        card_database[card_id] = card_info
+        card_database[internal_card_id] = card_info
         save_database(card_database, db_path=db_path)
         print(f"Card ID {card_id} has been added/updated in the CHS database.", file=sys.stderr)
         return card_info, True
     
     return card_info, False
+
+if __name__ == "__main__":
+    print("Fetching latest CHS card pack information...", file=sys.stderr)
+    fetch_card_packs()

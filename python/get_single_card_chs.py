@@ -41,11 +41,12 @@ def main(card_id_arg=None):
         
         if card_info:
             db = load_database(db_path=args.database_path)
-            existing_card = db.get(card_id)
+            internal_card_id = card_id.replace('/', '-')
+            existing_card = db.get(internal_card_id)
             
             if args.overwrite or not existing_card or not existing_card.get('name'):
                 print("Updating database...", file=sys.stderr)
-                db[card_id] = card_info
+                db[internal_card_id] = card_info
                 save_database(db, db_path=args.database_path)
                 updated = True
             else:
