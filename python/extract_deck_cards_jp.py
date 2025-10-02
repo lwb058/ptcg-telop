@@ -108,10 +108,11 @@ def main(deck_id_arg=None):
     cards = extract_deck_cards(deck_id, args.overwrite, db_path=args.database_path)
 
     if cards:
-        # Prepare a simplified list with only ID and quantity for machine parsing
-        deck_for_json_output = [{"id": card['id'], "quantity": card['quantity']} for card in cards if 'id' in card and 'quantity' in card]
-        # Print the simplified JSON data to stdout for Node.js to consume
-        print(json.dumps(deck_for_json_output))
+        # The user now wants a unique list of card IDs.
+        card_ids_only = [card['id'] for card in cards if 'id' in card]
+        
+        # To be consistent with other scripts, wrap the list in an object with a "cards" key.
+        print(json.dumps({"cards": card_ids_only}))
         
         print("Extracted cards:", file=sys.stderr)
         total_cards = 0

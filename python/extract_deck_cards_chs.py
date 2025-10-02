@@ -135,17 +135,12 @@ def main(identifier_arg=None):
         print("\nNo changes to the database were made.", file=sys.stderr)
 
     # --- Deck Data JSON Output Logic ---
-    final_deck_cards = []
-    for card in card_list_from_api:
-        set_code = card.get('setCode')
-        card_index = card.get('cardIndex')
-        count = card.get('count', 0)
-        if not set_code or not card_index:
-            continue
-        card_id = f"{set_code}-{card_index}"
-        final_deck_cards.extend([card_id] * count)
-    
-    deck_output = {"cards": final_deck_cards}
+    final_deck_card_ids = [
+        f"{card.get('setCode')}-{card.get('cardIndex')}"
+        for card in card_list_from_api
+        if card.get('setCode') and card.get('cardIndex')
+    ]
+    deck_output = {"cards": final_deck_card_ids}
     
     # Print the final JSON object to stdout for Node.js to capture
     print(json.dumps(deck_output, ensure_ascii=False))
