@@ -274,29 +274,32 @@ module.exports = function (nodecg) {
 	});
 
 	nodecg.listenFor('addSingleCardToDeck', ({ side, cardId }, callback) => {
-		nodecg.log.info(`Request to add single card ${cardId} to Player ${side}'s deck.`);
+		// Sanitize the ID at the very beginning to ensure consistency.
+		const sanitizedCardId = cardId.replace('/', '-');
+		nodecg.log.info(`Request to add single card ${cardId} (sanitized to ${sanitizedCardId}) to Player ${side}'s deck.`);
 
 		const deckReplicant = side === 'L' ? deckL : deckR;
 		const db = cardDatabase.value;
 
-		const addCardToDeck = () => {
+		const addCardToDeck = (idToAdd) => {
 			if (!Array.isArray(deckReplicant.value.cards)) {
 				deckReplicant.value.cards = [];
 			}
-			if (!deckReplicant.value.cards.includes(cardId)) {
-				deckReplicant.value.cards = [...deckReplicant.value.cards, cardId];
-				nodecg.log.info(`Card ${cardId} added to Player ${side}'s deck.`);
+			if (!deckReplicant.value.cards.includes(idToAdd)) {
+				deckReplicant.value.cards = [...deckReplicant.value.cards, idToAdd];
+				nodecg.log.info(`Card ${idToAdd} added to Player ${side}'s deck.`);
 			} else {
-				nodecg.log.info(`Card ${cardId} is already in Player ${side}'s deck. No changes made.`);
+				nodecg.log.info(`Card ${idToAdd} is already in Player ${side}'s deck. No changes made.`);
 			}
 			if (callback) callback(null, 'Card added to deck.');
 		};
 
-		if (db && db[cardId] && db[cardId].name) {
-			nodecg.log.info(`Card ${cardId} found in database. Adding to deck.`);
-			addCardToDeck();
+		// Use the sanitized ID for all checks and operations.
+		if (db && db[sanitizedCardId] && db[sanitizedCardId].name) {
+			nodecg.log.info(`Card ${sanitizedCardId} found in database. Adding to deck.`);
+			addCardToDeck(sanitizedCardId);
 		} else {
-			nodecg.log.info(`Card ${cardId} not in database. Fetching with get_single_card.py...`);
+			nodecg.log.info(`Card ${sanitizedCardId} not in database. Fetching with get_single_card.py...`);
 			
 			const pythonDir = path.join(__dirname, '..', 'python');
 			const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
@@ -314,7 +317,7 @@ module.exports = function (nodecg) {
 			const absoluteDbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
 
 			const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
-			const command = `${pythonCommand} "${pythonScriptPath}" "${cardId}" --database-path "${absoluteDbPath}"`;
+			const command = `${pythonCommand} "${pythonScriptPath}" "${sanitizedCardId}" --database-path "${absoluteDbPath}"`;
 
 			exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
 				if (error) {
@@ -324,14 +327,15 @@ module.exports = function (nodecg) {
 					return;
 				}
 
-				nodecg.log.info(`Python script for ${cardId} finished. Reloading database.`);
+				nodecg.log.info(`Python script for ${sanitizedCardId} finished. Reloading database.`);
 				loadCardDatabase();
 				
-				if (cardDatabase.value && cardDatabase.value[cardId] && cardDatabase.value[cardId].name) {
-					addCardToDeck();
+				// CRITICAL FIX: Check for the sanitized ID and add the sanitized ID.
+				if (cardDatabase.value && cardDatabase.value[sanitizedCardId] && cardDatabase.value[sanitizedCardId].name) {
+					addCardToDeck(sanitizedCardId);
 				} else {
-					nodecg.log.error(`Failed to fetch card ${cardId} with python script. It was not added to the database. Check python script output.`);
-					if (callback) callback({ error: `Failed to fetch card ${cardId}.` });
+					nodecg.log.error(`Failed to fetch card ${sanitizedCardId} with python script. It was not added to the database. Check python script output.`);
+					if (callback) callback({ error: `Failed to fetch card ${sanitizedCardId}.` });
 				}
 			});
 		}

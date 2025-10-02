@@ -195,7 +195,7 @@ def _transform_api_data(api_data, card_details, set_name_map):
 
 
         if pokemon_attr:
-            card_details['pokemon']['hp'] = pokemon_attr.get('hp')
+            card_details['pokemon']['hp'] = str(pokemon_attr.get('hp'))
             if pokemon_attr.get('energyType'):
                 card_details['pokemon']['color'] = [ENERGY_ICON_MAP.get(pokemon_attr['energyType'].lower())]
 
