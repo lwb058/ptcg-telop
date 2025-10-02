@@ -157,23 +157,51 @@ def _transform_api_data(api_data, card_details, set_name_map):
     supertype_api = data.get('cardType')
 
     if supertype_api == "Pokemon":
+        pokemon_attr = data.get('pokemonAttr', {})
+        is_basic = pokemon_attr.get('stage') == "Basic"
+
         card_details['supertype'] = 'pokemon'
         card_details['pokemon'] = {}
-        card_details['subtype'] = data.get('mechanic')
-        
-        if card_details['subtype'] in ['ex', 'V', 'VSTAR']:
-            card_details['addRule'] = f"当宝可梦{card_details['subtype']}昏厥时，对手将拿取2张奖赏卡。"
+        # Determine subtype with priority based on the 'stage' attribute
+        pokemon_stage = pokemon_attr.get('stage')
+        if pokemon_stage == 'VMAX':
+            card_details['subtype'] = 'VMAX'
+        elif pokemon_stage == 'VSTAR':
+            card_details['subtype'] = 'VSTAR'
+        else:
+            # Fallback to the general mechanic for V, ex, etc.
+            card_details['subtype'] = data.get('mechanic')
+
+        # options for TAG TEAM, Terastal, Mega, etc.
+        if data.get('label'):
+            card_details['pokemon']['option'] = data.get('label')[0]
+        elif pokemon_attr.get('ancientTrait') == 'Tera':
+            card_details['pokemon']['option'] = "Terastal"
+
+        # Rules for ex, V, VMAX, etc.
+        if card_details['subtype'] in ['ex', 'V', 'VSTAR', 'GX']:
+            if card_details['pokemon']['option'] == 'TAG TEAM':
+                card_details['addRule'] = f"当TAG TEAM昏厥时，对手将拿取3张奖赏卡。"
+            elif card_details['pokemon']['option'] == 'Mega':
+                card_details['addRule'] = f"当超级进化宝可梦ex昏厥时，对手将拿取3张奖赏卡。"
+            else:
+                card_details['addRule'] = f"当宝可梦{card_details['subtype']}昏厥时，对手将拿取2张奖赏卡。"
         elif card_details['subtype'] == 'VMAX':
             card_details['addRule'] = f"当宝可梦VMAX昏厥时，对手将拿取3张奖赏卡。"
+        
+        # Rule for Radiant Pokémon
+        elif card_details['name'] and card_details['name'].startswith("光辉") and is_basic:
+            card_details['addRule'] = "1副卡组中只能放入1张光辉宝可梦卡。"
 
-        pokemon_attr = data.get('pokemonAttr', {})
+
         if pokemon_attr:
-            card_details['pokemon']['evolves'] = EVOLUTION_STAGE_MAP.get(pokemon_attr.get('stage'))
-            card_details['pokemon']['evolvesFrom'] = [pokemon_attr.get('evolvesFrom')]
             card_details['pokemon']['hp'] = pokemon_attr.get('hp')
-            
             if pokemon_attr.get('energyType'):
                 card_details['pokemon']['color'] = [ENERGY_ICON_MAP.get(pokemon_attr['energyType'].lower())]
+
+            card_details['pokemon']['evolves'] = EVOLUTION_STAGE_MAP.get(pokemon_attr.get('stage'))
+            if not is_basic:
+                card_details['pokemon']['evolvesFrom'] = [pokemon_attr.get('evolvesFrom')]
 
             # Abilities
             if pokemon_attr.get('ability'):
@@ -216,9 +244,6 @@ def _transform_api_data(api_data, card_details, set_name_map):
             if pokemon_attr.get('retreatCost') is not None:
                 card_details['pokemon']['retreats'] = [ENERGY_ICON_MAP.get('c')] * pokemon_attr['retreatCost']
 
-            if pokemon_attr.get('ancientTrait') == 'Tera':
-                card_details['pokemon']['option'] = "Terastal"
-
     elif supertype_api in ["Trainer", "Stadium", "Supporter", "Item", "Tool"]:
         card_details['supertype'] = 'trainer'
         card_details['trainer'] = {'text': ' '.join(data.get('description', '').split())}
@@ -244,15 +269,15 @@ def _transform_api_data(api_data, card_details, set_name_map):
         card_details['supertype'] = supertype_api.lower() if supertype_api else None
 
 def get_card_details(card_id, html_content=None):
-    """
-    Extracts detailed information by calling the tcg.mik.moe API.
-    The card_id is expected in the format 'SET_CODE/CARD_NUMBER', e.g., 'CSV5C/019'.
-    """
-    if '/' not in card_id:
-        print(f"Invalid card_id format for CHS: {card_id}. Expected 'SET/NUM'.", file=sys.stderr)
+    """Extracts detailed information by calling the tcg.mik.moe API."""
+    # Normalize the ID to use a hyphen, making it consistent internally.
+    normalized_id = card_id.replace('/', '-')
+    
+    try:
+        set_code, card_number = normalized_id.split('-', 1)
+    except ValueError:
+        print(f"Invalid card_id format: {card_id}. Expected 'SET/NUM' or 'SET-NUM'.", file=sys.stderr)
         return None
-
-    set_code, card_number = card_id.split('/', 1)
 
     card_details = {
         "name": None, 
@@ -356,21 +381,25 @@ def _core_process_card(card_id, card_database, overwrite=True, html_content=None
     download_card_image(internal_card_id, card_info.get('image_url'))
     return card_info, 'updated'
 
-def add_card_to_database(card_id, overwrite=True, html_content=None, db_path=None):
-    """
-    Adds a single CHS card to the database.
-    """
-    internal_card_id = card_id.replace('/', '-')
-    card_database = load_database(db_path=db_path)
+def add_card_to_database(card_id, overwrite=True, html_content=None, db_path=None, db_instance=None):
+    """Adds a single CHS card to the database."""
+    # If a database instance is passed, use it; otherwise, load from file.
+    card_database = db_instance if db_instance is not None else load_database(db_path=db_path)
+    
+    # The core processing function now handles normalization
     card_info, status = _core_process_card(card_id, card_database, overwrite, html_content)
 
     if status == 'updated':
-        card_database[internal_card_id] = card_info
-        save_database(card_database, db_path=db_path)
-        print(f"Card ID {card_id} has been added/updated in the CHS database.", file=sys.stderr)
-        return card_info, True
+        # Use the normalized ID for the database key
+        normalized_id = card_id.replace('/', '-')
+        card_database[normalized_id] = card_info
+        # If we are working with an in-memory instance, we do not save here.
+        # The calling script is responsible for the final save.
+        if db_instance is None:
+            save_database(card_database, db_path=db_path)
+        print(f"Card ID {normalized_id} has been added/updated in the CHS database.", file=sys.stderr)
     
-    return card_info, False
+    return card_info, status
 
 if __name__ == "__main__":
     print("Fetching latest CHS card pack information...", file=sys.stderr)
