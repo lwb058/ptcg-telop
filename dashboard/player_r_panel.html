@@ -1086,7 +1086,10 @@
                                 const toolIconDiv = document.createElement('div');
                                 toolIconDiv.title = `[${toolData.name}] - Click to remove`;
                                 toolIconDiv.className = 'tool-icon-image';
-                                toolIconDiv.style.backgroundImage = `url('/${assetPaths.value.cardImgPath}${toolId}.jpg')`;
+                                // Dynamically get the extension from the image_url property
+                                const imageUrl = toolData.image_url;
+                                const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg';
+                                toolIconDiv.style.backgroundImage = `url('/${assetPaths.value.cardImgPath}${toolId}${extension}')`;
                                 toolIconDiv.dataset.toolId = toolId;
                                 toolDisplay.appendChild(toolIconDiv);
                             }

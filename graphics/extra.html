@@ -300,6 +300,17 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const getCardImageUrl = (cardId, isBgImage = false) => {
+                if (!cardId || !assetPaths.value.cardImgPath) {
+                    return isBgImage ? 'none' : '';
+                }
+                const db = cardDatabase.value;
+                const cardData = db ? db[cardId] : null;
+                const imageUrl = cardData ? cardData.image_url : null;
+                const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg'; // Fallback to .jpg
+                const path = `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
+                return isBgImage ? `url(${path})` : path;
+            };
             const ENERGY_MAP = { "草": "草", "炎": "炎", "水": "水", "雷": "雷", "超": "超", "闘": "闘", "悪": "悪", "鋼": "鋼", "無": "無", "全": "全", "超悪": "超悪", "竜": "竜", "妖": "妖" };
             // Animation Timings
             const REPLACE_ANIMATION_HIDE_MS = 550;
@@ -457,7 +468,7 @@
                                     toolItem.className = itemClass;
                                     toolItem.dataset.toolId = toolId;
                                     const toolImg = document.createElement('img');
-                                    toolImg.src = `/${assetPaths.value.cardImgPath}${toolId}.jpg`;
+                                    toolImg.src = getCardImageUrl(toolId);
                                     toolItem.appendChild(toolImg);
                                     wrapperEl.appendChild(toolItem);
                                 }
@@ -485,7 +496,7 @@
                             toolItem.className = `${itemClass} anim-tool-appear`;
                             toolItem.dataset.toolId = id;
                             const toolImg = document.createElement('img');
-                            toolImg.src = `/${assetPaths.value.cardImgPath}${id}.jpg`;
+                            toolImg.src = getCardImageUrl(id);
                             toolItem.appendChild(toolImg);
                             wrapperEl.appendChild(toolItem);
                             toolItem.addEventListener('animationstart', () => playToolAnimation(toolItem, isBattleSlot, true), { once: true });
@@ -658,7 +669,7 @@
                         playAnimationIfNeeded();
                         mainImg.onload = null; // Clean up handler
                     };
-                    mainImg.src = `/${assetPaths.value.cardImgPath}${slotData.cardId}.jpg`;
+                    mainImg.src = getCardImageUrl(slotData.cardId);
                 } else if (forceSlideIn) {
                     playAnimationIfNeeded();
                 }
@@ -810,14 +821,12 @@
                 const preloaderContainer = document.getElementById('video-preloader');
                 function preloadDeckImages(deck) {
                     if (!deck || !deck.cards || !assetPaths.value.cardImgPath || !preloaderContainer) return;
-                    
-                    const cardImgPath = `/${assetPaths.value.cardImgPath}`;
 
                     deck.cards.forEach(cardId => {
-                        // Check if image is already preloading/preloaded to avoid duplicates
-                        if (!preloaderContainer.querySelector(`img[src="${cardImgPath}${cardId}.jpg"]`)) {
+                        const fullPath = getCardImageUrl(cardId);
+                        if (fullPath && !preloaderContainer.querySelector(`img[src="${fullPath}"]`)) {
                             const img = document.createElement('img');
-                            img.src = `${cardImgPath}${cardId}.jpg`;
+                            img.src = fullPath;
                             preloaderContainer.appendChild(img);
                         }
                     });

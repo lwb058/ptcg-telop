@@ -1055,6 +1055,18 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const getCardImageUrl = (cardId, isBgImage = false) => {
+            if (!cardId || !assetPaths.value.cardImgPath) {
+                return isBgImage ? 'none' : '';
+            }
+            const db = cardDatabase.value;
+            const cardData = db ? db[cardId] : null;
+            const imageUrl = cardData ? cardData.image_url : null;
+            const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg'; // Fallback to .jpg
+            const path = `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
+            return isBgImage ? `url(${path})` : path;
+        };
+
         const ENERGY_MAP = {
             "草": "草", "炎": "炎", "水": "水", "雷": "雷", "超": "超", "闘": "闘", "悪": "悪", "鋼": "鋼",
             "無": "無", "全": "全", "超悪": "超悪", "竜": "竜", "妖": "妖"
@@ -1201,7 +1213,7 @@
             const updateContent = (card, isUsed) => {
                 if (card) {
                     stadiumNameEl.textContent = isUsed ? '使用済' : card.name;
-                    stadiumCardEl.style.backgroundImage = `url(/${assetPaths.value.cardImgPath}${newCardId}.jpg)`;
+                    stadiumCardEl.style.backgroundImage = getCardImageUrl(newCardId, true);
                     stadiumCardEl.style.filter = isUsed ? 'grayscale(1)' : 'none';
                 } else {
                     stadiumNameEl.textContent = '';
@@ -1449,7 +1461,7 @@
                                 toolItem.className = itemClass;
                                 toolItem.dataset.toolId = toolId;
                                 const toolImg = document.createElement('img');
-                                toolImg.src = `/${assetPaths.value.cardImgPath}${toolId}.jpg`;
+                                toolImg.src = getCardImageUrl(toolId);
                                 toolItem.appendChild(toolImg);
                                 wrapperEl.appendChild(toolItem);
                             }
@@ -1477,8 +1489,7 @@
                         toolItem.className = `${itemClass} anim-tool-appear`;
                         toolItem.dataset.toolId = id;
                         const toolImg = document.createElement('img');
-                        toolImg.src = `/${assetPaths.value.cardImgPath}${id}.jpg`;
-                        toolItem.appendChild(toolImg);
+                                                        toolImg.src = getCardImageUrl(id);                        toolItem.appendChild(toolImg);
                         wrapperEl.appendChild(toolItem);
                         toolItem.addEventListener('animationstart', () => playToolAnimation(toolItem, isBattleSlot, true), { once: true });
                         toolItem.addEventListener('animationend', () => toolItem.classList.remove('anim-tool-appear'), { once: true });
@@ -1668,7 +1679,7 @@
                         img.onload = null;
                     };
                 }
-                img.src = `/${assetPaths.value.cardImgPath}${slotData.cardId}.jpg`;
+                img.src = getCardImageUrl(slotData.cardId);
 
                 const hpUpdate = () => {
                     const hpTextEl = wrapper.querySelector('.battle-hp-text');
@@ -1757,7 +1768,7 @@
                         playAnimationIfNeeded();
                         mainImg.onload = null;
                     };
-                    mainImg.src = `/${assetPaths.value.cardImgPath}${slotData.cardId}.jpg`;
+                    mainImg.src = getCardImageUrl(slotData.cardId);
                 } else if (forceSlideIn) {
                     playAnimationIfNeeded();
                 }

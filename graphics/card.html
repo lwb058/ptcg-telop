@@ -113,26 +113,35 @@
          }
  
         const cardToShowL = nodecg.Replicant('cardToShowL');
-        const cardToShowR = nodecg.Replicant('cardToShowR');
-        const settingsRep = nodecg.Replicant('ptcg-settings');
-        const assetPaths = nodecg.Replicant('assetPaths');
-        const deckL = nodecg.Replicant('deckL');
-        const deckR = nodecg.Replicant('deckR');
-
+                 const cardToShowR = nodecg.Replicant('cardToShowR');
+                const settingsRep = nodecg.Replicant('ptcg-settings');
+                const assetPaths = nodecg.Replicant('assetPaths');
+                const deckL = nodecg.Replicant('deckL');
+                const deckR = nodecg.Replicant('deckR');
+                const cardDatabase = nodecg.Replicant('cardDatabase');
+        
+                const getCardImageUrl = (cardId) => {
+                    if (!cardId || !assetPaths.value || !assetPaths.value.cardImgPath || !cardDatabase.value) {
+                        return defaultImage;
+                    }
+                    const db = cardDatabase.value;
+                    const cardData = db[cardId];
+                    const imageUrl = cardData ? cardData.image_url : null;
+                    const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg';
+                    return `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
+                };
         let isReversed = false;
 
         // --- Deck Card Preloading Logic ---
         const preloaderContainer = document.getElementById('video-preloader');
         function preloadDeckImages(deck) {
             if (!deck || !deck.cards || !assetPaths.value || !assetPaths.value.cardImgPath || !preloaderContainer) return;
-            
-            const cardImgPath = `/${assetPaths.value.cardImgPath}`;
 
             deck.cards.forEach(cardId => {
-                // Check if image is already preloading/preloaded to avoid duplicates
-                if (!preloaderContainer.querySelector(`img[src="${cardImgPath}${cardId}.jpg"]`)) {
+                const fullPath = getCardImageUrl(cardId);
+                if (fullPath !== defaultImage && !preloaderContainer.querySelector(`img[src="${fullPath}"]`)) {
                     const img = document.createElement('img');
-                    img.src = `${cardImgPath}${cardId}.jpg`;
+                    img.src = fullPath;
                     preloaderContainer.appendChild(img);
                 }
             });
@@ -167,14 +176,15 @@
             const wantsToShow = !!newValue;
             let newSrc = newValue || defaultImage;
 
-            // Logic to construct the correct image path from the second function definition
+            // Logic to construct the correct image path
             if (wantsToShow && assetPaths.value && assetPaths.value.cardImgPath) {
-                const cardIdMatch = newValue.match(/(\d{5,})\.(jpg|png)$/);
+                // The newValue is a path string like '.../12345.jpg'. We need to extract the ID.
+                const cardIdMatch = newValue.match(/(\d{5,})/);
                 if (cardIdMatch) {
                     const cardId = cardIdMatch[1];
-                    newSrc = `/${assetPaths.value.cardImgPath}${cardId}.jpg`;
+                    newSrc = getCardImageUrl(cardId); // Use the new helper function
                 } else {
-                    // Fallback to original value if parsing fails, but still check if it's a valid path
+                    // Fallback to original value if parsing fails
                     newSrc = newValue;
                 }
             }

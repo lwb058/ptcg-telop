@@ -241,7 +241,7 @@ module.exports = function (nodecg) {
 		const absoluteCardImgPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', cardImgDirName);
 		
 		const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
-		const command = `${pythonCommand} "${pythonScriptPath}" "${deckCode}" --database-path "${absoluteDbPath}"`;
+		const command = `${pythonCommand} "${pythonScriptPath}" "${deckCode}"`;
 
 		exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
 			if (error) {
@@ -259,7 +259,7 @@ module.exports = function (nodecg) {
                 loadCardDatabase();
 				deckReplicant.value = {
 					name: deckCode, 
-					cards: deckCards.map(c => c.id)
+					cards: deckCards.cards
 				};
 				nodecg.log.info(`Database reloaded and deck for Player ${side} updated.`);
 				deckLoadingStatus.value = { loading: false, side: null };
@@ -1118,7 +1118,7 @@ module.exports = function (nodecg) {
 			deckR.value = { name: '', cards: [] };
 
 			// Reset all player slots (both LIVE and DRAFT)
-			for (let i = 0; i < 9; i++) { // Changed from 6 to 9
+			for (let i = 0; i < 9; i++) {
 				const slotDefault = {
 					cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [], abilityUsed: false,
 				};

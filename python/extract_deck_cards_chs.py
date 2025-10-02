@@ -76,40 +76,40 @@ def main(identifier_arg=None):
         if identifier_arg:
             identifier = identifier_arg
         else:
-            print("Usage: python extract_deck_cards_chs.py <deck_code|deck_id|url> [--overwrite]")
+            print("Usage: python extract_deck_cards_chs.py <deck_code|deck_id|url> [--overwrite]", file=sys.stderr)
             sys.exit(1)
 
     overwrite = args.overwrite
     
     id_type = _identifier_type(identifier)
-    card_list = None
+    card_list_from_api = None
 
     if id_type == 'url':
         match = re.search(r'/decks/(\d+)', identifier)
         if match:
             deck_id = match.group(1)
-            card_list = fetch_deck_by_id(deck_id)
+            card_list_from_api = fetch_deck_by_id(deck_id)
         else:
             print(f"Could not extract a valid deck ID from the URL: {identifier}", file=sys.stderr)
     elif id_type == 'deckId':
-        card_list = fetch_deck_by_id(identifier)
+        card_list_from_api = fetch_deck_by_id(identifier)
     elif id_type == 'deckCode':
-        card_list = fetch_deck_by_code(identifier)
+        card_list_from_api = fetch_deck_by_code(identifier)
     else:
         print(f"Unknown identifier format: {identifier}", file=sys.stderr)
 
-    if card_list is None:
-        print("Could not fetch deck data. Exiting.")
+    if card_list_from_api is None:
+        print("Could not fetch deck data. Exiting.", file=sys.stderr)
         sys.exit(1)
 
-    if not card_list:
-        print("No cards to process. Exiting.")
+    if not card_list_from_api:
+        print("No cards to process. Exiting.", file=sys.stderr)
         sys.exit(1)
 
+    # --- Database Update Logic ---
     card_database = load_database()
     db_changed = False
-
-    for i, card in enumerate(card_list):
+    for i, card in enumerate(card_list_from_api):
         set_code = card.get('setCode')
         card_index = card.get('cardIndex')
         
@@ -118,7 +118,7 @@ def main(identifier_arg=None):
             continue
 
         card_id = f"{set_code}-{card_index}"
-        print(f"\n--- Processing card {i+1}/{len(card_list)}: {card_id} ---", file=sys.stderr)
+        print(f"--- Processing card {i+1}/{len(card_list_from_api)}: {card_id} ---", file=sys.stderr)
 
         card_info, status = add_card_to_database(card_id, overwrite=overwrite, db_instance=card_database)
         
@@ -133,6 +133,22 @@ def main(identifier_arg=None):
         print("Database save complete.", file=sys.stderr)
     else:
         print("\nNo changes to the database were made.", file=sys.stderr)
+
+    # --- Deck Data JSON Output Logic ---
+    final_deck_cards = []
+    for card in card_list_from_api:
+        set_code = card.get('setCode')
+        card_index = card.get('cardIndex')
+        count = card.get('count', 0)
+        if not set_code or not card_index:
+            continue
+        card_id = f"{set_code}-{card_index}"
+        final_deck_cards.extend([card_id] * count)
+    
+    deck_output = {"cards": final_deck_cards}
+    
+    # Print the final JSON object to stdout for Node.js to capture
+    print(json.dumps(deck_output, ensure_ascii=False))
 
 if __name__ == "__main__":
     main()

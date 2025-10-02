@@ -515,6 +515,18 @@
                 return nodecg.Replicant(`draft_slot${side}${index}`);
             })
         ).then(() => {
+            const getCardImageUrl = (cardId, isBgImage = false) => {
+                if (!cardId || !assetPaths.value.cardImgPath) {
+                    const defaultPath = '/assets/ptcg-telop/element/default.jpg';
+                    return isBgImage ? `url(${defaultPath})` : defaultPath;
+                }
+                const db = cardDatabase.value;
+                const cardData = db ? db[cardId] : null;
+                const imageUrl = cardData ? cardData.image_url : null;
+                const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg'; // Fallback to .jpg
+                const path = `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
+                return isBgImage ? `url(${path})` : path;
+            };
             
             // --- Replicant Setup ---
             const playerL_name = nodecg.Replicant('playerL_name');
@@ -631,7 +643,7 @@
                 cardEl.dataset.slotId = slotId;
 
                 const img = document.createElement('img');
-                img.src = `/${assetPaths.value.cardImgPath}${slotValue.cardId}.jpg`;
+                img.src = getCardImageUrl(slotValue.cardId);
                 cardEl.appendChild(img);
 
                 // --- Display attached energies ---
@@ -674,7 +686,7 @@
                         const toolIconDiv = document.createElement('div');
                         toolIconDiv.className = 'attached-tool-icon';
                         toolIconDiv.title = `Click to remove ${toolData.name}`;
-                        toolIconDiv.style.backgroundImage = `url('/${assetPaths.value.cardImgPath}${toolId}.jpg')`;
+                        toolIconDiv.style.backgroundImage = getCardImageUrl(toolId, true);
                         toolIconDiv.dataset.toolId = toolId;
                         toolContainer.appendChild(toolIconDiv);
                     }
@@ -1157,7 +1169,7 @@
                     btn.className = 'tool-btn'; // Reuse style
                     
                     const img = document.createElement('img');
-                    img.src = `/${assetPaths.value.cardImgPath}${id}.jpg`; // Use card image for tools
+                    img.src = getCardImageUrl(id); // Use card image for tools
                     img.title = card.name;
                     img.className = 'tool-icon'; // Reuse style
                     img.dataset.toolId = id;
