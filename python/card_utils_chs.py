@@ -43,6 +43,19 @@ ENERGY_CHS_MAP = {
     "n": "龙",
     "y": "妖",
 }
+CHS_TO_JP_ENERGY_MAP = {
+    "草": "草",
+    "火": "炎",
+    "水": "水",
+    "雷": "雷",
+    "超": "超",
+    "斗": "闘",
+    "恶": "悪",
+    "钢": "鋼",
+    "无": "無",
+    "龙": "竜",
+    "妖": "妖",
+}
 
 # --- Core Functions ---
 def fetch_card_packs():
@@ -260,12 +273,46 @@ def _transform_api_data(api_data, card_details, set_name_map):
 
     elif supertype_api in ["Trainer", "Stadium", "Supporter", "Item", "Tool"]:
         card_details['supertype'] = 'trainer'
-        card_details['trainer'] = {'text': ' '.join(data.get('description', '').split())}
         
+        desc_raw = data.get('description', '')
+        description_text = ' '.join(desc_raw.split()) if isinstance(desc_raw, str) else ' '.join(desc_raw)
+        card_details['trainer'] = {'text': description_text}
+        
+        # Check if it's a "Technical Machine" card
+        if "招式学习器" in card_details.get('name', ''):
+            energy_chars = "".join(set(ENERGY_CHS_MAP.values()))
+            attack_pattern = re.compile(
+                r"((?:【(?:[" + energy_chars + "])】)+)\s+"  # (Group 1: Costs) e.g.【无】【无】
+                r"([^【\s]+)\s*"                            # (Group 2: Name) e.g. 临危一击
+                r"(?:(\d+)\s*)?"                            # (Group 3: Damage - optional) e.g. 280
+                r"(.*)"                                     # (Group 4: Text) e.g. 这个招式...
+            )
+            match = attack_pattern.search(description_text)
+            
+            if match:
+                cost_str, name, damage, text = match.groups()
+                
+                costs_chs = re.findall(r"【(.+?)】", cost_str)
+                costs_jp = [CHS_TO_JP_ENERGY_MAP.get(c, c) for c in costs_chs]
+
+                new_attack = {
+                    "name": name.strip(),
+                    "cost": costs_jp,
+                    "damage": damage.strip() if damage else "",
+                    "text": text.strip()
+                }
+                
+                if 'attacks' not in card_details['trainer']:
+                    card_details['trainer']['attacks'] = []
+                card_details['trainer']['attacks'].append(new_attack)
+
+                # Remove attack string from main description
+                card_details['trainer']['text'] = description_text.replace(match.group(0), '').strip()
+
         if supertype_api in ["Stadium", "Supporter", "Item", "Tool"]:
             card_details['subtype'] = supertype_api.lower()
         else:
-            desc = data.get('description', '')
+            desc = description_text
             if "宝可梦道具" in desc: card_details['subtype'] = 'tool'
             elif "支援者" in desc: card_details['subtype'] = 'supporter'
             elif "竞技场" in desc: card_details['subtype'] = 'stadium'

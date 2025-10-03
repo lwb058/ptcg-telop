@@ -1454,6 +1454,7 @@
 
             function updateAttackDropdown() {
                 attackSelect.innerHTML = ''; // Clear it
+                const TM_SOURCE_ID = '-TM-';
 
                 const attackerSlotId = attackerSelect.value;
                 if (!attackerSlotId) {
@@ -1490,7 +1491,7 @@
                         if (toolData.trainer?.attacks) {
                             const toolAttacks = toolData.trainer.attacks.map(attack => ({
                                 ...attack,
-                                source: 'ワザマシン'
+                                source: TM_SOURCE_ID
                             }));
                             allAttacks.push(...toolAttacks);
                         }
@@ -1528,19 +1529,18 @@
                         delete groupedAttacks[attackerName]; // Remove from map to avoid re-processing
                     }
 
-                    // 2. Add attacks from "ワザマシン" (Technical Machine)
-                    const technicalMachine = 'ワザマシン';
-                    if (groupedAttacks[technicalMachine]) {
+                    // 2. Add attacks from Technical Machine
+                    if (groupedAttacks[TM_SOURCE_ID]) {
                         const optgroup = document.createElement('optgroup');
-                        optgroup.label = technicalMachine;
-                        groupedAttacks[technicalMachine].forEach(attack => {
+                        optgroup.label = TM_SOURCE_ID;
+                        groupedAttacks[TM_SOURCE_ID].forEach(attack => {
                             const option = document.createElement('option');
                             option.value = attack.name;
                             option.textContent = attack.name;
                             optgroup.appendChild(option);
                         });
                         attackSelect.appendChild(optgroup);
-                        delete groupedAttacks[technicalMachine]; // Remove from map to avoid re-processing
+                        delete groupedAttacks[TM_SOURCE_ID]; // Remove from map to avoid re-processing
                     }
 
                     // 3. Add attacks from other sources (pre-evolutions) in optgroups

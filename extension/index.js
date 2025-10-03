@@ -690,7 +690,7 @@ module.exports = function (nodecg) {
                                 const initialTools = slotRep.value.attachedToolIds;
                                 const toolsToKeep = initialTools.filter(toolId => {
                                     const cardData = db[toolId];
-                                    return !(cardData && cardData.name && cardData.name.includes('ワザマシン'));
+                                    return !(cardData && cardData.subtype === 'tool' && cardData.trainer?.attacks);
                                 });
 
                                 if (initialTools.length !== toolsToKeep.length) {
