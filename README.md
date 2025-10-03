@@ -135,6 +135,6 @@ nodecg/
 
 ## Special Thanks
 
-本システムの簡体字中国語カードデータベースは、[tcg.mik.moe](https://tcg.mik.moe/)（開発者: [@CrystM39](https://x.com/CrystM39)）様より提供されています。心より感謝申し上げます。
+本システムの簡体字中国語カードデータベースは、[tcg.mik.moe](https://tcg.mik.moe/)（開発者: [CrystM39](https://x.com/CrystM39)）様より提供されています。心より感謝申し上げます。
 
-本系统的简体中文卡牌数据由 [tcg.mik.moe](https://tcg.mik.moe/) (开发者: [@CrystM39](https://space.bilibili.com/1802522475/dynamic)) 提供支持。特此感谢！
+本系统的简体中文卡牌数据由 [tcg.mik.moe](https://tcg.mik.moe/) (开发者: [CrystM39](https://space.bilibili.com/1802522475/dynamic)) 提供支持。特此感谢！
