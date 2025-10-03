@@ -535,8 +535,8 @@ module.exports = function (nodecg) {
 							prizeCount = parseInt(m[1], 10);
 						}
 						// Compatible with Chinese/English/etc.
-						else if (/2張|2枚奖赏卡|2 Prize/i.test(addRule)) prizeCount = 2;
-						else if (/3張|3枚奖赏卡|3 Prize/i.test(addRule)) prizeCount = 3;
+						else if (/2張|昏厥时，对手将拿取2张奖赏卡|2 Prize/i.test(addRule)) prizeCount = 2;
+						else if (/3張|昏厥时，对手将拿取3张奖赏卡|3 Prize/i.test(addRule)) prizeCount = 3;
 					}
 					// draft_sideL/draft_sideR
 					const draftSideRep = isL ? draft_sideR : draft_sideL;
