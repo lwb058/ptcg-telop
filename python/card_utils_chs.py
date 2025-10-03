@@ -202,6 +202,20 @@ def _transform_api_data(api_data, card_details, set_name_map):
             card_details['pokemon']['evolves'] = EVOLUTION_STAGE_MAP.get(pokemon_attr.get('stage'))
             if not is_basic:
                 card_details['pokemon']['evolvesFrom'] = [pokemon_attr.get('evolvesFrom')]
+                if pokemon_attr.get('stage') == 'Stage 2':
+                    # If it's a Stage 2, we need to find the Basic Pokémon as well.
+                    stage1_name = pokemon_attr.get('evolvesFrom')
+                    if stage1_name:
+                        print(f"  -> It's a Stage 2. Finding basic form for {stage1_name}...", file=sys.stderr)
+                        # Use our working function to get the Stage 1 card details
+                        stage1_details = get_card_by_name(stage1_name)
+                        if (stage1_details and stage1_details.get('pokemon') and 
+                            stage1_details['pokemon'].get('evolvesFrom')):
+                            # We found the basic Pokémon's name
+                            basic_name = stage1_details['pokemon']['evolvesFrom'][0]
+                            print(f"  -> Found basic form: {basic_name}", file=sys.stderr)
+                            # Append the basic name to the evolution chain
+                            card_details['pokemon']['evolvesFrom'].append(basic_name)
 
             # Abilities
             if pokemon_attr.get('ability'):
@@ -267,6 +281,49 @@ def _transform_api_data(api_data, card_details, set_name_map):
     
     else:
         card_details['supertype'] = supertype_api.lower() if supertype_api else None
+
+def get_card_by_name(name):
+    """Fetches card data by name using the advance search API."""
+    url = "https://tcg.mik.moe/api/v3/card/card-basic-search"
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+    }
+    payload = {
+        "SearchText": name,
+        "exact": True,
+        "page": 1,
+        "PageSize": 1
+    }
+    try:
+        # Add a small delay to avoid spamming the API
+        time.sleep(0.5)
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        
+        search_result = response.json()
+        
+        if search_result and search_result.get("code") == 200:
+            card_list = search_result.get("data", {}).get("list", [])
+            if card_list:
+                first_card = card_list[0]
+                set_code = first_card.get('setCode')
+                card_index = first_card.get('cardIndex')
+                
+                if set_code and card_index:
+                    card_id = f"{set_code}/{card_index}"
+                    # Call get_card_details to get the full card info, maintaining the original pattern
+                    card_details = get_card_details(card_id)
+                    return card_details
+
+    except requests.exceptions.RequestException as e:
+        print(f"API request error while fetching card by name '{name}': {e}", file=sys.stderr)
+    except json.JSONDecodeError:
+        print(f"Failed to decode JSON from search API response for name '{name}'.", file=sys.stderr)
+    except Exception as e:
+        print(f"An unexpected error occurred in get_card_by_name for '{name}': {e}", file=sys.stderr)
+        
+    return None
 
 def get_card_details(card_id, html_content=None):
     """Extracts detailed information by calling the tcg.mik.moe API."""
