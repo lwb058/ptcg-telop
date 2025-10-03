@@ -775,12 +775,19 @@
 
             deckLoadingStatus.on('change', (newStatus) => {
                 const isLoading = newStatus.loading;
-                const loadingSide = newStatus.side;
-                // Disable this panel's button if the *other* panel is loading.
-                if (isLoading && loadingSide === 'L') {
+                const side = newStatus.side;
+
+                if (isLoading && side === 'R') {
+                    // This panel is loading
+                    setDeckBtn.disabled = true;
+                    const percentage = newStatus.percentage || 0;
+                    setDeckBtn.textContent = `${percentage.toFixed(0)}%`;
+                } else if (isLoading) {
+                    // Another panel is loading
                     setDeckBtn.disabled = true;
                     setDeckBtn.textContent = 'Loading...';
-                } else if (!isLoading) {
+                } else {
+                    // No panel is loading
                     setDeckBtn.disabled = false;
                     setDeckBtn.textContent = 'Set';
                 }

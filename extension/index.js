@@ -52,6 +52,7 @@ module.exports = function (nodecg) {
 	const cardDatabase = nodecg.Replicant('cardDatabase', { defaultValue: {} });
 	const assetPaths = nodecg.Replicant('assetPaths', { defaultValue: {} });
 	const deckLoadingStatus = nodecg.Replicant('deckLoadingStatus', { defaultValue: { loading: false, side: null } });
+	const deckLoadingProgress = nodecg.Replicant('deckLoadingProgress', { defaultValue: { side: null, percentage: 0, text: '' } });
 	const playerL_name = nodecg.Replicant('playerL_name', { defaultValue: '' });
 	const playerR_name = nodecg.Replicant('playerR_name', { defaultValue: '' });
 	const matchInfo = nodecg.Replicant('matchInfo', { defaultValue: { round: '决赛' } });
@@ -243,11 +244,13 @@ module.exports = function (nodecg) {
 		const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
 		const command = `${pythonCommand} "${pythonScriptPath}" "${deckCode}"`;
 
-		exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
+		const child = exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
+			// Final state reset
+			deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
+
 			if (error) {
 				nodecg.log.error(`exec error: ${error}`);
 				nodecg.log.error(`Python stderr: ${stderr}`);
-				deckLoadingStatus.value = { loading: false, side: null };
 				if (callback) callback({ error: error.message, stderr: stderr });
 				return;
 			}
@@ -262,13 +265,23 @@ module.exports = function (nodecg) {
 					cards: deckCards.cards
 				};
 				nodecg.log.info(`Database reloaded and deck for Player ${side} updated.`);
-				deckLoadingStatus.value = { loading: false, side: null };
 				if (callback) callback(null, `Deck for Player ${side} updated.`);
 			} catch (parseError) {
 				nodecg.log.error('Failed to parse python script output:', parseError);
 				nodecg.log.error('Python stdout:', stdout);
-				deckLoadingStatus.value = { loading: false, side: null };
 				if (callback) callback({ error: 'Failed to parse script output.', stdout: stdout });
+			}
+		});
+
+		const progressRegex = /--- Processing card (\d+)\/(\d+):/;
+		child.stderr.on('data', (data) => {
+			const match = data.toString().match(progressRegex);
+			if (match) {
+				const current = parseInt(match[1], 10);
+				const total = parseInt(match[2], 10);
+				const percentage = Math.round((current / total) * 100);
+				const text = `${current}/${total}`;
+				deckLoadingStatus.value = { loading: true, side: side, percentage: percentage, text: text };
 			}
 		});
 	});

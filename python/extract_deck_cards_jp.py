@@ -55,7 +55,10 @@ def extract_deck_cards(deck_id, overwrite=True, db_path=None, language='jp'):
         print(f"Found {len(deck_list_with_quantity)} unique cards in the deck.", file=sys.stderr)
 
         # 2. Process all cards in memory
-        for card_id, quantity in deck_list_with_quantity.items():
+        card_list_items = list(deck_list_with_quantity.items())
+        total_cards = len(card_list_items)
+        for i, (card_id, quantity) in enumerate(card_list_items):
+            print(f"--- Processing card {i+1}/{total_cards}: {card_id} ---", file=sys.stderr)
             card_info, status = _core_process_card(card_id, card_database, overwrite, language=language)
             
             if status == 'updated':
