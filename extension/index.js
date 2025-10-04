@@ -8,6 +8,10 @@ const { exec } = require('child_process'); // Import child_process
 module.exports = function (nodecg) {
 	nodecg.log.info('Bundle ptcg-telop starting up.');
 
+	// Define projectRoot at the top level of the module to ensure it's available for all functions.
+	// This path points to the absolute root of the project, "NodeCG_PTCG".
+	const projectRoot = path.join(__dirname, '..', '..', '..', '..');
+
 	// Read package.json for version info
 	const pjson = require('../package.json');
 	const bundleVersion = pjson.version;
@@ -77,7 +81,7 @@ module.exports = function (nodecg) {
         }
 
 		const newLang = (newValue && newValue.language) || 'jp';
-		const oldLang = (oldValue && oldValue.language) || 'jp';
+		const oldLang = (oldValue && oldValue.language); // No default for oldLang
 
 		// Update asset path for card images
 		const newCardImgPath = `assets/ptcg-telop/card_img_${newLang}/`;
@@ -86,8 +90,9 @@ module.exports = function (nodecg) {
 			nodecg.log.info(`Asset path for card images updated to: ${newCardImgPath}`);
 		}
 
-		if (newValue && oldLang !== newLang) {
-			nodecg.log.info('Language setting changed. Reloading card database.');
+		// On initial load (oldValue is undefined) or if lang has changed, reload the DB.
+		if (!oldValue || (oldValue && newLang !== oldLang)) {
+			nodecg.log.info('Language setting changed or initial load. Reloading card database.');
 			loadCardDatabase();
 		}
     });
@@ -173,9 +178,7 @@ module.exports = function (nodecg) {
 	// --- DEBUG: Moved logic out of 'initialized' event ---
 	nodecg.log.info('[DEBUG_LIFECYCLE] Running initialization logic directly.');
 
-	// Use __dirname to robustly calculate paths, avoiding dependency on the NodeCG lifecycle.
-	// __dirname = /.../NodeCG_PTCG/nodecg/bundles/ptcg-telop/extension
-	const projectRoot = path.join(__dirname, '..', '..', '..', '..');
+
 
 	function loadCardDatabase() {
 		try {
@@ -213,11 +216,7 @@ module.exports = function (nodecg) {
 		}
 	}
 
-	// Initial load
-	loadCardDatabase();
-	// Manually populate assetPaths on startup
-	const initialLang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
-	assetPaths.value.cardImgPath = `assets/ptcg-telop/card_img_${initialLang}/`;
+	// Initial load of the database and asset paths is now handled by the ptcgSettings.on('change') listener.
 
 	// Listen for messages to process deck codes
 	nodecg.listenFor('setPlayerDeck', ({ side, deckCode }, callback) => {

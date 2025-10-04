@@ -122,6 +122,9 @@
             top: -62px; 
             left: -35px; 
         }
+        .battle-pokemon-image.is-v {
+            top: -119px;
+        }
         .battle-status-ailment { 
             position: absolute; 
             top: 5px; 
@@ -348,6 +351,9 @@
             height: auto;
             top: -26.5px; 
             left: -13.8px;
+        }
+        .bench-pokemon-image.is-v {
+            top: -54.5px;
         }
         .bench-attached-energies { position: absolute; bottom: -2px; left: -2px; display: flex; gap: 1px; }
         .bench-attached-energies:not(:empty) {
@@ -1707,6 +1713,7 @@
                     };
                 }
                 img.src = getCardImageUrl(slotData.cardId);
+                img.classList.toggle('is-v', cardData.pokemon && cardData.subtype === 'V');
 
                 const hpUpdate = () => {
                     const hpTextEl = wrapper.querySelector('.battle-hp-text');
@@ -1800,6 +1807,7 @@
                         mainImg.onload = null;
                     };
                     mainImg.src = getCardImageUrl(slotData.cardId);
+                    mainImg.classList.toggle('is-v', cardData.pokemon && cardData.subtype === 'V');
                 } else if (forceSlideIn) {
                     playAnimationIfNeeded();
                 }
