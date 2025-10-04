@@ -1387,12 +1387,31 @@
             video.addEventListener('ended', () => video.remove());
         }
 
-        function updateAttachedTools(slotEl, newToolIds, oldToolIds, isBattleSlot) {
+        function updateAttachedTools(slotEl, newToolIds, oldToolIds, isBattleSlot, forceRedraw = false) {
             const db = cardDatabase.value;
             const wrapperSelector = isBattleSlot ? '.battle-attached-tools-wrapper' : '.bench-attached-tools-wrapper';
             const itemClass = isBattleSlot ? 'battle-attached-tool-item' : 'bench-attached-tool-item';
             const wrapperEl = slotEl.querySelector(wrapperSelector);
             if (!wrapperEl) return;
+
+            // If a forceRedraw is needed (because the parent DOM was wiped), skip diffing and just render the new state.
+            if (forceRedraw) {
+                wrapperEl.innerHTML = ''; // Clear any previous content
+                newToolIds.forEach(id => {
+                    if (db[id]) {
+                        const toolItem = document.createElement('div');
+                        // Use a simple scale-in animation for this redraw case to avoid complexity.
+                        toolItem.className = `${itemClass} anim-scale-in-tool`;
+                        toolItem.dataset.toolId = id;
+                        const toolImg = document.createElement('img');
+                        toolImg.src = getCardImageUrl(id);
+                        toolItem.appendChild(toolImg);
+                        wrapperEl.appendChild(toolItem);
+                        toolItem.addEventListener('animationend', () => toolItem.classList.remove('anim-scale-in-tool'), { once: true });
+                    }
+                });
+                return; // End execution here
+            }
  
             const toolsToRemove = [];
             const toolsToAdd = [];
@@ -1545,6 +1564,7 @@
             const forceSlideIn = slotData && slotData.forceSlideIn;
             const skipSlideIn = slotData && slotData.evolutionSelect;
             const isNewCard = hasCard && (!oldSlotData || slotData.cardId !== oldSlotData.cardId);
+            const isCardChanged = !oldSlotData || (slotData && oldSlotData.cardId !== slotData.cardId);
 
             const sanitizeDamage = (damage) => {
                 if (typeof damage !== 'string') return damage || '';
@@ -1554,21 +1574,31 @@
             if (!slotEl || !slotData || !slotData.cardId || !db || !db[slotData.cardId]) {
                 const isSlidingOut = slotEl.classList.contains('anim-slide-out-L') || slotEl.classList.contains('anim-slide-out-R');
 
-                const clearSlot = () => {
-                    const activeWrapper = slotEl.querySelector('.active-pokemon-wrapper');
-                    const benchWrapper = slotEl.querySelector('.bench-pokemon-wrapper');
-
-                    if (activeWrapper) { // It's the active slot, just hide the content
-                        activeWrapper.classList.add('hidden');
-                    }
-                    if (benchWrapper) { // It's a bench slot, destroy the content
-                        slotEl.innerHTML = '';
-                    }
-
-                    slotEl.dataset.cardId = '';
-                    slotEl.classList.add('is-empty');
-                };
-
+                        const clearSlot = () => {
+                            const activeWrapper = slotEl.querySelector('.active-pokemon-wrapper');
+                            const benchWrapper = slotEl.querySelector('.bench-pokemon-wrapper');
+                
+                            if (activeWrapper) { // It's the active slot
+                                // First, hide the wrapper. The transition will make it fade out.
+                                activeWrapper.classList.add('hidden');
+                
+                                // Then, clean up the dynamic content. This happens while it's fading.
+                                const toolsWrapper = activeWrapper.querySelector('.battle-attached-tools-wrapper');
+                                if (toolsWrapper) toolsWrapper.innerHTML = '';
+                
+                                const energyWrapper = activeWrapper.querySelector('.battle-attached-energies');
+                                if (energyWrapper) energyWrapper.innerHTML = '';
+                
+                                const ailmentsWrapper = activeWrapper.querySelector('.battle-status-ailment');
+                                if (ailmentsWrapper) ailmentsWrapper.innerHTML = '';
+                            }
+                            if (benchWrapper) { // It's a bench slot, destroy the content
+                                slotEl.innerHTML = '';
+                            }
+                
+                            slotEl.dataset.cardId = '';
+                            slotEl.classList.add('is-empty');
+                        };
                 if (isSlidingOut) {
                     setTimeout(clearSlot, 500); 
                 } else {
@@ -1608,9 +1638,8 @@
             const newAilments = slotData ? (slotData.ailments || []) : [];
 
             // If the card ID changes (evolution, devolution) or if the Pokémon is no longer active,
-            // it loses all status ailments. We clear oldAilments to ensure the UI updates correctly.
-            const isCardChanged = oldSlotData && oldSlotData.cardId !== slotData.cardId;
-            const isNoLongerActive = index !== 0 && oldSlotData && oldSlotData.active; // Moved from active to bench
+        // it loses all status ailments. We clear oldAilments to ensure the UI updates correctly.
+        const isNoLongerActive = index !== 0 && oldSlotData && oldSlotData.active; // Moved from active to bench
             
             if (isCardChanged || isNoLongerActive) {
                 // When a card changes, it loses all ailments. The new state has no ailments.
@@ -1650,8 +1679,6 @@
             if (hpPercent <= 25) hpColor = 'var(--hp-low)';
             else if (hpPercent <= 50) hpColor = 'var(--hp-medium)';
             const getEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/energy/${ENERGY_MAP[type] || 'エネなし'}.png">`;
-
-            updateAttachedTools(slotEl, newToolIds, oldToolIds, index === 0);
 
             if (index === 0) {
                 const wrapper = slotEl.querySelector('.active-pokemon-wrapper');
@@ -1693,6 +1720,8 @@
                 };
                 if (isUnderAttack) { setTimeout(hpUpdate, 1100); } else { hpUpdate(); }
 
+                updateAttachedTools(slotEl, newToolIds, oldToolIds, true, isCardChanged);
+
                 const energyContainer = wrapper.querySelector('.battle-attached-energies');
                 renderAttachedEnergies(energyContainer, slotData.attachedEnergy, getEnergyIcon);
 
@@ -1726,6 +1755,8 @@
                 });
             } else {
                 let wrapper = slotEl.querySelector('.bench-pokemon-wrapper');
+                // Determine if a forceRedraw is needed BEFORE the DOM is potentially wiped.
+                const forceRedraw = !oldSlotData || !wrapper || slotEl.dataset.cardId !== slotData.cardId;
 
                 const playAnimationIfNeeded = () => {
                     if ((isNewCard || forceSlideIn) && !skipSlideIn) {
@@ -1739,7 +1770,7 @@
                     }
                 };
 
-                if (!wrapper || slotEl.dataset.cardId !== slotData.cardId) {
+                if (forceRedraw) {
                     slotEl.innerHTML = `
                         <div class="bench-pokemon-wrapper">
                             <div class="bench-card-image-area">
@@ -1798,6 +1829,8 @@
                         </div>`;
                 });
                 skillsContainer.innerHTML = skillsHtml;
+
+                updateAttachedTools(slotEl, newToolIds, oldToolIds, false, forceRedraw);
 
                 const hpUpdate = () => {
                     const hpTextEl = wrapper.querySelector('.bench-hp-text');
@@ -1983,6 +2016,9 @@
                     const replicant = live_slotReplicants[`live_slot${side}${i}`];
                     renderSlot(side, i, replicant.value, null);
                     replicant.on('change', (newVal, oldVal) => {
+                        if (!oldVal) {
+                            return;
+                        }
                         renderSlot(side, i, newVal, oldVal);
                     });
                 }

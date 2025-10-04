@@ -199,6 +199,14 @@
             animation: container-fade-in 0.2s ease-out forwards;
         }
 
+        @keyframes scale-in-tool {
+            from { transform: scale(1.1); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .anim-scale-in-tool {
+            animation: scale-in-tool 0.1s ease-out forwards;
+        }
+
         /* --- Attack FX Animations --- */
         @keyframes flash-white {
             0%, 100% { filter: brightness(1); }
@@ -395,12 +403,31 @@
                 document.body.appendChild(video);
                 video.addEventListener('ended', () => video.remove());
             }
-            function updateAttachedTools(slotEl, newToolIds, oldToolIds, isBattleSlot) {
+            function updateAttachedTools(slotEl, newToolIds, oldToolIds, isBattleSlot, forceRedraw = false) {
                 const db = cardDatabase.value;
                 const wrapperSelector = '.bench-attached-tools-wrapper';
                 const itemClass = 'bench-attached-tool-item';
                 const wrapperEl = slotEl.querySelector('.bench-attached-tools-wrapper');
                 if (!wrapperEl) return;
+
+                // If a forceRedraw is needed (because the parent DOM was wiped), skip diffing and just render the new state.
+                if (forceRedraw) {
+                    wrapperEl.innerHTML = ''; // Clear any previous content
+                    newToolIds.forEach(id => {
+                        if (db[id]) {
+                            const toolItem = document.createElement('div');
+                            // Use a simple scale-in animation for this redraw case to avoid complexity.
+                            toolItem.className = `${itemClass} anim-scale-in-tool`;
+                            toolItem.dataset.toolId = id;
+                            const toolImg = document.createElement('img');
+                            toolImg.src = getCardImageUrl(id);
+                            toolItem.appendChild(toolImg);
+                            wrapperEl.appendChild(toolItem);
+                            toolItem.addEventListener('animationend', () => toolItem.classList.remove('anim-scale-in-tool'), { once: true });
+                        }
+                    });
+                    return; // End execution here
+                }
  
                 const toolsToRemove = [];
                 const toolsToAdd = [];
@@ -640,7 +667,8 @@
                     }
                 };
 
-                if (!wrapper || slotEl.dataset.cardId !== slotData.cardId) {
+                const forceRedraw = !oldSlotData || !wrapper || slotEl.dataset.cardId !== slotData.cardId;
+                if (forceRedraw) {
                     slotEl.innerHTML = `
                         <div class="bench-pokemon-wrapper">
                             <div class="bench-card-image-area">
@@ -716,7 +744,7 @@
                 const energyContainer = wrapper.querySelector('.bench-attached-energies');
                 renderAttachedEnergies(energyContainer, slotData.attachedEnergy, getEnergyIcon);
 
-                updateAttachedTools(slotEl, newToolIds, oldToolIds, false); // isBattleSlot is always false here
+                updateAttachedTools(slotEl, newToolIds, oldToolIds, false, forceRedraw); // isBattleSlot is always false here
 
                 if (slotData && slotData.evolutionSelect) {
                     delete slotData.evolutionSelect;
@@ -844,6 +872,9 @@
                     sides.forEach(side => {
                         const replicant = nodecg.Replicant(`live_slot${side}${i}`);
                         replicant.on('change', (newVal, oldVal) => {
+                            if (!oldVal) {
+                                return;
+                            }
                             renderSlot(side, i, newVal, oldVal);
                         });
                         renderSlot(side, i, replicant.value, null);
