@@ -1,0 +1,95 @@
+/* 
+  PTCG Telop Local Font Definitions 
+*/
+
+/* --- 1. Font Face Declarations --- */
+
+/* Numeric & Monospace Font Definitions (Universal) */
+@font-face {
+  font-family: 'Sora';
+  src: url('/assets/ptcg-telop/font/Sora-VariableFont_wght.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Roboto Mono';
+  src: url('/assets/ptcg-telop/font/RobotoMono-VariableFont_wght.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Font-Player-Name';
+  src: url('/assets/ptcg-telop/font/NotoSans-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: 800;
+}
+
+/* Japanese Font Definitions */
+@font-face {
+  font-family: 'PTCG-Main-JP';
+  src: url('/assets/ptcg-telop/font/MPLUS1p-Regular.ttf') format('truetype');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'PTCG-Main-JP';
+  src: url('/assets/ptcg-telop/font/MPLUS1p-Bold.ttf') format('truetype');
+  font-weight: 700;
+}
+@font-face {
+  font-family: 'PTCG-Main-JP';
+  src: url('/assets/ptcg-telop/font/MPLUS1p-Black.ttf') format('truetype');
+  font-weight: 900;
+}
+
+
+@font-face {
+  font-family: 'PTCG-Attack-JP';
+  src: url('/assets/ptcg-telop/font/DelaGothicOne-Regular.ttf') format('truetype');
+  font-weight: 400;
+}
+
+/* 
+  Placeholder for Chinese Fonts 
+  Once you add the Chinese font files to the /assets/ptcg-telop/font/ directory,
+  uncomment these rules and update the file names.
+*/
+/*
+@font-face {
+  font-family: 'PTCG-Main-CHS';
+  src: url('/assets/ptcg-telop/font/Your-Chinese-Main-Font.ttf') format('truetype');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'PTCG-PlayerName-CHS';
+  src: url('/assets/ptcg-telop/font/Your-Chinese-PlayerName-Font.ttf') format('truetype');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'PTCG-Attack-CHS';
+  src: url('/assets/ptcg-telop/font/Your-Chinese-Attack-Font.ttf') format('truetype');
+  font-weight: 400;
+}
+*/
+
+/* --- 2. Language-based Switching Logic --- */
+
+/* 
+  Define CSS variables that will hold the current language's font family.
+  These are applied based on the class of the <body> tag.
+*/
+
+body.lang-jp {
+  --font-main-lang: 'PTCG-Main-JP';
+  --font-attack-lang: 'PTCG-Attack-JP';
+}
+
+body.lang-chs {
+  /* 
+    FALLBACK: Using Japanese fonts for Chinese until Chinese fonts are provided.
+    Once 'PTCG-Main-CHS' etc. are defined above, change these values.
+  */
+  --font-main-lang: 'PTCG-Main-JP';
+  --font-attack-lang: 'PTCG-Attack-JP';
+  /*
+  --font-main-lang: 'PTCG-Main-CHS';
+  --font-player-name-lang: 'PTCG-PlayerName-CHS';
+  --font-attack-lang: 'PTCG-Attack-CHS';
+  */
+}

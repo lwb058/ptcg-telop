@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Main Graphic</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+1p:wght@400;700;900&family=Mochiy+Pop+P+One&family=Sora:wght@400;700;900&family=Robot+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/fonts.css">
     <style>
         :root {
-            --font-main: 'M PLUS 1p', sans-serif;
+            /* All fonts are now defined in css/fonts.css */
             --font-numeric: 'Sora', sans-serif;
-            --font-damage: 'Rotobo Mono', sans-serif;
+            --font-damage: 'Roboto Mono', sans-serif;
             --color-bg-panel: #3db1ff;
             --color-bg-module: #0a406d;
             --module-border: 2px;
@@ -29,7 +27,7 @@
             --ability-tag-color: #d4000e;
         }
 
-        body, html { margin: 0; padding: 0; width: 1920px; height: 1080px; font-family: var(--font-main); color: var(--text-light); background-color: transparent; overflow: hidden; }
+        body, html { margin: 0; padding: 0; width: 1920px; height: 1080px; font-family: var(--font-main-lang, sans-serif); color: var(--text-light); background-color: transparent; overflow: hidden; }
         .overlay-frame { width: 100%; height: 100%; display: flex; justify-content: space-between; position: relative; }
         .player-area { 
             width: 406px; 
@@ -45,7 +43,7 @@
             background-position: center;
         }
         .player-info { 
-            font-family: "Mochiy Pop P One", sans-serif;
+            font-family: 'Font-Player-Name', sans-serif;
             font-size: 28px; 
             font-weight: 800;
             font-style: normal;
@@ -794,7 +792,7 @@
             opacity: 0; /* Start hidden */ 
         }
         .attack-fx-move-name {
-            font-family: 'Dela Gothic One', sans-serif;
+            font-family: var(--font-attack-lang, sans-serif);
             font-weight: 400; /* Use a lighter weight */ 
             translate: 0 -5%;
             font-size: 98px;
@@ -1941,6 +1939,30 @@
         }
         
 
+        const i18n = nodecg.Replicant('i18n');
+        const language = nodecg.Replicant('language');
+
+        // --- Language Font Switching ---
+        function setLanguageClass(lang) {
+            const supportedLangs = ['jp', 'chs', 'en'];
+            
+            // Remove any existing language classes
+            supportedLangs.forEach(l => {
+                document.body.classList.remove(`lang-${l}`);
+            });
+
+            // Add the new one if it's valid
+            if (lang && supportedLangs.includes(lang)) {
+                document.body.classList.add(`lang-${lang}`);
+            }
+        }
+
+        language.on('change', (newLang) => {
+            setLanguageClass(newLang);
+        });
+        // --- End Language Font Switching ---
+
+
         const cardDatabase = nodecg.Replicant('cardDatabase');
         const assetPaths = nodecg.Replicant('assetPaths');
         const playerL_name = nodecg.Replicant('playerL_name');
@@ -1965,7 +1987,8 @@
             vstarUsedL, vstarUsedR,
             live_sideL, live_sideR, live_stadium, live_currentTurn, settingsRep, firstMove,
             live_lostZoneL, live_lostZoneR,
-            deckL, deckR
+            deckL, deckR,
+            language, i18n
         ];
         sides.forEach(side => {
             actionTypes.forEach(action => {
@@ -2006,6 +2029,10 @@
         }
         
         NodeCG.waitForReplicants(...replicantList).then(() => {
+            // Set initial language class to ensure correct fonts are loaded.
+            // Default to 'jp' if the replicant has no value yet.
+            setLanguageClass(language.value || 'jp');
+
             updatePlayerInfo('L', playerL_name.value);
             updatePlayerInfo('R', playerR_name.value);
             updateVstarIcon('L', vstarUsedL.value);

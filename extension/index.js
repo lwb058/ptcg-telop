@@ -62,8 +62,10 @@ module.exports = function (nodecg) {
 	const matchInfo = nodecg.Replicant('matchInfo', { defaultValue: { round: '决赛' } });
 	const operationQueue = nodecg.Replicant('operationQueue', { defaultValue: [] });
 	const firstMove = nodecg.Replicant('firstMove', { defaultValue: '' });
-		const cardToShowL = nodecg.Replicant('cardToShowL', { defaultValue: '' });
+	const cardToShowL = nodecg.Replicant('cardToShowL', { defaultValue: '' });
 	const cardToShowR = nodecg.Replicant('cardToShowR', { defaultValue: '' });
+
+	const language = nodecg.Replicant('language', { defaultValue: 'jp' });
 
     const live_lostZoneL = nodecg.Replicant('live_lostZoneL', { defaultValue: 0 });
 	const draft_lostZoneL = nodecg.Replicant('draft_lostZoneL', { defaultValue: 0 });
@@ -73,6 +75,14 @@ module.exports = function (nodecg) {
 	live_lostZoneR.once('change', (newValue) => { if (newValue !== draft_lostZoneR.value) draft_lostZoneR.value = newValue; });
 
     ptcgSettings.on('change', (newValue, oldValue) => {
+
+		const newLang = (newValue && newValue.language) || 'jp';
+		const oldLang = (oldValue && oldValue.language); // No default for oldLang
+
+        if (language.value !== newLang) {
+            language.value = newLang;
+        }
+
         if (!newValue.lostZoneEnabled) {
             if (live_lostZoneL.value !== 0) live_lostZoneL.value = 0;
             if (draft_lostZoneL.value !== 0) draft_lostZoneL.value = 0;
@@ -80,8 +90,6 @@ module.exports = function (nodecg) {
             if (draft_lostZoneR.value !== 0) draft_lostZoneR.value = 0;
         }
 
-		const newLang = (newValue && newValue.language) || 'jp';
-		const oldLang = (oldValue && oldValue.language); // No default for oldLang
 
 		// Update asset path for card images
 		const newCardImgPath = `assets/ptcg-telop/card_img_${newLang}/`;
