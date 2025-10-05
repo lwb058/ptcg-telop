@@ -50,6 +50,11 @@
   Once you add the Chinese font files to the /assets/ptcg-telop/font/ directory,
   uncomment these rules and update the file names.
 */
+@font-face {
+  font-family: 'PTCG-Attack-CHS';
+  src: url('/assets/ptcg-telop/font/UnboundedSans.ttf') format('truetype');
+  font-weight: 400;
+}
 /*
 @font-face {
   font-family: 'PTCG-Main-CHS';
@@ -61,11 +66,7 @@
   src: url('/assets/ptcg-telop/font/Your-Chinese-PlayerName-Font.ttf') format('truetype');
   font-weight: 400;
 }
-@font-face {
-  font-family: 'PTCG-Attack-CHS';
-  src: url('/assets/ptcg-telop/font/Your-Chinese-Attack-Font.ttf') format('truetype');
-  font-weight: 400;
-}
+
 */
 
 /* --- 2. Language-based Switching Logic --- */
@@ -86,7 +87,7 @@ body.lang-chs {
     Once 'PTCG-Main-CHS' etc. are defined above, change these values.
   */
   --font-main-lang: 'PTCG-Main-JP';
-  --font-attack-lang: 'PTCG-Attack-JP';
+  --font-attack-lang: 'PTCG-Attack-CHS';
   /*
   --font-main-lang: 'PTCG-Main-CHS';
   --font-player-name-lang: 'PTCG-PlayerName-CHS';
