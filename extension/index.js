@@ -1202,7 +1202,7 @@ module.exports = function (nodecg) {
 		if (!ptcgSettings.value.autoCheckSupporter) return;
 		if (!cardUrl) return;
 
-		const match = cardUrl.match(/\/(\d{5,})\.(jpg|png)$/);
+		const match = cardUrl.match(/\/([^/]+)\.(jpg|png|jpeg|webp)$/i);
 		if (!match) return;
 
 		const cardId = match[1];

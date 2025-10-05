@@ -1066,7 +1066,7 @@
             const db = cardDatabase.value;
             const cardData = db ? db[cardId] : null;
             const imageUrl = cardData ? cardData.image_url : null;
-            const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg'; // Fallback to .jpg
+            const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg';
             const path = `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
             return isBgImage ? `url(${path})` : path;
         };

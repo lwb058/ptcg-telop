@@ -291,7 +291,7 @@
                 if (supertypeComparison !== 0) return supertypeComparison;
 
                 if (aData.supertype === 'pokemon') {
-                    const typeConversionMap = { '火': '炎', '斗': '闘', '恶': '悪', '钢': '鋼', '龙': '竜' };
+                    const typeConversionMap = { '火': '炎', '斗': '闘', '恶': '悪', '钢': '鋼', '龙': '竜' , "无": "無"};
 
                     const getSortableType = (card) => {
                         if (card && card.pokemon && card.pokemon.color && card.pokemon.color.length > 0) {
@@ -324,27 +324,25 @@
 
                 const imgCell = document.createElement('td');
                 const img = document.createElement('img');
-                const basePath = assetPaths.value.cardImgPath || 'assets/ptcg-telop/card_img_jp/';
-                img.src = `/${basePath}${card.id}.png`;
+
+                const getCardImageUrl = (cardId) => {
+                    if (!cardId || !assetPaths.value || !assetPaths.value.cardImgPath || !database.value) {
+                        return '/assets/ptcg-telop/element/default.jpg';
+                    }
+                    const db = database.value;
+                    const cardData = db ? db[cardId] : null;
+                    const imageUrl = cardData ? cardData.image_url : null;
+                    const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg';
+                    return `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
+                };
+
+                img.src = getCardImageUrl(card.id);
                 img.title = 'クリックして表示 (Click to show)';
-                img.onerror = () => { 
-                    img.src = `/${basePath}${card.id}.jpg`; 
-                    img.onerror = () => { img.src = '/assets/ptcg-telop/element/default.jpg'; };
-                }; 
+                img.onerror = () => { img.src = '/assets/ptcg-telop/element/default.jpg'; };
                 img.onclick = () => {
                     const targetReplicant = (side === 'L') ? cardToShowL : cardToShowR;
-                    let cardImageUrlPng = `/${basePath}${card.id}.png`;
-                    let cardImageUrlJpg = `/${basePath}${card.id}.jpg`;
-
-                    const tempImg = new Image();
-                    tempImg.src = cardImageUrlPng;
-                    tempImg.onload = () => { targetReplicant.value = cardImageUrlPng; };
-                    tempImg.onerror = () => {
-                        const tempImgJpg = new Image();
-                        tempImgJpg.src = cardImageUrlJpg;
-                        tempImgJpg.onload = () => { targetReplicant.value = cardImageUrlJpg; };
-                        tempImgJpg.onerror = () => { targetReplicant.value = '/assets/ptcg-telop/element/default.jpg'; };
-                    };
+                    const imageUrl = getCardImageUrl(card.id);
+                    targetReplicant.value = imageUrl;
                 };
                 imgCell.appendChild(img);
                 row.appendChild(imgCell);
