@@ -734,6 +734,8 @@
             nodecg.Replicant('ptcg-settings'),
             nodecg.Replicant('draft_vstar_L'),
             nodecg.Replicant('deckLoadingStatus'),
+            nodecg.Replicant('i18nStrings'),
+            nodecg.Replicant('language'),
             nodecg.Replicant('assetPaths'),
             ...Array(9).fill(0).map((_, i) => nodecg.Replicant(`draft_slotL${i}`))
         ).then(() => {
@@ -753,6 +755,8 @@
             const settingsRep = nodecg.Replicant('ptcg-settings');
             const draft_vstar_L = nodecg.Replicant('draft_vstar_L');
             const deckLoadingStatus = nodecg.Replicant('deckLoadingStatus');
+            const i18nStrings = nodecg.Replicant('i18nStrings');
+            const language = nodecg.Replicant('language');
             const assetPaths = nodecg.Replicant('assetPaths');
 
             // --- DOM Elements ---
@@ -769,6 +773,13 @@
             const pokemonSlotsContainer = document.getElementById('pokemon-slots-container-l');
             const extraBenchContainer = document.getElementById('extra-bench-container-l');
             const toggleExtraBenchBtn = document.getElementById('toggle-extra-bench-l');
+
+            const getI18nText = (key) => {
+                if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) {
+                    return key; // Fallback to key name if not found
+                }
+                return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
+            };
 
             const extraBenchVisible = nodecg.Replicant('extraBenchVisible');
             const renderSlotDebounce = {};
@@ -1022,6 +1033,16 @@
                 pokemonView.classList.remove('hidden');
 
                 const cardInfo = db[slotData.cardId];
+
+                // Dynamically set button text based on slot type
+                const swapBtn = pokemonView.querySelector('.swap-btn');
+                if (swapBtn) {
+                    if (index === 0) { // Battle slot
+                        swapBtn.textContent = getI18nText('retreat');
+                    } else { // Bench slot
+                        swapBtn.textContent = getI18nText('move');
+                    }
+                }
                 const typeColorMap = settingsRep.value?.typeColorMap || {};
 
                 // Set background color based on type, supporting new {color, opacity} format

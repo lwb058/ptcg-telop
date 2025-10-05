@@ -1,0 +1,147 @@
+{
+  "stadium_used": {
+    "jp": "使用済",
+    "chs": "已使用",
+    "en": "Used"
+  },
+  "move": {
+    "jp": "移動",
+    "chs": "移动",
+    "en": "Move"
+  },
+  "retreat": {
+    "jp": "逃げる",
+    "chs": "撤退",
+    "en": "Retreat"
+  },
+  "manually_attach": {
+    "jp": "手貼り",
+    "chs": "手填",
+    "en": "Attach"
+  },
+  "extra_bench": {
+    "jp": "エクストラベンチ",
+    "chs": "额外备战区",
+    "en": "EXTRA BENCH"
+  },
+  "show": {
+    "jp": "表示",
+    "chs": "显示",
+    "en": "Show"
+  },
+  "hide": {
+    "jp": "非表示",
+    "chs": "隐藏",
+    "en": "Hide"
+  },
+  "deck_id": {
+    "jp": "デッキID:",
+    "chs": "卡组码:",
+    "en": "DeckID:"
+  },
+  "set": {
+    "jp": "セット",
+    "chs": "设置",
+    "en": "Set"
+  },
+  "player": {
+    "jp": "プレイヤー:",
+    "chs": "玩家:",
+    "en": "Player:"
+  },
+  "side": {
+    "jp": "サイド:",
+    "chs": "奖赏卡:",
+    "en": "Prizes:"
+  },
+  "lost_zone": {
+    "jp": "ロストゾーン:",
+    "chs": "放逐区:",
+    "en": "Lost Zone:"
+  },
+  "settings_basic": {
+    "jp": "基本設定",
+    "chs": "基本设置",
+    "en": "Basic"
+  },
+  "settings_auto_side_take": {
+    "jp": "気絶する時、サイド自動取得",
+    "chs": "气绝时自动拿取奖赏卡",
+    "en": "Auto Side Take"
+  },
+  "settings_auto_retreat": {
+    "jp": "撤退時自動チェック",
+    "chs": "撤退时自动勾选RETREAT",
+    "en": "Auto Retreat Action"
+  },
+  "settings_auto_check_supporter": {
+    "jp": "サポート表示時自動チェック",
+    "chs": "查看支援者时自动勾选SUPPORTER",
+    "en": "Auto-check Supporter"
+  },
+  "settings_auto_trash_tm": {
+    "jp": "ワザマシン自動トラッシュ",
+    "chs": "结束时自动丢弃招式学习器",
+    "en": "Auto-Trash TM"
+  },
+  "settings_show_deck_energy_only": {
+    "jp": "デッキ内のエネルギーのみ表示",
+    "chs": "仅显示卡组中的基本能量",
+    "en": "Show Deck Energy Only"
+  },
+  "settings_regulation": {
+    "jp": "レギュレーション",
+    "chs": "赛制规则",
+    "en": "Regulation"
+  },
+  "settings_enable_lost_zone": {
+    "jp": "ロストゾーンを有効",
+    "chs": "启用放逐区",
+    "en": "Enable Lost Zone"
+  },
+  "settings_enable_vstar": {
+    "jp": "VSTARパワーを有効",
+    "chs": "启用VSTAR力量",
+    "en": "Enable VSTAR Power"
+  },
+  "settings_hotkey": {
+    "jp": "ホットキー",
+    "chs": "快捷键",
+    "en": "Hotkey"
+  },
+  "settings_system": {
+    "jp": "システム",
+    "chs": "系统",
+    "en": "System"
+  },
+  "settings_reverse_card_display": {
+    "jp": "カードを対側に表示",
+    "chs": "在对侧展示卡牌",
+    "en": "Reverse Card Display"
+  },
+  "settings_type_colored_borders": {
+    "jp": "タイプ色枠線",
+    "chs": "边框随属性变色",
+    "en": "Type-Colored Borders"
+  },
+  "settings_tool_carry_limit": {
+    "jp": "ポケモンのどうぐの所持上限",
+    "chs": "道具卡携带上限",
+    "en": "Tool Carry Limit"
+  },
+  "settings_language": {
+    "jp": "言語",
+    "chs": "语言",
+    "en": "Language"
+  },
+  "settings_clear_database": {
+    "jp": "データベースをクリア",
+    "chs": "清空数据库",
+    "en": "Clear Database"
+  },
+  "settings_save_all": {
+    "jp": "すべての設定を保存",
+    "chs": "保存所有设置",
+    "en": "Save All Settings"
+  }
+}

@@ -93,49 +93,49 @@
 <body>
     <div class="horizontal-panels">
         <div class="panel-section">
-            <h3>Basic</h3>
+            <h3 id="label-basic">Basic</h3>
             <div class="collapsible-content">
                 <div class="setting-grid">
                     <div class="form-group-hotkey">
-                        <label for="auto-sided-take">Auto Side Take</label>
+                        <label for="auto-sided-take" id="label-auto-side-take">Auto Side Take</label>
                         <input type="checkbox" id="auto-sided-take" style="width: auto; height: auto; justify-self: end;">
                     </div>
                     <div class="form-group-hotkey">
-                        <label for="auto-retreat-toggle">Auto Retreat</label>
+                        <label for="auto-retreat-toggle" id="label-auto-retreat">Auto Retreat</label>
                         <input type="checkbox" id="auto-retreat-toggle" style="width: auto; height: auto; justify-self: end;">
                     </div>
                     <div class="form-group-hotkey">
-                        <label for="auto-check-supporter-toggle">Auto-check Supporter</label>
+                        <label for="auto-check-supporter-toggle" id="label-auto-check-supporter">Auto-check Supporter</label>
                         <input type="checkbox" id="auto-check-supporter-toggle" style="width: auto; height: auto; justify-self: end;">
                     </div>
                     <div class="form-group-hotkey">
-                        <label for="auto-trash-tm-toggle">Auto-Trash TM</label>
+                        <label for="auto-trash-tm-toggle" id="label-auto-trash-tm">Auto-Trash TM</label>
                         <input type="checkbox" id="auto-trash-tm-toggle" style="width: auto; height: auto; justify-self: end;">
                     </div>
                     <div class="form-group-hotkey">
-                        <label for="show-deck-energy-only-toggle">Show Deck Energy Only</label>
+                        <label for="show-deck-energy-only-toggle" id="label-show-deck-energy-only">Show Deck Energy Only</label>
                         <input type="checkbox" id="show-deck-energy-only-toggle" style="width: auto; height: auto; justify-self: end;">
                     </div>
                 </div>
             </div>
         </div>
         <div class="panel-section">
-            <h3>Regulation</h3>
+            <h3 id="label-regulation">Regulation</h3>
             <div class="collapsible-content">
                 <div class="setting-grid">
                     <div class="form-group-hotkey">
-                        <label for="lost-zone-toggle">Enable Lost Zone</label>
+                        <label for="lost-zone-toggle" id="label-enable-lost-zone">Enable Lost Zone</label>
                         <input type="checkbox" id="lost-zone-toggle" style="width: auto; height: auto; justify-self: end;">
                     </div>
                     <div class="form-group-hotkey">
-                        <label for="vstar-toggle">Enable VSTAR Power</label>
+                        <label for="vstar-toggle" id="label-enable-vstar">Enable VSTAR Power</label>
                         <input type="checkbox" id="vstar-toggle" style="width: auto; height: auto; justify-self: end;">
                     </div>
                 </div>
             </div>
         </div>
         <div class="panel-section">
-            <h3>Hotkey</h3>
+            <h3 id="label-hotkey">Hotkey</h3>
             <div class="collapsible-content">
                 <div class="setting-grid">
                     <div class="form-group-hotkey">
@@ -158,23 +158,23 @@
             </div>
         </div>
         <div class="panel-section">
-            <h3>System</h3>
+            <h3 id="label-system">System</h3>
             <div class="collapsible-content">
                 <div class="setting-grid">
                     <div class="form-group-hotkey">
-                        <label for="reverse-card-display-toggle">Reverse Card Display</label>
+                        <label for="reverse-card-display-toggle" id="label-reverse-card-display">Reverse Card Display</label>
                         <input type="checkbox" id="reverse-card-display-toggle" style="width: auto; height: auto; justify-self: end;">
                     </div>
                     <div class="form-group-hotkey">
-                        <label for="type-stroke-toggle">Type-Colored Borders</label>
+                        <label for="type-stroke-toggle" id="label-type-colored-borders">Type-Colored Borders</label>
                         <input type="checkbox" id="type-stroke-toggle" style="width: auto; height: auto; justify-self: end;">
                     </div>
                     <div class="form-group-hotkey">
-                        <label for="tool-limit-input">Tool Carry Limit</label>
+                        <label for="tool-limit-input" id="label-tool-carry-limit">Tool Carry Limit</label>
                         <input type="number" id="tool-limit-input" min="1" max="10" step="1" style="width: 60px; justify-self: end;">
                     </div>
                     <div class="form-group-hotkey">
-                        <label for="language-select">Language</label>
+                        <label for="language-select" id="label-language">Language</label>
                         <select id="language-select" class="form-select">
                             <option value="jp">日本語</option>
                             <option value="chs">简体中文</option>
@@ -214,9 +214,12 @@
 
     <script>
         NodeCG.waitForReplicants(
-            nodecg.Replicant('ptcg-settings')
+            nodecg.Replicant('ptcg-settings'),
+            nodecg.Replicant('i18nStrings'),
+            nodecg.Replicant('language')
         ).then(() => {
             const settingsRep = nodecg.Replicant('ptcg-settings');
+            const i18nStrings = nodecg.Replicant('i18nStrings');
             
             // --- Element References ---
             const colorContainer = document.getElementById('color-settings-container');
@@ -238,6 +241,34 @@
             const saveBtn = document.getElementById('save-settings-btn');
             const clearDbBtn = document.getElementById('clear-database-btn');
             
+            const getI18nText = (key) => {
+                // Use the language from the settings replicant for consistency in the settings panel
+                const lang = settingsRep.value ? settingsRep.value.language : 'jp';
+                if (!i18nStrings.value || !i18nStrings.value[key] || !lang) {
+                    return key; // Fallback to key name if not found
+                }
+                return i18nStrings.value[key][lang] || i18nStrings.value[key]['jp'] || key;
+            };
+
+            function updateAllLabels() {
+                document.getElementById('label-basic').textContent = getI18nText('settings_basic');
+                document.getElementById('label-auto-side-take').textContent = getI18nText('settings_auto_side_take');
+                document.getElementById('label-auto-retreat').textContent = getI18nText('settings_auto_retreat');
+                document.getElementById('label-auto-check-supporter').textContent = getI18nText('settings_auto_check_supporter');
+                document.getElementById('label-auto-trash-tm').textContent = getI18nText('settings_auto_trash_tm');
+                document.getElementById('label-show-deck-energy-only').textContent = getI18nText('settings_show_deck_energy_only');
+                document.getElementById('label-regulation').textContent = getI18nText('settings_regulation');
+                document.getElementById('label-enable-lost-zone').textContent = getI18nText('settings_enable_lost_zone');
+                document.getElementById('label-enable-vstar').textContent = getI18nText('settings_enable_vstar');
+                document.getElementById('label-hotkey').textContent = getI18nText('settings_hotkey');
+                document.getElementById('label-system').textContent = getI18nText('settings_system');
+                document.getElementById('label-reverse-card-display').textContent = getI18nText('settings_reverse_card_display');
+                document.getElementById('label-type-colored-borders').textContent = getI18nText('settings_type_colored_borders');
+                document.getElementById('label-tool-carry-limit').textContent = getI18nText('settings_tool_carry_limit');
+                document.getElementById('label-language').textContent = getI18nText('settings_language');
+                document.getElementById('clear-database-btn').textContent = getI18nText('settings_clear_database');
+            }
+
             clearDbBtn.addEventListener('click', () => {
                 const confirmation = confirm("Are you sure you want to clear the entire card database and all downloaded images? This cannot be undone.");
                 if (confirmation) {
@@ -347,6 +378,7 @@
 
             settingsRep.on('change', (newValue) => {
                 renderAll(newValue);
+                updateAllLabels(); // Update labels when settings (including language) change
             });
 
             saveBtn.addEventListener('click', () => {
@@ -409,6 +441,7 @@
                     language: newLanguage
                 };
                 saveBtn.textContent = 'Saved!';
+                updateAllLabels(); // Re-translate after saving
                 setTimeout(() => {
                     saveBtn.textContent = 'Save All Settings';
                 }, 1500);

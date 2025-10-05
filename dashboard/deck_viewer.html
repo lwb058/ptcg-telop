@@ -150,6 +150,8 @@
         const database = nodecg.Replicant('cardDatabase');
         const settingsRep = nodecg.Replicant('ptcg-settings');
         const assetPaths = nodecg.Replicant('assetPaths');
+        const i18nStrings = nodecg.Replicant('i18nStrings');
+        const language = nodecg.Replicant('language');
 
         const deckLBody = document.getElementById('deckL-body');
         const deckRBody = document.getElementById('deckR-body');
@@ -167,6 +169,13 @@
             cardToShowL.value = '';
             cardToShowR.value = '';
         });
+
+        const getI18nText = (key) => {
+            if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) {
+                return key; // Fallback to key name if not found
+            }
+            return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
+        };
 
         function handleAddCard(side, inputEl) {
             const cardId = inputEl.value.trim();
@@ -218,6 +227,11 @@
 
         deckR.on('change', (newValue) => {
             renderDeck(newValue, deckRBody, database.value, 'R');
+        });
+
+        language.on('change', () => {
+            renderDeck(deckL.value, deckLBody, database.value, 'L');
+            renderDeck(deckR.value, deckRBody, database.value, 'R');
         });
 
         assetPaths.on('change', () => {

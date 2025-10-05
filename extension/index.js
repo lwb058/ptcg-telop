@@ -64,6 +64,7 @@ module.exports = function (nodecg) {
 	const firstMove = nodecg.Replicant('firstMove', { defaultValue: '' });
 	const cardToShowL = nodecg.Replicant('cardToShowL', { defaultValue: '' });
 	const cardToShowR = nodecg.Replicant('cardToShowR', { defaultValue: '' });
+	const i18nStrings = nodecg.Replicant('i18nStrings', { defaultValue: {} });
 
 	const language = nodecg.Replicant('language', { defaultValue: 'jp' });
 
@@ -99,9 +100,10 @@ module.exports = function (nodecg) {
 		}
 
 		// On initial load (oldValue is undefined) or if lang has changed, reload the DB.
-		if (!oldValue || (oldValue && newLang !== oldLang)) {
-			nodecg.log.info('Language setting changed or initial load. Reloading card database.');
+		if (!oldValue) {
+			nodecg.log.info('Initial load detected. Loading card database and i18n strings...');
 			loadCardDatabase();
+			loadI18nStrings();
 		}
     });
 
@@ -224,6 +226,20 @@ module.exports = function (nodecg) {
 		}
 	}
 
+	function loadI18nStrings() {
+		try {
+			const i18nPath = path.join(__dirname, '..', 'i18n', 'strings.json');
+			if (fs.existsSync(i18nPath)) {
+				const fileContent = fs.readFileSync(i18nPath, 'utf8');
+				i18nStrings.value = JSON.parse(fileContent);
+				nodecg.log.info('Successfully loaded i18n strings.');
+			} else {
+				nodecg.log.warn('i18n/strings.json not found.');
+			}
+		} catch (error) {
+			nodecg.log.error('Failed to load i18n strings:', error);
+		}
+	}
 	// Initial load of the database and asset paths is now handled by the ptcgSettings.on('change') listener.
 
 	// Listen for messages to process deck codes

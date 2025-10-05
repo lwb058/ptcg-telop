@@ -509,6 +509,8 @@
             nodecg.Replicant('draft_stadium'),
             nodecg.Replicant('ptcg-settings'), // Listen for settings
             nodecg.Replicant('assetPaths'),
+            nodecg.Replicant('i18nStrings'),
+            nodecg.Replicant('language'),
             ...Array(18).fill(0).map((_, i) => { // Changed from 12 to 18
                 const side = i < 9 ? 'L' : 'R';
                 const index = i % 9;
@@ -541,6 +543,8 @@
             const draft_stadium = nodecg.Replicant('draft_stadium');
             const settingsRep = nodecg.Replicant('ptcg-settings');
             const assetPaths = nodecg.Replicant('assetPaths');
+            const i18nStrings = nodecg.Replicant('i18nStrings');
+            const language = nodecg.Replicant('language');
             const slots = [];
             for (let i = 0; i < 9; i++) { // Changed from 6 to 9
                 slots.push(nodecg.Replicant(`draft_slotL${i}`));
@@ -560,6 +564,12 @@
             // --- Drag & Drop Field ---
             const currentPlayerField = document.getElementById('current-player-field');
 
+            const getI18nText = (key) => {
+                if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) {
+                    return key; // Fallback to key name if not found
+                }
+                return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
+            };
 
             /**
              * Renders the current turn player's field in the drop target area.
@@ -722,7 +732,7 @@
                 // Add the special drop zone for "manual turn attachment"
                 const manualAttachZone = document.createElement('div');
                 manualAttachZone.className = 'manual-attach-zone';
-                manualAttachZone.textContent = '手貼り';
+                manualAttachZone.textContent = getI18nText('manually_attach');
                 manualAttachZone.title = 'Set as Turn Energy';
                 cardEl.appendChild(manualAttachZone);
 
