@@ -325,6 +325,14 @@ body, html {
     opacity: 0; /* Start invisible */
 }
 
+#animation-wrapper-L {
+    left: 0;
+}
+
+#animation-wrapper-R {
+    right: 0;
+}
+
 /* --- Common Utility Classes --- */
 .battle-skill-ability-tag.used, .bench-skill-ability-tag.used { background-color: #9e9e9e;}
 .battle-skill-name.is-ability.used, .bench-skill-name.is-ability.used { color: #9e9e9e; }
@@ -353,20 +361,16 @@ body, html {
     animation-duration: 0.5s;
     animation-fill-mode: forwards;
 }
-.anim-slide-in-L, .anim-slide-in-R, .slide-in-left, .slide-in-right {
+.anim-slide-in-L, .anim-slide-in-R {
     animation-duration: 0.5s;
     animation-fill-mode: forwards;
     pointer-events: auto;
 }
 
 .anim-slide-out-L { animation-name: slide-out-left; }
-.anim-slide-in-L { animation-name: slide-in-left; }
+.anim-slide-in-L   { animation-name: slide-in-left; }
 .anim-slide-out-R { animation-name: slide-out-right; }
-.anim-slide-in-R { animation-name: slide-in-right; }
-.slide-out-left { animation-name: slide-out-left; }
-.slide-in-left { animation-name: slide-in-left; }
-.slide-out-right { animation-name: slide-out-right; }
-.slide-in-right { animation-name: slide-in-right; }
+.anim-slide-in-R   { animation-name: slide-in-right; }
 
 
 

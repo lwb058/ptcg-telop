@@ -75,8 +75,8 @@
  
          // State object to track visibility and animation status for each side
          const cardState = {
-             left: { isVisible: false, isAnimating: false },
-             right: { isVisible: false, isAnimating: false }
+             L: { isVisible: false, isAnimating: false },
+             R: { isVisible: false, isAnimating: false }
          };
  
          // Helper function to promisify animationend event
@@ -166,8 +166,8 @@
             try {
                 // Case 1: Hide the card
                 if (!wantsToShow && state.isVisible) {
-                    animatedContainer.classList.remove(`slide-in-${side}`); // Clean up previous state
-                    animatedContainer.classList.add(`slide-out-${side}`);
+                    animatedContainer.classList.remove(`anim-slide-in-${side}`); // Clean up previous state
+                    animatedContainer.classList.add(`anim-slide-out-${side}`);
                     await onAnimationEnd(animatedContainer);
                     // DO NOT remove the slide-out class. It keeps the element off-screen.
                     image.src = defaultImage;
@@ -177,16 +177,16 @@
                 else if (wantsToShow) {
                     // If it's an update (already visible), slide it out first.
                     if (state.isVisible) {
-                        animatedContainer.classList.remove(`slide-in-${side}`);
-                        animatedContainer.classList.add(`slide-out-${side}`);
+                        animatedContainer.classList.remove(`anim-slide-in-${side}`);
+                        animatedContainer.classList.add(`anim-slide-out-${side}`);
                         await onAnimationEnd(animatedContainer);
                     }
 
                     // Now it's off-screen. Change image, then clean up and slide in.
                     image.src = newSrc;
-                    animatedContainer.classList.remove(`slide-out-${side}`); // "Self-cleanup" before sliding in
+                    animatedContainer.classList.remove(`anim-slide-out-${side}`); // "Self-cleanup" before sliding in
                     
-                    animatedContainer.classList.add(`slide-in-${side}`);
+                    animatedContainer.classList.add(`anim-slide-in-${side}`);
                     await onAnimationEnd(animatedContainer);
                     
                     // Leave the slide-in class on to keep it visible. It will be cleaned up by the next operation.
@@ -199,17 +199,17 @@
 
         cardToShowL.on('change', (newValue) => {
             if (isReversed) {
-                handleCardUpdate(animationWrapperR, cardImageR, newValue, 'right');
+                handleCardUpdate(animationWrapperR, cardImageR, newValue, 'R');
             } else {
-                handleCardUpdate(animationWrapperL, cardImageL, newValue, 'left');
+                handleCardUpdate(animationWrapperL, cardImageL, newValue, 'L');
             }
         });
  
         cardToShowR.on('change', (newValue) => {
             if (isReversed) {
-                handleCardUpdate(animationWrapperL, cardImageL, newValue, 'left');
+                handleCardUpdate(animationWrapperL, cardImageL, newValue, 'L');
             } else {
-                handleCardUpdate(animationWrapperR, cardImageR, newValue, 'right');
+                handleCardUpdate(animationWrapperR, cardImageR, newValue, 'R');
             }
         });
     </script>
