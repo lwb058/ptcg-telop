@@ -735,6 +735,40 @@ body, html {
     font-size: 28px;
 }
 
+/* --- Current Turn Border --- */
+@keyframes breathe-opacity {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.current-turn-border {
+    position: absolute;
+    width: 120px; /* Same width File */
+    height: 1080px; /* Same height as player-area */
+    background-image: url('/assets/ptcg-telop/element/current.png');
+    background-size: 100% 100%; /* Stretch to fit */
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: -1; /* Place at the bottom layer */
+    opacity: 0; /* Start hidden */
+    transition: opacity 0.5s ease-in-out; /* Smooth fade for activation/deactivation */
+}
+
+.current-turn-border.active {
+    animation: breathe-opacity 2s infinite alternate ease-in-out;
+}
+
+#current-L-border {
+    left: 348px; /* Adjusted to align with player area */
+    top: 0;
+}
+
+#current-R-border {
+    right: 348px; /* Adjusted to align with player area */
+    top: 0;
+}
+
 /* Type Colors */
 .type-草 .attack-fx-upper { background: linear-gradient(to bottom, #78C850, #5ca03a); }
 .type-炎 .attack-fx-upper { background: linear-gradient(to bottom, #C03028, #a02821); }
@@ -802,38 +836,32 @@ body, html {
     animation: text-movement 1000ms linear forwards; 
 }
 
-/* --- Current Turn Border --- */
-@keyframes breathe-opacity {
-    0% { opacity: 0; }
-    50% { opacity: 1; }
-    100% { opacity: 0; }
+/* Animation definitions for status ailments, added to fix broken animations. */
+@keyframes status-appear {
+    from {
+        opacity: 0;
+        transform: scale(1.1);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
-
-.current-turn-border {
-    position: absolute;
-    width: 120px; /* Same width File */
-    height: 1080px; /* Same height as player-area */
-    background-image: url('/assets/ptcg-telop/element/current.png');
-    background-size: 100% 100%; /* Stretch to fit */
-    background-repeat: no-repeat;
-    background-position: center;
-    z-index: -1; /* Place at the bottom layer */
-    opacity: 0; /* Start hidden */
-    transition: opacity 0.5s ease-in-out; /* Smooth fade for activation/deactivation */
+@keyframes status-disappear {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(1.1);
+    }
 }
-
-.current-turn-border.active {
-    animation: breathe-opacity 2s infinite alternate ease-in-out;
+.anim-status-appear {
+    animation: status-appear 0.3s ease-out forwards;
 }
-
-#current-L-border {
-    left: 348px; /* Adjusted to align with player area */
-    top: 0;
-}
-
-#current-R-border {
-    right: 348px; /* Adjusted to align with player area */
-    top: 0;
+.anim-status-disappear {
+    animation: status-disappear 0.3s ease-in forwards;
 }
 
 /* --- Preloader --- */
