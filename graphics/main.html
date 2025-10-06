@@ -40,7 +40,7 @@
         <!-- Player L Area -->
         <div class="player-area" id="player-L-area">
             <div class="player-info" id="player-L-info">
-                <img class="first-move-icon hidden" id="first-move-L" src="/assets/ptcg-telop/element/first_move.png">
+                <img class="first-move-icon hidden" id="first-move-L" src="/assets/ptcg-telop/element/first_move_jp.png">
                 <span class="player-name" id="player-L-name"></span>
                 <img src="/assets/ptcg-telop/element/VSTAR.webp" class="vstar-icon" id="vstar-L-icon">
             </div>
@@ -78,7 +78,7 @@
         <!-- Player R Area -->
         <div class="player-area" id="player-R-area">
             <div class="player-info" id="player-R-info">
-                <img class="first-move-icon hidden" id="first-move-R" src="/assets/ptcg-telop/element/first_move.png">
+                <img class="first-move-icon hidden" id="first-move-R" src="/assets/ptcg-telop/element/first_move_jp.png">
                 <span class="player-name" id="player-R-name"></span>
                 <img src="/assets/ptcg-telop/element/VSTAR.webp" class="vstar-icon" id="vstar-R-icon">
             </div>
@@ -387,11 +387,23 @@
             }
         }
 
+        function getLocalizedAssetPath(basePath) {
+            const lang = language.value;
+            const supportedLangs = ['jp', 'chs', 'cht', 'en'];
+            if (supportedLangs.includes(lang)) {
+                const parts = basePath.split('_jp.');
+                const extension = parts.pop();
+                const pathWithoutExt = parts.join('.');
+                return `${pathWithoutExt}_${lang}.${extension}`;
+            }
+            return basePath; // Fallback to base path
+        }
+
         function updateFirstMoveIcon(firstMoveValue) {
             const iconL = document.getElementById('first-move-L');
             const iconR = document.getElementById('first-move-R');
-            const firstMoveIconSrc = '/assets/ptcg-telop/element/first_move.png';
-            const secondMoveIconSrc = '/assets/ptcg-telop/element/second_move.png';
+            const firstMoveIconSrc = getLocalizedAssetPath('/assets/ptcg-telop/element/first_move_jp.png');
+            const secondMoveIconSrc = getLocalizedAssetPath('/assets/ptcg-telop/element/second_move_jp.png');
 
             if (firstMoveValue === 'L') {
                 iconL.src = firstMoveIconSrc;
@@ -1067,6 +1079,8 @@
 
         language.on('change', (newLang) => {
             setLanguageClass(newLang);
+            // Re-render first move icon when language changes
+            updateFirstMoveIcon(firstMove.value);
         });
         // --- End Language Font Switching ---
 
