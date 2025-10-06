@@ -367,6 +367,13 @@
             cursor: pointer;
             border: 1px solid white;
         }
+        /* Style for disabled buttons to provide visual feedback */
+        .btn:disabled {
+            cursor: not-allowed;
+            background: Grey;
+            /* Prevent hover effects on disabled buttons */
+            pointer-events: none; 
+        }
     </style>
 </head>
 <body>
@@ -1767,7 +1774,18 @@
             }
 
             function handleApply() {
+                // Disable the button to prevent rapid clicks
+                const originalText = applyOpBtn.textContent;
+                applyOpBtn.disabled = true;
+                applyOpBtn.textContent = 'Applying...';
+
                 nodecg.sendMessage('applyQueue').catch(e => console.error("Failed to apply queue", e));
+
+                // Re-enable the button after a 1.5-second cooldown
+                setTimeout(() => {
+                    applyOpBtn.disabled = false;
+                    applyOpBtn.textContent = originalText;
+                }, 1500);
             }
 
             discardOpBtn.addEventListener('click', handleDiscard);
