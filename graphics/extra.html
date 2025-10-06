@@ -4,21 +4,35 @@
     <meta charset="UTF-8">
     <title>Extra Bench Graphic</title>
     <link rel="stylesheet" href="css/fonts.css">
-    <link rel="stylesheet" href="css/shared_graphics.css">
+    <script>
+        // Dynamically preload fonts based on fonts.css
+        (function() {
+            fetch('css/fonts.css')
+                .then(response => response.text())
+                .then(text => {
+                    const fontUrlRegex = /url\((['"]?)(.+?\.(?:ttf|otf|woff|woff2))\1\)/g;
+                    let match;
+                    while ((match = fontUrlRegex.exec(text)) !== null) {
+                        const fontUrl = match[2];
+                        const link = document.createElement('link');
+                        link.rel = 'preload';
+                        link.href = fontUrl;
+                        link.as = 'font';
+                        link.type = `font/${fontUrl.split('.').pop()}`;
+                        link.crossOrigin = 'anonymous';
+                        document.head.appendChild(link);
+                    }
+                }).catch(err => console.error('Failed to preload fonts:', err));
+        })();
+    </script>
+    <link rel="stylesheet" href="css/common.css">
     <style>
         .player-area { 
-            width: 406px; 
             height: 560px; 
             transform: translateY(475px);
-            display: flex; 
             flex-direction: column; 
-            padding: 5px; 
-            box-sizing: border-box; 
             background-color: var(--color-bg-panel); 
             background-image: url('/assets/ptcg-telop/element/extra-bg.png');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-position: center;
         }
         .bench-slots { gap: 24px; } /* Override default gap */
         .extra-bench-title {
@@ -40,17 +54,11 @@
             visibility: hidden;
         }
 
-        /* --- Animation Styles --- */
-        #animation-wrapper-L,
-        #animation-wrapper-R {
-            opacity: 0;
-            pointer-events: none;
-        }
     </style>
 </head>
 <body>
     <div class="overlay-frame">
-        <div id="animation-wrapper-L">
+        <div id="animation-wrapper-L" class="animation-wrapper">
             <div class="player-area" id="player-L-area">
                 <div class="extra-bench-title">EXTRA BENCH</div>
                 <div class="bench-slots">
@@ -60,7 +68,7 @@
                 </div>
             </div>
         </div>
-        <div id="animation-wrapper-R">
+        <div id="animation-wrapper-R" class="animation-wrapper">
             <div class="player-area" id="player-R-area">
                 <div class="extra-bench-title">EXTRA BENCH</div>
                 <div class="bench-slots">

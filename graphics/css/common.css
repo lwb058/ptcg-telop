@@ -1,0 +1,849 @@
+/* 
+  PTCG Telop Shared Graphic Styles
+  Contains common styles used by main.html, extra.html, etc.
+*/
+
+:root {
+    /* All fonts are now defined in css/fonts.css */
+    --font-numeric: 'Sora', sans-serif;
+    --font-damage: 'Roboto Mono', sans-serif;
+    --color-bg-panel: #3db1ff;
+    --color-bg-module: #0a406d;
+    --module-border: 2px;
+    --module-border-radius: 8px;
+    --module-color-border: #ffffff;
+    --image-border: 3px;
+    --text-light: #F3F4F6;
+    --text-dark: #9CA3AF;
+    --sub-color: #3db1ffbd;
+    --third-color: #1a59be83;
+    --hp-high: #22C55E;
+    --hp-medium: #F59E0B;
+    --hp-low: #da0000;
+    --hp-border:2px;
+    --hp-border-color:#ffffff;
+    --ability-tag-color: #d4000e;
+}
+
+body, html { 
+    margin: 0; 
+    padding: 0; 
+    width: 1920px; 
+    height: 1080px; 
+    font-family: var(--font-main-lang, sans-serif); 
+    color: var(--text-light); 
+    background-color: transparent; 
+    overflow: hidden; 
+}
+
+.overlay-frame { 
+    width: 100%; 
+    height: 100%; 
+    display: flex; 
+    justify-content: space-between; 
+    position: relative; 
+}
+
+/* --- Battle Slot --- */
+.active-slot {
+    height: 390px; 
+    flex-shrink: 0;
+    margin-bottom: 5px; 
+    background-color: var(--color-bg-module);
+    background-image: url('/assets/ptcg-telop/element/active-bg.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border: var(--module-border) solid var(--module-color-border); 
+    border-radius: var(--module-border-radius);
+    padding: 4px; 
+    box-sizing: border-box;
+    position: relative; /* For KO Animation Positioning */
+}
+.active-pokemon-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; gap: 4px; }
+.battle-pokemon-name { height: 35px; align-content: flex-end; font-size: 25px; font-weight: 900; }
+.battle-card-image-area {
+    position: relative; 
+    width: 376px; 
+    height: 248px;  
+    flex-shrink: 0;
+    margin: 0 auto; 
+    overflow: hidden; 
+    border-radius: var(--module-border-radius);
+    border: var(--image-border) solid var(--module-color-border); 
+}
+.battle-pokemon-image { 
+    position: absolute; 
+    width: 447.0px; 
+    height: auto; 
+    top: -62px; 
+    left: -35px; 
+}
+.battle-pokemon-image.is-v {
+    top: -119px;
+}
+.battle-status-ailment { 
+    position: absolute; 
+    top: 5px; 
+    left: 5px; 
+    z-index: 10; 
+    display: flex;
+    gap: 4px; 
+}
+.status-icon-wrapper { /* This is the div container */
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    /* The container handles border and shadow */
+    border: 3px solid white;
+    box-shadow: 3px 3px 4px rgba(0,0,0,0.7);
+    /* Clip the overflowing inner image part */
+    overflow: hidden; 
+}
+.status-icon { /* This is the img tag */
+    width: 100%;
+    height: 100%;
+    /* Key: Scale up the image to fill the container and eliminate gaps */
+    transform: scale(1.15); 
+}
+.battle-attached-energies { 
+    position: absolute; 
+    bottom: -1px; 
+    left: -1px; 
+    display: flex; 
+    gap: 2px; 
+    z-index: 10; 
+}
+.battle-attached-energies:not(:empty) {
+    background-color: var(--module-color-border);
+    border-radius: 0px 15px 0px 0px;
+    padding: 3px;
+    border: 1px solid var(--module-color-border);
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+}
+.battle-attached-tool-item {
+    width: 80px;
+    height: 50px;
+    z-index: 10;
+    overflow: hidden;
+    border-radius: 4px;
+    border: var(--module-border) solid var(--module-color-border);
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.7);
+    position: relative;
+}
+.battle-attached-tool-item img {
+    position: absolute;
+    width: 95.25px;
+    height: auto;
+    left: -7.57px;
+    top: -64.87px;
+    transform: rotate(180deg); /* Flip the item content back to normal */
+}
+
+.battle-attached-tools-wrapper {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    z-index: 10;
+    display: grid;
+    /* Revert to column-based template */
+    grid-template-columns: repeat(2, 80px);
+    /* End revert */
+    justify-items: start;
+    gap: 3px 6px;
+    transform: rotate(180deg);
+}
+
+.battle-hp-gauge { display: flex; align-items: center; }
+.battle-hp-text {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Align to the right */
+    padding-right: 8px; /* Add some padding */
+    font-family: var(--font-numeric);
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px black;
+    z-index: 2;
+}
+.battle-hp-bar-container { 
+    position: relative;
+    flex-grow: 1; 
+    height: 24px; 
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 13px; 
+    overflow: hidden; 
+    border: var(--hp-border) solid var(--hp-border-color); 
+}
+.battle-hp-bar { 
+    height: 100%; 
+    background-color: var(--hp-high); 
+    transition: width 0.5s ease-in-out, background-color 0.5s ease; 
+}
+.battle-skills-container { height: 54px; flex-grow: 0; display: flex; flex-direction: column; justify-content: space-around; background-color: var(--sub-color);border-radius: var(--module-border-radius); padding: 2px; gap: 2px; box-sizing: border-box; }
+
+.skill-row-wrapper {
+    position: relative;
+    height: 22px;
+}
+
+.battle-skill { 
+    display: grid; 
+    grid-template-columns: 1fr 50px; 
+    width: 100%;
+    height: 100%;
+    align-items: center; 
+    background-color: var(--third-color);
+    border-radius: var(--module-border-radius); 
+    gap: 5px; 
+}
+
+.energy-cost-container,
+.battle-skill-ability-tag {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+}
+
+.energy-cost-container .energy-icon { width: 20px; height: 20px; }
+
+.energy-cost-container {
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 4px 11px 11px 4px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 2px;
+    box-sizing: border-box;
+    gap: 1px;
+}
+
+.battle-skill-name-wrapper { display: flex; align-items: center; gap: 5px; overflow: hidden; padding-left: 130px; }
+
+.battle-skill-ability-tag { 
+    background-color: var(--ability-tag-color); 
+    color: white; 
+    font-size: 16px; 
+    border-radius: 4px 11px 11px 4px;
+    font-weight: bold; 
+    width: 72px; 
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    font-style: italic;
+    letter-spacing: 2px;
+    transition: filter 0.3s ease; filter: grayscale(0)
+}
+.battle-skill-name { 
+    font-size: 16px; 
+    font-weight: 900; 
+    white-space: nowrap;
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    position: relative;
+    top: -1px;
+}
+.battle-skill-name.is-ability {
+    color: var(--ability-tag-color);
+    top: 0px;
+}
+.battle-skill-damage {
+    font-family: var(--font-numeric);
+    font-size: 20px;
+    font-weight: bold;
+    text-align: right;
+    padding-right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    position: relative;
+    top: 0px;
+    white-space: nowrap;
+}
+
+/* --- Common Bench Styles --- */
+.bench-slots { display: flex; flex-direction: column; gap: 5px; }
+.bench-slot {
+    height: 108px;
+    flex-grow: 1;
+    padding: 5px;
+    border-radius: 6px; 
+    box-sizing: border-box;
+    background-color: var(--color-bg-module);
+    background-image: url('/assets/ptcg-telop/element/bench-bg.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border: var(--module-border) solid var(--module-color-border);
+    position: relative;
+}
+.bench-pokemon-wrapper { display: flex; align-items: flex-start; gap: 5px; width: 100%; height: 100%; }
+.bench-card-image-area { position: relative; width: 142px; height: 88px; margin: 0 auto; display: flex; flex-shrink: 0; overflow: hidden; border-radius: 4px; border: var(--image-border) solid var(--module-color-border); }
+.bench-pokemon-image { position: absolute; width: 171.4px; height: auto; top: -26.5px; left: -13.8px; }
+.bench-pokemon-image.is-v { top: -54.5px; }
+.bench-attached-energies { position: absolute; bottom: -2px; left: -2px; display: flex; gap: 1px; }
+.bench-attached-energies:not(:empty) { background-color: var(--module-color-border); border-radius: 0px 11px 0px 0px; padding: 1px; border: 1px solid var(--module-color-border); box-shadow: 1px 1px 3px rgba(0,0,0,0.6); }
+.bench-attached-energies .energy-icon { width: 14px; height: 14px; }
+.energy-count-group { display: flex; align-items: center; gap: 2px; }
+.energy-count-number { font-family: var(--font-numeric); font-weight: bold; color: #212121; text-shadow: 0 0 2px white; }
+.bench-attached-energies .energy-count-number { font-size: 14px; padding-right: 4px; }
+.bench-attached-tools-wrapper { position: absolute; bottom: 2px; right: 2px; z-index: 10; display: grid; grid-template-columns: repeat(2, 36px); justify-items: start; gap: 2px 6px; transform: rotate(180deg); }
+.bench-attached-tool-item { width: 36px; height: 23px; overflow: hidden; border-radius: 3px; border: var(--module-border) solid var(--module-color-border); box-shadow: 2px 2px 5px rgba(0,0,0,0.7); position: relative; }
+.bench-attached-tool-item img { position: absolute; width: 42.63px; height: auto; left: -3.79px; top: -28.44px; transform: rotate(180deg); }
+.bench-info-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 4px; overflow: hidden; }
+.bench-pokemon-name { font-size: 16px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 21px; display: flex; align-items: flex-end; }
+.bench-hp-gauge { display: flex; align-items: center; }
+.bench-hp-text { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; font-family: var(--font-numeric); font-size: 11px; font-weight: bold; color: white; text-shadow: 1px 1px 1px black; z-index: 2; }
+.bench-hp-bar-container { position: relative; flex-grow: 1; height: 16px; background-color: rgba(0, 0, 0, 0.5); border-radius: 8px; overflow: hidden; border: var(--hp-border) solid var(--hp-border-color); }
+.bench-hp-bar { height: 100%; transition: width 0.5s ease-in-out, background-color 0.5s ease; }
+.bench-skills-container { display: flex; flex-direction: column; justify-content: space-around; flex-grow: 0; overflow: hidden; height: 44px; }
+.bench-skill-row-wrapper { position: relative; height: 20px; }
+.bench-skill { display: grid; grid-template-columns: 1fr 40px; width: 100%; height: 100%; align-items: center; background-color: var(--third-color); border-radius: 6px; gap: 4px; }
+.bench-energy-cost-container, .bench-skill-ability-tag { position: absolute; left: 0; top: 0; z-index: 1; }
+.bench-energy-cost-container { background-color: rgb(201, 201, 201); border-radius: 3px 9px 9px 3px; height: 20px; display: inline-flex; align-items: center; padding: 0 2px; box-sizing: border-box; gap: 1px; }
+.bench-energy-cost-container .energy-icon { width: 14px; height: 14px; margin-left: 0px; }
+.bench-skill-ability-tag { background-color: var(--ability-tag-color); color: white; font-size: 12px; border-radius: 3px 9px 9px 3px; font-weight: bold; width: 50px; height: 20px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; font-style: italic; transition: filter 0.3s ease; filter: grayscale(0) }
+.bench-skill-name-wrapper { display: flex; align-items: center; gap: 4px; overflow: hidden; padding-left: 80px; }
+.bench-skill-name { font-size: 12px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bench-skill-name.is-ability { color: var(--ability-tag-color); }
+.bench-skill-damage { font-family: var(--font-numeric);font-size: 14px; font-weight: bold; text-align: right; padding-right: 8px; white-space: nowrap; }
+
+/* --- Common Animation Wrapper --- */
+/* This wrapper is used in card.html and extra.html to control the visibility and animation of the entire player module. */
+.animation-wrapper {
+    position: absolute;
+    width: 406px; /* Corresponds to the width of the player-area in main.html */
+    height: 100%;
+    pointer-events: none; /* By default, the wrapper does not intercept mouse events */
+    opacity: 0; /* Start invisible */
+}
+
+/* --- Common Utility Classes --- */
+.battle-skill-ability-tag.used, .bench-skill-ability-tag.used { background-color: #9e9e9e;}
+.battle-skill-name.is-ability.used, .bench-skill-name.is-ability.used { color: #9e9e9e; }
+.hidden { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.2s, visibility 0.2s; }
+.is-empty { opacity: 0; pointer-events: none; }
+
+/* --- Common Animation Styles --- */
+@keyframes slide-out-left {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(-120%); opacity: 0; }
+}
+@keyframes slide-in-left {
+    0%, 15% { transform: translateX(-120%); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+}
+@keyframes slide-out-right {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(120%); opacity: 0; }
+}
+@keyframes slide-in-right {
+    0%, 15% { transform: translateX(120%); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+}
+
+.anim-slide-out-L, .anim-slide-out-R {
+    animation-duration: 0.5s;
+    animation-fill-mode: forwards;
+}
+.anim-slide-in-L, .anim-slide-in-R, .slide-in-left, .slide-in-right {
+    animation-duration: 0.5s;
+    animation-fill-mode: forwards;
+    pointer-events: auto;
+}
+
+.anim-slide-out-L { animation-name: slide-out-left; }
+.anim-slide-in-L { animation-name: slide-in-left; }
+.anim-slide-out-R { animation-name: slide-out-right; }
+.anim-slide-in-R { animation-name: slide-in-right; }
+.slide-out-left { animation-name: slide-out-left; }
+.slide-in-left { animation-name: slide-in-left; }
+.slide-out-right { animation-name: slide-out-right; }
+.slide-in-right { animation-name: slide-in-right; }
+
+
+
+/* --- Animation for Tool Card Attachment --- */
+@keyframes tool-appear {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+.anim-tool-appear {
+    animation: tool-appear 0.3s ease-out forwards;
+}
+
+@keyframes tool-disappear {
+    from { transform: scale(1); opacity: 1; }
+    to { transform: scale(0.5); opacity: 0; }
+}
+.anim-tool-disappear {
+    animation: tool-disappear 0.3s ease-in forwards;
+}
+
+@keyframes container-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+.tools-fade-in {
+    animation: container-fade-in 0.2s ease-out forwards;
+}
+
+@keyframes scale-in-tool {
+    from { transform: scale(1.1); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+.anim-scale-in-tool {
+    animation: scale-in-tool 0.1s ease-out forwards;
+}
+
+/* --- Attack FX Animations --- */
+@keyframes flash-white {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(2.5); }
+}
+.anim-flash-white { animation: flash-white 0.1s ease 2; }
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-5px) translateY(4px); }
+    40% { transform: translateX(4px) translateY(-3px); }
+    75% { transform: translateX(2px) translateY(1px); }
+}
+.anim-shake { animation: shake 0.1s ease-in-out 2; }
+
+.hit-effect {
+    position: absolute;
+    z-index: 400;
+    pointer-events: none;
+}
+
+@keyframes show-and-fade-up {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+    10% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+    90% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.0); }
+}
+
+/* --- Damage/Heal Number FX --- */
+.damage-number, .heal-number {
+    font-family: var(--font-damage);
+    position: absolute;
+    font-weight: 900;
+    z-index: 500;
+    pointer-events: none;
+    animation: show-and-fade-up 1.5s ease-out forwards;
+}
+
+.damage-number { color: #fff9dd; }
+.heal-number { color: #dcffe3; }
+
+.damage-number-bench {
+    font-size: 40px;
+    text-shadow: 2px 2px 0 #750000, -2px -2px 0 #750000, 2px -2px 0 #750000, -2px 2px 0 #750000, 4px 4px 6px #000000cc;
+}
+.heal-number-bench {
+    font-size: 40px;
+    text-shadow: 2px 2px 0 #1aa541, -2px -2px 0 #1aa541, 2px -2px 0 #1aa541, -2px 2px 0 #1aa541, 4px 4px 6px #000000cc;
+}
+
+/* --- Player Area --- */
+.player-area { 
+    width: 406px; 
+    height: 100%; 
+    display: flex; 
+    flex-direction: column; 
+    padding: 5px; 
+    box-sizing: border-box; 
+    background-color: var(--color-bg-panel); 
+    background-image: url('/assets/ptcg-telop/element/panel-bg.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+.player-info { 
+    font-family: 'Font-Player-Name', sans-serif;
+    font-size: 28px; 
+    font-weight: 800;
+    font-style: normal;
+    height: 70px; 
+    letter-spacing: 2px;
+    flex-shrink: 0;
+    /* background-color: var(--color-bg-module); 
+    border: var(--module-border) solid var(--module-color-border); 
+    border-radius: var(--module-border-radius); */
+    box-sizing: border-box; 
+    padding: 0 10px; /* Adjusted padding */
+    color: var(--text-light); 
+    margin-bottom: 5px; 
+    display: flex;
+    align-items: center; 
+    justify-content: space-between; /* Key change for alignment */
+    text-shadow: 2px 2px 4px #000; 
+}
+.player-name {
+    flex-grow: 1; /* Allow name to take up space */
+    text-align: left; /* Align name to the left */
+}
+.vstar-icon {
+    width: 82px;
+    height: 40px;
+    flex-shrink: 0; /* Prevent icon from shrinking */
+    transition: filter 0.3s ease, opacity 0.3s ease;
+}
+.vstar-icon.used {
+    filter: grayscale(1) brightness(0.5);
+}
+.vstar-icon.available {
+    filter: grayscale(0) brightness(1);
+}
+.first-move-icon {
+    width: 25px;
+    height: 50px;
+    margin-right: 10px;
+    transition: opacity 0.3s ease;
+}
+
+/* --- Action Area --- */
+.player-action { 
+    height: 44px; 
+    margin-bottom: 2px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-around; 
+    padding: 0 0px; 
+}
+.action-icon { height: 32px; width: auto; transition: filter 0.3s ease; filter: grayscale(0) brightness(1); }
+.action-icon.used { filter: grayscale(1) brightness(0.5); }
+
+/* --- Side Area --- */
+.side-area {
+    position: absolute;
+    top: 4px;
+    width: 36px;
+    height: 186px;
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: space-between;
+    padding: 4px;
+    box-sizing: border-box;
+    background-color: var(--color-bg-module);
+    border: var(--module-border) solid var(--module-color-border);
+    border-radius: var(--module-border-radius);
+}
+#side-L-area { left: 411px; } /* 406px width + 5px gap */
+#side-R-area { right: 411px; } /* 406px width + 5px gap */
+.side-icon { height: 25px; width: 25px; margin: 0 auto; }
+
+/* --- Lost Zone --- */
+.lost-zone-counter {
+    position: absolute;
+    top: 195px; /* Position it below the side area */
+    width: 36px;
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px;
+    box-sizing: border-box;
+    background-color: var(--color-bg-module);
+    border: var(--module-border) solid var(--module-color-border);
+    border-radius: var(--module-border-radius);
+}
+#lost-zone-L-area {
+    left: 411px;
+}
+#lost-zone-R-area {
+    right: 411px;
+}
+.lost-zone-counter.visible {
+    display: flex;
+}
+.lost-zone-counter img {
+    width: 30px;
+    height: 50px;
+    margin-top: 8px;
+}
+.lost-zone-counter .count {
+    font-family: var(--font-numeric);
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px black;
+}
+
+.energy-icon { width: 28px; height: 28px; }
+
+/* Make empty slots transparent */
+.active-slot.is-empty,
+.bench-slot.is-empty {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* --- Stadium Area --- */
+#stadium-area {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 240px;
+    height: 40px;
+    z-index: 100;
+}
+
+#stadium-card {
+    width: 100%;
+    height: 100%;
+    border-radius: 20px;
+    background-size: 120%; 
+    /* Crop the card art to better fit the container */
+    background-position: center 25%; 
+    border: 2px solid var(--module-color-border);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    transition: filter 0.5s ease;
+}
+
+#stadium-name {
+    font-size: 18px;
+    font-weight: 900;
+    color: white;
+    text-shadow: 2px 2px 4px #000, -2px -2px 4px #000;
+    z-index: 1;
+    padding: 0 5px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- Animation Styles for Stadium --- */
+@keyframes slide-in-top {
+    0%, 20% { transform: translateY(-150%); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slide-out-top {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(-150%); opacity: 0; }
+}
+
+.anim-slide-in-top { animation: slide-in-top 0.5s ease-out forwards; }
+.anim-slide-out-top { animation: slide-out-top 0.5s ease-in forwards; }
+
+.damage-number-battle {
+    font-size: 80px;
+    text-shadow: 4px 4px 0 #750000, -4px -4px 0 #750000, 4px -4px 0 #750000, -4px 4px 0 #750000, 8px 8px 10px #000000cc;
+}
+
+.weakness-icon-fx {
+    position: absolute;
+    width: 240px;
+    height: 160px;
+    z-index: 490; /* Above damage number text */
+    pointer-events: none;
+    animation: show-and-fade-up 1.5s ease-out forwards;
+}
+
+.heal-number-battle {
+    font-size: 80px;
+    text-shadow: 4px 4px 0 #1aa541, -4px -4px 0 #1aa541, 4px -4px 0 #1aa541, -4px 4px 0 #1aa541, 8px 8px 10px #000000cc;
+}
+
+/* --- Final Attack FX --- */
+#attack-fx-container {
+    position: absolute;
+    top: 70%; /* Moved down */
+    left: -10%;
+    width: 120%;
+    height: 150px;
+    z-index: 1000;
+    /* The rotation angle is now dynamically controlled by the --direction variable. */
+    transform: rotate(calc(-6deg * var(--direction, 1))); 
+    pointer-events: none;
+    /* overflow: hidden; */ /* Removed to allow video to show above/below the bar */ 
+    display: none; /* Start hidden */
+}
+#attack-fx-container.active {
+    display: block;
+}
+.attack-fx-video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1920px;
+    height: 320px;
+    /* The horizontal direction is now dynamically controlled by the --direction variable. */
+    transform: translate(-50%, -50%) scaleX(var(--direction, 1));
+    z-index: 1; /* Behind the bar */
+    opacity: 0.7;
+}
+.attack-fx-bar {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    z-index: 2; /* In front of the video */
+}
+.attack-fx-upper {
+    height: 70%;
+    background: linear-gradient(to bottom, #6e6e6e, #c2c2c2); /* Default Colorless */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+.attack-fx-lower {
+    height: 30%;
+    background-color: #202020;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+.attack-fx-move-name, .attack-fx-attacker-name {
+    color: white;
+    text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+    position: absolute;
+    white-space: nowrap;
+    z-index: 3; /* Ensure text is above bar */
+    opacity: 0; /* Start hidden */ 
+}
+.attack-fx-move-name {
+    font-family: var(--font-attack-lang, sans-serif);
+    font-weight: 400; /* Use a lighter weight */ 
+    translate: 0 -5%;
+    font-size: 98px;
+}
+.attack-fx-attacker-name {
+    font-family: 'Sora', sans-serif;
+    font-weight: 400; /* Use a lighter weight */ 
+    font-size: 28px;
+}
+
+/* Type Colors */
+.type-草 .attack-fx-upper { background: linear-gradient(to bottom, #78C850, #5ca03a); }
+.type-炎 .attack-fx-upper { background: linear-gradient(to bottom, #C03028, #a02821); }
+.type-水 .attack-fx-upper { background: linear-gradient(to bottom, #6890F0, #4a77d8); }
+.type-雷 .attack-fx-upper { background: linear-gradient(to bottom, #F8D030, #fffb03); }
+.type-超 .attack-fx-upper { background: linear-gradient(to bottom, #A040A0, #803380); }
+.type-闘 .attack-fx-upper { background: linear-gradient(to bottom, #F08030, #d46e23); }
+.type-悪 .attack-fx-upper { background: linear-gradient(to bottom, #486770, #133d58); }
+.type-鋼 .attack-fx-upper { background: linear-gradient(to bottom, #B8B8D0, #9e9ec0); }
+.type-竜 .attack-fx-upper { background: linear-gradient(to bottom, #a1a154, #b3b306); }
+.type-妖 .attack-fx-upper { background: linear-gradient(to bottom, #EE99AC, #e87994); }
+.type-無 .attack-fx-upper { background: linear-gradient(to bottom, #6e6e6e, #c2c2c2); } /* Default Colorless */
+
+/* Unified Keyframes */
+@keyframes bar-wipe {
+    0% { transform: translateX(calc(-101% * var(--direction))); }
+    8% { transform: translateX(0); } /* 0-80ms wipe-in */ 
+    92% { transform: translateX(0); } /* 80-920ms hold */ 
+    100% { transform: translateX(calc(101% * var(--direction))); } /* 920-1000ms wipe-out */ 
+}
+@keyframes text-movement {
+    0% {
+        transform: translateX(calc(-150% * var(--direction))); 
+        opacity: 0;
+    }
+    /* Phase 1: Entry (4% -> 20%). Decelerated entry (ease-out). */
+    4% { 
+        transform: translateX(calc(-150% * var(--direction))); 
+        opacity: 0; 
+        animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 0.95); 
+    }
+    /* Phase 2: Drift (20% -> 80%). Constant speed. */
+    20% { 
+        transform: translateX(0);  
+        opacity: 1;
+        animation-timing-function: linear;
+    }
+    /* Phase 3: Exit (80% -> 96%). Symmetrical accelerated exit (ease-in). */
+    80% { 
+        transform: translateX(calc(40px * var(--direction))); 
+        opacity: 1; 
+        animation-timing-function: cubic-bezier(0.64, 0.05, 0.78, 0.39);
+    }
+    /* End of animation */
+    96% {
+        transform: translateX(calc(150% * var(--direction))); 
+        opacity: 0;
+    }
+    100% { 
+        transform: translateX(calc(150% * var(--direction))); 
+        opacity: 0; 
+    }
+}
+
+/* Animation Application Classes */
+.animate-L { --direction: 1; }
+.animate-R { --direction: -1; }
+
+.animate-L .attack-fx-bar, .animate-R .attack-fx-bar { 
+    animation: bar-wipe 1000ms cubic-bezier(0.5, 0, 0.75, 0) forwards; 
+}
+.animate-L .attack-fx-move-name, .animate-L .attack-fx-attacker-name,
+.animate-R .attack-fx-move-name, .animate-R .attack-fx-attacker-name { 
+    /* Timing is now controlled within keyframes for multi-stage easing. */
+    animation: text-movement 1000ms linear forwards; 
+}
+
+/* --- Current Turn Border --- */
+@keyframes breathe-opacity {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.current-turn-border {
+    position: absolute;
+    width: 120px; /* Same width File */
+    height: 1080px; /* Same height as player-area */
+    background-image: url('/assets/ptcg-telop/element/current.png');
+    background-size: 100% 100%; /* Stretch to fit */
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: -1; /* Place at the bottom layer */
+    opacity: 0; /* Start hidden */
+    transition: opacity 0.5s ease-in-out; /* Smooth fade for activation/deactivation */
+}
+
+.current-turn-border.active {
+    animation: breathe-opacity 2s infinite alternate ease-in-out;
+}
+
+#current-L-border {
+    left: 348px; /* Adjusted to align with player area */
+    top: 0;
+}
+
+#current-R-border {
+    right: 348px; /* Adjusted to align with player area */
+    top: 0;
+}
+
+/* --- Preloader --- */
+#video-preloader {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    left: -9999px;
+    top: -9999px;
+    visibility: hidden;
+    pointer-events: none;
+}
