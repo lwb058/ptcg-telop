@@ -51,23 +51,15 @@
   uncomment these rules and update the file names.
 */
 @font-face {
+  font-family: 'PTCG-Main-CHS';
+  src: url('/assets/ptcg-telop/font/NotoSans-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: 400;
+}
+@font-face {
   font-family: 'PTCG-Attack-CHS';
   src: url('/assets/ptcg-telop/font/UnboundedSans.ttf') format('truetype');
   font-weight: 400;
 }
-/*
-@font-face {
-  font-family: 'PTCG-Main-CHS';
-  src: url('/assets/ptcg-telop/font/Your-Chinese-Main-Font.ttf') format('truetype');
-  font-weight: 400;
-}
-@font-face {
-  font-family: 'PTCG-PlayerName-CHS';
-  src: url('/assets/ptcg-telop/font/Your-Chinese-PlayerName-Font.ttf') format('truetype');
-  font-weight: 400;
-}
-
-*/
 
 /* --- 2. Language-based Switching Logic --- */
 
@@ -86,7 +78,7 @@ body.lang-chs {
     FALLBACK: Using Japanese fonts for Chinese until Chinese fonts are provided.
     Once 'PTCG-Main-CHS' etc. are defined above, change these values.
   */
-  --font-main-lang: 'PTCG-Main-JP';
+  --font-main-lang: 'PTCG-Main-CHS';
   --font-attack-lang: 'PTCG-Attack-CHS';
   /*
   --font-main-lang: 'PTCG-Main-CHS';
