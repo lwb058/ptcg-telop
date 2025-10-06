@@ -428,7 +428,7 @@
                 if (hpPercent <= 25) hpColor = 'var(--hp-low)';
                 else if (hpPercent <= 50) hpColor = 'var(--hp-medium)';
 
-                const getEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/energy/${ENERGY_MAP[type] || 'エネなし'}.png">`;
+                const getEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/icons/${ENERGY_MAP[type] || 'エネなし'}.png">`;
                 
                 let wrapper = slotEl.querySelector('.bench-pokemon-wrapper');
 

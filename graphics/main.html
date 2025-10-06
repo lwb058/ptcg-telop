@@ -645,7 +645,7 @@
                     iconWrapper.className = 'status-icon-wrapper anim-status-appear';
                     iconWrapper.dataset.ailment = ailment;
                     const iconImg = document.createElement('img');
-                    iconImg.src = `/assets/ptcg-telop/status/${ailment}.png`;
+                    iconImg.src = `/assets/ptcg-telop/icons/${ailment}.png`;
                     iconImg.className = 'status-icon';
                     iconWrapper.appendChild(iconImg);
                     containerEl.appendChild(iconWrapper);
@@ -781,7 +781,7 @@
             let hpColor = 'var(--hp-high)';
             if (hpPercent <= 25) hpColor = 'var(--hp-low)';
             else if (hpPercent <= 50) hpColor = 'var(--hp-medium)';
-            const getEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/energy/${ENERGY_MAP[type] || 'エネなし'}.png">`;
+            const getEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/icons/${ENERGY_MAP[type] || 'エネなし'}.png">`;
 
             if (index === 0) {
                 const wrapper = slotEl.querySelector('.active-pokemon-wrapper');
@@ -950,7 +950,7 @@
                 if (isUnderAttack) { setTimeout(hpUpdate, 1100); } else { hpUpdate(); }
 
                 const energyContainer = wrapper.querySelector('.bench-attached-energies');
-                const getBenchEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/energy/${ENERGY_MAP[type] || 'エネなし'}.png">`;
+                const getBenchEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/icons/${ENERGY_MAP[type] || 'エネなし'}.png">`;
                 renderAttachedEnergies(energyContainer, slotData.attachedEnergy, getBenchEnergyIcon);
             }
             if (slotData && slotData.evolutionSelect) {
@@ -1007,13 +1007,13 @@
             '/assets/ptcg-telop/element/action-supporter.png',
             '/assets/ptcg-telop/element/action-retreat.png', 
             // Status condition icons
-            '/assets/ptcg-telop/status/Poisoned.png',
-            '/assets/ptcg-telop/status/Burned.png',
-            '/assets/ptcg-telop/status/Asleep.png',
-            '/assets/ptcg-telop/status/Paralyzed.png',
-            '/assets/ptcg-telop/status/Confused.png', 
+            '/assets/ptcg-telop/icons/Poisoned.png',
+            '/assets/ptcg-telop/icons/Burned.png',
+            '/assets/ptcg-telop/icons/Asleep.png',
+            '/assets/ptcg-telop/icons/Paralyzed.png',
+            '/assets/ptcg-telop/icons/Confused.png', 
             // Energy icons (dynamically generated)
-            ...Object.values(ENERGY_MAP).map(type => `/assets/ptcg-telop/energy/${type}.png`)
+            ...Object.values(ENERGY_MAP).map(type => `/assets/ptcg-telop/icons/${type}.png`)
         ].filter((v, i, a) => a.indexOf(v) === i); // Deduplicate, just in case
 
         const preloaderContainer = document.getElementById('video-preloader');

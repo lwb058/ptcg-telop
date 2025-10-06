@@ -264,11 +264,11 @@
                         </ul>
                     </div>
                     <div class="ailment-icons">
-                        <img src="/assets/ptcg-telop/status/Poisoned.png" class="ailment-icon" data-ailment="Poisoned" title="Poisoned">
-                        <img src="/assets/ptcg-telop/status/Burned.png" class="ailment-icon" data-ailment="Burned" title="Burned">
-                        <img src="/assets/ptcg-telop/status/Asleep.png" class="ailment-icon" data-ailment="Asleep" title="Asleep">
-                        <img src="/assets/ptcg-telop/status/Paralyzed.png" class="ailment-icon" data-ailment="Paralyzed" title="Paralyzed">
-                        <img src="/assets/ptcg-telop/status/Confused.png" class="ailment-icon" data-ailment="Confused" title="Confused">
+                        <img src="/assets/ptcg-telop/icons/Poisoned.png" class="ailment-icon" data-ailment="Poisoned" title="Poisoned">
+                        <img src="/assets/ptcg-telop/icons/Burned.png" class="ailment-icon" data-ailment="Burned" title="Burned">
+                        <img src="/assets/ptcg-telop/icons/Asleep.png" class="ailment-icon" data-ailment="Asleep" title="Asleep">
+                        <img src="/assets/ptcg-telop/icons/Paralyzed.png" class="ailment-icon" data-ailment="Paralyzed" title="Paralyzed">
+                        <img src="/assets/ptcg-telop/icons/Confused.png" class="ailment-icon" data-ailment="Confused" title="Confused">
                     </div>
                     <div class="d-flex gap-2">
                         <label><input type="checkbox" class="ko-checkbox"> K.O</label>
@@ -1178,7 +1178,7 @@
                 if (slotData.attachedEnergy) {
                     slotData.attachedEnergy.forEach((energyType, energyIndex) => {
                         const energyImg = document.createElement('img');
-                        energyImg.src = `/assets/ptcg-telop/energy/${energyType}.png`;
+                        energyImg.src = `/assets/ptcg-telop/icons/${energyType}.png`;
                         energyImg.classList.add('energy-icon');
                         energyImg.title = `Click to remove ${energyType}`;
                         energyImg.addEventListener('click', () => {

@@ -24,18 +24,19 @@ PTCG-Telopは、[NodeCG](https://www.nodecg.dev/)フレームワークをベー�
 nodecg/
 ├── assets/
 │   └── ptcg-telop/
-│       ├── energy/         (エネルギーアイコンのフォルダ)
+│       ├── element/        (UI要素のフォルダ)
+│       ├── icons/          (エネルギーや異常状態アイコンなどのフォルダ)
 │       ├── fx/             (エフェクト動画のフォルダ)
-│       ├── mark/           (exやVSTARなどのアイコンフォルダ)
-│       ├── status/         (異常状態アイコンのフォルダ)
-│       ├── card_img/       (自動作成、カード画像のフォルダ)
-│       └── database.json   (自動作成、カードデータベースのファイル)
+│       ├── font/           (フォントのフォルダ)
+│       ├── card_img_*/       (自動作成、カード画像のフォルダ)
+│       └── database_*.json   (自動作成、カードデータベースのファイル)
 ├── bundles/
 │   └── ptcg-telop/
 │       ├── dashboard/      (管理画面のパネル)
 │       ├── graphics/       (配信に表示される画面)
 │       ├── extension/      (サーバーサイドのロジック)
 │       ├── python/         (カード情報取得用スクリプト)
+│       ├── i18n/           (多言語対応用ファイル)
 │       ├── package.json    (バンドルの設定ファイル)
 │       └── その他のファイル
 └── ... (NodeCGのその他ファイル)

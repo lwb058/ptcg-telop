@@ -403,17 +403,17 @@
             </div>
         </div>
         <div id="energy-buttons" class="energy-btn-grid">
-            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/草.png" title="草" class="energy-icon" data-energy-type="草" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/炎.png" title="炎" class="energy-icon" data-energy-type="炎" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/水.png" title="水" class="energy-icon" data-energy-type="水" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/雷.png" title="雷" class="energy-icon" data-energy-type="雷" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/超.png" title="超" class="energy-icon" data-energy-type="超" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/闘.png" title="闘" class="energy-icon" data-energy-type="闘" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/悪.png" title="悪" class="energy-icon" data-energy-type="悪" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/鋼.png" title="鋼" class="energy-icon" data-energy-type="鋼" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/妖.png" title="妖" class="energy-icon" data-energy-type="妖" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/無.png" title="無" class="energy-icon" data-energy-type="無" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/energy/全.png" title="全" class="energy-icon" data-energy-type="全" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/草.png" title="草" class="energy-icon" data-energy-type="草" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/炎.png" title="炎" class="energy-icon" data-energy-type="炎" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/水.png" title="水" class="energy-icon" data-energy-type="水" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/雷.png" title="雷" class="energy-icon" data-energy-type="雷" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/超.png" title="超" class="energy-icon" data-energy-type="超" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/闘.png" title="闘" class="energy-icon" data-energy-type="闘" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/悪.png" title="悪" class="energy-icon" data-energy-type="悪" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/鋼.png" title="鋼" class="energy-icon" data-energy-type="鋼" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/妖.png" title="妖" class="energy-icon" data-energy-type="妖" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/無.png" title="無" class="energy-icon" data-energy-type="無" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/全.png" title="全" class="energy-icon" data-energy-type="全" draggable="true"></button>
         </div>
         <div id="current-player-field" style="margin-top: 10px;">
              <!-- Pokémon will be rendered here by JavaScript -->
@@ -670,7 +670,7 @@
                 const attachedEnergies = slotValue.attachedEnergy || [];
                 attachedEnergies.forEach((energy, index) => {
                     const energyImg = document.createElement('img');
-                    energyImg.src = `/assets/ptcg-telop/energy/${energy}.png`;
+                    energyImg.src = `/assets/ptcg-telop/icons/${energy}.png`;
                     energyImg.className = 'attached-energy-icon';
                     energyImg.draggable = true;
                     energyImg.dataset.energyType = energy;
