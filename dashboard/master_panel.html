@@ -367,6 +367,111 @@
             cursor: pointer;
             border: 1px solid white;
         }
+
+        /* Styles for Attack Module Targeting View */
+        .target-field-container {
+            padding: 2px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fafafa;
+            flex-grow: 1; /* Allow it to take space */
+            max-height: 200px; /* Set a max height to show opponent's field by default */
+            overflow-y: auto; /* Add vertical scroll when content overflows */
+            scrollbar-width: thin;
+            scrollbar-color: #ccc #f0f2f5;
+        }
+        .target-field-container::-webkit-scrollbar { 
+            width: 8px; 
+        }
+        .target-field-container::-webkit-scrollbar-track { 
+            background: #f0f2f5; 
+        }
+        .target-field-container::-webkit-scrollbar-thumb { 
+            background-color: #ccc; 
+            border-radius: 4px; 
+        }
+        .targeting-row {
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+            margin-bottom: 5px;
+        }
+        .targeting-row:last-child {
+            margin-bottom: 0;
+        }
+        .targeting-row.bench {
+            flex-wrap: wrap;
+        }
+        /* Opponent's card sizes */
+        .targeting-row.opponent-row .pokemon-target-card {
+            flex: 0 0 11%;
+            max-width: 60px;
+        }
+        .targeting-row.opponent-row.battle .pokemon-target-card {
+            flex: 0 0 20%;
+            max-width: 80px;
+        }
+
+        /* Player's card sizes (smaller) */
+        .targeting-row.player-row .pokemon-target-card {
+            flex: 0 0 11%;
+            max-width: 60px; /* ~20% smaller */
+        }
+        .targeting-row.player-row.battle .pokemon-target-card {
+            flex: 0 0 20%;
+            max-width: 80px; /* ~20% smaller */
+        }
+        .target-view-separator {
+            border-top: 2px dashed #ccc;
+            margin: 8px 5%;
+        }
+        .pokemon-target-card {
+            position: relative;
+            border: 2px solid transparent;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            aspect-ratio: 868 / 1212; /* Maintain card aspect ratio */
+        }
+        .pokemon-target-card > img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border-radius: 4px;
+            object-fit: cover;
+        }
+        .pokemon-target-card.empty-target-slot {
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            background-color: #f0f2f5;
+        }
+        .pokemon-target-card.is-targeted {
+            border-color: #e74c3c;
+            transform: scale(1.05);
+            box-shadow: 0 0 12px #e74c3c;
+        }
+        .pokemon-target-card.is-targeted::before,
+        .pokemon-target-card.is-targeted::after {
+            content: '';
+            position: absolute;
+            background-color: red;
+            box-shadow: 0 0 5px black;
+            z-index: 1;
+        }
+        .pokemon-target-card.is-targeted::before {
+            top: 50%;
+            left: 22%;
+            right: 22%;
+            height: 5px;
+            transform: translateY(-50%);
+        }
+        .pokemon-target-card.is-targeted::after {
+            left: 50%;
+            top: 30%;
+            bottom: 30%;
+            width: 5px;
+            transform: translateX(-50%);
+        }
         /* Style for disabled buttons to provide visual feedback */
         .btn:disabled {
             cursor: not-allowed;
@@ -384,12 +489,6 @@
             <div>
                 <p>Total Pokemons: <span id="total-pokemons">0</span></p>
                 <p>Selected: <span id="selected-pokemons">None</span></p>
-            </div>
-            <div class="form-group" style="margin-left: auto; flex-grow: 0; align-items: center;">
-                <label for="stadium-select">Stadium:</label>
-                <select id="stadium-select" style="margin-right: 10px;"></select>
-                <input type="checkbox" id="stadium-used-checkbox" style="transform: scale(1.2);">
-                <label for="stadium-used-checkbox" style="margin-left: 5px;">Used</label>
             </div>
         </div>
     </div>
@@ -437,9 +536,19 @@
                 <select id="attack-select" class="truncate-select"></select>
             </div>
         </div>
-        <div class="form-group">
-            <label for="target">Target:</label>
-            <textarea id="target" readonly></textarea>
+        <div class="form-group" style="flex-direction: column; align-items: stretch; margin-bottom: 10px;">
+            <label>Target:</label>
+            <div id="attack-target-field" class="target-field-container">
+                <!-- Targeting view will be rendered here by JavaScript -->
+            </div>
+        </div>
+        <div class="select-zone-grid" style="margin-bottom: 10px;">
+            <button id="select-with-energy-btn" class="btn select-btn">エネ付き</button>
+            <button id="select-with-ability-btn" class="btn select-btn">特性あり</button>
+            <button id="select-with-rule-btn" class="btn select-btn">ルール持ち</button>
+            <button id="select-attacker-btn" class="btn btn-primary">Attacker</button>
+            <button id="select-clear-btn" class="btn btn-black">Clear</button>
+            <button id="select-reverse-btn" class="btn select-btn">Reverse</button>
         </div>
         <div class="flex-container" style="align-items: center; gap: 15px;">
             <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
@@ -457,16 +566,15 @@
     
     <div class="panel-section">
         <h3>Shortcut Module</h3>
-        <div class="select-zone-grid">
-            <button id="select-attacker-btn" class="btn btn-primary">Attacker</button>
-            <button id="select-clear-btn" class="btn btn-black">Clear</button>
-            <button id="select-reverse-btn" class="btn select-btn">Reverse</button>
-            <button id="select-with-energy-btn" class="btn select-btn">エネ付き</button>
-            <button id="select-with-ability-btn" class="btn select-btn">特性あり</button>
-            <button id="select-with-rule-btn" class="btn select-btn">ルール持ち</button>
-        </div>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
+        <div class="flex-container" style="justify-content: space-between; align-items: center;">
             <button id="ko-0hp-btn" class="btn btn-danger">Remove K.O</button>
+            <div class="form-group" style="flex-grow: 0; align-items: center; margin-bottom: 0;">
+                <label for="stadium-select">Stadium:</label>
+                <select id="stadium-select" style="margin-right: 10px;"></select>
+                <input type="checkbox" id="stadium-used-checkbox" style="transform: scale(1.2);">
+                <label for="stadium-used-checkbox" style="margin-left: 5px;">Used</label>
+            </div>
+        </div>
     </div>
     
     <div class="panel-section">
@@ -1284,12 +1392,118 @@
             });
 
 
+            // --- Targeting View Logic ---
+            const attackTargetField = document.getElementById('attack-target-field');
+
+            /**
+             * Creates a DOM element for a Pokémon card in the targeting view.
+             * @param {string} slotId - The ID of the slot (e.g., 'slotL0').
+             * @param {object} slotValue - The value of the slot replicant.
+             * @returns {HTMLElement} The created element.
+             */
+            function createTargetingCardElement(slotId, slotValue) {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'pokemon-target-card';
+                cardEl.dataset.slotId = slotId;
+
+                if (slotValue && slotValue.cardId) {
+                    const img = document.createElement('img');
+                    img.src = getCardImageUrl(slotValue.cardId);
+                    cardEl.appendChild(img);
+                } else {
+                    cardEl.classList.add('empty-target-slot');
+                }
+
+                // Add click listener to toggle selection
+                cardEl.addEventListener('click', () => {
+                    const currentSelections = selections.value || [];
+                    const index = currentSelections.indexOf(slotId);
+                    let newSelections = [...currentSelections];
+
+                    if (index > -1) {
+                        // Already selected, so remove it
+                        newSelections.splice(index, 1);
+                    } else {
+                        // Not selected, so add it
+                        newSelections.push(slotId);
+                    }
+                    selections.value = newSelections;
+                });
+
+                return cardEl;
+            }
+
+            /**
+             * Renders the entire battlefield in the targeting view, from the current player's perspective.
+             */
+            function renderTargetingField() {
+                if (!attackTargetField) return;
+                attackTargetField.innerHTML = ''; // Clear view
+
+                const turn = draft_currentTurn.value;
+                if (!turn) return;
+
+                const currentPlayerId = turn;
+                const opponentPlayerId = turn === 'L' ? 'R' : 'L';
+                const currentSelections = selections.value || [];
+
+                // Helper to create a row container
+                const createRow = (className) => {
+                    const row = document.createElement('div');
+                    row.className = `targeting-row ${className}`;
+                    return row;
+                };
+
+                // Helper to populate a row with Pokémon cards
+                const populateRow = (row, side, indices) => {
+                    let hasPokemon = false;
+                    indices.forEach(i => {
+                        const slotId = `slot${side}${i}`;
+                        const slot = slots.find(s => s.name === `draft_${slotId}`);
+                        if (slot && slot.value && slot.value.cardId) {
+                            hasPokemon = true;
+                            const card = createTargetingCardElement(slotId, slot.value);
+                            if (currentSelections.includes(slotId)) {
+                                card.classList.add('is-targeted');
+                            }
+                            row.appendChild(card);
+                        }
+                    });
+                    return hasPokemon; // Return true if at least one Pokémon was added
+                };
+
+                const opponentBenchRow = createRow('bench opponent-row');
+                const opponentBattleRow = createRow('battle opponent-row');
+                const playerBattleRow = createRow('battle player-row');
+                const playerBenchRow = createRow('bench player-row');
+
+                // Populate rows
+                const hasOpponentBench = populateRow(opponentBenchRow, opponentPlayerId, [1, 2, 3, 4, 5, 6, 7, 8]);
+                const hasOpponentBattle = populateRow(opponentBattleRow, opponentPlayerId, [0]);
+                const hasPlayerBattle = populateRow(playerBattleRow, currentPlayerId, [0]);
+                const hasPlayerBench = populateRow(playerBenchRow, currentPlayerId, [1, 2, 3, 4, 5, 6, 7, 8]);
+
+                // Append rows in the correct order only if they have content
+                if (hasOpponentBench) attackTargetField.appendChild(opponentBenchRow);
+                if (hasOpponentBattle) attackTargetField.appendChild(opponentBattleRow);
+
+                // Add separator if both opponent and player have pokemon on the field
+                if ((hasOpponentBench || hasOpponentBattle) && (hasPlayerBattle || hasPlayerBench)) {
+                    const separator = document.createElement('div');
+                    separator.className = 'target-view-separator';
+                    attackTargetField.appendChild(separator);
+                }
+
+                if (hasPlayerBattle) attackTargetField.appendChild(playerBattleRow);
+                if (hasPlayerBench) attackTargetField.appendChild(playerBenchRow);
+            }
+
+
             // --- Attack Module Logic ---
             const attackerSelect = document.getElementById('attacker');
             const attackSelect = document.getElementById('attack-select');
             const damageInput = document.getElementById('damage');
             const weaknessCheck = document.getElementById('weakness-check');
-            const targetTextarea = document.getElementById('target');
             const attackBtn = document.getElementById('attack-btn');
             const aimBtn = document.getElementById('aim-btn');
             const stadiumSelect = document.getElementById('stadium-select');
@@ -1590,29 +1804,48 @@
                 attackerSelect.innerHTML = '<option value="">Select Attacker</option>';
                 
                 const availableAttackers = getOccupiedSlots().filter(slotId => slotId.startsWith(`slot${turn}`));
+                
+                const battleSlotId = `slot${turn}0`;
+                const battlePokemon = availableAttackers.find(id => id === battleSlotId);
+                const benchPokemon = availableAttackers.filter(id => id !== battleSlotId).sort(); // Sort bench for consistency
 
-                availableAttackers.forEach(slotId => {
+                // Add Battle Pokémon first
+                if (battlePokemon) {
+                    const option = document.createElement('option');
+                    option.value = battlePokemon;
+                    option.textContent = getCardName(battlePokemon);
+                    attackerSelect.appendChild(option);
+                }
+
+                // Add separator if there are both battle and bench Pokémon
+                if (battlePokemon && benchPokemon.length > 0) {
+                    const separator = document.createElement('option');
+                    separator.disabled = true;
+                    separator.textContent = '──── Bench ────';
+                    attackerSelect.appendChild(separator);
+                }
+
+                // Add Bench Pokémon
+                benchPokemon.forEach(slotId => {
                     const option = document.createElement('option');
                     option.value = slotId;
-                    option.textContent = `${slotId}: ${getCardName(slotId)}`;
+                    option.textContent = getCardName(slotId);
                     attackerSelect.appendChild(option);
                 });
 
-                const battleSlot = `slot${turn}0`;
-                if (availableAttackers.includes(battleSlot)) {
-                    attackerSelect.value = battleSlot;
-                } else {
+                // Reselect the correct value
+                if (availableAttackers.includes(currentValue)) {
                     attackerSelect.value = currentValue;
+                } else if (battlePokemon) {
+                    attackerSelect.value = battleSlotId;
+                } else if (benchPokemon.length > 0) {
+                    attackerSelect.value = benchPokemon[0];
                 }
-                // Update attacks when attacker changes
+                
+                // After updating the dropdown, the attack list and weakness should also be updated
+                // based on the new state of the attacker dropdown.
                 updateAttackDropdown();
-                // Manually trigger weakness check since programmatic change doesn't fire event
                 updateWeaknessCheckbox();
-            }
-
-            function updateTargetTextarea() {
-                const currentSelections = selections.value || [];
-                targetTextarea.value = currentSelections.map(id => `${id}: ${getCardName(id)}`).join('\n');
             }
 
             attackerSelect.addEventListener('change', () => {
@@ -1752,6 +1985,7 @@
                 renderCurrentPlayerField();
                 updateEnergyButtonVisibility();
                 updateToolButtonVisibility(); // <-- FIX: Added this call
+                renderTargetingField(); // Re-render the targeting view for the new perspective
             });
 
             turnLRadio.addEventListener('change', () => {
@@ -1834,18 +2068,18 @@
             slots.forEach(slot => slot.on('change', () => {
                 updateTotalPokemons();
                 updateAttackerDropdown();
-                updateTargetTextarea(); // Selections might refer to a card that was just removed
+                renderTargetingField(); // Selections might refer to a card that was just removed
                 updateWeaknessCheckbox();
             }));
             selections.on('change', () => {
                 updateSelectedPokemons();
-                updateTargetTextarea();
+                renderTargetingField();
                 updateWeaknessCheckbox();
             });
             cardDatabase.on('change', () => {
                 updateSelectedPokemons();
                 updateAttackerDropdown();
-                updateTargetTextarea();
+                renderTargetingField();
                 updateWeaknessCheckbox();
             });
             operationQueue.on('change', renderQueue);
@@ -1857,7 +2091,7 @@
             updateFirstPlayerDropdown();
             renderQueue();
             updateAttackerDropdown();
-            updateTargetTextarea();
+            renderTargetingField();
             updateEnergyButtonVisibility();
             updateToolButtonVisibility(); // <-- FIX: Added this call
             renderCurrentPlayerField();
