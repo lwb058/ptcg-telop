@@ -373,9 +373,9 @@
             padding: 2px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            background-color: #fafafa;
+            background-color: #255bc0;
             flex-grow: 1; /* Allow it to take space */
-            max-height: 200px; /* Set a max height to show opponent's field by default */
+            height: 200px; /* Set a max height to show opponent's field by default */
             overflow-y: auto; /* Add vertical scroll when content overflows */
             scrollbar-width: thin;
             scrollbar-color: #ccc #f0f2f5;
@@ -455,7 +455,6 @@
             content: '';
             position: absolute;
             background-color: red;
-            box-shadow: 0 0 5px black;
             z-index: 1;
         }
         .pokemon-target-card.is-targeted::before {
@@ -543,12 +542,12 @@
             </div>
         </div>
         <div class="select-zone-grid" style="margin-bottom: 10px;">
-            <button id="select-with-energy-btn" class="btn select-btn">エネ付き</button>
-            <button id="select-with-ability-btn" class="btn select-btn">特性あり</button>
-            <button id="select-with-rule-btn" class="btn select-btn">ルール持ち</button>
-            <button id="select-attacker-btn" class="btn btn-primary">Attacker</button>
-            <button id="select-clear-btn" class="btn btn-black">Clear</button>
-            <button id="select-reverse-btn" class="btn select-btn">Reverse</button>
+            <button id="select-with-energy-btn" class="btn select-btn" data-i18n="select_with_energy">エネ付き</button>
+            <button id="select-with-ability-btn" class="btn select-btn" data-i18n="select_with_ability">特性あり</button>
+            <button id="select-with-rule-btn" class="btn select-btn" data-i18n="select_with_rule">ルール持ち</button>
+            <button id="select-opponent-all-btn" class="btn select-btn" data-i18n="select_opponent_all">相手全体</button>
+            <button id="select-clear-btn" class="btn btn-black" data-i18n="clear">Clear</button>
+            <button id="select-reverse-btn" class="btn select-btn" data-i18n="reverse">Reverse</button>
         </div>
         <div class="flex-container" style="align-items: center; gap: 15px;">
             <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
@@ -685,6 +684,13 @@
                 }
                 return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
             };
+
+            function updateUIStrings() {
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.dataset.i18n;
+                    el.textContent = getI18nText(key);
+                });
+            }
 
             /**
              * Renders the current turn player's field in the drop target area.
@@ -866,12 +872,12 @@
             }
 
             // --- Select Module Buttons ---
-            const btnSelectAttacker = document.getElementById('select-attacker-btn');
             const btnSelectClear = document.getElementById('select-clear-btn');
             const btnSelectReverse = document.getElementById('select-reverse-btn');
             const btnSelectWithEnergy = document.getElementById('select-with-energy-btn');
             const btnSelectWithAbility = document.getElementById('select-with-ability-btn');
             const btnSelectWithRule = document.getElementById('select-with-rule-btn');
+            const btnSelectOpponentAll = document.getElementById('select-opponent-all-btn');
             const btnKo0hp = document.getElementById('ko-0hp-btn');
 
             /**
@@ -1057,16 +1063,6 @@
             });
 
             // --- Selection Button Logic ---
-            btnSelectAttacker.addEventListener('click', () => {
-                const currentTurn = draft_currentTurn.value;
-                if (currentTurn === 'L') {
-                    selections.value = getOccupiedSlots().filter(id => id === 'slotL0');
-                } else if (currentTurn === 'R') {
-                    selections.value = getOccupiedSlots().filter(id => id === 'slotR0');
-                } else {
-                    alert('No current turn player to select battle Pokémon.');
-                }
-            });
             btnSelectClear.addEventListener('click', () => {
                 selections.value = [];
             });
@@ -1108,6 +1104,19 @@
                     }
                 });
                 selections.value = selected;
+            });
+
+            btnSelectOpponentAll.addEventListener('click', () => {
+                const currentTurn = draft_currentTurn.value;
+                if (!currentTurn) {
+                    alert('Current turn is not set.');
+                    return;
+                }
+                const opponentSide = currentTurn === 'L' ? 'R' : 'L';
+                const opponentPrefix = `slot${opponentSide}`;
+
+                const opponentSlots = getOccupiedSlots().filter(slotId => slotId.startsWith(opponentPrefix));
+                selections.value = opponentSlots;
             });
 
             btnKo0hp.addEventListener('click', () => {
@@ -2084,8 +2093,12 @@
             });
             operationQueue.on('change', renderQueue);
 
+            i18nStrings.on('change', updateUIStrings);
+            language.on('change', updateUIStrings);
+
 
             // Initial UI Update ---
+            updateUIStrings();
             updateTotalPokemons();
             updateSelectedPokemons();
             updateFirstPlayerDropdown();

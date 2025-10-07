@@ -143,5 +143,35 @@
     "jp": "すべての設定を保存",
     "chs": "保存所有设置",
     "en": "Save All Settings"
+  },
+  "select_with_energy": {
+    "jp": "エネ付き",
+    "en": "w/Energy",
+    "chs": "有能量"
+  },
+  "select_with_ability": {
+    "jp": "特性あり",
+    "en": "w/Ability",
+    "chs": "带特性"
+  },
+  "select_with_rule": {
+    "jp": "ルール持ち",
+    "en": "w/Rule",
+    "chs": "带规则"
+  },
+  "select_opponent_all": {
+    "jp": "相手全体",
+    "en": "Opponent All",
+    "chs": "对方全体"
+  },
+  "clear": {
+    "jp": "クリア",
+    "en": "Clear",
+    "chs": "清除"
+  },
+  "reverse": {
+    "jp": "反転",
+    "en": "Reverse",
+    "chs": "反选"
   }
 }
