@@ -204,7 +204,7 @@
     "chs": "卡片ID",
     "en": "Card ID"
   },
-  "deck_viewer_header_delete": {
+  "delete": {
     "jp": "削除",
     "chs": "删除",
     "en": "Delete"

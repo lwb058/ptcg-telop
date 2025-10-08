@@ -183,13 +183,13 @@
             document.getElementById('header-l-name').textContent = getI18nText('deck_viewer_header_card_name');
             document.getElementById('header-l-type').textContent = getI18nText('deck_viewer_header_type');
             document.getElementById('header-l-id').textContent = getI18nText('deck_viewer_header_id');
-            document.getElementById('header-l-delete').textContent = getI18nText('deck_viewer_header_delete');
+            document.getElementById('header-l-delete').textContent = getI18nText('delete');
 
             document.getElementById('header-r-image').textContent = getI18nText('deck_viewer_header_image');
             document.getElementById('header-r-name').textContent = getI18nText('deck_viewer_header_card_name');
             document.getElementById('header-r-type').textContent = getI18nText('deck_viewer_header_type');
             document.getElementById('header-r-id').textContent = getI18nText('deck_viewer_header_id');
-            document.getElementById('header-r-delete').textContent = getI18nText('deck_viewer_header_delete');
+            document.getElementById('header-r-delete').textContent = getI18nText('delete');
         }
 
         function handleAddCard(side, inputEl) {
@@ -404,7 +404,7 @@
 
                 const deleteCell = document.createElement('td');
                 const deleteButton = document.createElement('button');
-                deleteButton.textContent = '削除';
+                deleteButton.textContent = getI18nText('delete');
                 deleteButton.onclick = () => {
                     const playerName = side === 'L' ? (playerL_name.value || 'Player L') : (playerR_name.value || 'Player R');
                     if (confirm(`「${cardData.name}」を${playerName}のデッキから削除しますか？\n\nRemove "${cardData.name}" from ${playerName}'s deck?`)) {
