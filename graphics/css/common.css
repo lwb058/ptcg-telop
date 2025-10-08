@@ -570,13 +570,12 @@ body, html {
     display: flex;
 }
 .lost-zone-counter img {
-    width: 30px;
+    width: 25px;
     height: 50px;
-    margin-top: 8px;
 }
 .lost-zone-counter .count {
     font-family: var(--font-numeric);
-    font-size: 18px;
+    font-size: 22px;
     font-weight: bold;
     color: white;
     text-shadow: 1px 1px 2px black;

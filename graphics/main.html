@@ -123,19 +123,19 @@
 
         <!-- Side Areas -->
         <div class="side-area" id="side-L-area">
-            <img class="side-icon"><img class="side-icon"><img class="side-icon">
-            <img class="side-icon"><img class="side-icon"><img class="side-icon">
+            <img class="side-icon" alt=""><img class="side-icon" alt=""><img class="side-icon" alt="">
+            <img class="side-icon" alt=""><img class="side-icon" alt=""><img class="side-icon" alt="">
         </div>
         <div id="lost-zone-L-area" class="lost-zone-counter">
-            <img src="/assets/ptcg-telop/element/lost-zone.png">
+            <img src="/assets/ptcg-telop/element/lost-zone_jp.png" alt="Lost Zone Icon">
             <span class="count">0</span>
         </div>
         <div class="side-area" id="side-R-area">
-            <img class="side-icon"><img class="side-icon"><img class="side-icon">
-            <img class="side-icon"><img class="side-icon"><img class="side-icon">
+            <img class="side-icon" alt=""><img class="side-icon" alt=""><img class="side-icon" alt="">
+            <img class="side-icon" alt=""><img class="side-icon" alt=""><img class="side-icon" alt="">
         </div>
         <div id="lost-zone-R-area" class="lost-zone-counter">
-            <img src="/assets/ptcg-telop/element/lost-zone.png">
+            <img src="/assets/ptcg-telop/element/lost-zone_jp.png" alt="Lost Zone Icon">
             <span class="count">0</span>
         </div>
     </div>
@@ -1079,8 +1079,14 @@
 
         language.on('change', (newLang) => {
             setLanguageClass(newLang);
-            // Re-render first move icon when language changes
+            // When language changes, update all localized assets
             updateFirstMoveIcon(firstMove.value);
+
+            const lostZoneIconSrc = getLocalizedAssetPath('/assets/ptcg-telop/element/lost-zone_jp.png');
+            const lostZoneLImg = document.querySelector('#lost-zone-L-area img');
+            const lostZoneRImg = document.querySelector('#lost-zone-R-area img');
+            if (lostZoneLImg) lostZoneLImg.src = lostZoneIconSrc;
+            if (lostZoneRImg) lostZoneRImg.src = lostZoneIconSrc;
         });
         // --- End Language Font Switching ---
 
