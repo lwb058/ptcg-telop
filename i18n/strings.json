@@ -144,6 +144,16 @@
     "chs": "保存所有设置",
     "en": "Save All Settings"
   },
+  "settings_support_button": {
+    "jp": "開発者を応援",
+    "chs": "支持开发者",
+    "en": "Support Developer"
+  },
+  "donation_modal_title": {
+    "jp": "ご応援ありがとうございます！",
+    "chs": "感谢您对这个项目的支持！",
+    "en": "Thank you for your support!"
+  },
   "select_with_energy": {
     "jp": "エネ付き",
     "en": "w/Energy",
@@ -173,5 +183,35 @@
     "jp": "反転",
     "en": "Reverse",
     "chs": "反选"
+  },
+  "deck_viewer_header_image": {
+    "jp": "画像",
+    "chs": "卡图",
+    "en": "Image"
+  },
+  "deck_viewer_header_card_name": {
+    "jp": "カード名",
+    "chs": "卡名",
+    "en": "Card Name"
+  },
+  "deck_viewer_header_type": {
+    "jp": "タイプ",
+    "chs": "类别",
+    "en": "Type"
+  },
+  "deck_viewer_header_id": {
+    "jp": "カードID",
+    "chs": "卡片ID",
+    "en": "Card ID"
+  },
+  "deck_viewer_header_delete": {
+    "jp": "削除",
+    "chs": "删除",
+    "en": "Delete"
+  },
+  "deck_viewer_show_card_tip": {
+    "jp": "クリックして表示",
+    "chs": "点击以展示",
+    "en": "Click to show"
   }
 }

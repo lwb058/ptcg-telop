@@ -99,11 +99,11 @@
                 <table class="deck-table">
                     <thead>
                         <tr>
-                            <th>画像</th>
-                            <th>カード名</th>
-                            <th>タイプ</th>
-                            <th>ID</th>
-                            <th>削除</th>
+                            <th id="header-l-image">画像</th>
+                            <th id="header-l-name">カード名</th>
+                            <th id="header-l-type">タイプ</th>
+                            <th id="header-l-id">ID</th>
+                            <th id="header-l-delete">削除</th>
                         </tr>
                     </thead>
                     <tbody id="deckL-body">
@@ -125,11 +125,11 @@
                 <table class="deck-table">
                     <thead>
                         <tr>
-                            <th>画像</th>
-                            <th>カード名</th>
-                            <th>タイプ</th>
-                            <th>ID</th>
-                            <th>削除</th>
+                            <th id="header-r-image">画像</th>
+                            <th id="header-r-name">カード名</th>
+                            <th id="header-r-type">タイプ</th>
+                            <th id="header-r-id">ID</th>
+                            <th id="header-r-delete">削除</th>
                         </tr>
                     </thead>
                     <tbody id="deckR-body">
@@ -177,6 +177,21 @@
             return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
         };
 
+        function updateUIText() {
+            // Deck table headers
+            document.getElementById('header-l-image').textContent = getI18nText('deck_viewer_header_image');
+            document.getElementById('header-l-name').textContent = getI18nText('deck_viewer_header_card_name');
+            document.getElementById('header-l-type').textContent = getI18nText('deck_viewer_header_type');
+            document.getElementById('header-l-id').textContent = getI18nText('deck_viewer_header_id');
+            document.getElementById('header-l-delete').textContent = getI18nText('deck_viewer_header_delete');
+
+            document.getElementById('header-r-image').textContent = getI18nText('deck_viewer_header_image');
+            document.getElementById('header-r-name').textContent = getI18nText('deck_viewer_header_card_name');
+            document.getElementById('header-r-type').textContent = getI18nText('deck_viewer_header_type');
+            document.getElementById('header-r-id').textContent = getI18nText('deck_viewer_header_id');
+            document.getElementById('header-r-delete').textContent = getI18nText('deck_viewer_header_delete');
+        }
+
         function handleAddCard(side, inputEl) {
             const cardId = inputEl.value.trim();
             if (cardId) {
@@ -205,11 +220,12 @@
             if (e.key === 'Enter') handleAddCard('R', addCardIdR);
         });
 
-        NodeCG.waitForReplicants(deckL, deckR, database, playerL_name, playerR_name).then(() => {
+        NodeCG.waitForReplicants(deckL, deckR, database, playerL_name, playerR_name, i18nStrings, language).then(() => {
             // Set initial titles
             playerLDeckTitle.textContent = `${playerL_name.value || 'Player L'}'s Deck`;
             playerRDeckTitle.textContent = `${playerR_name.value || 'Player R'}'s Deck`;
 
+            updateUIText();
             renderDeck(deckL.value, deckLBody, database.value, 'L');
             renderDeck(deckR.value, deckRBody, database.value, 'R');
         });
@@ -230,6 +246,7 @@
         });
 
         language.on('change', () => {
+            updateUIText();
             renderDeck(deckL.value, deckLBody, database.value, 'L');
             renderDeck(deckR.value, deckRBody, database.value, 'R');
         });
@@ -351,7 +368,7 @@
                 };
 
                 img.src = getCardImageUrl(card.id);
-                img.title = 'クリックして表示 (Click to show)';
+                img.title = getI18nText('deck_viewer_show_card_tip');
                 img.onerror = () => { img.src = '/assets/ptcg-telop/element/default.jpg'; };
                 img.onclick = () => {
                     const targetReplicant = (side === 'L') ? cardToShowL : cardToShowR;
