@@ -1,5 +1,16 @@
+import sys, json, re, os, time, argparse
+
+# Get the absolute path of the directory where the script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# Construct the absolute path to the 'libs' directory
+libs_dir = os.path.join(script_dir, 'libs')
+
+# Add the 'libs' directory to the Python path
+if libs_dir not in sys.path:
+    sys.path.insert(0, libs_dir)
+
 # -*- coding: utf-8 -*-
-import requests, json, re, sys, os, time, argparse
+import requests
 from card_utils_chs import add_card_to_database, load_database, save_database
 
 def _identifier_type(identifier):

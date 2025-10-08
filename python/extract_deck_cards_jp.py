@@ -1,4 +1,15 @@
-import requests, re, time, argparse, sys, json
+import os, re, time, argparse, sys, json
+
+# Get the absolute path of the directory where the script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# Construct the absolute path to the 'libs' directory
+libs_dir = os.path.join(script_dir, 'libs')
+
+# Add the 'libs' directory to the Python path
+if libs_dir not in sys.path:
+    sys.path.insert(0, libs_dir)
+
+import requests
 from bs4 import BeautifulSoup
 # Explicitly import path variables for consistency
 from card_utils_jp import load_database, save_database, _core_process_card

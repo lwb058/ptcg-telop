@@ -1,6 +1,14 @@
-import sys
-import argparse
-import os
+import sys, os, argparse
+
+# Get the absolute path of the directory where the script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# Construct the absolute path to the 'libs' directory
+libs_dir = os.path.join(script_dir, 'libs')
+
+# Add the 'libs' directory to the Python path
+if libs_dir not in sys.path:
+    sys.path.insert(0, libs_dir)
+
 from card_utils_jp import add_card_to_database, get_card_details, save_database, load_database
 
 def main(card_id_arg=None):
