@@ -626,6 +626,8 @@
             nodecg.Replicant('assetPaths'),
             nodecg.Replicant('i18nStrings'),
             nodecg.Replicant('language'),
+            nodecg.Replicant('cardToShowL'),
+            nodecg.Replicant('cardToShowR'),
             ...Array(18).fill(0).map((_, i) => { // Changed from 12 to 18
                 const side = i < 9 ? 'L' : 'R';
                 const index = i % 9;
@@ -660,6 +662,8 @@
             const assetPaths = nodecg.Replicant('assetPaths');
             const i18nStrings = nodecg.Replicant('i18nStrings');
             const language = nodecg.Replicant('language');
+            const cardToShowL = nodecg.Replicant('cardToShowL');
+            const cardToShowR = nodecg.Replicant('cardToShowR');
             const slots = [];
             for (let i = 0; i < 9; i++) { // Changed from 6 to 9
                 slots.push(nodecg.Replicant(`draft_slotL${i}`));
@@ -2042,7 +2046,7 @@
             });
 
             // --- Unified Hotkey Handling ---
-            let hotkeys = { discard: 'Escape', apply: 'Control+S' };
+            let hotkeys = { discard: 'Escape', apply: 'Control+S', clearSelection: 'Delete', clearCard: ' ' };
 
             function updateButtonLabels() {
                 discardOpBtn.textContent = `Discard (${hotkeys.discard})`;
@@ -2053,7 +2057,7 @@
                 if (newValue && newValue.hotkeys) {
                     hotkeys = newValue.hotkeys;
                 } else {
-                    hotkeys = { discard: 'Escape', apply: 'Control+S' };
+                    hotkeys = { discard: 'Escape', apply: 'Control+S', clearSelection: 'Delete', clearCard: ' ' };
                 }
                 updateButtonLabels();
             });
@@ -2113,6 +2117,11 @@
             // --- Hotkey Sender (for this panel) ---
             function checkHotkey(e, hotkeyString) {
                 if (!hotkeyString || typeof hotkeyString !== 'string') return false;
+
+                // Special case for space key
+                if (hotkeyString.toLowerCase() === 'space' || hotkeyString === ' ') {
+                    return e.key === ' ';
+                }
                 
                 const parts = hotkeyString.toLowerCase().split('+').map(p => p.trim());
                 const key = parts.pop();
@@ -2140,6 +2149,10 @@
                 } else if (checkHotkey(e, hotkeys.clearSelection)) {
                     e.preventDefault();
                     btnSelectClear.click();
+                } else if (checkHotkey(e, hotkeys.clearCard)) {
+                    e.preventDefault();
+                    cardToShowL.value = '';
+                    cardToShowR.value = '';
                 }
             });
         });

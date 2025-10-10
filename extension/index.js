@@ -1153,6 +1153,9 @@ module.exports = function (nodecg) {
 			// Reset Selections
 			selections.value = [];
 
+			// Reset Deck Loading Status
+			deckLoadingStatus.value = { loading: false, side: null };
+
 			// Reset Decks
 			deckL.value = { name: '', cards: [] };
 			deckR.value = { name: '', cards: [] };

@@ -979,6 +979,7 @@
             '/assets/ptcg-telop/fx/active_ko.webm',
             '/assets/ptcg-telop/fx/active-evolve.webm',
             '/assets/ptcg-telop/fx/active-mega-evolve.webm',
+            '/assets/ptcg-telop/fx/active-tera-evolve.webm',
             '/assets/ptcg-telop/fx/active-replace.webm',
             '/assets/ptcg-telop/fx/active-devolve.webm',
             '/assets/ptcg-telop/fx/bench_ko.webm',
@@ -986,6 +987,7 @@
             '/assets/ptcg-telop/fx/bench-devolve.webm',
             '/assets/ptcg-telop/fx/bench-evolve.webm',
             '/assets/ptcg-telop/fx/bench-mega-evolve.webm',
+            '/assets/ptcg-telop/fx/bench-tera-evolve.webm',
             // Hit FX
             '/assets/ptcg-telop/fx/hit-colorless.webm',
             '/assets/ptcg-telop/fx/hit-darkness.webm',
@@ -1296,11 +1298,16 @@
                     const isBattleSlot = animation.target.endsWith('0');
                     let videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active-evolve.webm' : '/assets/ptcg-telop/fx/bench-evolve.webm';
 
-                    // Check for Mega Evolution
+                    // Check for Mega Evolution or Terastal
                     if (animation.cardId && db && db[animation.cardId]) {
                         const cardData = db[animation.cardId];
-                        if (cardData.pokemon && cardData.pokemon.option && cardData.pokemon.option.toLowerCase() === 'mega') {
-                            videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active-mega-evolve.webm' : '/assets/ptcg-telop/fx/bench-mega-evolve.webm';
+                        if (cardData.pokemon && cardData.pokemon.option) {
+                            const option = cardData.pokemon.option.toLowerCase();
+                            if (option === 'mega') {
+                                videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active-mega-evolve.webm' : '/assets/ptcg-telop/fx/bench-mega-evolve.webm';
+                            } else if (option === 'terastal') {
+                                videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active-tera-evolve.webm' : '/assets/ptcg-telop/fx/bench-tera-evolve.webm';
+                            }
                         }
                     }
                     playVideoOnSlot(targetEl, videoSrc);

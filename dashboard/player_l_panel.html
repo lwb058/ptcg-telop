@@ -218,6 +218,9 @@
         <div class="form-group">
             <label for="lost-zone-l">Lost Zone:</label>
             <input type="number" id="lost-zone-l" value="0" min="0" step="1">
+            <button class="btn" id="lost-zone-l-plus1" style="margin-left: 5px;">+1</button>
+            <button class="btn" id="lost-zone-l-plus2" style="margin-left: 5px;">+2</button>
+            <button class="btn" id="lost-zone-l-plus3" style="margin-left: 5px;">+3</button>
         </div>
     </div>
 
@@ -737,6 +740,8 @@
             nodecg.Replicant('i18nStrings'),
             nodecg.Replicant('language'),
             nodecg.Replicant('assetPaths'),
+            nodecg.Replicant('cardToShowL'),
+            nodecg.Replicant('cardToShowR'),
             ...Array(9).fill(0).map((_, i) => nodecg.Replicant(`draft_slotL${i}`))
         ).then(() => {
             // --- Replicants ---
@@ -758,6 +763,8 @@
             const i18nStrings = nodecg.Replicant('i18nStrings');
             const language = nodecg.Replicant('language');
             const assetPaths = nodecg.Replicant('assetPaths');
+            const cardToShowL = nodecg.Replicant('cardToShowL');
+            const cardToShowR = nodecg.Replicant('cardToShowR');
 
             // --- DOM Elements ---
             const playerNameInput = document.getElementById('player-name-l');
@@ -773,6 +780,17 @@
             const pokemonSlotsContainer = document.getElementById('pokemon-slots-container-l');
             const extraBenchContainer = document.getElementById('extra-bench-container-l');
             const toggleExtraBenchBtn = document.getElementById('toggle-extra-bench-l');
+
+            // --- Lost Zone Shortcut Buttons ---
+            document.getElementById('lost-zone-l-plus1').addEventListener('click', () => addLostZone(1));
+            document.getElementById('lost-zone-l-plus2').addEventListener('click', () => addLostZone(2));
+            document.getElementById('lost-zone-l-plus3').addEventListener('click', () => addLostZone(3));
+
+            function addLostZone(amount) {
+                const currentValue = parseInt(lostZoneInput.value, 10) || 0;
+                lostZoneInput.value = currentValue + amount;
+                lostZoneInput.dispatchEvent(new Event('change')); // Trigger change to update replicant
+            }
 
             const getI18nText = (key) => {
                 if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) {
@@ -1088,7 +1106,11 @@
 
                 if (hasAbility) {
                     abilityCheckboxWrapper.classList.remove('hidden'); // Show the container
-                    abilityCheckboxWrapper.innerHTML = `<img src="/assets/ptcg-telop/element/ability_mark.png" class="ability-icon ${slotData.abilityUsed ? 'used' : ''}" title="Toggle Ability Used">`;
+                    const supportedLangs = ['jp', 'en', 'chs'];
+                    const currentLang = language.value;
+                    const langSuffix = (currentLang && supportedLangs.includes(currentLang)) ? `${currentLang}` : ''; // fallback to no suffix
+                    const abilityIconSrc = `/assets/ptcg-telop/element/ability_${langSuffix}.png`;
+                    abilityCheckboxWrapper.innerHTML = `<img src="${abilityIconSrc}" class="ability-icon ${slotData.abilityUsed ? 'used' : ''}" title="Toggle Ability Used">`;
                 } else {
                     // Ensure the container is hidden when there is no ability.
                     abilityCheckboxWrapper.innerHTML = '';
@@ -1559,13 +1581,13 @@
             syncCheckboxesWithSelections();
 
             // --- Hotkey Sender ---
-            let hotkeys = { discard: 'Escape', apply: 'Control+S' };
+            let hotkeys = { discard: 'Escape', apply: 'Control+S', clearSelection: 'Delete', clearCard: ' ' };
 
             settingsRep.on('change', (newValue) => {
                 if (newValue && newValue.hotkeys) {
                     hotkeys = newValue.hotkeys;
                 } else {
-                    hotkeys = { discard: 'Escape', apply: 'Control+S' };
+                    hotkeys = { discard: 'Escape', apply: 'Control+S', clearSelection: 'Delete', clearCard: ' ' };
                 }
             });
 
@@ -1575,6 +1597,11 @@
 
             function checkHotkey(e, hotkeyString) {
                 if (!hotkeyString || typeof hotkeyString !== 'string') return false;
+
+                // Special case for space key
+                if (hotkeyString.toLowerCase() === 'space' || hotkeyString === ' ') {
+                    return e.key === ' ';
+                }
                 
                 const parts = hotkeyString.toLowerCase().split('+').map(p => p.trim());
                 const key = parts.pop();
@@ -1602,6 +1629,10 @@
                 } else if (checkHotkey(e, hotkeys.clearSelection)) {
                     e.preventDefault();
                     selections.value = [];
+                } else if (checkHotkey(e, hotkeys.clearCard)) {
+                    e.preventDefault();
+                    cardToShowL.value = '';
+                    cardToShowR.value = '';
                 }
             });
         });
