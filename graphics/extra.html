@@ -366,6 +366,18 @@
                 container.innerHTML = html;
             }
 
+            function getLocalizedAssetPath(basePath) {
+                const lang = language.value;
+                const supportedLangs = ['jp', 'chs', 'cht', 'en'];
+                if (supportedLangs.includes(lang)) {
+                    const parts = basePath.split('_jp.');
+                    const extension = parts.pop();
+                    const pathWithoutExt = parts.join('.');
+                    return `${pathWithoutExt}_${lang}.${extension}`;
+                }
+                return basePath; // Fallback to base path
+            }
+
             function renderSlot(side, index, slotData, oldSlotData) {
                 const slotEl = document.getElementById(`slot-${side}${index}`);
                 const db = cardDatabase.value;
@@ -501,7 +513,8 @@
                     const abilityUsedClass = (isAbility && slotData.abilityUsed) ? 'used' : '';
                     let tagHtml = '';
                     if (isAbility) {
-                        tagHtml = `<span class="bench-skill-ability-tag ${abilityUsedClass}">特 性</span>`;
+                        const abilityIconSrc = getLocalizedAssetPath('/assets/ptcg-telop/element/ability_jp.png');
+                        tagHtml = `<img src="${abilityIconSrc}" class="bench-skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
                     } else {
                         const cost = skill.cost || [];
                         const iconsToRender = cost.length > 0 ? cost : [null];
@@ -596,7 +609,8 @@
             const assetPaths = nodecg.Replicant('assetPaths');
             const deckL = nodecg.Replicant('deckL');
             const deckR = nodecg.Replicant('deckR');
-            const replicantList = [cardDatabase, settingsRep, assetPaths, deckL, deckR];
+            const language = nodecg.Replicant('language');
+            const replicantList = [cardDatabase, settingsRep, assetPaths, deckL, deckR, language];
             const sides = ['L', 'R'];
 
             for (let i = 6; i <= 8; i++) {

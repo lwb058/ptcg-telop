@@ -490,6 +490,14 @@
                 <p>Total Pokemons: <span id="total-pokemons">0</span></p>
                 <p>Selected: <span id="selected-pokemons">None</span></p>
             </div>
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <label for="first-player-select" data-i18n="first_move">First Move:</label>
+                <select id="first-player-select">
+                    <option value="">--Select--</option>
+                    <option value="L">Left Player</option>
+                    <option value="R">Right Player</option>
+                </select>
+            </div>
         </div>
     </div>
 
@@ -600,14 +608,6 @@
     <div class="panel-section">
         <h3>Danger Zone</h3>
         <div class="flex-container" style="align-items: center;">
-            <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                <label for="first-player-select">First Move:</label>
-                <select id="first-player-select">
-                    <option value="">--Select--</option>
-                    <option value="L">Left Player</option>
-                    <option value="R">Right Player</option>
-                </select>
-            </div>
             <button id="reset-system-btn" class="btn btn-danger" style="flex: 1;">Reset System</button>
         </div>
     </div>

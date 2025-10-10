@@ -213,5 +213,10 @@
     "jp": "クリックして表示",
     "chs": "点击以展示",
     "en": "Click to show"
+  },
+  "first_move": {
+    "jp": "先攻:",
+    "chs": "先手:",
+    "en": "First Move:"
   }
 }

@@ -850,7 +850,8 @@
                     const abilityUsedClass = (isAbility && slotData.abilityUsed) ? 'used' : '';
                     let tagHtml = '';
                     if (isAbility) {
-                        tagHtml = `<span class="battle-skill-ability-tag ${abilityUsedClass}">特 性</span>`;
+                        const abilityIconSrc = getLocalizedAssetPath('/assets/ptcg-telop/element/ability_jp.png');
+                        tagHtml = `<img src="${abilityIconSrc}" class="battle-skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
                     } else {
                         const cost = skill.cost || [];
                         const iconsToRender = cost.length > 0 ? cost : [null];
@@ -929,7 +930,8 @@
                     const abilityUsedClass = (isAbility && slotData.abilityUsed) ? 'used' : '';
                     let tagHtml = '';
                     if (isAbility) {
-                        tagHtml = `<span class="bench-skill-ability-tag ${abilityUsedClass}">特 性</span>`;
+                        const abilityIconSrc = getLocalizedAssetPath('/assets/ptcg-telop/element/ability_jp.png');
+                        tagHtml = `<img src="${abilityIconSrc}" class="bench-skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
                     } else {
                         const cost = skill.cost || [];
                         const iconsToRender = cost.length > 0 ? cost : [null];
