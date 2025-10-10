@@ -218,5 +218,25 @@
     "jp": "先攻:",
     "chs": "先手:",
     "en": "First Move:"
+  },
+  "attacker": {
+    "jp": "アタッカー",
+    "chs": "攻击方",
+    "en": "Attacker"
+  },
+  "waza": {
+    "jp": "ワザ",
+    "chs": "招式",
+    "en": "Move"
+  },
+  "damage": {
+    "jp": "ダメージ",
+    "chs": "伤害",
+    "en": "Damage"
+  },
+  "weakness": {
+    "jp": "弱点",
+    "chs": "弱点",
+    "en": "Weakness"
   }
 }

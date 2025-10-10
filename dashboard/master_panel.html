@@ -536,11 +536,11 @@
         <h3>Attack Module</h3>
         <div id="attack-zone-flex-container" class="flex-container">
             <div class="form-group" style="flex-grow: 3;">
-                <label for="attacker">Attacker:</label>
+                <label for="attacker" data-i18n="attacker">Attacker</label>
                 <select id="attacker" class="truncate-select"></select>
             </div>
             <div class="form-group" style="flex-grow: 2;">
-                <label for="attack-select">Move:</label>
+                <label for="attack-select" data-i18n="waza">Move</label>
                 <select id="attack-select" class="truncate-select"></select>
             </div>
         </div>
@@ -560,11 +560,11 @@
         </div>
         <div class="flex-container" style="align-items: center; gap: 15px;">
             <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
-                <label for="damage">Damage:</label>
+                <label for="damage" style="min-width: 30px; margin-right: 5px;" data-i18n="damage">Damage</label>
                 <input type="number" id="damage" class="compact-input" value="0" min="0" step="10">
             </div>
             <div class="form-group" style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
-                <label for="weakness-check" style="margin-right: 5px;">Weakness</label>
+                <label for="weakness-check" style="margin-right: 5px;" data-i18n="weakness">Weakness</label>
                 <input type="checkbox" id="weakness-check" style="transform: scale(1.2);">
             </div>
             <button id="aim-btn" class="btn btn-info" style="flex-grow: 2; height: fit-content;">Aim</button>
