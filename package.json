@@ -45,8 +45,8 @@
       ]
     },
     {
-      "name": "energy",
-      "title": "エネルギーアイコン",
+      "name": "icons",
+      "title": "アイコン",
       "allowedTypes": [
         "png",
         "webp"
