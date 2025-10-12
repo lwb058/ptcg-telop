@@ -94,6 +94,17 @@
 
         .energy-container { border: 1px solid #ccc; border-radius: 4px; padding: 5px; min-height: 20px; display: flex; gap: 5px; background: #f9f9f9; }
         .energy-icon { width: 20px; height: 20px; cursor: pointer; flex-shrink: 0; /* Prevent icons from shrinking */ }
+        .attached-special-energy-icon {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            border-radius: 50%;
+            background-size: 145%;
+            background-position: center 30%;
+            border: 1px solid #555;
+            display: inline-block;
+            flex-shrink: 0;
+        }
         .checkbox-group label { margin-right: 15px; font-weight: normal; }
         .player-action label {
             padding: 4px 10px;
@@ -766,6 +777,19 @@
             const cardToShowL = nodecg.Replicant('cardToShowL');
             const cardToShowR = nodecg.Replicant('cardToShowR');
 
+            const getCardImageUrl = (cardId, isBgImage = false) => {
+                if (!cardId || !assetPaths.value.cardImgPath) {
+                    const defaultPath = '/assets/ptcg-telop/element/default.jpg';
+                    return isBgImage ? `url(${defaultPath})` : defaultPath;
+                }
+                const db = cardDatabase.value;
+                const cardData = db ? db[cardId] : null;
+                const imageUrl = cardData ? cardData.image_url : null;
+                const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg'; // Fallback to .jpg
+                const path = `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
+                return isBgImage ? `url(${path})` : path;
+            };
+
             // --- DOM Elements ---
             const playerNameInput = document.getElementById('player-name-l');
             const deckIdInput = document.getElementById('deck-id-l');
@@ -1198,23 +1222,31 @@
                 const energyContainer = pokemonView.querySelector('.energy-container');
                 energyContainer.innerHTML = '';
                 if (slotData.attachedEnergy) {
-                    slotData.attachedEnergy.forEach((energyType, energyIndex) => {
-                        const energyImg = document.createElement('img');
-                        energyImg.src = `/assets/ptcg-telop/icons/${energyType}.png`;
-                        energyImg.classList.add('energy-icon');
-                        energyImg.title = `Click to remove ${energyType}`;
-                        energyImg.addEventListener('click', () => {
-                            // Create a copy of the current energy array
+                    slotData.attachedEnergy.forEach((energy, energyIndex) => {
+                        let energyEl;
+                        if (energy.startsWith('special:')) {
+                            const cardId = energy.substring(8);
+                            const cardData = db[cardId];
+                            energyEl = document.createElement('div');
+                            energyEl.className = 'attached-special-energy-icon';
+                            energyEl.style.backgroundImage = getCardImageUrl(cardId, true);
+                            energyEl.title = cardData ? `Click to remove ${cardData.name}` : 'Click to remove Special Energy';
+                        } else {
+                            energyEl = document.createElement('img');
+                            energyEl.src = `/assets/ptcg-telop/icons/${energy}.png`;
+                            energyEl.classList.add('energy-icon');
+                            energyEl.title = `Click to remove ${energy}`;
+                        }
+
+                        energyEl.addEventListener('click', () => {
                             const currentEnergies = [...(slotData.attachedEnergy || [])];
-                            // Remove the clicked energy from the copy
                             currentEnergies.splice(energyIndex, 1);
-                            // Use the new energy array to set the final state via queueOrUpdate
                             queueOrUpdateOperation('SET_ENERGIES', { 
                                 target: `slotL${index}`, 
                                 energies: currentEnergies 
                             });
                         });
-                        energyContainer.appendChild(energyImg);
+                        energyContainer.appendChild(energyEl);
                     });
                 }
 

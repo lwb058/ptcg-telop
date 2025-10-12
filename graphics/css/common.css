@@ -285,6 +285,22 @@ body, html {
 .bench-attached-energies { position: absolute; bottom: -2px; left: -2px; display: flex; gap: 1px; }
 .bench-attached-energies:not(:empty) { background-color: var(--module-color-border); border-radius: 0px 11px 0px 0px; padding: 1px; border: 1px solid var(--module-color-border); box-shadow: 1px 1px 3px rgba(0,0,0,0.6); }
 .bench-attached-energies .energy-icon { width: 14px; height: 14px; }
+
+.attached-special-energy-icon {
+    display: inline-block;
+    border-radius: 50%;
+    background-size: 145%;
+    background-position: center 30%;
+    vertical-align: bottom; /* Align with img tags */
+}
+.battle-attached-energies .attached-special-energy-icon {
+    width: 28px;
+    height: 28px;
+}
+.bench-attached-energies .attached-special-energy-icon {
+    width: 14px;
+    height: 14px;
+}
 .energy-count-group { display: flex; align-items: center; gap: 2px; }
 .energy-count-number { font-family: var(--font-numeric); font-weight: bold; color: #212121; text-shadow: 0 0 2px white; }
 .bench-attached-energies .energy-count-number { font-size: 14px; padding-right: 4px; }

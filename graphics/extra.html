@@ -381,17 +381,51 @@
 
             function renderAttachedEnergies(container, energies, getIconHtml) {
                 if (!container || !energies) return;
-                const energyCounts = energies.reduce((acc, energy) => { acc[energy] = (acc[energy] || 0) + 1; return acc; }, {});
+
+                const getSpecialIconHtml = (cardId) => {
+                    const cardData = cardDatabase.value[cardId];
+                    const title = cardData ? cardData.name : 'Special Energy';
+                    const bgImage = getCardImageUrl(cardId, true);
+                    // Note: The class controls the size (battle vs bench)
+                    return `<div class="attached-special-energy-icon" style="background-image: ${bgImage}" title="${title}"></div>`;
+                };
+
+                const energyCounts = energies.reduce((acc, energy) => {
+                    acc[energy] = (acc[energy] || 0) + 1;
+                    return acc;
+                }, {});
+
                 const totalEnergyCount = energies.length;
                 const maxSingleEnergyCount = Object.values(energyCounts).reduce((max, count) => Math.max(max, count), 0);
                 const useTypeB = (maxSingleEnergyCount > 1 && totalEnergyCount >= 7) || maxSingleEnergyCount >= 5;
+                
                 let html = '';
                 if (useTypeB) {
-                    for (const type in energyCounts) {
-                        html += `<div class="energy-count-group">${getIconHtml(type)}<span class="energy-count-number">${energyCounts[type]}</span></div>`;
+                    for (const energy in energyCounts) {
+                        const count = energyCounts[energy];
+                        let iconHtml;
+                        if (energy.startsWith('special:')) {
+                            const cardId = energy.substring(8);
+                            iconHtml = getSpecialIconHtml(cardId);
+                        } else {
+                            iconHtml = getIconHtml(energy);
+                        }
+                        html += `
+                            <div class="energy-count-group">
+                                ${iconHtml}
+                                <span class="energy-count-number">${count}</span>
+                            </div>
+                        `;
                     }
                 } else {
-                    html = energies.map(getIconHtml).join('');
+                    html = energies.map(energy => {
+                        if (energy.startsWith('special:')) {
+                            const cardId = energy.substring(8);
+                            return getSpecialIconHtml(cardId);
+                        } else {
+                            return getIconHtml(energy);
+                        }
+                    }).join('');
                 }
                 container.innerHTML = html;
             }

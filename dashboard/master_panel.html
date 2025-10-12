@@ -168,6 +168,17 @@
             height: 50px;
             vertical-align: middle;
         }
+        .special-energy-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-size: 145%;
+            background-position: center 30%;
+            display: inline-block;
+            vertical-align: middle;
+            border: 1px solid #888;
+            cursor: grab;
+        }
         .tool-btn-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -317,6 +328,16 @@
             width: 16px;
             height: 16px;
             cursor: pointer;
+        }
+        .attached-special-energy-icon {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            border-radius: 50%;
+            background-size: 142%;
+            background-position: center 27.5%;
+            border: 1px solid #555;
+            display: inline-block;
         }
         .tool-placeholder {
             width: 100%;
@@ -802,15 +823,28 @@
 
                 const attachedEnergies = slotValue.attachedEnergy || [];
                 attachedEnergies.forEach((energy, index) => {
-                    const energyImg = document.createElement('img');
-                    energyImg.src = `/assets/ptcg-telop/icons/${energy}.png`;
-                    energyImg.className = 'attached-energy-icon';
-                    energyImg.draggable = true;
-                    energyImg.dataset.energyType = energy;
-                    energyImg.dataset.sourceSlot = slotId;
-                    energyImg.dataset.energyIndex = index;
-                    energyImg.title = `Click to remove ${energy}`;
-                    energyImg.addEventListener('click', () => {
+                    let energyEl;
+                    if (energy.startsWith('special:')) {
+                        const cardId = energy.substring(8); // 'special:'.length
+                        const cardData = cardDatabase.value[cardId];
+                        energyEl = document.createElement('div');
+                        energyEl.className = 'attached-special-energy-icon';
+                        energyEl.style.backgroundImage = getCardImageUrl(cardId, true);
+                        energyEl.title = cardData ? `Click to remove ${cardData.name}` : 'Click to remove Special Energy';
+                    } else {
+                        energyEl = document.createElement('img');
+                        energyEl.src = `/assets/ptcg-telop/icons/${energy}.png`;
+                        energyEl.className = 'attached-energy-icon';
+                        energyEl.title = `Click to remove ${energy}`;
+                    }
+
+                    energyEl.draggable = true;
+                    // Use a generic identifier for both types
+                    energyEl.dataset.energyIdentifier = energy;
+                    energyEl.dataset.sourceSlot = slotId;
+                    energyEl.dataset.energyIndex = index;
+
+                    energyEl.addEventListener('click', () => {
                         const currentEnergies = [...(slotValue.attachedEnergy || [])];
                         currentEnergies.splice(index, 1);
                         queueOrUpdateOperation('SET_ENERGIES', {
@@ -818,7 +852,7 @@
                             energies: currentEnergies
                         });
                     });
-                    energyContainer.appendChild(energyImg);
+                    energyContainer.appendChild(energyEl);
                 });
                 cardEl.appendChild(energyContainer);
 
@@ -1181,9 +1215,17 @@
 
             // 1. DRAG START: Set data when dragging an energy or tool
             energyButtonsContainer.addEventListener('dragstart', (e) => {
-                if (e.target.tagName === 'IMG' && e.target.dataset.energyType) {
+                const target = e.target;
+                // Handle Basic Energy (IMG tag)
+                if (target.tagName === 'IMG' && target.dataset.energyType) {
                     e.dataTransfer.setData('application/ptcg-energy-drag', 'true');
-                    e.dataTransfer.setData('text/plain', e.target.dataset.energyType);
+                    e.dataTransfer.setData('text/plain', target.dataset.energyType);
+                    e.dataTransfer.effectAllowed = 'copy';
+                }
+                // Handle Special Energy (DIV tag)
+                else if (target.dataset.specialEnergyId) {
+                    e.dataTransfer.setData('application/ptcg-energy-drag', 'true');
+                    e.dataTransfer.setData('text/plain', `special:${target.dataset.specialEnergyId}`);
                     e.dataTransfer.effectAllowed = 'copy';
                 }
             });
@@ -1199,12 +1241,12 @@
             // Listen for drag start on the field itself (for moving attached energies)
             currentPlayerField.addEventListener('dragstart', (e) => {
                 const target = e.target;
-                if (target.classList.contains('attached-energy-icon')) {
+                if (target.dataset.energyIdentifier) { // Check for the generic identifier
                     const moveData = {
                         type: 'move',
                         sourceSlot: target.dataset.sourceSlot,
                         energyIndex: parseInt(target.dataset.energyIndex, 10),
-                        energyType: target.dataset.energyType
+                        energyIdentifier: target.dataset.energyIdentifier // Pass the full identifier
                     };
                     e.dataTransfer.setData('application/ptcg-energy-drag', 'true');
                     e.dataTransfer.setData('application/json', JSON.stringify(moveData));
@@ -1273,10 +1315,11 @@
                     if (moveDataJSON) {
                         // Handle MOVE operation
                         const moveData = JSON.parse(moveDataJSON);
-                        const { sourceSlot, energyIndex, energyType } = moveData;
+                        const { sourceSlot, energyIndex, energyIdentifier } = moveData; // Changed from energyType
 
                         if (sourceSlot === destinationSlotId) return; // Do nothing if dropped on itself
 
+                        // Remove from source
                         const sourceReplicant = slots.find(s => s.name === `draft_${sourceSlot}`);
                         if (sourceReplicant && sourceReplicant.value) {
                             const sourceEnergies = [...(sourceReplicant.value.attachedEnergy || [])];
@@ -1284,16 +1327,17 @@
                             queueOrUpdateOperation('SET_ENERGIES', { target: sourceSlot, energies: sourceEnergies });
                         }
 
+                        // Add to destination
                         const destReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
                         if (destReplicant && destReplicant.value) {
-                            const destEnergies = [...(destReplicant.value.attachedEnergy || []), energyType];
+                            const destEnergies = [...(destReplicant.value.attachedEnergy || []), energyIdentifier]; // Use identifier
                             queueOrUpdateOperation('SET_ENERGIES', { target: destinationSlotId, energies: destEnergies });
                         }
 
                     } else {
                         // Handle COPY operation (from energy grid)
-                        const energyType = e.dataTransfer.getData('text/plain');
-                        if (!energyType) return;
+                        const energyIdentifier = e.dataTransfer.getData('text/plain'); // Changed from energyType
+                        if (!energyIdentifier) return;
 
                         const slotReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
                         if (!slotReplicant || !slotReplicant.value || !slotReplicant.value.cardId) {
@@ -1303,7 +1347,7 @@
 
                         const isManualAttach = e.target.classList.contains('manual-attach-zone');
                         const currentEnergies = slotReplicant.value.attachedEnergy || [];
-                        const finalEnergies = [...currentEnergies, energyType];
+                        const finalEnergies = [...currentEnergies, energyIdentifier]; // Use identifier
 
                         queueOrUpdateOperation('SET_ENERGIES', {
                             target: destinationSlotId,
@@ -1377,6 +1421,9 @@
 
                 const energyIcons = energyButtonsContainer.querySelectorAll('img[data-energy-type]');
 
+                // Clear previously rendered special energy buttons
+                energyButtonsContainer.querySelectorAll('.special-energy-btn').forEach(btn => btn.remove());
+
                 if (!settings.showDeckEnergyOnly || !db || !deckLVal || !deckRVal || !displayTurn) {
                     // If setting is off, data is missing, or turn is not set, show all buttons as a fallback.
                     energyIcons.forEach(icon => {
@@ -1388,29 +1435,36 @@
                 }
 
                 const deckEnergies = new Set();
+                const specialEnergies = new Map(); // Using a Map to preserve insertion order and uniqueness
                 const targetDeck = displayTurn === 'L' ? deckLVal.cards : deckRVal.cards;
                 const uniqueCardIds = [...new Set(targetDeck || [])];
 
                 uniqueCardIds.forEach(id => {
                     const card = db[id];
-                    if (card && card.supertype === 'energy' && card.subtype === 'basic energy') { 
-                        // Updated logic to support Japanese and Chinese basic energy names
-                        const energyTypeRaw = card.name.replace(/基本|能量|エネルギー/g, '').trim();
-                        
-                        if (energyTypeRaw) {
-                            // Map from Simplified Chinese type characters to Japanese type characters
-                            const typeConversionMap = {
-                                '火': '炎',
-                                '斗': '闘',
-                                '恶': '悪',
-                                '钢': '鋼',
-                                '龙': '竜'
-                            };
-                            
-                            // Convert if it's a Chinese character, otherwise use the original
-                            const energyType = typeConversionMap[energyTypeRaw] || energyTypeRaw;
+                    if (card && card.supertype === 'energy') {
+                        if (card.subtype === 'basic energy') {
+                            // Updated logic to support Japanese and Chinese basic energy names
+                            const energyTypeRaw = card.name.replace(/基本|能量|エネルギー/g, '').trim();
 
-                            deckEnergies.add(energyType);
+                            if (energyTypeRaw) {
+                                // Map from Simplified Chinese type characters to Japanese type characters
+                                const typeConversionMap = {
+                                    '火': '炎',
+                                    '斗': '闘',
+                                    '恶': '悪',
+                                    '钢': '鋼',
+                                    '龙': '竜'
+                                };
+
+                                // Convert if it's a Chinese character, otherwise use the original
+                                const energyType = typeConversionMap[energyTypeRaw] || energyTypeRaw;
+
+                                deckEnergies.add(energyType);
+                            }
+                        } else { // Assumes this is a Special Energy
+                            if (!specialEnergies.has(id)) {
+                                specialEnergies.set(id, card);
+                            }
                         }
                     }
                 });
@@ -1426,6 +1480,22 @@
                     } else {
                         parentButton.style.display = 'none';
                     }
+                });
+
+                // Render special energy buttons
+                specialEnergies.forEach((card, id) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'energy-btn special-energy-btn';
+
+                    const div = document.createElement('div');
+                    div.className = 'special-energy-icon';
+                    div.style.backgroundImage = getCardImageUrl(id, true);
+                    div.title = card.name;
+                    div.dataset.specialEnergyId = id;
+                    div.draggable = true;
+
+                    btn.appendChild(div);
+                    energyButtonsContainer.appendChild(btn);
                 });
             }
 
