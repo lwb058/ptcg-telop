@@ -96,7 +96,7 @@
             background-color: #c0392b;
         }
         .btn-grass {
-            background-color: #299100;
+            background-color: #62a348;
             color: white;
         }
         .btn-fire {
@@ -574,13 +574,27 @@
     
     <div class="panel-section">
         <h3>Shortcut Module</h3>
-        <div class="flex-container" style="justify-content: space-between; align-items: center;">
+        <div class="flex-container" style="justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <button id="ko-0hp-btn" class="btn btn-danger">Remove K.O</button>
             <div class="form-group" style="flex-grow: 0; align-items: center; margin-bottom: 0;">
                 <label for="stadium-select">Stadium:</label>
                 <select id="stadium-select" style="margin-right: 10px;"></select>
                 <input type="checkbox" id="stadium-used-checkbox" style="transform: scale(1.2);">
                 <label for="stadium-used-checkbox" style="margin-left: 5px;">Used</label>
+            </div>
+        </div>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
+        <div id="damage-shortcuts">
+            <h4 style="margin-top: 10px; margin-bottom: 5px; font-size: 12px; font-weight: bold; color: #555;">Damage Adjust</h4>
+            <div class="grid-container" style="grid-template-columns: repeat(8, 1fr); gap: 5px;">
+                <button class="btn btn-fire" data-damage-adj="-10">-10 HP</button>
+                <button class="btn btn-fire" data-damage-adj="-20">-20 HP</button>
+                <button class="btn btn-fire" data-damage-adj="-30">-30 HP</button>
+                <button class="btn btn-fire" data-damage-adj="-50">-50 HP</button>
+                <button class="btn btn-grass" data-damage-adj="+10">+10 HP</button>
+                <button class="btn btn-grass" data-damage-adj="+20">+20 HP</button>
+                <button class="btn btn-grass" data-damage-adj="+30">+30 HP</button>
+                <button class="btn btn-grass" data-damage-adj="+50">+50 HP</button>
             </div>
         </div>
     </div>
@@ -1128,6 +1142,35 @@
                 slots.forEach(slot => {
                     if (slot.value && slot.value.cardId && slot.value.isKO) {
                         queueOperation('KO_POKEMON', { target: slot.name.replace('draft_', '') });
+                    }
+                });
+            });
+
+            // --- Damage Shortcut Module Logic ---
+            const damageShortcutsContainer = document.getElementById('damage-shortcuts');
+            damageShortcutsContainer.addEventListener('click', (e) => {
+                const target = e.target.closest('button[data-damage-adj]');
+                if (!target) return;
+
+                const adjValue = parseInt(target.dataset.damageAdj, 10);
+                if (isNaN(adjValue)) return;
+
+                const currentSelections = selections.value;
+                if (!currentSelections || currentSelections.length === 0) {
+                    console.log('No Pokémon selected for damage adjustment.');
+                    return; // Or show a user-friendly message
+                }
+
+                currentSelections.forEach(slotId => {
+                    const slotReplicant = slots.find(s => s.name === `draft_${slotId}`);
+                    if (slotReplicant && slotReplicant.value && slotReplicant.value.cardId) {
+                        const currentDamage = parseInt(slotReplicant.value.damage || 0, 10);
+                        const newDamage = Math.max(0, currentDamage - adjValue); // Damage cannot be negative
+
+                        queueOrUpdateOperation('SET_DAMAGE', {
+                            target: slotId,
+                            value: newDamage
+                        });
                     }
                 });
             });
