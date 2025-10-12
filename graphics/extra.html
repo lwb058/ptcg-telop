@@ -57,6 +57,22 @@
     </style>
 </head>
 <body>
+    <!-- SVG Filter Definitions for Text Effects -->
+    <svg width="0" height="0" style="position:absolute;z-index:-1;">
+        <defs>
+        <filter id="text-stroke-shadow-bench" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="4" dy="4" stdDeviation="2" flood-color="#00000099" result="shadow"/>
+            <feMorphology in="SourceAlpha" result="stroke" operator="dilate" radius="3"></feMorphology>
+            <feFlood flood-color="#000b1a" result="stroke-color"/>
+            <feComposite in="stroke-color" in2="stroke" operator="in" result="stroke-shape"/>
+            <feMerge>
+                <feMergeNode in="shadow"/>
+                <feMergeNode in="stroke-shape"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        </defs>
+    </svg>
     <div class="overlay-frame">
         <div id="animation-wrapper-L" class="animation-wrapper">
             <div class="player-area" id="player-L-area">
@@ -310,18 +326,32 @@
                 }
             }
 
-            function animateHp(element, from, to, fromMax, toMax, duration) {
+            function animateHp(element, startHp, endHp, startMaxHp, endMaxHp, duration) {
                 if (!element) return;
-                let start = null;
-                const animate = (timestamp) => {
-                    if (!start) start = timestamp;
-                    const progress = Math.min((timestamp - start) / duration, 1);
-                    const currentVal = Math.round(from + (to - from) * progress);
-                    const currentMaxVal = Math.round(fromMax + (toMax - fromMax) * progress);
-                   
-                    element.textContent = `${currentVal}/${currentMaxVal}`;
+                if (startHp === endHp && startMaxHp === endMaxHp) {
+                    element.textContent = `${endHp}/${endMaxHp}`;
+                    return;
+                }
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    const rawCurrentHp = progress * (endHp - startHp) + startHp;
+                    const rawCurrentMaxHp = progress * (endMaxHp - startMaxHp) + startMaxHp;
+                    let displayHp, displayMaxHp;
+                    if (progress < 1) {
+                        displayHp = Math.round(rawCurrentHp / 10) * 10;
+                        displayMaxHp = Math.round(rawCurrentMaxHp / 10) * 10;
+                    } else {
+                        displayHp = endHp;
+                        displayMaxHp = endMaxHp;
+                    }
+                    element.textContent = `${displayHp}/${displayMaxHp}`;
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
                 };
-                requestAnimationFrame(animate);
+                window.requestAnimationFrame(step);
             }
 
             function displayHpChangeNumber(targetSlotEl, hpChange) {

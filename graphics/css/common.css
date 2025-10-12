@@ -6,7 +6,7 @@
 :root {
     /* All fonts are now defined in css/fonts.css */
     --font-numeric: 'Sora', sans-serif;
-    --font-damage: 'Roboto Mono', sans-serif;
+    --font-damage: 'Damage-Font', sans-serif;
     --color-bg-panel: #3db1ff;
     --color-bg-module: #0a406d;
     --module-border: 2px;
@@ -439,16 +439,38 @@ body, html {
     animation: show-and-fade-up 1.5s ease-out forwards;
 }
 
-.damage-number { color: #fff9dd; }
-.heal-number { color: #dcffe3; }
+.damage-number {
+    /* Set the text color to a vertical gradient from light yellow to orange */
+    background: linear-gradient(to bottom, #e26d6d 20%, #ffffff 100%);
+    -webkit-background-clip: text; /* Clip the background to the text shape for webkit browsers */
+    background-clip: text;
+    color: transparent;
+}
+.heal-number {
+    /* Set the text color to a vertical gradient from light green to a brighter green */
+    background: linear-gradient(to bottom, #67e07f 20%, #ffffff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.damage-number-battle {
+    font-size: 80px;
+    filter: url(#text-stroke-shadow-battle);
+}
+
+.heal-number-battle {
+    font-size: 80px;
+    filter: url(#text-stroke-shadow-battle);
+}
 
 .damage-number-bench {
     font-size: 40px;
-    text-shadow: 2px 2px 0 #750000, -2px -2px 0 #750000, 2px -2px 0 #750000, -2px 2px 0 #750000, 4px 4px 6px #000000cc;
+    filter: url(#text-stroke-shadow-bench);
 }
 .heal-number-bench {
     font-size: 40px;
-    text-shadow: 2px 2px 0 #1aa541, -2px -2px 0 #1aa541, 2px -2px 0 #1aa541, -2px 2px 0 #1aa541, 4px 4px 6px #000000cc;
+    filter: url(#text-stroke-shadow-bench);
 }
 
 /* --- Player Area --- */
@@ -639,11 +661,6 @@ body, html {
 .anim-slide-in-top { animation: slide-in-top 0.5s ease-out forwards; }
 .anim-slide-out-top { animation: slide-out-top 0.5s ease-in forwards; }
 
-.damage-number-battle {
-    font-size: 80px;
-    text-shadow: 4px 4px 0 #750000, -4px -4px 0 #750000, 4px -4px 0 #750000, -4px 4px 0 #750000, 8px 8px 10px #000000cc;
-}
-
 .weakness-icon-fx {
     position: absolute;
     width: 240px;
@@ -653,10 +670,6 @@ body, html {
     animation: show-and-fade-up 1.5s ease-out forwards;
 }
 
-.heal-number-battle {
-    font-size: 80px;
-    text-shadow: 4px 4px 0 #1aa541, -4px -4px 0 #1aa541, 4px -4px 0 #1aa541, -4px 4px 0 #1aa541, 8px 8px 10px #000000cc;
-}
 
 /* --- Final Attack FX --- */
 #attack-fx-container {

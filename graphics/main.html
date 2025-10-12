@@ -32,6 +32,35 @@
     </style>
 </head>
 <body>
+    <!-- SVG Filter Definitions for Text Effects -->
+    <svg width="0" height="0" style="position:absolute;z-index:-1;">
+        <defs>
+        <!-- 战斗区数字滤镜 -->
+        <filter id="text-stroke-shadow-battle" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="-4" dy="6" stdDeviation="2" flood-color="#00000099" result="shadow"/>
+            <feMorphology in="SourceAlpha" result="stroke" operator="dilate" radius="4"></feMorphology>
+            <feFlood flood-color="#000b1a" result="stroke-color"/>
+            <feComposite in="stroke-color" in2="stroke" operator="in" result="stroke-shape"/>
+            <feMerge>
+                <feMergeNode in="shadow"/>
+                <feMergeNode in="stroke-shape"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        <!-- 后备区数字滤镜 -->
+        <filter id="text-stroke-shadow-bench" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="4" dy="4" stdDeviation="2" flood-color="#00000099" result="shadow"/>
+            <feMorphology in="SourceAlpha" result="stroke" operator="dilate" radius="3"></feMorphology>
+            <feFlood flood-color="#000b1a" result="stroke-color"/>
+            <feComposite in="stroke-color" in2="stroke" operator="in" result="stroke-shape"/>
+            <feMerge>
+                <feMergeNode in="shadow"/>
+                <feMergeNode in="stroke-shape"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        </defs>
+    </svg>
     <div class="overlay-frame">
         <!-- Current Turn Borders (positioned at the bottom layer) -->
         <div id="current-L-border" class="current-turn-border"></div>

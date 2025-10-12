@@ -11,8 +11,9 @@
 }
 
 @font-face {
-  font-family: 'Roboto Mono';
-  src: url('/assets/ptcg-telop/font/RobotoMono-VariableFont_wght.ttf') format('truetype');
+  font-family: 'Damage-Font';
+  src: url('/assets/ptcg-telop/font/Roboto-VariableFont_wdth,wght') format('truetype');
+  font-weight: 800;
 }
 
 @font-face {
