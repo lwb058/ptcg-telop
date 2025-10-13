@@ -58,6 +58,32 @@ The following software must be installed to run this bundle.
 
 ## Installation
 
+---
+### 🔰 Easy Install (Recommended)
+
+For new users, the easiest way to get started is by using the "All-in-One Package".
+
+1.  Go to the [**Releases**](https://github.com/lwb058/ptcg-telop/releases) page of this repository.
+2.  From the `Assets` section of the latest release, download `NodeCG_PTCG_vX.X.X.zip` and unzip it.
+3.  (If you haven't already) Install [Node.js](https://nodejs.org/) and [Python](https://www.python.org/).
+4.  Double-click `install.bat` inside the unzipped folder to run it. This will automatically install all necessary components.
+5.  After the installation is complete, double-click `start.bat` to launch the system.
+
+---
+### 🚀 How to Update
+
+If you are already using an older version, you can easily update using the "Patch File".
+
+1.  Go to the [**Releases**](https://github.com/lwb058/ptcg-telop/releases) page of this repository.
+2.  From the `Assets` section of the latest release, download `patch_vX.X.X.zip` and unzip it.
+3.  Copy the `assets` and `bundles` folders from inside.
+4.  Paste them directly into your current `nodecg` folder, overwriting all existing files.
+
+---
+### Manual Installation
+
+For developers or those who prefer to set up the environment manually.
+
 1.  **Set up NodeCG** (if not already installed):
     ```bash
     # Install NodeCG in a location of your choice

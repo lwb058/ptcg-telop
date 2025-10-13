@@ -58,6 +58,32 @@ nodecg/
 
 ## 安装方法
 
+---
+### 🔰 轻松上手（推荐）
+
+如果您是初次使用，推荐使用包含所有必需文件的“懒人包”。
+
+1.  访问本仓库的 [**Releases**](https://github.com/lwb058/ptcg-telop/releases) 页面。
+2.  从最新版本的`Assets`中，下载`NodeCG_PTCG_vX.X.X.zip`并解压。
+3.  (如果尚未安装) 请安装 [Node.js](https://nodejs.org/) 和 [Python](https://www.python.org/)。
+4.  双击解压后文件夹中的`install.bat`来执行。所需的组件将会被自动安装。
+5.  安装完成后，双击`start.bat`即可启动系统。
+
+---
+### 🚀 更新方法
+
+已经在使用旧版本的用户，可以使用“更新补丁”来轻松升级。
+
+1.  访问本仓库的 [**Releases**](https://github.com/lwb058/ptcg-telop/releases) 页面。
+2.  从最新版本的`Assets`中，下载`patch_vX.X.X.zip`并解压。
+3.  复制解压出来的`assets`和`bundles`这两个文件夹。
+4.  将它们直接粘贴到您当前使用的`nodecg`文件夹中，并选择覆盖所有现有文件。
+
+---
+### 手动安装
+
+适用于开发者或希望手动配置环境的用户。
+
 1.  **设置 NodeCG** (如果尚未安装):
     ```bash
     # 在任意位置安装 NodeCG
