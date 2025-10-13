@@ -122,8 +122,9 @@ For developers or those who prefer to set up the environment manually.
 
 ## Usage
 
-1.  **Start NodeCG**:
-    Run the following command in the NodeCG root directory.
+1.  **Start the System**:
+    -   **For Easy Install Package Users**: Double-click `start.bat` to launch.
+    -   **For Manual Installers**: Run the following command in the NodeCG root directory.
     ```bash
     nodecg start
     ```
