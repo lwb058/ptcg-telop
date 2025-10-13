@@ -1118,8 +1118,8 @@
             slots.forEach(slot => slot.on('change', () => {
                 updateTotalPokemons();
                 renderCurrentPlayerField();
-                updateBattleEnergyCounts();
-            }));
+                updateBattleEnergyCounts();       
+                            }));
             cardDatabase.on('change', () => {
                 renderQueue(); // Re-render queue if card names change
                 renderCurrentPlayerField();
@@ -1129,7 +1129,7 @@
             showOpponentCheckbox.addEventListener('change', () => {
                 renderCurrentPlayerField();
                 updateEnergyButtonVisibility();
-                updateToolButtonVisibility(); // <-- FIX: Added this call
+                updateToolButtonVisibility();
             });
             playerL_name.on('change', () => {
                 renderQueue();
@@ -1866,7 +1866,7 @@
                 const weaknessCheck = document.getElementById('weakness-check');
                 if (!db) { weaknessCheck.checked = false; return; }
 
-                // 获取攻击方信息
+                // Get info for the selected attacker
                 const attackerSlotId = attackerSelect.value;
                 if (!attackerSlotId) { weaknessCheck.checked = false; return; }
                 const attackerSlotReplicant = slots.find(s => s.name === `draft_${attackerSlotId}`);
@@ -2267,8 +2267,8 @@
                 updateAttackerDropdown();
                 renderCurrentPlayerField();
                 updateEnergyButtonVisibility();
-                updateToolButtonVisibility(); // <-- FIX: Added this call
-                renderTargetingField(); // Re-render the targeting view for the new perspective
+                updateToolButtonVisibility();
+                renderTargetingField();
             });
 
             turnLRadio.addEventListener('change', () => {
@@ -2337,11 +2337,13 @@
 
             // FIX: Moved from a duplicate block below
             slots.forEach(slot => slot.on('change', () => {
+                updateAttackerDropdown();
                 updateTotalPokemons();
                 renderTargetingField(); // Selections might refer to a card that was just removed
                 updateWeaknessCheckbox();
             }));
             selections.on('change', () => {
+                updateAttackerDropdown();
                 renderTargetingField();
                 updateWeaknessCheckbox();
             });
