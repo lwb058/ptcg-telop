@@ -650,9 +650,12 @@
     
     <div class="panel-section">
         <h3>Operation Queue</h3>
-        <div class="flex-container" style="margin-bottom: 10px;">
+        <div id="op-buttons-container" class="flex-container" style="margin-bottom: 10px;">
             <button id="discard-op-btn" class="btn btn-danger">Discard (Esc)</button>
             <button id="apply-op-btn" class="btn btn-primary">Apply (Ctrl+S)</button>
+        </div>
+        <div id="auto-apply-warning" class="btn btn-danger" style="display: none; width: 100%; box-sizing: border-box; margin-bottom: 10px; font-size: 12px; font-weight: 800; background-color: #808080; pointer-events: none;">
+            \\\ WARNING: Auto-Apply Activated \\\
         </div>
         <div class="operation-queue" id="operation-queue">
             <!-- Operations will be listed here -->
@@ -662,6 +665,10 @@
     <div class="panel-section">
         <h3>Danger Zone</h3>
         <div class="flex-container" style="align-items: center;">
+            <div class="form-group" style="flex-grow: 1; margin-bottom: 0; justify-content: center;">
+                <input type="checkbox" id="auto-apply-checkbox" style="transform: scale(1.2); flex-grow: 0;">
+                <label for="auto-apply-checkbox" style="margin-left: 5px;">Auto-Apply Live</label>
+            </div>
             <button id="reset-system-btn" class="btn btn-danger" style="flex: 1;">Reset System</button>
         </div>
     </div>
@@ -2355,8 +2362,8 @@
             let hotkeys = { discard: 'Escape', apply: 'Control+S', clearSelection: 'Delete', clearCard: ' ' };
 
             function updateButtonLabels() {
-                discardOpBtn.textContent = `${getI18nText('discard')} (${hotkeys.discard})`;
-                applyOpBtn.textContent = `${getI18nText('apply')} (${hotkeys.apply})`;
+                discardOpBtn.textContent = `Discard (${hotkeys.discard})`;
+                applyOpBtn.textContent = `Apply (${hotkeys.apply})`;
             }
 
             settingsRep.on('change', (newValue) => {
@@ -2389,8 +2396,56 @@
                 return true;
             }
 
+            const autoApplyCheckbox = document.getElementById('auto-apply-checkbox');
+
+            const opButtonsContainer = document.getElementById('op-buttons-container');
+            const autoApplyWarning = document.getElementById('auto-apply-warning');
+
+            settingsRep.on('change', (newValue) => {
+                const autoApplyEnabled = newValue && newValue.autoApply;
+                
+                // Update checkbox state
+                if (autoApplyCheckbox.checked !== autoApplyEnabled) {
+                    autoApplyCheckbox.checked = autoApplyEnabled;
+                }
+
+                // Toggle visibility of button containers
+                if (autoApplyEnabled) {
+                    opButtonsContainer.style.display = 'none';
+                    autoApplyWarning.style.display = 'block';
+                } else {
+                    opButtonsContainer.style.display = 'flex';
+                    autoApplyWarning.style.display = 'none';
+                }
+
+                // Also, re-run hotkey label updates in case settings object was reset
+                if (newValue && newValue.hotkeys) {
+                    hotkeys = newValue.hotkeys;
+                } else {
+                    hotkeys = { discard: 'Escape', apply: 'Control+S', clearSelection: 'Delete', clearCard: ' ' };
+                }
+                updateButtonLabels();
+            });
+
+            autoApplyCheckbox.addEventListener('change', (e) => {
+                const isChecked = e.target.checked;
+                if (settingsRep.value) {
+                    settingsRep.value.autoApply = isChecked;
+                }
+                // If the checkbox is checked and there are items in the queue, apply them.
+                if (isChecked && operationQueue.value && operationQueue.value.length > 0) {
+                    console.log('Auto-Apply enabled with items in queue. Applying now.');
+                    handleApply();
+                }
+            });
+
             document.addEventListener('keydown', (e) => {
                 if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') return;
+                
+                // Do not trigger manual hotkeys if auto-apply is on
+                const autoApplyEnabled = settingsRep.value && settingsRep.value.autoApply;
+                if (autoApplyEnabled) return;
+
                 if (checkHotkey(e, hotkeys.discard)) {
                     e.preventDefault();
                     nodecg.sendMessage('hotkeyFired', 'discard').catch(err => console.error("Error sending discard hotkey signal", err));

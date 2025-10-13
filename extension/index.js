@@ -66,6 +66,26 @@ module.exports = function (nodecg) {
 	const cardToShowR = nodecg.Replicant('cardToShowR', { defaultValue: '' });
 	const i18nStrings = nodecg.Replicant('i18nStrings', { defaultValue: {} });
 
+	// Auto-apply logic
+	operationQueue.on('change', (newValue, oldValue) => {
+		// Ensure settings are loaded and auto-apply is enabled
+		if (!ptcgSettings.value || !ptcgSettings.value.autoApply) {
+			return;
+		}
+
+		// Trigger only when items are added to the queue
+		if (newValue && newValue.length > 0 && (!oldValue || newValue.length > oldValue.length)) {
+			nodecg.log.info('Auto-Apply triggered by queue change.');
+			// Use a short timeout to allow any immediate follow-up operations (like from an attack) to be batched.
+			setTimeout(() => {
+				// Double-check the queue isn't empty again, as the applyQueue will clear it.
+				if (operationQueue.value.length > 0) {
+					nodecg.sendMessage('applyQueue');
+				}
+			}, 100); // 100ms delay for batching
+		}
+	});
+
 	const language = nodecg.Replicant('language', { defaultValue: 'jp' });
 
     const live_lostZoneL = nodecg.Replicant('live_lostZoneL', { defaultValue: 0 });

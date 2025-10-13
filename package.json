@@ -81,14 +81,14 @@
       },
       {
         "name": "player-l-panel",
-        "title": "Player L",
+        "title": "Player Panel L",
         "width": 3,
         "file": "player_l_panel.html",
         "headerColor": "#3498DB"
       },
       {
         "name": "player-r-panel",
-        "title": "Player R",
+        "title": "Player Panel R",
         "width": 3,
         "file": "player_r_panel.html",
         "headerColor": "#E74C3C"
