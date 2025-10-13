@@ -654,7 +654,7 @@
             <button id="discard-op-btn" class="btn btn-danger">Discard (Esc)</button>
             <button id="apply-op-btn" class="btn btn-primary">Apply (Ctrl+S)</button>
         </div>
-        <div id="auto-apply-warning" class="btn btn-danger" style="display: none; width: 100%; box-sizing: border-box; margin-bottom: 10px; font-size: 12px; font-weight: 800; background-color: #808080; pointer-events: none;">
+        <div id="auto-apply-warning" class="btn" style="display: none; width: 100%; box-sizing: border-box; margin-bottom: 10px; font-weight: 800; color:#ff4040; background-color: black; pointer-events: none;">
             \\\ WARNING: Auto-Apply Activated \\\
         </div>
         <div class="operation-queue" id="operation-queue">
@@ -2434,9 +2434,9 @@
             }
 
             const autoApplyCheckbox = document.getElementById('auto-apply-checkbox');
-
             const opButtonsContainer = document.getElementById('op-buttons-container');
             const autoApplyWarning = document.getElementById('auto-apply-warning');
+            const operationQueueContainer = document.getElementById('operation-queue');
 
             settingsRep.on('change', (newValue) => {
                 const autoApplyEnabled = newValue && newValue.autoApply;
@@ -2450,9 +2450,11 @@
                 if (autoApplyEnabled) {
                     opButtonsContainer.style.display = 'none';
                     autoApplyWarning.style.display = 'block';
+                    operationQueueContainer.style.display = 'none';
                 } else {
                     opButtonsContainer.style.display = 'flex';
                     autoApplyWarning.style.display = 'none';
+                    operationQueueContainer.style.display = 'block';
                 }
 
                 // Also, re-run hotkey label updates in case settings object was reset

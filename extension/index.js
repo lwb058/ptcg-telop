@@ -67,26 +67,6 @@ module.exports = function (nodecg) {
 	const cardToShowR = nodecg.Replicant('cardToShowR', { defaultValue: '' });
 	const i18nStrings = nodecg.Replicant('i18nStrings', { defaultValue: {} });
 
-	// Auto-apply logic
-	operationQueue.on('change', (newValue, oldValue) => {
-		// Ensure settings are loaded and auto-apply is enabled
-		if (!ptcgSettings.value || !ptcgSettings.value.autoApply) {
-			return;
-		}
-
-		// Trigger only when items are added to the queue
-		if (newValue && newValue.length > 0 && (!oldValue || newValue.length > oldValue.length)) {
-			nodecg.log.info('Auto-Apply triggered by queue change.');
-			// Use a short timeout to allow any immediate follow-up operations (like from an attack) to be batched.
-			setTimeout(() => {
-				// Double-check the queue isn't empty again, as the applyQueue will clear it.
-				if (operationQueue.value.length > 0) {
-					nodecg.sendMessage('applyQueue');
-				}
-			}, 100); // 100ms delay for batching
-		}
-	});
-
 	const language = nodecg.Replicant('language', { defaultValue: 'jp' });
 
     const live_lostZoneL = nodecg.Replicant('live_lostZoneL', { defaultValue: 0 });
@@ -795,6 +775,12 @@ module.exports = function (nodecg) {
 		op.id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 		operationQueue.value.push(op);
 		nodecg.log.info(`Operation queued: ${op.type}`);
+
+		// If auto-apply is on, try to process the queue.
+		if (ptcgSettings.value && ptcgSettings.value.autoApply) {
+			nodecg.sendMessage('applyQueue');
+		}
+
 		if (callback) callback(null, op.id);
 	});
 
@@ -916,235 +902,142 @@ module.exports = function (nodecg) {
 
 	/**
 	 * Applies all operations in the queue to the LIVE state, with delays for animations.
+	 * This function implements a locking and buffering mechanism to handle "auto-apply".
 	 */
+	let isApplyingQueue = false;
 	nodecg.listenFor('applyQueue', (data, callback) => {
-		const queue = operationQueue.value;
-		nodecg.log.info(`Applying queue with ${queue.length} operations.`);
+		// If the queue is already being processed, do nothing. The new operations will be handled in the next cycle.
+		if (isApplyingQueue) {
+			nodecg.log.info('Queue application is already in progress. New operations are buffered.');
+			if (callback) callback(null, 'Queue application buffered.');
+			return;
+		}
+
+		// If the queue is empty, do nothing.
+		if (!operationQueue.value || operationQueue.value.length === 0) {
+			if (callback) callback(null, 'Queue is empty.');
+			return;
+		}
+
+		// 1. Lock the process and take a snapshot of the queue for processing.
+		isApplyingQueue = true;
+		const opsToProcess = [...operationQueue.value];
+		operationQueue.value = []; // Clear the queue immediately.
+		nodecg.log.info(`Applying queue with ${opsToProcess.length} operations.`);
 
 		try {
-			// 1. Sort queue by priority (lower first), then by time (implicit)
-			const sortedQueue = [...queue].sort((a, b) => (a.payload.priority || 99) - (b.payload.priority || 99));
+			// 2. Sort queue by priority, then by time (implicit).
+			const sortedQueue = opsToProcess.sort((a, b) => (a.payload.priority || 99) - (b.payload.priority || 99));
 
-			// 2. Separate ATTACK operations for grouping, and all other operations
+			// 3. Separate operations into animation groups.
 			const attackOps = sortedQueue.filter(op => op.type === 'ATTACK');
 			const nonAttackOps = sortedQueue.filter(op => op.type !== 'ATTACK');
-
-			// 3. Group attack operations by attacker and move name
+			
+			// Group attack operations (same as before)
 			const attackGroups = new Map();
 			attackOps.forEach(op => {
-				// Correctly read properties from the actual payload structure
 				const { attackerSlotId, attackName, damage, target, targets } = op.payload;
 				const attacker = attackerSlotId;
 				const move = attackName;
 				const groupKey = `${attacker}_${move}`;
-
-				// Guard against malformed operations
-				if (!attacker || !move) {
-					nodecg.log.warn('Skipping malformed attack operation:', op);
-					return;
-				}
-
+				if (!attacker || !move) return;
 				if (!attackGroups.has(groupKey)) {
-					const attackerSide = attacker.charAt(4); // "slotL0" -> "L"
-					attackGroups.set(groupKey, {
-						attacker: attacker,
-						moveName: move,
-						attackerSide: attackerSide,
-						targets: []
-					});
+					attackGroups.set(groupKey, { attacker, moveName: move, attackerSide: attacker.charAt(4), targets: [] });
 				}
-
 				const group = attackGroups.get(groupKey);
-				// Robustness: Handle both single target string and array of targets
 				const actualTargets = Array.isArray(targets) ? targets : [target];
-
 				actualTargets.forEach(targetId => {
-					// Guard against undefined entries in the targets array
-					if (!targetId) {
-						nodecg.log.warn('Skipping undefined target in attack operation:', op);
-						return;
-					}
-					const targetSide = targetId.charAt(4);
-					group.targets.push({
-						targetId: targetId,
-						targetSide: targetSide,
-						damage: damage, // Send the intended damage for display
-						isWeakness: op.payload.isWeakness // Pass the weakness flag
-					});
+					if (!targetId) return;
+					group.targets.push({ targetId, targetSide: targetId.charAt(4), damage, isWeakness: op.payload.isWeakness });
 				});
 			});
 
-			// --- Trigger Animations ---
-			
-			// 4. Trigger the new grouped attack animations
+			// --- 4. Trigger Animations ---
 			attackGroups.forEach(group => {
-				// Get attacker's card data to add name and type to the payload
 				const attackerRep = nodecg.Replicant(`live_${group.attacker}`);
 				if (attackerRep.value && attackerRep.value.cardId) {
 					const cardData = cardDatabase.value[attackerRep.value.cardId];
 					if (cardData) {
 						group.attackerName = cardData.name;
-						// Use the first type for coloring
-						if (cardData.pokemon && cardData.pokemon.color && cardData.pokemon.color.length > 0) {
-							group.attackerType = cardData.pokemon.color[0];
-						} else {
-							group.attackerType = 'Colorless'; // Default
-						}
+						group.attackerType = (cardData.pokemon && cardData.pokemon.color && cardData.pokemon.color.length > 0) ? cardData.pokemon.color[0] : 'Colorless';
 					}
 				}
-				
 				nodecg.log.info(`Sending attack-fx for ${group.moveName}`);
 				nodecg.sendMessage('attack-fx', group);
 			});
 
-			// 5. Filter non-attack operations into timed groups (same as before)
 			const promoteOps = nonAttackOps.filter(op => op.type === 'SWITCH_POKEMON');
 			const removeOps = nonAttackOps.filter(op => op.type === 'REMOVE_POKEMON');
 			const koOps = nonAttackOps.filter(op => op.type === 'KO_POKEMON');
 			const replaceOps = nonAttackOps.filter(op => op.type === 'REPLACE_POKEMON');
-			
-			// 6. All remaining operations (including the original ungrouped ATTACKs) will be applied.
-			// This ensures data changes happen correctly.
-			const otherOps = sortedQueue.filter(op => 
-				!promoteOps.includes(op) && 
-				!removeOps.includes(op) && 
-				!koOps.includes(op) && 
-				!replaceOps.includes(op)
-			);
+			const otherOps = sortedQueue.filter(op => !promoteOps.includes(op) && !removeOps.includes(op) && !koOps.includes(op) && !replaceOps.includes(op));
 
-			// 7. Trigger animations for non-attack operations (same as before)
 			otherOps.forEach(op => {
 				if (op.type === 'SET_POKEMON' && op.payload.target && op.payload.target.startsWith('slot')) {
 					const liveRep = nodecg.Replicant(`live_${op.payload.target}`);
 					if (liveRep.value && !liveRep.value.cardId) {
-						const side = op.payload.target.charAt(4);
-						const index = op.payload.target.charAt(5);
-						const graphicTargetId = `slot-${side}${index}`;
-						nodecg.sendMessage('playAnimation', { type: 'ENTER_POKEMON', target: graphicTargetId });
+						nodecg.sendMessage('playAnimation', { type: 'ENTER_POKEMON', target: op.payload.target.replace('slot', 'slot-') });
 					}
 				}
 			});
-			promoteOps.forEach(op => {
-				const { source, target } = op.payload;
-				if (!source || !target) {
-					nodecg.log.warn('Skipping PROMOTE animation due to missing source/target.');
-					return;
-				}
-				// The animation message needs both source and target to work correctly
-				nodecg.sendMessage('playAnimation', {
-					type: 'SWITCH_POKEMON',
-					source: source.replace('slot', 'slot-'), // convert to DOM ID
-					target: target.replace('slot', 'slot-')  // convert to DOM ID
-				});
-			});
-			removeOps.forEach(op => {
-				const side = op.payload.target.charAt(4);
-				const index = op.payload.target.charAt(5);
-				const graphicTargetId = `slot-${side}${index}`;
-				nodecg.sendMessage('playAnimation', { type: 'EXIT_POKEMON', target: graphicTargetId });
-			});
-			koOps.forEach(op => {
-				const side = op.payload.target.charAt(4);
-				const index = op.payload.target.charAt(5);
-				const graphicTargetId = `slot-${side}${index}`;
-				const animationType = op.type === 'KO_POKEMON' ? 'KO_POKEMON' : 'EXIT_POKEMON';
-				nodecg.sendMessage('playAnimation', { type: animationType, target: graphicTargetId });
-			});
+			promoteOps.forEach(op => nodecg.sendMessage('playAnimation', { type: 'SWITCH_POKEMON', source: op.payload.source.replace('slot', 'slot-'), target: op.payload.target.replace('slot', 'slot-') }));
+			removeOps.forEach(op => nodecg.sendMessage('playAnimation', { type: 'EXIT_POKEMON', target: op.payload.target.replace('slot', 'slot-') }));
+			koOps.forEach(op => nodecg.sendMessage('playAnimation', { type: 'KO_POKEMON', target: op.payload.target.replace('slot', 'slot-') }));
 			replaceOps.forEach(op => {
-				const side = op.payload.target.charAt(4);
-				const index = op.payload.target.charAt(5);
-				const graphicTargetId = `slot-${side}${index}`;
-				let animationType;
-				if (op.payload.actionType === 'Evolve') {
-					animationType = 'EVOLVE_POKEMON';
-				} else if (op.payload.actionType === 'Devolve') {
-					animationType = 'DEVOLVE_POKEMON';
-				} else {
-					animationType = 'REPLACE_POKEMON';
-				}
-				nodecg.sendMessage('playAnimation', {
-					type: animationType,
-					target: graphicTargetId,
-					cardId: op.payload.cardId // Pass the cardId for Mega check
-
-				});
+				let animationType = 'REPLACE_POKEMON';
+				if (op.payload.actionType === 'Evolve') animationType = 'EVOLVE_POKEMON';
+				else if (op.payload.actionType === 'Devolve') animationType = 'DEVOLVE_POKEMON';
+				nodecg.sendMessage('playAnimation', { type: animationType, target: op.payload.target.replace('slot', 'slot-'), cardId: op.payload.cardId });
 			});
 
-
-			// --- Apply Data Changes ---
-			// 8. Apply all non-delayed operations immediately. This includes ATTACK ops.
+			// --- 5. Apply Data Changes ---
 			otherOps.forEach(op => {
 				if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
-					const liveRep = nodecg.Replicant(`live_${op.payload.target}`);
-					applyOperationLogic(liveRep, op, 'live');
+					applyOperationLogic(nodecg.Replicant(`live_${op.payload.target}`), op, 'live');
 				} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
 					applyOperationLogic(live_stadium, op, 'live');
 				} else if (op.payload.target && op.payload.target.startsWith('slot')) {
-					const liveRep = nodecg.Replicant(op.payload.target.replace('slot', 'live_slot'));
-					applyOperationLogic(liveRep, op, 'live');
+					applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live');
 				} else {
-					// This handles operations like ATTACK which don't have a single `target`.
 					applyOperationLogic(null, op, 'live');
 				}
 			});
 
-			// 9. Schedule delayed data changes (same as before)
 			let maxDelay = 0;
-			// Add a small base delay for attack animations to start
-			if (attackGroups.size > 0) {
-				maxDelay = Math.max(maxDelay, 2000); // Placeholder for attack animation duration
-			}
-
-			if (promoteOps.length > 0 || removeOps.length > 0) {
+			if (attackGroups.size > 0) maxDelay = Math.max(maxDelay, 2000);
+			if (promoteOps.length > 0 || removeOps.length > 0 || replaceOps.length > 0) {
 				const delay = 500;
 				maxDelay = Math.max(maxDelay, delay);
 				setTimeout(() => {
 					promoteOps.forEach(op => applyOperationLogic(null, op, 'live'));
-					removeOps.forEach(op => {
-						const liveRep = nodecg.Replicant(op.payload.target.replace('slot', 'live_slot'));
-						applyOperationLogic(liveRep, op, 'live');
-					});
+					removeOps.forEach(op => applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live'));
+					replaceOps.forEach(op => applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live'));
 				}, delay);
 			}
 			if (koOps.length > 0) {
 				const delay = 1500;
 				maxDelay = Math.max(maxDelay, delay);
 				setTimeout(() => {
-					koOps.forEach(op => {
-						const liveRep = nodecg.Replicant(op.payload.target.replace('slot', 'live_slot'));
-						applyOperationLogic(liveRep, op, 'live');
-					});
-				}, delay);
-			}
-			if (replaceOps.length > 0) {
-				const delay = 500;
-				maxDelay = Math.max(maxDelay, delay);
-				setTimeout(() => {
-					replaceOps.forEach(op => {
-						const liveRep = nodecg.Replicant(op.payload.target.replace('slot', 'live_slot'));
-						applyOperationLogic(liveRep, op, 'live');
-					});
+					koOps.forEach(op => applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live'));
 				}, delay);
 			}
 
+			// 6. Schedule the process to end, release the lock, and chain to the next batch of operations.
+			setTimeout(() => {
+				nodecg.log.info('Queue batch applied.');
+				isApplyingQueue = false; // Release the lock.
+				if (callback) callback(null, 'Queue batch applied successfully.');
 
-			// 10. Schedule queue clearing and state sync after the longest delay
-			if (maxDelay > 0) {
-				setTimeout(() => {
-					operationQueue.value = [];
-					syncLiveToDraft();
-					nodecg.log.info('Queue applied (with animation delay) and states synced.');
-					if (callback) callback(null, 'Queue applied successfully.');
-				}, maxDelay);
-			} else {
-				operationQueue.value = [];
-				syncLiveToDraft();
-				nodecg.log.info('Queue applied and states synced.');
-				if (callback) callback(null, 'Queue applied successfully.');
-			}
+				// IMPORTANT: Check if new operations were buffered during the animation and start the next cycle.
+				if (operationQueue.value.length > 0) {
+					nodecg.log.info('Buffered operations found. Starting next apply cycle.');
+					nodecg.sendMessage('applyQueue');
+				}
+			}, maxDelay);
 
 		} catch (e) {
 			nodecg.log.error('Failed to apply queue:', e);
+			isApplyingQueue = false; // Ensure lock is released on error.
 			if (callback) callback(e);
 		}
 	});
