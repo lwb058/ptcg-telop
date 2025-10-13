@@ -341,6 +341,7 @@
         }
         .tool-placeholder {
             width: 100%;
+            max-height: 40px;
             flex-grow: 1; /* Allow placeholder to fill remaining space */
             border-radius: 2px;
             border: 2px dashed #ccc;
@@ -2262,11 +2263,55 @@
             });
 
             // --- Unified Hotkey Handling ---
+            nodecg.listenFor('hotkeyFired', (command) => {
+                console.log(`Master panel received hotkey command: ${command}`);
+                if (command === 'discard') {
+                    handleDiscard();
+                } else if (command === 'apply') {
+                    handleApply();
+                }
+            });
+
+            // --- Event Listeners for UI Updates ---
+            cardDatabase.on('change', () => {
+                updateAttackerDropdown();
+                renderTargetingField();
+                updateWeaknessCheckbox();
+            });
+            operationQueue.on('change', renderQueue);
+
+            i18nStrings.on('change', updateUIStrings);
+            language.on('change', updateUIStrings);
+
+            // FIX: Moved from a duplicate block below
+            slots.forEach(slot => slot.on('change', () => {
+                updateTotalPokemons();
+                renderTargetingField(); // Selections might refer to a card that was just removed
+                updateWeaknessCheckbox();
+            }));
+            selections.on('change', () => {
+                renderTargetingField();
+                updateWeaknessCheckbox();
+            });
+
+            // Initial UI Update ---
+            updateUIStrings();
+            updateTotalPokemons(); // Keep this
+            updateBattleEnergyCounts(); // New
+            updateFirstPlayerDropdown();
+            renderQueue();
+            updateAttackerDropdown();
+            renderTargetingField();
+            updateEnergyButtonVisibility();
+            updateToolButtonVisibility();
+            renderCurrentPlayerField();
+
+            // --- Unified Hotkey Handling ---
             let hotkeys = { discard: 'Escape', apply: 'Control+S', clearSelection: 'Delete', clearCard: ' ' };
 
             function updateButtonLabels() {
-                discardOpBtn.textContent = `Discard (${hotkeys.discard})`;
-                applyOpBtn.textContent = `Apply (${hotkeys.apply})`;
+                discardOpBtn.textContent = `${getI18nText('discard')} (${hotkeys.discard})`;
+                applyOpBtn.textContent = `${getI18nText('apply')} (${hotkeys.apply})`;
             }
 
             settingsRep.on('change', (newValue) => {
@@ -2284,76 +2329,23 @@
             }
             updateButtonLabels();
 
-
-            nodecg.listenFor('hotkeyFired', (command) => {
-                console.log(`Master panel received hotkey command: ${command}`);
-                if (command === 'discard') {
-                    handleDiscard();
-                } else if (command === 'apply') {
-                    handleApply();
-                }
-            });
-
-            // --- Event Listeners for UI Updates ---
-            slots.forEach(slot => slot.on('change', () => {
-                updateTotalPokemons();
-                renderTargetingField(); // Selections might refer to a card that was just removed
-                updateWeaknessCheckbox();
-            }));
-            selections.on('change', () => {
-                updateSelectedPokemons();
-                renderTargetingField();
-                updateWeaknessCheckbox();
-            });
-            cardDatabase.on('change', () => {
-                updateAttackerDropdown();
-                renderTargetingField();
-                updateWeaknessCheckbox();
-            });
-            operationQueue.on('change', renderQueue);
-
-            i18nStrings.on('change', updateUIStrings);
-            language.on('change', updateUIStrings);
-
-
-            // Initial UI Update ---
-            updateUIStrings();
-            updateTotalPokemons(); // Keep this
-            updateBattleEnergyCounts(); // New
-            updateFirstPlayerDropdown();
-            renderQueue();
-            updateAttackerDropdown();
-            renderTargetingField();
-            updateEnergyButtonVisibility();
-            updateToolButtonVisibility(); // <-- FIX: Added this call
-            renderCurrentPlayerField();
-
-            // --- Hotkey Sender (for this panel) ---
             function checkHotkey(e, hotkeyString) {
                 if (!hotkeyString || typeof hotkeyString !== 'string') return false;
-
-                // Special case for space key
                 if (hotkeyString.toLowerCase() === 'space' || hotkeyString === ' ') {
                     return e.key === ' ';
                 }
-                
                 const parts = hotkeyString.toLowerCase().split('+').map(p => p.trim());
                 const key = parts.pop();
-
                 if (e.key.toLowerCase() !== key) return false;
                 if (parts.includes('ctrl') !== e.ctrlKey) return false;
                 if (parts.includes('alt') !== e.altKey) return false;
                 if (parts.includes('shift') !== e.shiftKey) return false;
-                if (parts.includes('meta') !== e.metaKey) return false; // For Command key on Mac
-
+                if (parts.includes('meta') !== e.metaKey) return false;
                 return true;
             }
 
             document.addEventListener('keydown', (e) => {
-                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') {
-                    return;
-                }
-
+                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') return;
                 if (checkHotkey(e, hotkeys.discard)) {
                     e.preventDefault();
                     nodecg.sendMessage('hotkeyFired', 'discard').catch(err => console.error("Error sending discard hotkey signal", err));
@@ -2369,6 +2361,7 @@
                     cardToShowR.value = '';
                 }
             });
+
         });
     </script>
 </body>
