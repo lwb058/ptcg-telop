@@ -204,6 +204,10 @@
                         <label for="show-deck-energy-only-toggle" id="label-show-deck-energy-only">Show Deck Energy Only</label>
                         <input type="checkbox" id="show-deck-energy-only-toggle" style="width: auto; height: auto; justify-self: end;">
                     </div>
+                    <div class="form-group-hotkey">
+                        <label for="weakness-damage-toggle" id="label-weakness-damage">Auto Double Weakness Damage</label>
+                        <input type="checkbox" id="weakness-damage-toggle" style="width: auto; height: auto; justify-self: end;">
+                    </div>
                 </div>
             </div>
         </div>
@@ -332,6 +336,7 @@
             const showDeckEnergyOnlyToggle = document.getElementById('show-deck-energy-only-toggle');
             const autoCheckSupporterToggle = document.getElementById('auto-check-supporter-toggle');
             const autoTrashTmToggle = document.getElementById('auto-trash-tm-toggle');
+            const weaknessDamageToggle = document.getElementById('weakness-damage-toggle');
             const discardHotkeyInput = document.getElementById('discard-hotkey-input');
             const applyHotkeyInput = document.getElementById('apply-hotkey-input');
             const clearCardHotkeyInput = document.getElementById('clear-card-hotkey-input');
@@ -357,6 +362,7 @@
                 document.getElementById('label-auto-check-supporter').textContent = getI18nText('settings_auto_check_supporter');
                 document.getElementById('label-auto-trash-tm').textContent = getI18nText('settings_auto_trash_tm');
                 document.getElementById('label-show-deck-energy-only').textContent = getI18nText('settings_show_deck_energy_only');
+                document.getElementById('label-weakness-damage').textContent = getI18nText('settings_auto_double_weakness_damage');
                 document.getElementById('label-regulation').textContent = getI18nText('settings_regulation');
                 document.getElementById('label-enable-lost-zone').textContent = getI18nText('settings_enable_lost_zone');
                 document.getElementById('label-enable-vstar').textContent = getI18nText('settings_enable_vstar');
@@ -468,6 +474,7 @@
                 showDeckEnergyOnlyToggle.checked = !!(settings && settings.showDeckEnergyOnly);
                 autoCheckSupporterToggle.checked = !!(settings && settings.autoCheckSupporter);
                 autoTrashTmToggle.checked = !!(settings && settings.autoTrashTM);
+                weaknessDamageToggle.checked = !!(settings && settings.weaknessDamage);
                 toolLimitInput.value = (settings && settings.toolLimit) ? settings.toolLimit : 4;
                 languageSelect.value = (settings && settings.language) ? settings.language : "jp";
 
@@ -521,6 +528,7 @@
                 const newShowDeckEnergyOnly = showDeckEnergyOnlyToggle.checked;
                 const newAutoCheckSupporter = autoCheckSupporterToggle.checked;
                 const newAutoTrashTM = autoTrashTmToggle.checked;
+                const newWeaknessDamage = weaknessDamageToggle.checked;
                 const newToolLimit = parseInt(toolLimitInput.value, 10) || 4;
                 const newLanguage = languageSelect.value;
                 
@@ -540,6 +548,7 @@
                     showDeckEnergyOnly: newShowDeckEnergyOnly,
                     autoCheckSupporter: newAutoCheckSupporter,
                     autoTrashTM: newAutoTrashTM,
+                    weaknessDamage: newWeaknessDamage,
                     toolLimit: newToolLimit,
                     language: newLanguage
                 };

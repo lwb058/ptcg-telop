@@ -1792,6 +1792,9 @@
             const stadiumSelect = document.getElementById('stadium-select');
             const stadiumUsedCheckbox = document.getElementById('stadium-used-checkbox');
 
+            // Store the original (base) damage value to handle weakness doubling correctly
+            let originalDamage = 0;
+
             /**
              * Automatically populates the damage input based on the selected attack.
              * - Uses the number directly if the damage value is a number.
@@ -1856,6 +1859,10 @@
                     // If no attack is found, set to 0
                     damageInput.value = 0;
                 }
+
+                // After updating damage, also update originalDamage and handle weakness
+                updateOriginalDamage();
+                handleWeaknessDamageCalculation();
             }
 
             /**
@@ -1890,8 +1897,36 @@
                 const isWeak = attackerTypes.some(type => weaknessTypes.includes(type));
 
                 weaknessCheck.checked = isWeak;
+                handleWeaknessDamageCalculation();
             }
 
+            /**
+             * Updates the originalDamage variable.
+             * Only updates when the weakness checkbox is unchecked to prevent saving the doubled damage as the base damage.
+             */
+            function updateOriginalDamage() {
+                if (!weaknessCheck.checked) {
+                    originalDamage = parseInt(damageInput.value, 10) || 0;
+                }
+            }
+
+            /**
+             * Calculates and updates the damage input value based on originalDamage and the weakness checkbox state.
+             * This is the only weakness-related function that should modify damageInput.value.
+             */
+            function handleWeaknessDamageCalculation() {
+                if (weaknessCheck.checked) {
+                    damageInput.value = originalDamage * 2;
+                } else {
+                    damageInput.value = originalDamage;
+                }
+            }
+
+            // When the weakness checkbox is manually clicked, update the damage value.
+            weaknessCheck.addEventListener('change', handleWeaknessDamageCalculation);
+            // When the user manually inputs damage, update the original damage value.
+            damageInput.addEventListener('input', updateOriginalDamage);
+            
             /**
              * Finds all attacks for a Pokémon and its entire pre-evolution line by
              * searching within the combined decks. This version correctly handles multiple

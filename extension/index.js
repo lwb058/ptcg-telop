@@ -47,6 +47,7 @@ module.exports = function (nodecg) {
             showDeckEnergyOnly: true,
             autoCheckSupporter: true,
             autoTrashTM: true,
+            weaknessDamage: true,
             toolLimit: 4,
 			language: "jp"
 		}

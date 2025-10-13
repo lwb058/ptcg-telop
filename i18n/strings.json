@@ -89,6 +89,11 @@
     "chs": "仅显示卡组中的基本能量",
     "en": "Show Deck Energy Only"
   },
+  "settings_auto_double_weakness_damage": {
+    "jp": "弱点ダメージ自動2倍",
+    "chs": "弱点伤害自动翻倍",
+    "en": "Auto Double Weakness Damage"
+  },
   "settings_regulation": {
     "jp": "レギュレーション",
     "chs": "赛制规则",
