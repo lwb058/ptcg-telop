@@ -562,7 +562,7 @@
                 <select id="attacker" class="truncate-select"></select>
             </div>
             <div class="form-group" style="flex-grow: 2;">
-                <label for="attack-select" data-i18n="waza">Move</label>
+                <label for="attack-select" style="flex: none;" data-i18n="waza">Move</label>
                 <select id="attack-select" class="truncate-select"></select>
             </div>
         </div>
@@ -2469,7 +2469,8 @@
             autoApplyCheckbox.addEventListener('change', (e) => {
                 const isChecked = e.target.checked;
                 if (settingsRep.value) {
-                    settingsRep.value.autoApply = isChecked;
+                    // Update the replicant to reflect the new autoApply setting
+                    settingsRep.value = { ...settingsRep.value, autoApply: isChecked };
                 }
                 // If the checkbox is checked and there are items in the queue, apply them.
                 if (isChecked && operationQueue.value && operationQueue.value.length > 0) {
@@ -2480,15 +2481,14 @@
 
             document.addEventListener('keydown', (e) => {
                 if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') return;
-                
-                // Do not trigger manual hotkeys if auto-apply is on
                 const autoApplyEnabled = settingsRep.value && settingsRep.value.autoApply;
-                if (autoApplyEnabled) return;
 
                 if (checkHotkey(e, hotkeys.discard)) {
+                    if (autoApplyEnabled) return; // Ignore discard hotkey if auto-apply is enabled
                     e.preventDefault();
                     nodecg.sendMessage('hotkeyFired', 'discard').catch(err => console.error("Error sending discard hotkey signal", err));
                 } else if (checkHotkey(e, hotkeys.apply)) {
+                    if (autoApplyEnabled) return; // Ignore apply hotkey if auto-apply is enabled
                     e.preventDefault();
                     nodecg.sendMessage('hotkeyFired', 'apply').catch(err => console.error("Error sending apply hotkey signal", err));
                 } else if (checkHotkey(e, hotkeys.clearSelection)) {
