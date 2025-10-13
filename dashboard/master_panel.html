@@ -509,7 +509,7 @@
         <div class="flex-container" style="align-items: flex-start;">
             <div>
                 <p>Total Pokemons: <span id="total-pokemons">0</span></p>
-                <p>Selected: <span id="selected-pokemons">None</span></p>
+                <p>Battle Energy: <span id="battle-energy-l">L: 0</span> | <span id="battle-energy-r">R: 0</span></p>
             </div>
             <div class="form-group" style="flex: 1; margin-bottom: 0;">
                 <label for="first-player-select" data-i18n="first_move">First Move:</label>
@@ -566,7 +566,10 @@
             </div>
         </div>
         <div class="form-group" style="flex-direction: column; align-items: stretch; margin-bottom: 10px;">
-            <label>Target:</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <label style="margin-bottom: 0;">Select Target:</label>
+                <button id="toggle-target-height-btn" class="btn" style="padding: 2px 8px; font-size: 12px;">Expand</button>
+            </div>
             <div id="attack-target-field" class="target-field-container">
                 <!-- Targeting view will be rendered here by JavaScript -->
             </div>
@@ -605,8 +608,23 @@
             </div>
         </div>
         <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
+        <div id="extrahp-shortcuts">
+            <h4 style="text-align:center; margin-top: 10px; margin-bottom: 5px; font-size: 12px; font-weight: bold; color: #555;">↓↓↓ ExtraHP Adjust ↓↓↓</h4>
+            <div class="grid-container" style="grid-template-columns: repeat(2, 1fr); gap: 5px; margin-bottom: 10px;">
+                <button id="select-basic-btn" class="btn btn-info">Select All Basic</button>
+                <button id="select-stage2-btn" class="btn btn-info">Select All Stage 2</button>
+            </div>
+            <div class="grid-container" style="grid-template-columns: repeat(5, 1fr); gap: 5px;">
+                <button class="btn btn-grass" data-extrahp-adj="+30">+30 MaxHP</button>
+                <button class="btn btn-grass" data-extrahp-adj="+50">+50 MaxHP</button>
+                <button class="btn btn-grass" data-extrahp-adj="+100">+100 MaxHP</button>
+                <button class="btn btn-fire" data-extrahp-adj="-30">-30 MaxHP</button>
+                <button class="btn btn-black" data-extrahp-set="0">No ExtraHP</button>
+            </div>
+        </div>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
         <div id="damage-shortcuts">
-            <h4 style="margin-top: 10px; margin-bottom: 5px; font-size: 12px; font-weight: bold; color: #555;">HP Adjust</h4>
+            <h4 style="text-align:center; margin-top: 10px; margin-bottom: 5px; font-size: 12px; font-weight: bold; color: #555;">↓↓↓ HP Adjust ↓↓↓</h4>
             <div class="grid-container" style="grid-template-columns: repeat(8, 1fr); gap: 5px;">
                 <button class="btn btn-fire" data-damage-adj="-10">-10 HP</button>
                 <button class="btn btn-fire" data-damage-adj="-20">-20 HP</button>
@@ -707,7 +725,8 @@
 
             // --- DOM Element Setup ---
             const totalPokemonsEl = document.getElementById('total-pokemons');
-            const selectedPokemonsEl = document.getElementById('selected-pokemons');
+            const battleEnergyLEl = document.getElementById('battle-energy-l');
+            const battleEnergyREl = document.getElementById('battle-energy-r');
             const firstPlayerSelect = document.getElementById('first-player-select');
             const operationQueueEl = document.getElementById('operation-queue');
             const discardOpBtn = document.getElementById('discard-op-btn');
@@ -978,14 +997,19 @@
             const updateTotalPokemons = () => {
                 totalPokemonsEl.textContent = getOccupiedSlots().length;
             };
-            const updateSelectedPokemons = () => {
-                const currentSelections = selections.value;
-                if (!currentSelections || currentSelections.length === 0) {
-                    selectedPokemonsEl.textContent = 'None';
-                    return;
+            const updateBattleEnergyCounts = () => {
+                const slotL0 = slots.find(s => s.name === 'draft_slotL0');
+                const slotR0 = slots.find(s => s.name === 'draft_slotR0');
+
+                const energyCountL = (slotL0 && slotL0.value && slotL0.value.attachedEnergy) ? slotL0.value.attachedEnergy.length : 0;
+                const energyCountR = (slotR0 && slotR0.value && slotR0.value.attachedEnergy) ? slotR0.value.attachedEnergy.length : 0;
+
+                if (battleEnergyLEl) {
+                    battleEnergyLEl.textContent = `L: ${energyCountL}`;
                 }
-                const selectedNames = currentSelections.map(getCardName);
-                selectedPokemonsEl.textContent = selectedNames.join(', ');
+                if (battleEnergyREl) {
+                    battleEnergyREl.textContent = `R: ${energyCountR}`;
+                }
             };
 
             function updateFirstPlayerDropdown() {
@@ -1085,12 +1109,12 @@
             slots.forEach(slot => slot.on('change', () => {
                 updateTotalPokemons();
                 renderCurrentPlayerField();
+                updateBattleEnergyCounts();
             }));
-            selections.on('change', updateSelectedPokemons);
             cardDatabase.on('change', () => {
-                updateSelectedPokemons();
                 renderQueue(); // Re-render queue if card names change
                 renderCurrentPlayerField();
+                updateBattleEnergyCounts();
             });
             operationQueue.on('change', renderQueue);
             showOpponentCheckbox.addEventListener('change', () => {
@@ -1205,6 +1229,71 @@
                             target: slotId,
                             value: newDamage
                         });
+                    }
+                });
+            });
+
+            // --- Evolution Stage Selection Buttons ---
+            const selectBasicBtn = document.getElementById('select-basic-btn');
+            const selectStage2Btn = document.getElementById('select-stage2-btn');
+
+            const createEvoSelectHandler = (evolvesValue) => {
+                return () => {
+                    const db = cardDatabase.value;
+                    if (!db) return;
+
+                    const selected = [];
+                    slots.forEach(slot => {
+                        if (slot.value && slot.value.cardId) {
+                            const card = db[slot.value.cardId];
+                            if (card && card.pokemon && card.pokemon.evolves === evolvesValue) {
+                                selected.push(slot.name.replace('draft_', ''));
+                            }
+                        }
+                    });
+                    selections.value = selected;
+                };
+            };
+
+            if (selectBasicBtn) {
+                selectBasicBtn.addEventListener('click', createEvoSelectHandler('たね'));
+            }
+
+            if (selectStage2Btn) {
+                selectStage2Btn.addEventListener('click', createEvoSelectHandler('2 進化'));
+            }
+
+            // --- Extra HP Shortcut Module Logic ---
+            const extrahpShortcutsContainer = document.getElementById('extrahp-shortcuts');
+            extrahpShortcutsContainer.addEventListener('click', (e) => {
+                const target = e.target.closest('button');
+                if (!target) return;
+
+                const currentSelections = selections.value;
+                if (!currentSelections || currentSelections.length === 0) {
+                    console.log('No Pokémon selected for Extra HP adjustment.');
+                    return;
+                }
+
+                const adjValue = parseInt(target.dataset.extrahpAdj, 10);
+                const setValue = target.dataset.extrahpSet !== undefined ? parseInt(target.dataset.extrahpSet, 10) : NaN;
+
+                currentSelections.forEach(slotId => {
+                    const slotReplicant = slots.find(s => s.name === `draft_${slotId}`);
+                    if (slotReplicant && slotReplicant.value && slotReplicant.value.cardId) {
+                        let newExtraHp;
+                        if (!isNaN(setValue)) {
+                            // Handle "Set to" logic
+                            newExtraHp = setValue;
+                        } else if (!isNaN(adjValue)) {
+                            // Handle adjustment logic
+                            const currentExtraHp = parseInt(slotReplicant.value.extraHp || 0, 10);
+                            newExtraHp = currentExtraHp + adjValue;
+                        }
+
+                        if (newExtraHp !== undefined) {
+                            queueOrUpdateOperation('SET_EXTRA_HP', { target: slotId, value: newExtraHp });
+                        }
                     }
                 });
             });
@@ -1521,6 +1610,20 @@
 
             // --- Targeting View Logic ---
             const attackTargetField = document.getElementById('attack-target-field');
+            const toggleTargetHeightBtn = document.getElementById('toggle-target-height-btn');
+
+            if (toggleTargetHeightBtn) {
+                toggleTargetHeightBtn.addEventListener('click', () => {
+                    const currentHeight = attackTargetField.style.height;
+                    if (currentHeight === '420px') {
+                        attackTargetField.style.height = '200px';
+                        toggleTargetHeightBtn.textContent = 'Expand';
+                    } else {
+                        attackTargetField.style.height = '420px';
+                        toggleTargetHeightBtn.textContent = 'Collapse';
+                    }
+                });
+            }
 
             /**
              * Creates a DOM element for a Pokémon card in the targeting view.
@@ -2194,7 +2297,6 @@
             // --- Event Listeners for UI Updates ---
             slots.forEach(slot => slot.on('change', () => {
                 updateTotalPokemons();
-                updateAttackerDropdown();
                 renderTargetingField(); // Selections might refer to a card that was just removed
                 updateWeaknessCheckbox();
             }));
@@ -2204,7 +2306,6 @@
                 updateWeaknessCheckbox();
             });
             cardDatabase.on('change', () => {
-                updateSelectedPokemons();
                 updateAttackerDropdown();
                 renderTargetingField();
                 updateWeaknessCheckbox();
@@ -2217,8 +2318,8 @@
 
             // Initial UI Update ---
             updateUIStrings();
-            updateTotalPokemons();
-            updateSelectedPokemons();
+            updateTotalPokemons(); // Keep this
+            updateBattleEnergyCounts(); // New
             updateFirstPlayerDropdown();
             renderQueue();
             updateAttackerDropdown();
