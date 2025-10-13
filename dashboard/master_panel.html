@@ -832,6 +832,7 @@
                     cardEl.classList.add('battle-zone-pokemon');
                 }
                 cardEl.dataset.slotId = slotId;
+                cardEl.draggable = true; // Make the entire card element draggable
 
                 const img = document.createElement('img');
                 img.src = getCardImageUrl(slotValue.cardId);
@@ -1344,6 +1345,20 @@
                 }
             });
 
+            // Listen for drag start on the field itself (for moving Pokémon)
+            currentPlayerField.addEventListener('dragstart', (e) => {
+                const sourceCard = e.target.closest('.pokemon-drop-target');
+                // Ensure we are dragging a Pokémon card itself, not an energy/tool on it.
+                // The check `e.target === sourceCard` or `e.target.tagName === 'IMG'` ensures this.
+                if (sourceCard && !sourceCard.classList.contains('empty-slot') && (e.target === sourceCard || e.target.tagName === 'IMG')) {
+                    const sourceSlotId = sourceCard.dataset.slotId;
+                    e.dataTransfer.setData('application/ptcg-pokemon-swap', 'true');
+                    e.dataTransfer.setData('text/plain', sourceSlotId);
+                    e.dataTransfer.effectAllowed = 'move';
+                }
+            });
+
+
             // 2. DRAG OVER: Allow dropping and provide visual feedback
             currentPlayerField.addEventListener('dragover', (e) => {
                 const isEnergyDrag = e.dataTransfer.types.includes('application/ptcg-energy-drag');
@@ -1353,6 +1368,13 @@
                 if (target && (isEnergyDrag || isToolDrag)) {
                     e.preventDefault(); // Allow drop
                     target.style.boxShadow = '0 0 10px 3px #4a69bd'; // Highlight
+                }
+            });
+
+            // Extend dragover to handle Pokémon swaps (allowing drops on empty slots too)
+            currentPlayerField.addEventListener('dragover', (e) => {
+                if (e.dataTransfer.types.includes('application/ptcg-pokemon-swap') && e.target.closest('.pokemon-drop-target')) {
+                    e.preventDefault();
                 }
             });
 
@@ -1375,6 +1397,7 @@
 
                 const isEnergyDrag = e.dataTransfer.types.includes('application/ptcg-energy-drag');
                 const isToolDrag = e.dataTransfer.types.includes('application/ptcg-tool-drag');
+                const isPokemonSwap = e.dataTransfer.types.includes('application/ptcg-pokemon-swap');
 
                 if (isToolDrag) {
                     // --- Handle TOOL attachment ---
@@ -1448,6 +1471,28 @@
                             const turn = draft_currentTurn.value;
                             const actionStatusTarget = `action_energy_${turn}`;
                             queueOperation('SET_ACTION_STATUS', { target: actionStatusTarget, status: true });
+                        }
+                    }
+                } else if (isPokemonSwap) {
+                    // --- Handle POKEMON swap ---
+                    const sourceSlotId = e.dataTransfer.getData('text/plain');
+                    if (sourceSlotId && destinationSlotId && sourceSlotId !== destinationSlotId) {
+                        // Queue the switch operation
+                        queueOperation('SWITCH_POKEMON', {
+                            source: sourceSlotId,
+                            target: destinationSlotId
+                        });
+
+                        // Check for auto-retreat logic
+                        const settings = settingsRep.value || {};
+                        const isRetreat = sourceSlotId.endsWith('0'); // Dragged from a battle slot
+
+                        if (isRetreat && settings.autoRetreatToggle) {
+                            const turn = draft_currentTurn.value;
+                            if (turn) {
+                                const actionStatusTarget = `action_retreat_${turn}`;
+                                queueOperation('SET_ACTION_STATUS', { target: actionStatusTarget, status: true });
+                            }
                         }
                     }
                 }
