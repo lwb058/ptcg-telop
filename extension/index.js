@@ -458,6 +458,36 @@ module.exports = function (nodecg) {
 	}
 
 	/**
+	 * Checks and updates the KO status of a Pokémon in a given slot.
+	 * This should be called any time a value affecting HP (damage, extraHp, baseHp) changes.
+	 * @param {string} slotId - The ID of the slot to check (e.g., 'slotL0').
+	 * @param {string} mode - The mode, either 'draft' or 'live'.
+	 */
+	function updateKOStatusForSlot(slotId, mode) {
+		const prefix = mode === 'draft' ? 'draft_' : 'live_';
+		const replicant = nodecg.Replicant(`${prefix}${slotId}`);
+		const db = cardDatabase.value;
+
+		if (replicant && replicant.value && replicant.value.cardId && db && db[replicant.value.cardId]) {
+			const card = db[replicant.value.cardId];
+			if (card && card.pokemon) {
+				const baseHp = parseInt(card.pokemon.hp || 0, 10);
+				const extraHp = parseInt(replicant.value.extraHp || 0, 10);
+				const damage = parseInt(replicant.value.damage || 0, 10);
+				const currentHp = (baseHp + extraHp) - damage;
+
+				// Update the isKO status based on HP.
+				const wasKO = replicant.value.isKO;
+				const isNowKO = currentHp <= 0;
+
+				if (wasKO !== isNowKO) {
+					replicant.value.isKO = isNowKO;
+				}
+			}
+		}
+	}
+
+	/**
 	 * Applies a single operation object to a given replicant.
 	 * This is a helper function used by both queueOperation and applyQueue.
 	 * @param {object} replicant - The NodeCG replicant to modify.
@@ -531,24 +561,15 @@ module.exports = function (nodecg) {
 				}
 				// Add a unified evolutionSelect flag.
 				replicant.value.evolutionSelect = true;
+				updateKOStatusForSlot(payload.target, mode);
 				break;
 			case 'SET_DAMAGE':
 				replicant.value.damage = value;
-				const db = cardDatabase.value;
-				if (replicant.value.cardId && db && db[replicant.value.cardId]) {
-					const card = db[replicant.value.cardId];
-					if (card && card.pokemon) {
-						const baseHp = parseInt(card.pokemon.hp || 0, 10);
-						const extraHp = parseInt(replicant.value.extraHp || 0, 10);
-						const currentHp = (baseHp + extraHp) - replicant.value.damage;
-						if (currentHp <= 0) {
-							replicant.value.isKO = true;
-						}
-					}
-				}
+				updateKOStatusForSlot(payload.target, mode);
 				break;
 			case 'SET_EXTRA_HP':
 				replicant.value.extraHp = value;
+				updateKOStatusForSlot(payload.target, mode);
 				break;
                                     case 'SET_TOOLS': {
                 const toolLimit = (ptcgSettings.value && ptcgSettings.value.toolLimit) || 4;
@@ -717,18 +738,7 @@ module.exports = function (nodecg) {
                         targetRep.value.damage = currentDamage + newDamage;
 
                         // After applying damage, check if the Pokémon is knocked out.
-                        const db = cardDatabase.value;
-                        if (targetRep.value.cardId && db && db[targetRep.value.cardId]) {
-                            const card = db[targetRep.value.cardId];
-                            if (card && card.pokemon) {
-                                const baseHp = parseInt(card.pokemon.hp || 0, 10);
-                                const extraHp = parseInt(targetRep.value.extraHp || 0, 10);
-                                const currentHp = (baseHp + extraHp) - targetRep.value.damage;
-                                if (currentHp <= 0) {
-                                    targetRep.value.isKO = true;
-                                }
-                            }
-                        }
+                        updateKOStatusForSlot(slotId, mode);
                     }
                 });
                 break;
