@@ -405,6 +405,59 @@ module.exports = function (nodecg) {
 	});
 
 	/**
+	 * Returns the priority for a given operation type based on the refactor plan.
+	 * @param {string} type - The operation type.
+	 * @returns {number} The priority level.
+	 */
+	function getPriorityForOperation(type) {
+		switch (type) {
+			// Priority 0: Attack Flow
+			case 'ATTACK':
+				return 0;
+
+			// Priority 1: State & Attachment Changes
+			case 'SET_AILMENTS':
+			case 'SET_ENERGIES':
+			case 'SET_TOOLS':
+			case 'SET_ACTION_STATUS':
+			case 'SET_ABILITY_USED':
+			case 'SET_STADIUM':
+			case 'SET_STADIUM_USED':			
+			case 'SET_VSTAR_STATUS':
+				return 1;
+
+			// Priority 2: Core Value Settlement
+			case 'SET_DAMAGE':
+			case 'SET_EXTRA_HP':
+				return 2;
+
+			// Priority 3: K.O. Resolution
+			case 'KO_POKEMON': // This is the animation trigger
+				return 3;
+
+			// Priority 4: Post-battle processing
+			case 'SET_SIDES': // Taking prize cards
+			case 'REMOVE_POKEMON': // Removing KO'd pokemon from field
+				return 4;
+
+			// Priority 5 & 6: Sequential animations
+			case 'SLIDE_OUT':
+			case 'SET_POKEMON':
+			case 'REPLACE_POKEMON': // Evolution
+			case 'EXIT_POKEMON': // Animation for REMOVE_POKEMON
+            case 'SET_TURN':
+			case 'SET_LOST_ZONE':
+				return 5;
+			case 'APPLY_SWITCH':
+				return 6;
+
+			default:
+				nodecg.log.warn(`Unknown operation type for priority assignment: ${type}`);
+				return 99; // Default for unknown or purely visual ops
+		}
+	}
+
+	/**
 	 * Applies a single operation object to a given replicant.
 	 * This is a helper function used by both queueOperation and applyQueue.
 	 * @param {object} replicant - The NodeCG replicant to modify.
@@ -419,15 +472,17 @@ module.exports = function (nodecg) {
 
 		// Ensure replicant.value is an object before modification, for slot-based operations.
 		// This check is bypassed for simpler replicants or operations that manage their own replicants.
-		if (type !== 'SET_POKEMON' && type !== 'SWITCH_POKEMON' && type !== 'SET_ACTION_STATUS' && type !== 'SET_TURN' && type !== 'SET_SIDES' && type !== 'ATTACK' && type !== 'SET_STADIUM' && type !== 'SET_STADIUM_USED' && type !== 'SET_ABILITY_USED' && type !== 'SET_VSTAR_STATUS' && type !== 'SET_LOST_ZONE' && type !== 'SET_KO_STATUS' && (!replicant || typeof replicant.value !== 'object' || replicant.value === null)) {
+		if (type !== 'SET_POKEMON' && type !== 'APPLY_SWITCH' && type !== 'SET_ACTION_STATUS' && type !== 'SET_TURN' && type !== 'SET_SIDES' && type !== 'ATTACK' && type !== 'SET_STADIUM' && type !== 'SET_STADIUM_USED' && type !== 'SET_ABILITY_USED' && type !== 'SET_VSTAR_STATUS' && type !== 'SET_LOST_ZONE' && type !== 'SET_KO_STATUS' && (!replicant || typeof replicant.value !== 'object' || replicant.value === null)) {
 			// For PROMOTE, the logic handles its own replicants. For others, if the replicant is not ready, abort.
-			if (type !== 'SWITCH_POKEMON') {
+				// SWITCH_POKEMON is now split and does not reach here directly.
 				nodecg.log.warn(`Operation ${type} aborted: replicant or its value is not a valid object.`);
 				return;
-			}
 		}
 
 		switch(type) {
+			case 'SLIDE_OUT':
+				// This is an animation-only operation, no data logic needed.
+				break;
 			case 'SET_KO_STATUS':
 				if (replicant && replicant.value) {
 					replicant.value.isKO = payload.status;
@@ -523,14 +578,6 @@ module.exports = function (nodecg) {
 					cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [],
 					...(isBattleSlot && { ailments: [] })
 				};
-
-				// Queue a simple exit animation for non-KO removal
-				const slotId = replicant.name.replace(/^draft_/, '').replace(/^live_/, '');
-				operationQueue.value.push({
-					type: 'EXIT_POKEMON',
-					payload: { target: slotId },
-					id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-				});
 				break;
 			}
 			case 'KO_POKEMON': {
@@ -544,7 +591,9 @@ module.exports = function (nodecg) {
 				};
 				// Auto-prize card logic
 				const autoSideTake = ptcgSettings.value && ptcgSettings.value.autoSideTake;
-				if (autoSideTake) {
+				// This logic should only run when applying to DRAFT, to generate the follow-up op.
+				// When applying to LIVE, the generated op will be processed from the queue itself.
+				if (autoSideTake && mode === 'draft') {
 					// Determine which side was KO'd
 					const slotId = replicant.name.replace(/^draft_/, '').replace(/^live_/, '');
 					const side = slotId.charAt(4); // "slotL3" -> "L" or "R"
@@ -574,6 +623,7 @@ module.exports = function (nodecg) {
 					operationQueue.value.push({
 						type: 'SET_SIDES',
 						payload: { target: sideKey, value: newValue },
+						priority: 4, // Taking prize cards
 						id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
 					});
 				}
@@ -587,7 +637,7 @@ module.exports = function (nodecg) {
 			case 'SET_ENERGIES':
 				replicant.value.attachedEnergy = [...payload.energies];
 				break;
-			case 'SWITCH_POKEMON': {
+			case 'APPLY_SWITCH': {
                 const { source, target } = payload;
                 if (!source || !target) {
                     nodecg.log.error('Invalid PROMOTE operation: source or target missing.', payload);
@@ -627,24 +677,25 @@ module.exports = function (nodecg) {
 				
 				// --- Auto Retreat Logic ---
 				const autoRetreat = ptcgSettings.value && ptcgSettings.value.autoRetreatToggle;
-				if (autoRetreat) {
+				if (autoRetreat && mode === 'draft') {
 					// Check if it involves the Active Spot
 					if (source === 'slotL0') {
 						nodecg.Replicant('draft_action_retreat_L').value = true;
-						operationQueue.value.push({
-							type: 'SET_ACTION_STATUS',
-							payload: { target: 'action_retreat_L', status: true },
-							id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-						});
-					}
-					if (source === 'slotR0') {
-						nodecg.Replicant('draft_action_retreat_R').value = true;
-						operationQueue.value.push({
-						type: 'SET_ACTION_STATUS',
-						payload: { target: 'action_retreat_R', status: true },
-						id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-					});
-					}
+												operationQueue.value.push({
+													type: 'SET_ACTION_STATUS',
+													payload: { target: 'action_retreat_L', status: true },
+													priority: 1, // State change
+													id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+												});
+											}
+											if (source === 'slotR0') {
+												nodecg.Replicant('draft_action_retreat_R').value = true;
+												operationQueue.value.push({
+													type: 'SET_ACTION_STATUS',
+													payload: { target: 'action_retreat_R', status: true },
+													priority: 1, // State change
+													id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+												});					}
 				}
                 break;
             }
@@ -704,7 +755,7 @@ module.exports = function (nodecg) {
                 }
 
                 // Auto-trash Technical Machines if the setting is enabled
-                if (ptcgSettings.value.autoTrashTM) {
+                if (ptcgSettings.value.autoTrashTM && mode === 'draft') {
                     const db = cardDatabase.value;
                     for (let i = 0; i < 9; i++) {
                         ['L', 'R'].forEach(side => {
@@ -763,18 +814,41 @@ module.exports = function (nodecg) {
 			applyOperationLogic(draftRep, op, 'draft');
 		} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
 			applyOperationLogic(draft_stadium, op, 'draft');
+		} else if (op.type === 'SWITCH_POKEMON') {
+			// For draft purposes, we treat the original SWITCH op as an APPLY_SWITCH to get immediate UI feedback.
+			const draftOp = { ...op, type: 'APPLY_SWITCH' };
+			applyOperationLogic(null, draftOp, 'draft');
 		} else if (op.payload.target && op.payload.target.startsWith('slot')) {
 			const draftRep = nodecg.Replicant(op.payload.target.replace('slot', 'draft_slot'));
 			applyOperationLogic(draftRep, op, 'draft');
 		} else {
-			// Handle other non-slot-based operations
+			// Handle other non-slot-based operations like ATTACK
 			applyOperationLogic(null, op, 'draft');
 		}
 
-		// Add the operation to the queue
-		op.id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-		operationQueue.value.push(op);
-		nodecg.log.info(`Operation queued: ${op.type}`);
+		// If the operation is a switch, split it into two separate operations for the LIVE queue
+		if (op.type === 'SWITCH_POKEMON') {
+			const slideOutOp = {
+				type: 'SLIDE_OUT',
+				payload: op.payload,
+				priority: 5,
+				id: `${Date.now()}-slideout-${Math.random().toString(36).substring(2, 9)}`
+			};
+			const applySwitchOp = {
+				type: 'APPLY_SWITCH',
+				payload: op.payload,
+				priority: 6,
+				id: `${Date.now()}-applyswitch-${Math.random().toString(36).substring(2, 9)}`
+			};
+			operationQueue.value.push(slideOutOp, applySwitchOp);
+			nodecg.log.info(`Split SWITCH_POKEMON into SLIDE_OUT (prio 5) and APPLY_SWITCH (prio 6)`);
+		} else {
+			// For all other operations, add them to the queue as usual
+			op.id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+			op.priority = getPriorityForOperation(op.type);
+			operationQueue.value.push(op);
+			nodecg.log.info(`Operation queued: ${op.type} with priority ${op.priority}`);
+		}
 
 		// If auto-apply is on, try to process the queue.
 		if (ptcgSettings.value && ptcgSettings.value.autoApply) {
@@ -904,36 +978,93 @@ module.exports = function (nodecg) {
 	 * Applies all operations in the queue to the LIVE state, with delays for animations.
 	 * This function implements a locking and buffering mechanism to handle "auto-apply".
 	 */
-	let isApplyingQueue = false;
+	function doesBatchRequireAck(batch) {
+		        const animationHeavyTypes = [
+					'ATTACK',
+					'SET_DAMAGE',
+					'SET_AILMENTS',
+					'KO_POKEMON',
+					'SLIDE_OUT', // New
+					'APPLY_SWITCH', // New
+					'REPLACE_POKEMON',
+					'SET_POKEMON',
+		            'REMOVE_POKEMON', // This triggers EXIT_POKEMON animation
+					'EXIT_POKEMON',
+					'ENTER_POKEMON',
+					'SET_TOOLS',
+					'SET_ENERGIES'
+				];		return batch.some(op => animationHeavyTypes.includes(op.type));
+	}
+
+	let processorStatus = 'IDLE'; // IDLE, PROCESSING
+	let pendingOperations = [];
+	let ackTimeout = null; // Timeout for waiting for animation acknowledgement
+
+	// Gets a timeout duration based on priority. Higher priority (lower number) = longer animation.
+	function getTimeoutForPriority(priority) {
+		switch (priority) {
+			case 0: return 3000; // Attack animations
+			case 1: return 1500;
+			case 2: return 1500;
+			case 3: return 2000; // KO animations
+			case 4: return 1500;
+			case 5: return 1500; // Switch/Evolve animations
+			case 6: return 1500;
+			default: return 1500;
+		}
+	}
+
+	// Shared logic for when an animation batch is considered complete (either by ACK or timeout)
+	function handleAnimationComplete() {
+		if (ackTimeout) {
+			clearTimeout(ackTimeout);
+			ackTimeout = null;
+		}
+		if (processorStatus !== 'PROCESSING') return; // Avoid multiple triggers
+
+		nodecg.log.info('Animation batch complete. Processing next batch.');
+		processorStatus = 'IDLE';
+		nodecg.sendMessage('applyQueue');
+	}
+
 	nodecg.listenFor('applyQueue', (data, callback) => {
-		// If the queue is already being processed, do nothing. The new operations will be handled in the next cycle.
-		if (isApplyingQueue) {
-			nodecg.log.info('Queue application is already in progress. New operations are buffered.');
-			if (callback) callback(null, 'Queue application buffered.');
+		if (processorStatus === 'PROCESSING') {
+			nodecg.log.info('Queue processor is busy.');
+			if (callback) callback(null, 'Processor is busy.');
 			return;
 		}
 
-		// If the queue is empty, do nothing.
-		if (!operationQueue.value || operationQueue.value.length === 0) {
-			if (callback) callback(null, 'Queue is empty.');
+		if (pendingOperations.length === 0) {
+			if (!operationQueue.value || operationQueue.value.length === 0) {
+				if (callback) callback(null, 'Queue is empty.');
+				return;
+			}
+			const sortedQueue = [...operationQueue.value].sort((a, b) => a.priority - b.priority);
+			pendingOperations = sortedQueue;
+			operationQueue.value = [];
+		}
+
+		if (pendingOperations.length === 0) {
+			processorStatus = 'IDLE';
+			nodecg.log.info('All operation batches processed.');
+			syncLiveToDraft();
+			if (callback) callback(null, 'All batches processed.');
 			return;
 		}
 
-		// 1. Lock the process and take a snapshot of the queue for processing.
-		isApplyingQueue = true;
-		const opsToProcess = [...operationQueue.value];
-		operationQueue.value = []; // Clear the queue immediately.
-		nodecg.log.info(`Applying queue with ${opsToProcess.length} operations.`);
+		processorStatus = 'PROCESSING';
 
-		try {
-			// 2. Sort queue by priority, then by time (implicit).
-			const sortedQueue = opsToProcess.sort((a, b) => (a.payload.priority || 99) - (b.payload.priority || 99));
+		const currentPriority = pendingOperations[0].priority;
+		const batchToProcess = pendingOperations.filter(op => op.priority === currentPriority);
+		const remainingOps = pendingOperations.filter(op => op.priority !== currentPriority);
+		
+		pendingOperations = remainingOps;
 
-			// 3. Separate operations into animation groups.
-			const attackOps = sortedQueue.filter(op => op.type === 'ATTACK');
-			const nonAttackOps = sortedQueue.filter(op => op.type !== 'ATTACK');
-			
-			// Group attack operations (same as before)
+		nodecg.log.info(`Processing batch with priority ${currentPriority} (${batchToProcess.length} ops).`);
+
+		// Separate attack operations to build attack-fx message
+		const attackOps = batchToProcess.filter(op => op.type === 'ATTACK');
+		if (attackOps.length > 0) {
 			const attackGroups = new Map();
 			attackOps.forEach(op => {
 				const { attackerSlotId, attackName, damage, target, targets } = op.payload;
@@ -952,7 +1083,6 @@ module.exports = function (nodecg) {
 				});
 			});
 
-			// --- 4. Trigger Animations ---
 			attackGroups.forEach(group => {
 				const attackerRep = nodecg.Replicant(`live_${group.attacker}`);
 				if (attackerRep.value && attackerRep.value.cardId) {
@@ -965,81 +1095,61 @@ module.exports = function (nodecg) {
 				nodecg.log.info(`Sending attack-fx for ${group.moveName}`);
 				nodecg.sendMessage('attack-fx', group);
 			});
-
-			const promoteOps = nonAttackOps.filter(op => op.type === 'SWITCH_POKEMON');
-			const removeOps = nonAttackOps.filter(op => op.type === 'REMOVE_POKEMON');
-			const koOps = nonAttackOps.filter(op => op.type === 'KO_POKEMON');
-			const replaceOps = nonAttackOps.filter(op => op.type === 'REPLACE_POKEMON');
-			const otherOps = sortedQueue.filter(op => !promoteOps.includes(op) && !removeOps.includes(op) && !koOps.includes(op) && !replaceOps.includes(op));
-
-			otherOps.forEach(op => {
-				if (op.type === 'SET_POKEMON' && op.payload.target && op.payload.target.startsWith('slot')) {
-					const liveRep = nodecg.Replicant(`live_${op.payload.target}`);
-					if (liveRep.value && !liveRep.value.cardId) {
-						nodecg.sendMessage('playAnimation', { type: 'ENTER_POKEMON', target: op.payload.target.replace('slot', 'slot-') });
-					}
-				}
-			});
-			promoteOps.forEach(op => nodecg.sendMessage('playAnimation', { type: 'SWITCH_POKEMON', source: op.payload.source.replace('slot', 'slot-'), target: op.payload.target.replace('slot', 'slot-') }));
-			removeOps.forEach(op => nodecg.sendMessage('playAnimation', { type: 'EXIT_POKEMON', target: op.payload.target.replace('slot', 'slot-') }));
-			koOps.forEach(op => nodecg.sendMessage('playAnimation', { type: 'KO_POKEMON', target: op.payload.target.replace('slot', 'slot-') }));
-			replaceOps.forEach(op => {
-				let animationType = 'REPLACE_POKEMON';
-				if (op.payload.actionType === 'Evolve') animationType = 'EVOLVE_POKEMON';
-				else if (op.payload.actionType === 'Devolve') animationType = 'DEVOLVE_POKEMON';
-				nodecg.sendMessage('playAnimation', { type: animationType, target: op.payload.target.replace('slot', 'slot-'), cardId: op.payload.cardId });
-			});
-
-			// --- 5. Apply Data Changes ---
-			otherOps.forEach(op => {
-				if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
-					applyOperationLogic(nodecg.Replicant(`live_${op.payload.target}`), op, 'live');
-				} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
-					applyOperationLogic(live_stadium, op, 'live');
-				} else if (op.payload.target && op.payload.target.startsWith('slot')) {
-					applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live');
-				} else {
-					applyOperationLogic(null, op, 'live');
-				}
-			});
-
-			let maxDelay = 0;
-			if (attackGroups.size > 0) maxDelay = Math.max(maxDelay, 2000);
-			if (promoteOps.length > 0 || removeOps.length > 0 || replaceOps.length > 0) {
-				const delay = 500;
-				maxDelay = Math.max(maxDelay, delay);
-				setTimeout(() => {
-					promoteOps.forEach(op => applyOperationLogic(null, op, 'live'));
-					removeOps.forEach(op => applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live'));
-					replaceOps.forEach(op => applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live'));
-				}, delay);
-			}
-			if (koOps.length > 0) {
-				const delay = 1500;
-				maxDelay = Math.max(maxDelay, delay);
-				setTimeout(() => {
-					koOps.forEach(op => applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live'));
-				}, delay);
-			}
-
-			// 6. Schedule the process to end, release the lock, and chain to the next batch of operations.
-			setTimeout(() => {
-				nodecg.log.info('Queue batch applied.');
-				isApplyingQueue = false; // Release the lock.
-				if (callback) callback(null, 'Queue batch applied successfully.');
-
-				// IMPORTANT: Check if new operations were buffered during the animation and start the next cycle.
-				if (operationQueue.value.length > 0) {
-					nodecg.log.info('Buffered operations found. Starting next apply cycle.');
-					nodecg.sendMessage('applyQueue');
-				}
-			}, maxDelay);
-
-		} catch (e) {
-			nodecg.log.error('Failed to apply queue:', e);
-			isApplyingQueue = false; // Ensure lock is released on error.
-			if (callback) callback(e);
 		}
+
+		// Send animation messages
+		batchToProcess.forEach(op => {
+			switch (op.type) {
+				case 'SLIDE_OUT': // New operation for switch animation
+					nodecg.sendMessage('playAnimation', { type: 'SWITCH_POKEMON', source: op.payload.source.replace('slot', 'slot-'), target: op.payload.target.replace('slot', 'slot-') });
+					break;
+				case 'REMOVE_POKEMON':
+					nodecg.sendMessage('playAnimation', { type: 'EXIT_POKEMON', target: op.payload.target.replace('slot', 'slot-') });
+					break;
+				case 'KO_POKEMON':
+					nodecg.sendMessage('playAnimation', { type: 'KO_POKEMON', target: op.payload.target.replace('slot', 'slot-') });
+					break;
+				case 'REPLACE_POKEMON':
+					let animationType = 'REPLACE_POKEMON';
+					if (op.payload.actionType === 'Evolve') animationType = 'EVOLVE_POKEMON';
+					else if (op.payload.actionType === 'Devolve') animationType = 'DEVOLVE_POKEMON';
+					nodecg.sendMessage('playAnimation', { type: animationType, target: op.payload.target.replace('slot', 'slot-'), cardId: op.payload.cardId });
+					break;
+			}
+		});
+
+		// Apply data changes to LIVE replicants
+		batchToProcess.forEach(op => {
+			if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
+				applyOperationLogic(nodecg.Replicant(`live_${op.payload.target}`), op, 'live');
+			} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
+				applyOperationLogic(live_stadium, op, 'live');
+			} else if (op.payload.target && op.payload.target.startsWith('slot')) {
+				applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live');
+			} else {
+				// For ops like APPLY_SWITCH that don't have a single target replicant
+				applyOperationLogic(null, op, 'live');
+			}
+		});
+
+		if (doesBatchRequireAck(batchToProcess)) {
+			nodecg.log.info(`Batch (Prio ${currentPriority}) applied. Waiting for frontend acknowledgement.`);
+			const timeoutDuration = getTimeoutForPriority(currentPriority);
+            ackTimeout = setTimeout(() => {
+                nodecg.log.warn(`Acknowledgement timeout for priority ${currentPriority}! Forcing next batch.`);
+                handleAnimationComplete();
+            }, timeoutDuration);
+		} else {
+			nodecg.log.info(`Batch (Prio ${currentPriority}) was data-only. Proceeding to next batch immediately.`);
+			processorStatus = 'IDLE';
+			nodecg.sendMessage('applyQueue'); // Trigger next cycle immediately
+		}
+	});
+
+	nodecg.listenFor('animationBatchComplete', (data, callback) => {
+		nodecg.log.info(`Received 'animationBatchComplete'.`);
+		handleAnimationComplete();
+		if (callback) callback(null, 'Acknowledged.');
 	});
 
 	/**
