@@ -747,6 +747,10 @@ module.exports = function (nodecg) {
                         case 'SET_TURN': {
                 const turnRep = nodecg.Replicant(`${prefix}currentTurn`);
                 turnRep.value = payload.side;
+
+                // Clear all selections when the turn changes.
+                selections.value = [];
+
                 // When a turn ends, reset all individual action statuses for both players
                 ['L', 'R'].forEach(side => {
                     actionTypes.forEach(action => {
