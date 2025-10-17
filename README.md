@@ -19,37 +19,6 @@ PTCG-Telopは、[NodeCG](https://www.nodecg.dev/)フレームワークをベー�
 
 <img width="1920" height="1080" alt="Screenshot 2025-09-02 14-36-42" src="https://github.com/user-attachments/assets/776332a4-29ee-46a7-bfb4-e97b4e49c82d" />
 
-## ディレクトリ構造
-
-このプロジェクトは、NodeCGの`bundles`ディレクトリ内に配置されることを前提としています。主要なファイルとディレクトリの役割は以下の通りです。
-
-```
-nodecg/
-├── assets/
-│   └── ptcg-telop/
-│       ├── element/        (UI要素のフォルダ)
-│       ├── icons/          (エネルギーや異常状態アイコンなどのフォルダ)
-│       ├── fx/             (エフェクト動画のフォルダ)
-│       ├── font/           (フォントのフォルダ)
-│       ├── card_img_*/     (自動作成、カード画像のフォルダ)
-│       └── database_*.json (自動作成、カードデータベースのファイル)
-├── bundles/
-│   └── ptcg-telop/
-│       ├── dashboard/      (管理画面のパネル)
-│       ├── graphics/       (配信に表示される画面)
-│       ├── extension/      (サーバーサイドのロジック)
-│       ├── python/         (カード情報取得用スクリプト)
-│       ├── i18n/           (多言語対応用ファイル)
-│       ├── package.json    (バンドルの設定ファイル)
-│       └── その他のファイル
-└── ... (NodeCGのその他ファイル)
-```
-
--   **`assets/ptcg-telop/`**: 配信で使う背景画像や動画などを配置する場所です。
--   **`dashboard/`**: `http://localhost:9090`でアクセスする操作パネルのファイル群です。
--   **`graphics/`**: OBSなどに取り込むための、配信用グラフィック画面のファイル群です。
--   **`python/`**: デッキコードからカード情報を取得し、データベースを生成するためのスクリプト群です。
-
 ## 前提条件
 
 このバンドルを動作させるには、以下のソフトウェアがインストールされている必要があります。
@@ -122,6 +91,37 @@ nodecg/
     pip install -r requirements.txt
     ```
     *もし`requirements.txt`がなければ、`card_utils_jp.py`や`extract_deck_cards_jp.py`でimportしているライブラリ（例: `requests`, `beautifulsoup4`など）を手動でインストールしてください。*
+
+## ディレクトリ構造
+
+このプロジェクトは、NodeCGの`bundles`ディレクトリ内に配置されることを前提としています。主要なファイルとディレクトリの役割は以下の通りです。
+
+```
+nodecg/
+├── assets/
+│   └── ptcg-telop/
+│       ├── element/        (UI要素のフォルダ)
+│       ├── icons/          (エネルギーや異常状態アイコンなどのフォルダ)
+│       ├── fx/             (エフェクト動画のフォルダ)
+│       ├── font/           (フォントのフォルダ)
+│       ├── card_img_*/     (自動作成、カード画像のフォルダ)
+│       └── database_*.json (自動作成、カードデータベースのファイル)
+├── bundles/
+│   └── ptcg-telop/
+│       ├── dashboard/      (管理画面のパネル)
+│       ├── graphics/       (配信に表示される画面)
+│       ├── extension/      (サーバーサイドのロジック)
+│       ├── python/         (カード情報取得用スクリプト)
+│       ├── i18n/           (多言語対応用ファイル)
+│       ├── package.json    (バンドルの設定ファイル)
+│       └── その他のファイル
+└── ... (NodeCGのその他ファイル)
+```
+
+-   **`assets/ptcg-telop/`**: 配信で使う背景画像や動画などを配置する場所です。
+-   **`dashboard/`**: `http://localhost:9090`でアクセスする操作パネルのファイル群です。
+-   **`graphics/`**: OBSなどに取り込むための、配信用グラフィック画面のファイル群です。
+-   **`python/`**: デッキコードからカード情報を取得し、データベースを生成するためのスクリプト群です。
 
 ## 使用方法
 

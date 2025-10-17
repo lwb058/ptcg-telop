@@ -1783,10 +1783,10 @@
                 if (hasPlayerBench) attackTargetField.appendChild(playerBenchRow);
             }
 
-            // --- 攻击模块的拖拽换位逻辑 ---
+            // --- Logic for dragging and dropping to swap Pokémon in the targeting view --- 
             attackTargetField.addEventListener('dragstart', e => {
                 const sourceCard = e.target.closest('.pokemon-target-card');
-                // 只允许拖动实际的宝可梦卡牌，而不是空位
+                // Allow dragging only if it's not an empty slot
                 if (sourceCard && !sourceCard.classList.contains('empty-target-slot')) {
                     const sourceSlotId = sourceCard.dataset.slotId;
                     e.dataTransfer.setData('application/ptcg-pokemon-swap', 'true');
@@ -1796,12 +1796,11 @@
             });
 
             attackTargetField.addEventListener('dragover', e => {
-                // 检查是否正在拖动可交换的宝可梦
+                // Check if draging a Pokémon swap
                 if (e.dataTransfer.types.includes('application/ptcg-pokemon-swap')) {
                     const targetCard = e.target.closest('.pokemon-target-card');
-                    if (targetCard) {
-                        e.preventDefault(); // 允许放置
-                        // 添加视觉高亮提示
+                    if (targetCard) { //Add highlight
+                        e.preventDefault();
                         targetCard.style.boxShadow = '0 0 10px 3px #3498db';
                     }
                 }
@@ -1810,7 +1809,7 @@
             attackTargetField.addEventListener('dragleave', e => {
                 const targetCard = e.target.closest('.pokemon-target-card');
                 if (targetCard) {
-                    // 移除视觉高亮
+                    // Remove highlight
                     targetCard.style.boxShadow = '';
                 }
             });
@@ -1820,20 +1819,20 @@
                 const dropTarget = e.target.closest('.pokemon-target-card');
                 if (!dropTarget) return;
 
-                dropTarget.style.boxShadow = ''; // 放置后总是移除高亮
+                dropTarget.style.boxShadow = ''; // always remove highlight after drop
 
                 if (e.dataTransfer.types.includes('application/ptcg-pokemon-swap')) {
                     const sourceSlotId = e.dataTransfer.getData('text/plain');
                     const destinationSlotId = dropTarget.dataset.slotId;
 
-                    // 确保有来源、有目标，且两者不相同
+                    // Make sure both slots are valid and not the same
                     if (sourceSlotId && destinationSlotId && sourceSlotId !== destinationSlotId) {
                         const sourceSide = sourceSlotId.charAt(4);
                         const destinationSide = destinationSlotId.charAt(4);
 
-                        // 核心逻辑：只在同一边时才执行交换
+                        // Only allow swaps within the same side (player or opponent)
                         if (sourceSide === destinationSide) {
-                            // 将交换操作加入队列
+                            // Queue the switch operation
                             queueOperation('SWITCH_POKEMON', {
                                 source: sourceSlotId,
                                 target: destinationSlotId

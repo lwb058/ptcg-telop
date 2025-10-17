@@ -16,32 +16,6 @@
 
 <img width="1920" height="1080" alt="Screenshot 2025-09-02 14-36-42" src="https://github.com/user-attachments/assets/776332a4-29ee-46a7-bfb4-e97b4e49c82d" />
 
-## 目录结构
-
-这个项目设计为放置在 NodeCG 的`bundles`目录下。主要文件和目录的功能如下。
-
-```
-nodecg/
-├── assets/
-│   └── ptcg-telop/
-│       ├── element/        (UI元素文件夹)
-│       ├── icons/          (能量、异常状态等图标的文件夹)
-│       ├── fx/             (特效视频文件夹)
-│       ├── font/           (字体文件夹)
-│       ├── card_img_*/     (自动创建的卡图文件夹)
-│       └── database_*.json (自动创建的卡牌数据库文件)
-├── bundles/
-│   └── ptcg-telop/
-│       ├── dashboard/      (后台管理面板)
-│       ├── graphics/       (在直播中显示的画面)
-│       ├── extension/      (服务器端逻辑)
-│       ├── python/         (卡牌信息的爬虫脚本)
-│       ├── i18n/           (多语言支持文件)
-│       ├── package.json    (Bundle的配置文件)
-│       └── 其他文件
-└── ... (NodeCG的其他文件)
-```
-
 -   **`assets/ptcg-telop/`**: 用于放置直播中使用的背景图片、视频等素材。
 -   **`dashboard/`**: 可通过 `http://localhost:9090` 访问的操作面板文件。
 -   **`graphics/`**: 用于导入 OBS 等软件的直播用图形画面文件。
@@ -119,6 +93,32 @@ nodecg/
     pip install -r requirements.txt
     ```
     *如果 `requirements.txt` 不存在，请手动安装 `card_utils_jp.py` 或 `extract_deck_cards_jp.py` 中导入的库（例如 `requests`, `beautifulsoup4` 等）。*
+
+## 目录结构
+
+这个项目设计为放置在 NodeCG 的`bundles`目录下。主要文件和目录的功能如下。
+
+```
+nodecg/
+├── assets/
+│   └── ptcg-telop/
+│       ├── element/        (UI元素文件夹)
+│       ├── icons/          (能量、异常状态等图标的文件夹)
+│       ├── fx/             (特效视频文件夹)
+│       ├── font/           (字体文件夹)
+│       ├── card_img_*/     (自动创建的卡图文件夹)
+│       └── database_*.json (自动创建的卡牌数据库文件)
+├── bundles/
+│   └── ptcg-telop/
+│       ├── dashboard/      (后台管理面板)
+│       ├── graphics/       (在直播中显示的画面)
+│       ├── extension/      (服务器端逻辑)
+│       ├── python/         (卡牌信息的爬虫脚本)
+│       ├── i18n/           (多语言支持文件)
+│       ├── package.json    (Bundle的配置文件)
+│       └── 其他文件
+└── ... (NodeCG的其他文件)
+```
 
 ## 使用方法
 

@@ -16,37 +16,6 @@ It allows for real-time management of player board states (HP, damage, energy, t
 
 <img width="1920" height="1080" alt="Screenshot 2025-09-02 14-36-42" src="https://github.com/user-attachments/assets/776332a4-29ee-46a7-bfb4-e97b4e49c82d" />
 
-## Directory Structure
-
-This project is intended to be placed within NodeCG's `bundles` directory. The roles of the main files and directories are as follows.
-
-```
-nodecg/
-├── assets/
-│   └── ptcg-telop/
-│       ├── element/        (Folder for UI elements)
-│       ├── icons/          (Folder for energy, condition icons, etc.)
-│       ├── fx/             (Folder for effect videos)
-│       ├── font/           (Folder for fonts)
-│       ├── card_img_*/     (Auto-created folder for card images)
-│       └── database_*.json (Auto-created file for the card database)
-├── bundles/
-│   └── ptcg-telop/
-│       ├── dashboard/      (Panels for the dashboard)
-│       ├── graphics/       (Graphics to be displayed on stream)
-│       ├── extension/      (Server-side logic)
-│       ├── python/         (Scripts for fetching card information)
-│       ├── i18n/           (Files for multi-language support)
-│       ├── package.json    (Bundle configuration file)
-│       └── Other files
-└── ... (Other NodeCG files)
-```
-
--   **`assets/ptcg-telop/`**: A place to put background images, videos, etc., used in the stream.
--   **`dashboard/`**: The files for the control panels accessed at `http://localhost:9090`.
--   **`graphics/`**: The graphic screen files to be imported into software like OBS.
--   **`python/`**: Scripts for fetching card information from deck codes and generating the database.
-
 ## Prerequisites
 
 The following software must be installed to run this bundle.
@@ -119,6 +88,37 @@ For developers or those who prefer to set up the environment manually.
     pip install -r requirements.txt
     ```
     *If `requirements.txt` does not exist, please manually install the libraries imported in `card_utils_jp.py` or `extract_deck_cards_jp.py` (e.g., `requests`, `beautifulsoup4`).*
+
+## Directory Structure
+
+This project is intended to be placed within NodeCG's `bundles` directory. The roles of the main files and directories are as follows.
+
+```
+nodecg/
+├── assets/
+│   └── ptcg-telop/
+│       ├── element/        (Folder for UI elements)
+│       ├── icons/          (Folder for energy, condition icons, etc.)
+│       ├── fx/             (Folder for effect videos)
+│       ├── font/           (Folder for fonts)
+│       ├── card_img_*/     (Auto-created folder for card images)
+│       └── database_*.json (Auto-created file for the card database)
+├── bundles/
+│   └── ptcg-telop/
+│       ├── dashboard/      (Panels for the dashboard)
+│       ├── graphics/       (Graphics to be displayed on stream)
+│       ├── extension/      (Server-side logic)
+│       ├── python/         (Scripts for fetching card information)
+│       ├── i18n/           (Files for multi-language support)
+│       ├── package.json    (Bundle configuration file)
+│       └── Other files
+└── ... (Other NodeCG files)
+```
+
+-   **`assets/ptcg-telop/`**: A place to put background images, videos, etc., used in the stream.
+-   **`dashboard/`**: The files for the control panels accessed at `http://localhost:9090`.
+-   **`graphics/`**: The graphic screen files to be imported into software like OBS.
+-   **`python/`**: Scripts for fetching card information from deck codes and generating the database.
 
 ## Usage
 
