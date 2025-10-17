@@ -65,7 +65,7 @@ nodecg/
 
 1.  访问本仓库的 [**Releases**](https://github.com/lwb058/ptcg-telop/releases) 页面。
 2.  从最新版本的`Assets`中，下载`NodeCG_PTCG_vX.X.X.zip`并解压。
-3.  (如果尚未安装) 请安装 [Node.js](https://nodejs.org/) 和 [Python](https://www.python.org/)。
+3.  (如果尚未安装) 请安装 [Node.js](https://nodejs.org/) 和 [Python](https://www.python.org/)。**【重要】安装Python时，请务必在安装程序的第一个界面勾选`Add Python to PATH`复选框。**
 4.  双击解压后文件夹中的`install.bat`来执行。所需的组件将会被自动安装。
 5.  安装完成后，双击`start.bat`即可启动系统。
 

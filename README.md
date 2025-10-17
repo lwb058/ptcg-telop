@@ -68,7 +68,7 @@ nodecg/
 
 1.  本リポジトリの [**Releases**](https://github.com/lwb058/ptcg-telop/releases) ページにアクセスします。
 2.  最新リリースの`Assets`欄から、`NodeCG_PTCG_vX.X.X.zip` をダウンロードし、解凍します。
-3.  （もし未導入の場合）[Node.js](https://nodejs.org/) と [Python](https://www.python.org/) をインストールします。
+3.  （もし未導入の場合）[Node.js](https://nodejs.org/) と [Python](https://www.python.org/) をインストールします。**【重要】Pythonをインストールする際は、インストーラーの最初の画面で`Add Python to PATH`のチェックボックスを必ずオンにしてください。**
 4.  解凍したフォルダの中にある `install.bat` をダブルクリックして実行します。必要なコンポーネントが自動でインストールされます。
 5.  インストール完了後、`start.bat` をダブルクリックするとシステムが起動します。
 
