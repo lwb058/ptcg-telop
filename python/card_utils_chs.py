@@ -334,8 +334,11 @@ def _transform_api_data(api_data, card_details, set_name_map):
         card_details['subtype'] = supertype_api.lower()
         if card_details['subtype'] == 'special energy':
             card_details['energy'] = {'text': ' '.join(data.get('description', '').split())}
-        else:
-            card_details['energy'] = {}
+        elif card_details['subtype'] == 'basic energy':
+            # For basic energy, extract the type from the name and set it as a string.
+            energy_type_chs = re.sub(r'基本|能量', '', card_details['name']).strip()
+            energy_type_jp = CHS_TO_JP_ENERGY_MAP.get(energy_type_chs, energy_type_chs)
+            card_details['energy'] = energy_type_jp
     
     else:
         card_details['supertype'] = supertype_api.lower() if supertype_api else None

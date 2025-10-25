@@ -377,9 +377,14 @@ def get_card_details(card_id, html_content=None):
                 card_details['trainer']['attacks'] = attacks_list
         
         elif card_details['supertype'] == 'energy':
-            card_details['energy'] = {}
-            text_p = right_box.find('p', recursive=False)
-            if text_p: card_details['energy']['text'] = parse_energy_icons(text_p)
+            if card_details['subtype'] == 'basic energy':
+                # For basic energy, extract the type from the name and set it as a string.
+                # Use regex to remove "基本" and "エネルギー" to get the energy type.
+                card_details['energy'] = re.sub(r'基本|エネルギー', '', card_name).strip()
+            else: # For special energy
+                card_details['energy'] = {}
+                text_p = right_box.find('p', recursive=False)
+                if text_p: card_details['energy']['text'] = parse_energy_icons(text_p)
 
         # --- Additional Rules & Rarity ---
         add_rule_heading = soup.find('h2', string='特別なルール')
