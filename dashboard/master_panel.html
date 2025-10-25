@@ -1562,69 +1562,75 @@
                 }
 
                 const energyIcons = energyButtonsContainer.querySelectorAll('img[data-energy-type]');
-
-                // Clear previously rendered special energy buttons
                 energyButtonsContainer.querySelectorAll('.special-energy-btn').forEach(btn => btn.remove());
 
-                if (!settings.showDeckEnergyOnly || !db || !deckLVal || !deckRVal || !displayTurn) {
-                    // If setting is off, data is missing, or turn is not set, show all buttons as a fallback.
+                if (!db) return; // Need database to proceed
+
+                const specialEnergies = new Map();
+
+                if (settings.showDeckEnergyOnly) {
+                    // --- DECK-ONLY LOGIC ---
+                    if (!deckLVal || !deckRVal || !displayTurn) {
+                        // Hide all if data is missing
+                        energyIcons.forEach(icon => icon.parentElement.style.display = 'none');
+                        return;
+                    }
+
+                    const deckEnergies = new Set();
+                    const targetDeck = displayTurn === 'L' ? deckLVal.cards : deckRVal.cards;
+                    const uniqueCardIds = [...new Set(targetDeck || [])];
+
+                    uniqueCardIds.forEach(id => {
+                        const card = db[id];
+                        if (card && card.supertype === 'energy') {
+                            if (card.subtype === 'basic energy') {
+                                const energyTypeRaw = card.name.replace(/基本|能量|エネルギー/g, '').trim();
+                                if (energyTypeRaw) {
+                                    const typeConversionMap = { '火': '炎', '斗': '闘', '恶': '悪', '钢': '鋼', '龙': '竜' };
+                                    const energyType = typeConversionMap[energyTypeRaw] || energyTypeRaw;
+                                    deckEnergies.add(energyType);
+                                }
+                            } else {
+                                if (!specialEnergies.has(id)) {
+                                    specialEnergies.set(id, card);
+                                }
+                            }
+                        }
+                    });
+
+                    energyIcons.forEach(icon => {
+                        const energyType = icon.dataset.energyType;
+                        const parentButton = icon.parentElement;
+                        if (parentButton.tagName !== 'BUTTON') return;
+                        // Show only if it's in the deck
+                        if (deckEnergies.has(energyType)) {
+                            parentButton.style.display = '';
+                        } else {
+                            parentButton.style.display = 'none';
+                        }
+                    });
+
+                } else {
+                    // --- SHOW-ALL LOGIC ---
+                    // 1. Show all basic energy icons
                     energyIcons.forEach(icon => {
                         if (icon.parentElement.tagName === 'BUTTON') {
                             icon.parentElement.style.display = '';
                         }
                     });
-                    return;
-                }
 
-                const deckEnergies = new Set();
-                const specialEnergies = new Map(); // Using a Map to preserve insertion order and uniqueness
-                const targetDeck = displayTurn === 'L' ? deckLVal.cards : deckRVal.cards;
-                const uniqueCardIds = [...new Set(targetDeck || [])];
-
-                uniqueCardIds.forEach(id => {
-                    const card = db[id];
-                    if (card && card.supertype === 'energy') {
-                        if (card.subtype === 'basic energy') {
-                            // Updated logic to support Japanese and Chinese basic energy names
-                            const energyTypeRaw = card.name.replace(/基本|能量|エネルギー/g, '').trim();
-
-                            if (energyTypeRaw) {
-                                // Map from Simplified Chinese type characters to Japanese type characters
-                                const typeConversionMap = {
-                                    '火': '炎',
-                                    '斗': '闘',
-                                    '恶': '悪',
-                                    '钢': '鋼',
-                                    '龙': '竜'
-                                };
-
-                                // Convert if it's a Chinese character, otherwise use the original
-                                const energyType = typeConversionMap[energyTypeRaw] || energyTypeRaw;
-
-                                deckEnergies.add(energyType);
-                            }
-                        } else { // Assumes this is a Special Energy
-                            if (!specialEnergies.has(id)) {
+                    // 2. Find all special energies in the entire database
+                    for (const id in db) {
+                        const card = db[id];
+                        if (card && card.supertype === 'energy' && card.subtype !== 'basic energy') {
+                             if (!specialEnergies.has(id)) {
                                 specialEnergies.set(id, card);
                             }
                         }
                     }
-                });
+                }
 
-                energyIcons.forEach(icon => {
-                    const energyType = icon.dataset.energyType;
-                    const parentButton = icon.parentElement;
-
-                    if (parentButton.tagName !== 'BUTTON') return; // Safety check
-
-                    if (energyType === '無' || energyType === '全' || deckEnergies.has(energyType)) {
-                        parentButton.style.display = '';
-                    } else {
-                        parentButton.style.display = 'none';
-                    }
-                });
-
-                // Render special energy buttons
+                // --- COMMON LOGIC: Render all found special energies ---
                 specialEnergies.forEach((card, id) => {
                     const btn = document.createElement('button');
                     btn.className = 'energy-btn special-energy-btn';
