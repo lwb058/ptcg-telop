@@ -44,7 +44,7 @@
   "deck_id": {
     "jp": "デッキID:",
     "chs": "卡组码:",
-    "cht": "牌組碼:",
+    "cht": "牌組編碼:",
     "en": "DeckID:"
   },
   "set": {
@@ -80,7 +80,7 @@
   "settings_auto_side_take": {
     "jp": "気絶する時、サイド自動取得",
     "chs": "气绝时自动拿取奖赏卡",
-    "cht": "氣絕時自動拿取獎賞卡",
+    "cht": "昏厥時自動拿取獎賞卡",
     "en": "Auto Side Take"
   },
   "settings_auto_retreat": {
