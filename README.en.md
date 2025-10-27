@@ -41,6 +41,10 @@ For new users, the easiest way to get started is by using the "All-in-One Packag
 ---
 ### 🚀 How to Update
 
+> **[Important]**
+> Due to fundamental changes in the data logic, users updating from a version prior to v1.5.0 must delete the existing database to avoid compatibility issues and unexpected bugs.
+> After updating, please go to the **SETTINGS panel** and click the "**Clear Database**" button to do so.
+
 If you are already using an older version, you can easily update using the "Patch File".
 
 1.  Go to the [**Releases**](https://github.com/lwb058/ptcg-telop/releases) page of this repository.

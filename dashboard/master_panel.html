@@ -1583,13 +1583,9 @@
                     uniqueCardIds.forEach(id => {
                         const card = db[id];
                         if (card && card.supertype === 'energy') {
-                            if (card.subtype === 'basic energy') {
-                                const energyTypeRaw = card.name.replace(/基本|能量|エネルギー/g, '').trim();
-                                if (energyTypeRaw) {
-                                    const typeConversionMap = { '火': '炎', '斗': '闘', '恶': '悪', '钢': '鋼', '龙': '竜' };
-                                    const energyType = typeConversionMap[energyTypeRaw] || energyTypeRaw;
-                                    deckEnergies.add(energyType);
-                                }
+                            if (card.subtype === 'basic energy' && card.energy) {
+                                // Directly use the 'energy' property from the card data
+                                deckEnergies.add(card.energy);
                             } else {
                                 if (!specialEnergies.has(id)) {
                                     specialEnergies.set(id, card);

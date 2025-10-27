@@ -323,15 +323,8 @@
 
                 if (aData.supertype === 'pokemon') {
                     const typeConversionMap = { '火': '炎', '斗': '闘', '恶': '悪', '钢': '鋼', '龙': '竜' , "无": "無"};
-
-                    const getSortableType = (card) => {
-                        if (card && card.pokemon && card.pokemon.color && card.pokemon.color.length > 0) {
-                            const originalType = card.pokemon.color[0];
-                            return typeConversionMap[originalType] || originalType;
-                        }
-                        return null;
-                    };
-
+                    const getSortableType = (card) => (card?.pokemon?.color?.[0]) ? (typeConversionMap[card.pokemon.color[0]] || card.pokemon.color[0]) : null;
+                    
                     const aSortType = getSortableType(aData);
                     const bSortType = getSortableType(bData);
                     const pokemonTypeComparison = (pokemonTypeOrder[aSortType] || 99) - (pokemonTypeOrder[bSortType] || 99);
@@ -342,7 +335,9 @@
                     const trainerSubtypeComparison = (trainerSubtypeOrder[aData.subtype] || 99) - (trainerSubtypeOrder[bData.subtype] || 99);
                     if (trainerSubtypeComparison !== 0) return trainerSubtypeComparison;
                 } else if (aData.supertype === 'energy') {
-                    const energySubtypeComparison = (energySubtypeOrder[aData.subtype] || 99) - (energySubtypeOrder[bData.subtype] || 99);
+                    const energyTypeComparison = (pokemonTypeOrder[aData.energy] || 99) - (pokemonTypeOrder[bData.energy] || 99);
+                    if (energyTypeComparison !== 0) return energyTypeComparison;
+                    const energySubtypeComparison = (energySubtypeOrder[aData.subtype] || 99) - (energySubtypeOrder[bData.subtype] || 99); // Basic vs Special
                     if (energySubtypeComparison !== 0) return energySubtypeComparison;
                 }
                 return a.id.localeCompare(b.id);
