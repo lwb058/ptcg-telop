@@ -621,16 +621,10 @@ module.exports = function (nodecg) {
 					const isL = side === 'L';
 
 					// As long as a Pokémon is knocked out, the opponent takes prize cards (turn check removed).
-					let prizeCount = 1;
-					if (prevCardId && cardDatabase.value[prevCardId] && cardDatabase.value[prevCardId].addRule) {
-						const addRule = cardDatabase.value[prevCardId].addRule;
-						const m = addRule.match(/がきぜつしたとき、相手はサイドを(\d+)枚とる/);
-						if (m) {
-							prizeCount = parseInt(m[1], 10);
-						}
-						// Compatible with Chinese/English/etc.
-						else if (/2張|昏厥时，对手将拿取2张奖赏卡|2 Prize/i.test(addRule)) prizeCount = 2;
-						else if (/3張|昏厥时，对手将拿取3张奖赏卡|3 Prize/i.test(addRule)) prizeCount = 3;
+					let prizeCount = 1; // Default value
+					const cardData = prevCardId && cardDatabase.value[prevCardId];
+					if (cardData && cardData.pokemon && cardData.pokemon.prize) {
+						prizeCount = parseInt(cardData.pokemon.prize, 10);
 					}
 					// draft_sideL/draft_sideR
 					const draftSideRep = isL ? draft_sideR : draft_sideL;

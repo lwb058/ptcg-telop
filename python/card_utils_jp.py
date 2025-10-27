@@ -389,7 +389,18 @@ def get_card_details(card_id, html_content=None):
         # --- Additional Rules & Rarity ---
         add_rule_heading = soup.find('h2', string='特別なルール')
         if add_rule_heading:
-            card_details['addRule'] = add_rule_heading.find_next_sibling('p').get_text(strip=True)
+            rule_text = add_rule_heading.find_next_sibling('p').get_text(strip=True)
+            card_details['addRule'] = rule_text
+            
+            # Prize Card Logic (from addRule)
+            if card_details.get('supertype') == 'pokemon' and rule_text:
+                # Ensure pokemon object exists
+                if 'pokemon' not in card_details or not card_details['pokemon']:
+                    card_details['pokemon'] = {}
+                
+                prize_match = re.search(r'がきぜつしたとき、相手はサイドを(\d+)枚とる', rule_text)
+                if prize_match:
+                    card_details['pokemon']['prize'] = int(prize_match.group(1))
 
         rarity_img = soup.find('img', src=re.compile(r'ic_rare_.*\.gif'))
         if rarity_img:

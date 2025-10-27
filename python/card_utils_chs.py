@@ -202,16 +202,20 @@ def _transform_api_data(api_data, card_details, set_name_map):
         elif pokemon_attr.get('ancientTrait') == 'Tera':
             card_details['pokemon']['option'] = "Terastal"
 
-        # Rules for ex, V, VMAX, etc.
+        # Rules for ex, V, VMAX, etc. and Prize Card Logic
         if card_details['subtype'] in ['ex', 'V', 'VSTAR', 'GX']:
             if card_details['pokemon'].get('option') == 'TAG TEAM':
                 card_details['addRule'] = f"当TAG TEAM昏厥时，对手将拿取3张奖赏卡。"
+                card_details['pokemon']['prize'] = 3
             elif card_details['pokemon'].get('option') == 'Mega':
                 card_details['addRule'] = f"当超级进化宝可梦ex昏厥时，对手将拿取3张奖赏卡。"
+                card_details['pokemon']['prize'] = 3
             else:
                 card_details['addRule'] = f"当宝可梦{card_details['subtype']}昏厥时，对手将拿取2张奖赏卡。"
+                card_details['pokemon']['prize'] = 2
         elif card_details['subtype'] == 'VMAX':
             card_details['addRule'] = f"当宝可梦VMAX昏厥时，对手将拿取3张奖赏卡。"
+            card_details['pokemon']['prize'] = 3
         
         # Rule for Radiant Pokémon
         elif card_details['name'] and card_details['name'].startswith("光辉") and is_basic:

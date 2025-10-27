@@ -251,12 +251,14 @@ def get_card_details(card_id, html_content=None):
             # Add placeholder rule for all 'ex' cards (will be overwritten by more specific rules)
             if card_details.get('subtype') == 'ex':
                 card_details['addRule'] = '寶可夢ex昏厥時，對手獲得2張獎賞卡。'
+                card_details['pokemon']['prize'] = 2
 
             # Check for Mega Evolution ex (will overwrite the 'ex' rule placeholder)
             card_name = card_details.get('name', '')
             if card_name.startswith('超級') and card_name.endswith('ex'):
                 card_details['pokemon']['option'] = 'Mega'
                 card_details['addRule'] = '超級進化寶可夢ex昏厥時，對手獲得3張獎賞卡。'
+                card_details['pokemon']['prize'] = 3
 
             hp_span = soup.select_one('.mainInfomation .number')
             if hp_span:
@@ -308,6 +310,14 @@ def get_card_details(card_id, html_content=None):
                 if name.startswith('[') and name.endswith('規則]'):
                     rule_text = text.replace('【', '').replace('】', '')
                     card_details['addRule'] = rule_text
+                    
+                    # Prize Card Logic
+                    prize_match = re.search(r'獲得(\d+)張獎賞卡', rule_text)
+                    if prize_match:
+                        if 'pokemon' not in card_details or not card_details['pokemon']:
+                            card_details['pokemon'] = {}
+                        card_details['pokemon']['prize'] = int(prize_match.group(1))
+
                     continue
 
                 if '[特性]' in name:
