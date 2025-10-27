@@ -33,6 +33,20 @@ ENERGY_ICON_MAP = {
     "Colorless.png": "無",
 }
 
+CHT_TO_JP_ENERGY_MAP = {
+    "草": "草",
+    "火": "炎",
+    "水": "水",
+    "雷": "雷",
+    "超": "超",
+    "鬥": "闘",
+    "惡": "悪",
+    "鋼": "鋼",
+    "龍": "竜",
+    "妖": "妖",
+    "無": "無",
+}
+
 RARITY_ICON_MAP = {
     # This map needs to be updated for the CHT website
 }
@@ -223,11 +237,14 @@ def get_card_details(card_id, html_content=None):
                 if '基本能量卡' in header_text:
                     card_details['supertype'] = 'energy'
                     card_details['subtype'] = 'basic energy'
+                    energy_type_cht = ''
                     match = re.search(r'【(.+?)】', card_details.get('name', ''))
                     if match:
-                        card_details['energy'] = match.group(1)
+                        energy_type_cht = match.group(1)
                     else:
-                        card_details['energy'] = re.sub(r'基本|能量', '', card_details.get('name', '')).strip()
+                        energy_type_cht = re.sub(r'基本|能量', '', card_details.get('name', '')).strip()
+                    # Translate CHT energy type to JP for consistency
+                    card_details['energy'] = CHT_TO_JP_ENERGY_MAP.get(energy_type_cht, energy_type_cht)
                 elif '特殊能量卡' in header_text:
                     card_details['supertype'] = 'energy'
                     card_details['subtype'] = 'special energy'
