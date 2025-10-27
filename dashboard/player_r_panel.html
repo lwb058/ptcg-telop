@@ -1130,7 +1130,7 @@
 
                 if (hasAbility) {
                     abilityCheckboxWrapper.classList.remove('hidden'); // Show the container
-                    const supportedLangs = ['jp', 'en', 'chs'];
+                    const supportedLangs = ['jp', 'en', 'chs', 'cht'];
                     const currentLang = language.value;
                     const langSuffix = (currentLang && supportedLangs.includes(currentLang)) ? `${currentLang}` : ''; // fallback to no suffix
                     const abilityIconSrc = `/assets/ptcg-telop/element/ability_${langSuffix}.png`;

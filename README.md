@@ -1,4 +1,4 @@
-[简体中文](./README.chs.md) | [English](./README.en.md)
+[简体中文](./README.chs.md) | [繁体中文](./README.cht.md) | [English](./README.en.md)
 
 ---
 # PTCG-Telop
