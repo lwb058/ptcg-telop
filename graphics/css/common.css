@@ -319,7 +319,7 @@ body, html {
 .bench-energy-cost-container, .bench-skill-ability-tag { position: absolute; left: 0; top: 0; z-index: 1; }
 .bench-energy-cost-container { background-color: rgb(201, 201, 201); border-radius: 3px 9px 9px 3px; height: 20px; display: inline-flex; align-items: center; padding: 0 2px; box-sizing: border-box; gap: 1px; }
 .bench-energy-cost-container .energy-icon { width: 14px; height: 14px; margin-left: 0px; }
-.bench-skill-ability-tag { width: 76px; height: 100%; left:-1px; object-fit: contain; transition: filter 0.3s ease; filter: grayscale(0);}
+.bench-skill-ability-tag { width: 79px; height: 100%; left:-1px; object-fit: contain; transition: filter 0.3s ease; filter: grayscale(0);}
 .bench-skill-name-wrapper { display: flex; align-items: center; gap: 4px; overflow: hidden; padding-left: 80px; }
 .bench-skill-name { font-size: 12px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bench-skill-name.is-ability { color: var(--ability-tag-color); }

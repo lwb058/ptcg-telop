@@ -62,6 +62,16 @@
   font-weight: 400;
 }
 
+@font-face {
+  font-family: 'PTCG-Main-CHT';
+  src: url('/assets/ptcg-telop/font/NotoSans-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'PTCG-Attack-CHT';
+  src: url('/assets/ptcg-telop/font/MantouSans-Regular.ttf') format('truetype');
+  font-weight: 400;
+}
 /* --- 2. Language-based Switching Logic --- */
 
 /* 
@@ -75,15 +85,11 @@ body.lang-jp {
 }
 
 body.lang-chs {
-  /* 
-    FALLBACK: Using Japanese fonts for Chinese until Chinese fonts are provided.
-    Once 'PTCG-Main-CHS' etc. are defined above, change these values.
-  */
   --font-main-lang: 'PTCG-Main-CHS';
   --font-attack-lang: 'PTCG-Attack-CHS';
-  /*
-  --font-main-lang: 'PTCG-Main-CHS';
-  --font-player-name-lang: 'PTCG-PlayerName-CHS';
-  --font-attack-lang: 'PTCG-Attack-CHS';
-  */
+}
+
+body.lang-cht {
+  --font-main-lang: 'PTCG-Main-CHT';
+  --font-attack-lang: 'PTCG-Attack-CHT';
 }

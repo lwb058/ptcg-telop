@@ -2,246 +2,295 @@
   "used": {
     "jp": "使用済",
     "chs": "已使用",
+    "cht": "使用過",
     "en": "Used"
   },
   "move": {
     "jp": "移動",
     "chs": "移动",
+    "cht": "移動",
     "en": "Move"
   },
   "retreat": {
     "jp": "逃げる",
     "chs": "撤退",
+    "cht": "撤退",
     "en": "Retreat"
   },
   "manually_attach": {
     "jp": "手貼り",
     "chs": "手填",
+    "cht": "手貼",
     "en": "Attach"
   },
   "extra_bench": {
     "jp": "エクストラベンチ",
     "chs": "额外备战区",
+    "cht": "額外備戰區",
     "en": "EXTRA BENCH"
   },
   "show": {
     "jp": "表示",
     "chs": "显示",
+    "cht": "顯示",
     "en": "Show"
   },
   "hide": {
     "jp": "非表示",
     "chs": "隐藏",
+    "cht": "隱藏",
     "en": "Hide"
   },
   "deck_id": {
     "jp": "デッキID:",
     "chs": "卡组码:",
+    "cht": "牌組碼:",
     "en": "DeckID:"
   },
   "set": {
     "jp": "セット",
     "chs": "设置",
+    "cht": "設定",
     "en": "Set"
   },
   "player": {
     "jp": "プレイヤー:",
     "chs": "玩家:",
+    "cht": "玩家:",
     "en": "Player:"
   },
   "side": {
     "jp": "サイド:",
     "chs": "奖赏卡:",
+    "cht": "獎賞卡:",
     "en": "Prizes:"
   },
   "lost_zone": {
     "jp": "ロストゾーン:",
     "chs": "放逐区:",
+    "cht": "放逐區:",
     "en": "Lost Zone:"
   },
   "settings_basic": {
     "jp": "基本設定",
     "chs": "基本设置",
+    "cht": "基本設定",
     "en": "Basic"
   },
   "settings_auto_side_take": {
     "jp": "気絶する時、サイド自動取得",
     "chs": "气绝时自动拿取奖赏卡",
+    "cht": "氣絕時自動拿取獎賞卡",
     "en": "Auto Side Take"
   },
   "settings_auto_retreat": {
     "jp": "撤退時自動チェック",
     "chs": "撤退时自动勾选RETREAT",
+    "cht": "撤退時自動勾選RETREAT",
     "en": "Auto Retreat Action"
   },
   "settings_auto_check_supporter": {
     "jp": "サポート表示時自動チェック",
     "chs": "查看支援者时自动勾选SUPPORTER",
+    "cht": "查看支援者時自動勾選SUPPORTER",
     "en": "Auto-check Supporter"
   },
   "settings_auto_trash_tm": {
     "jp": "ワザマシン自動トラッシュ",
     "chs": "结束时自动丢弃招式学习器",
+    "cht": "結束時自動丟棄招式學習器",
     "en": "Auto-Trash TM"
   },
   "settings_show_deck_energy_only": {
     "jp": "デッキ内のエネルギーのみ表示",
     "chs": "仅显示卡组中的基本能量",
+    "cht": "僅顯示牌組中的基本能量",
     "en": "Show Deck Energy Only"
   },
   "settings_auto_double_weakness_damage": {
     "jp": "弱点ダメージ自動2倍",
     "chs": "弱点伤害自动翻倍",
+    "cht": "弱點傷害自動加倍",
     "en": "Auto Double Weakness Damage"
   },
   "settings_regulation": {
     "jp": "レギュレーション",
     "chs": "赛制规则",
+    "cht": "賽制規則",
     "en": "Regulation"
   },
   "settings_enable_lost_zone": {
     "jp": "ロストゾーンを有効",
     "chs": "启用放逐区",
+    "cht": "啟用放逐區",
     "en": "Enable Lost Zone"
   },
   "settings_enable_vstar": {
     "jp": "VSTARパワーを有効",
     "chs": "启用VSTAR力量",
+    "cht": "啟用VSTAR力量",
     "en": "Enable VSTAR Power"
   },
   "settings_hotkey": {
     "jp": "ホットキー",
     "chs": "快捷键",
+    "cht": "快捷鍵",
     "en": "Hotkey"
   },
   "settings_system": {
     "jp": "システム",
     "chs": "系统",
+    "cht": "系統",
     "en": "System"
   },
   "settings_reverse_card_display": {
     "jp": "カードを対側に表示",
     "chs": "在对侧展示卡牌",
+    "cht": "在對側展示卡牌",
     "en": "Reverse Card Display"
   },
   "settings_type_colored_borders": {
     "jp": "タイプ色枠線",
     "chs": "边框随属性变色",
+    "cht": "邊框隨屬性變色",
     "en": "Type-Colored Borders"
   },
   "settings_tool_carry_limit": {
     "jp": "ポケモンのどうぐの所持上限",
     "chs": "道具卡携带上限",
+    "cht": "寶可夢道具持有上限",
     "en": "Tool Carry Limit"
   },
   "settings_language": {
     "jp": "言語",
     "chs": "语言",
+    "cht": "語言",
     "en": "Language"
   },
   "settings_clear_database": {
     "jp": "データベースをクリア",
     "chs": "清空数据库",
+    "cht": "清空資料庫",
     "en": "Clear Database"
   },
   "settings_save_all": {
     "jp": "すべての設定を保存",
     "chs": "保存所有设置",
+    "cht": "儲存所有設定",
     "en": "Save All Settings"
   },
   "settings_support_button": {
     "jp": "開発を応援",
     "chs": "支持开发者",
+    "cht": "支持開發者",
     "en": "Support Developer"
   },
   "donation_modal_title": {
     "jp": "ご応援ありがとうございます！",
     "chs": "感谢您对这个项目的支持！",
+    "cht": "感謝您對這個專案的支持！",
     "en": "Thank you for your support!"
   },
   "select_with_energy": {
     "jp": "エネ付き",
     "en": "w/Energy",
-    "chs": "有能量"
+    "chs": "有能量",
+    "cht": "有能量"
   },
   "select_with_ability": {
     "jp": "特性あり",
     "en": "w/Ability",
-    "chs": "带特性"
+    "chs": "带特性",
+    "cht": "有特性"
   },
   "select_with_rule": {
     "jp": "ルール持ち",
     "en": "w/Rule",
-    "chs": "带规则"
+    "chs": "带规则",
+    "cht": "有規則"
   },
   "select_opponent_all": {
     "jp": "相手全体",
     "en": "Opponent All",
-    "chs": "对方全体"
+    "chs": "对方全体",
+    "cht": "對方全體"
   },
   "clear": {
     "jp": "クリア",
     "en": "Clear",
-    "chs": "清除"
+    "chs": "清除",
+    "cht": "清除"
   },
   "reverse": {
     "jp": "反転",
     "en": "Reverse",
-    "chs": "反选"
+    "chs": "反选",
+    "cht": "反選"
   },
   "deck_viewer_header_image": {
     "jp": "画像",
     "chs": "卡图",
+    "cht": "卡圖",
     "en": "Image"
   },
   "deck_viewer_header_card_name": {
     "jp": "カード名",
     "chs": "卡名",
+    "cht": "卡名",
     "en": "Card Name"
   },
   "deck_viewer_header_type": {
     "jp": "タイプ",
     "chs": "类别",
+    "cht": "類別",
     "en": "Type"
   },
   "deck_viewer_header_id": {
     "jp": "カードID",
     "chs": "卡片ID",
+    "cht": "卡片ID",
     "en": "Card ID"
   },
   "delete": {
     "jp": "削除",
     "chs": "删除",
+    "cht": "刪除",
     "en": "Delete"
   },
   "deck_viewer_show_card_tip": {
     "jp": "クリックして表示",
     "chs": "点击以展示",
+    "cht": "點擊以展示",
     "en": "Click to show"
   },
   "first_move": {
     "jp": "先攻:",
     "chs": "先攻:",
+    "cht": "先攻:",
     "en": "First Move:"
   },
   "attacker": {
     "jp": "アタッカー",
     "chs": "攻击方",
+    "cht": "攻擊方",
     "en": "Attacker"
   },
   "waza": {
     "jp": "ワザ",
     "chs": "招式",
+    "cht": "招式",
     "en": "Move"
   },
   "damage": {
     "jp": "ダメージ",
     "chs": "伤害",
+    "cht": "傷害",
     "en": "Damage"
   },
   "weakness": {
     "jp": "弱点",
     "chs": "弱点",
+    "cht": "弱點",
     "en": "Weakness"
   }
 }
