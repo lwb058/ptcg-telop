@@ -21,6 +21,34 @@
             border-bottom: 2px solid #4f5d7b;
             padding-bottom: 5px;
             margin-bottom: 1em;
+            gap: 15px;
+        }
+        .deck-header h2 {
+            flex-shrink: 0;
+        }
+        .view-controls {
+            flex-grow: 1;
+            text-align: center;
+        }
+        .view-controls .view-btn {
+            padding: 5px 12px;
+            border: 1px solid #4f5d7b;
+            background-color: transparent;
+            color: #f0f0f0;
+            cursor: pointer;
+        }
+        .view-controls .view-btn.active {
+            background-color: #4f5d7b;
+            font-weight: bold;
+        }
+        .view-controls .view-btn:first-child {
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+        }
+        .view-controls .view-btn:last-child {
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+            border-left-width: 0;
         }
         .add-card-controls {
             display: flex;
@@ -34,13 +62,23 @@
             display: flex;
             gap: 20px;
         }
-        .table-wrapper {
-            /* Set a max-height and allow vertical scrolling. */
-            /* Using vh is a bit risky, but 85vh should be safe for most panel sizes. */
+
+        #playerL-deck, #playerR-deck {
+            flex-basis: 0;
+            flex-grow: 1;
+            min-width: 0; /* Prevents content from overflowing flex item */
+        }
+        .table-wrapper, .icon-view-wrapper {
             max-height: 85vh;
             overflow-y: auto;
             border: 1px solid #444;
-            border-top: none;
+        }
+        .table-wrapper {
+             border-top: none;
+        }
+        .icon-view-wrapper {
+            padding: 1em;
+            display: none; /* Initially hidden */
         }
         .deck-table {
             border-collapse: collapse;
@@ -52,16 +90,13 @@
             padding: 8px;
             text-align: left;
         }
-        /* Column widths */
-        .deck-table th:nth-child(1) { width: 8%; }   /* 画像 */
-        .deck-table th:nth-child(2) { width: auto; }  /* カード名 */
-        .deck-table th:nth-child(3) { width: 20%; }  /* タイプ */
-        .deck-table th:nth-child(4) { width: 10%; } /* ID */
-        .deck-table th:nth-child(5) { width: 10%; }   /* 削除ボタン */
-
+        .deck-table th:nth-child(1) { width: 8%; }
+        .deck-table th:nth-child(2) { width: auto; }
+        .deck-table th:nth-child(3) { width: 20%; }
+        .deck-table th:nth-child(4) { width: 10%; }
+        .deck-table th:nth-child(5) { width: 10%; }
         .deck-table th {
             background-color: #3a455c;
-            /* position:sticky is not reliable in NodeCG iframes, so we make the table header scroll with the content. */
         }
         .deck-table img {
             width: 45px;
@@ -79,6 +114,63 @@
             padding: 5px 10px;
             cursor: pointer;
         }
+
+        /* Icon View Styles */
+        .card-category {
+            margin-bottom: 1.5em;
+        }
+        .card-category h3 {
+            border-bottom: 1px solid #4f5d7b;
+            padding-bottom: 5px;
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            color: #a9c0e0;
+        }
+        .card-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .card-grid .card-item {
+            position: relative;
+            width: 90px;
+            text-align: center;
+        }
+        .card-grid .card-item img {
+            width: 100%;
+            cursor: pointer;
+            transition: transform 0.1s ease-in-out;
+            border-radius: 5px;
+        }
+        .card-grid .card-item img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px #a9c0e0;
+        }
+        .card-item .delete-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #e74c3c;
+            color: white;
+            border: 1px solid white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.2s;
+        }
+        .card-item:hover .delete-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
     </style>
 </head>
 <body>
@@ -90,12 +182,16 @@
         <div id="playerL-deck">
             <div class="deck-header">
                 <h2 id="playerL-deck-title">Player L Deck</h2>
+                <div class="view-controls">
+                    <button class="view-btn active" data-view="table" data-player="L">List</button>
+                    <button class="view-btn" data-view="icon" data-player="L">Grid</button>
+                </div>
                 <div class="add-card-controls">
                     <input type="text" id="add-card-id-L" placeholder="Enter Card ID to add">
                     <button id="add-card-btn-L">Add Card</button>
                 </div>
             </div>
-            <div class="table-wrapper">
+            <div class="table-wrapper" id="deckL-table-wrapper">
                 <table class="deck-table">
                     <thead>
                         <tr>
@@ -106,22 +202,25 @@
                             <th id="header-l-delete">削除</th>
                         </tr>
                     </thead>
-                    <tbody id="deckL-body">
-                        <!-- Content will be generated by script -->
-                    </tbody>
+                    <tbody id="deckL-body"></tbody>
                 </table>
             </div>
+            <div class="icon-view-wrapper" id="deckL-icon-wrapper"></div>
         </div>
 
         <div id="playerR-deck">
             <div class="deck-header">
                 <h2 id="playerR-deck-title">Player R Deck</h2>
+                 <div class="view-controls">
+                    <button class="view-btn active" data-view="table" data-player="R">List</button>
+                    <button class="view-btn" data-view="icon" data-player="R">Grid</button>
+                </div>
                 <div class="add-card-controls">
                     <input type="text" id="add-card-id-R" placeholder="Enter Card ID to add">
                     <button id="add-card-btn-R">Add Card</button>
                 </div>
             </div>
-            <div class="table-wrapper">
+            <div class="table-wrapper" id="deckR-table-wrapper">
                 <table class="deck-table">
                     <thead>
                         <tr>
@@ -132,11 +231,10 @@
                             <th id="header-r-delete">削除</th>
                         </tr>
                     </thead>
-                    <tbody id="deckR-body">
-                        <!-- Content will be generated by script -->
-                    </tbody>
+                    <tbody id="deckR-body"></tbody>
                 </table>
             </div>
+            <div class="icon-view-wrapper" id="deckR-icon-wrapper"></div>
         </div>
     </div>
 
@@ -153,29 +251,100 @@
         const i18nStrings = nodecg.Replicant('i18nStrings');
         const language = nodecg.Replicant('language');
 
+        // DOM Elements
         const deckLBody = document.getElementById('deckL-body');
         const deckRBody = document.getElementById('deckR-body');
+        const deckLIconWrapper = document.getElementById('deckL-icon-wrapper');
+        const deckRIconWrapper = document.getElementById('deckR-icon-wrapper');
         const clearButton = document.getElementById('clear-displays-btn');
-
         const addCardIdL = document.getElementById('add-card-id-L');
         const addCardBtnL = document.getElementById('add-card-btn-L');
         const addCardIdR = document.getElementById('add-card-id-R');
         const addCardBtnR = document.getElementById('add-card-btn-R');
-
         const playerLDeckTitle = document.getElementById('playerL-deck-title');
         const playerRDeckTitle = document.getElementById('playerR-deck-title');
 
+        // Global State
+        let deckViews = { L: 'table', R: 'table' };
+
+        // Event Listeners
         clearButton.addEventListener('click', () => {
             cardToShowL.value = '';
             cardToShowR.value = '';
         });
 
+        addCardBtnL.addEventListener('click', () => handleAddCard('L', addCardIdL));
+        addCardIdL.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleAddCard('L', addCardIdL);
+        });
+
+        addCardBtnR.addEventListener('click', () => handleAddCard('R', addCardIdR));
+        addCardIdR.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleAddCard('R', addCardIdR);
+        });
+
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const player = btn.dataset.player;
+                const view = btn.dataset.view;
+                deckViews[player] = view;
+
+                // Update button styles
+                document.querySelectorAll(`.view-btn[data-player="${player}"]`).forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Re-render the deck for the correct player
+                const deck = player === 'L' ? deckL.value : deckR.value;
+                renderPlayerDeck(player, deck, database.value);
+            });
+        });
+
+        // Init
+        NodeCG.waitForReplicants(deckL, deckR, database, playerL_name, playerR_name, i18nStrings, language).then(() => {
+            playerLDeckTitle.textContent = `${playerL_name.value || 'Player L'}'s Deck`;
+            playerRDeckTitle.textContent = `${playerR_name.value || 'Player R'}'s Deck`;
+
+            updateUIText();
+            renderPlayerDeck('L', deckL.value, database.value);
+            renderPlayerDeck('R', deckR.value, database.value);
+        });
+
+        // Replicant Change Listeners
+        playerL_name.on('change', (newValue) => {
+            playerLDeckTitle.textContent = `${newValue || 'Player L'}'s Deck`;
+        });
+        playerR_name.on('change', (newValue) => {
+            playerRDeckTitle.textContent = `${newValue || 'Player R'}'s Deck`;
+        });
+
+        deckL.on('change', (newValue) => renderPlayerDeck('L', newValue, database.value));
+        deckR.on('change', (newValue) => renderPlayerDeck('R', newValue, database.value));
+        language.on('change', () => {
+            updateUIText();
+            renderPlayerDeck('L', deckL.value, database.value);
+            renderPlayerDeck('R', deckR.value, database.value);
+        });
+        assetPaths.on('change', () => {
+            renderPlayerDeck('L', deckL.value, database.value);
+            renderPlayerDeck('R', deckR.value, database.value);
+        });
+
+        // Helper Functions
         const getI18nText = (key) => {
-            if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) {
-                return key; // Fallback to key name if not found
-            }
+            if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) return key;
             return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
         };
+
+        function getCardImageUrl(cardId) {
+            if (!cardId || !assetPaths.value || !assetPaths.value.cardImgPath || !database.value) {
+                return '/assets/ptcg-telop/element/default.jpg';
+            }
+            const db = database.value;
+            const cardData = db ? db[cardId] : null;
+            const imageUrl = cardData ? cardData.image_url : null;
+            const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg';
+            return `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
+        }
 
         function updateUIText() {
             // Deck table headers
@@ -196,9 +365,7 @@
             const cardId = inputEl.value.trim();
             if (cardId) {
                 nodecg.sendMessage('addSingleCardToDeck', { side: side, cardId: cardId })
-                    .then(() => {
-                        inputEl.value = ''; // Clear input on success
-                    })
+                    .then(() => { inputEl.value = ''; })
                     .catch(err => {
                         console.error(`Error adding card for player ${side}:`, err);
                         alert(`Failed to add card ${cardId}. See console for details.`);
@@ -206,114 +373,13 @@
             }
         }
 
-        addCardBtnL.addEventListener('click', () => {
-            handleAddCard('L', addCardIdL);
-        });
-        addCardIdL.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') handleAddCard('L', addCardIdL);
-        });
-
-        addCardBtnR.addEventListener('click', () => {
-            handleAddCard('R', addCardIdR);
-        });
-        addCardIdR.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') handleAddCard('R', addCardIdR);
-        });
-
-        NodeCG.waitForReplicants(deckL, deckR, database, playerL_name, playerR_name, i18nStrings, language).then(() => {
-            // Set initial titles
-            playerLDeckTitle.textContent = `${playerL_name.value || 'Player L'}'s Deck`;
-            playerRDeckTitle.textContent = `${playerR_name.value || 'Player R'}'s Deck`;
-
-            updateUIText();
-            renderDeck(deckL.value, deckLBody, database.value, 'L');
-            renderDeck(deckR.value, deckRBody, database.value, 'R');
-        });
-
-        playerL_name.on('change', (newValue) => {
-            playerLDeckTitle.textContent = `${newValue || 'Player L'}'s Deck`;
-        });
-        playerR_name.on('change', (newValue) => {
-            playerRDeckTitle.textContent = `${newValue || 'Player R'}'s Deck`;
-        });
-
-        deckL.on('change', (newValue) => {
-            renderDeck(newValue, deckLBody, database.value, 'L');
-        });
-
-        deckR.on('change', (newValue) => {
-            renderDeck(newValue, deckRBody, database.value, 'R');
-        });
-
-        language.on('change', () => {
-            updateUIText();
-            renderDeck(deckL.value, deckLBody, database.value, 'L');
-            renderDeck(deckR.value, deckRBody, database.value, 'R');
-        });
-
-        assetPaths.on('change', () => {
-            renderDeck(deckL.value, deckLBody, database.value, 'L');
-            renderDeck(deckR.value, deckRBody, database.value, 'R');
-        });
-
-        // --- Hotkey Logic ---
-        let hotkeys = { clearCard: ' ' }; // Default hotkey
-
-        settingsRep.on('change', (newValue) => {
-            if (newValue && newValue.hotkeys) {
-                hotkeys = newValue.hotkeys;
-            }
-        });
-
-        function checkHotkey(e, hotkeyString) {
-            if (!hotkeyString || typeof hotkeyString !== 'string') return false;
-            
-            // Special case for space key
-            if (hotkeyString.toLowerCase() === 'space' || hotkeyString === ' ') {
-                return e.key === ' ';
-            }
-
-            const parts = hotkeyString.toLowerCase().split('+').map(p => p.trim());
-            const key = parts.pop();
-
-            if (e.key.toLowerCase() !== key) return false;
-            if (parts.includes('ctrl') !== e.ctrlKey) return false;
-            if (parts.includes('alt') !== e.altKey) return false;
-            if (parts.includes('shift') !== e.shiftKey) return false;
-            if (parts.includes('meta') !== e.metaKey) return false; // For Command key on Mac
-
-            return true;
-        }
-
-        document.addEventListener('keydown', (e) => {
-            // Ignore hotkeys if user is typing in an input field
-            if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
-                return;
-            }
-
-            if (checkHotkey(e, hotkeys.clearCard)) {
-                e.preventDefault();
-                clearButton.click();
-            }
-        });
-
-        function renderDeck(deck, tableBody, db, side) {
-            if (!deck || !deck.cards || !db) {
-                tableBody.innerHTML = '<tr><td colspan="5">Waiting for data...</td></tr>';
-                return;
-            }
-
+        function sortCards(cardIds, db) {
             const supertypeOrder = { 'pokemon': 1, 'trainer': 2, 'energy': 3 };
             const trainerSubtypeOrder = { 'item': 1, 'tool': 2, 'supporter': 3, 'stadium': 4 };
             const energySubtypeOrder = { 'special energy': 1, 'basic energy': 2 };
             const pokemonTypeOrder = { '草': 1, '炎': 2, '水': 3, '雷': 4, '超': 5, '闘': 6, '悪': 7, '鋼': 8, '竜': 9, '無': 10, '妖': 11 };
 
-            // Use a Set to get unique card IDs from the deck list
-            const uniqueCardIds = [...new Set(deck.cards)];
-            const sortableCards = uniqueCardIds.map(cardId => ({
-                id: cardId,
-                data: db[cardId]
-            })).filter(card => card.data);
+            const sortableCards = cardIds.map(cardId => ({ id: cardId, data: db[cardId] })).filter(card => card.data);
 
             sortableCards.sort((a, b) => {
                 const aData = a.data;
@@ -324,51 +390,88 @@
                 if (aData.supertype === 'pokemon') {
                     const typeConversionMap = { '火': '炎', '斗': '闘', '恶': '悪', '钢': '鋼', '龙': '竜' , "无": "無"};
                     const getSortableType = (card) => (card?.pokemon?.color?.[0]) ? (typeConversionMap[card.pokemon.color[0]] || card.pokemon.color[0]) : null;
-                    
                     const aSortType = getSortableType(aData);
                     const bSortType = getSortableType(bData);
                     const pokemonTypeComparison = (pokemonTypeOrder[aSortType] || 99) - (pokemonTypeOrder[bSortType] || 99);
                     if (pokemonTypeComparison !== 0) return pokemonTypeComparison;
-
-                }
-                else if (aData.supertype === 'trainer') {
+                } else if (aData.supertype === 'trainer') {
                     const trainerSubtypeComparison = (trainerSubtypeOrder[aData.subtype] || 99) - (trainerSubtypeOrder[bData.subtype] || 99);
                     if (trainerSubtypeComparison !== 0) return trainerSubtypeComparison;
                 } else if (aData.supertype === 'energy') {
                     const energyTypeComparison = (pokemonTypeOrder[aData.energy] || 99) - (pokemonTypeOrder[bData.energy] || 99);
                     if (energyTypeComparison !== 0) return energyTypeComparison;
-                    const energySubtypeComparison = (energySubtypeOrder[aData.subtype] || 99) - (energySubtypeOrder[bData.subtype] || 99); // Basic vs Special
+                    const energySubtypeComparison = (energySubtypeOrder[aData.subtype] || 99) - (energySubtypeOrder[bData.subtype] || 99);
                     if (energySubtypeComparison !== 0) return energySubtypeComparison;
                 }
                 return a.id.localeCompare(b.id);
             });
+            return sortableCards;
+        }
+
+        // Hotkey Logic
+        let hotkeys = { clearCard: ' ' };
+        settingsRep.on('change', (newValue) => {
+            if (newValue && newValue.hotkeys) hotkeys = newValue.hotkeys;
+        });
+        document.addEventListener('keydown', (e) => {
+            if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+            if (checkHotkey(e, hotkeys.clearCard)) {
+                e.preventDefault();
+                clearButton.click();
+            }
+        });
+        function checkHotkey(e, hotkeyString) {
+            if (!hotkeyString || typeof hotkeyString !== 'string') return false;
+            if (hotkeyString.toLowerCase() === 'space' || hotkeyString === ' ') return e.key === ' ';
+            const parts = hotkeyString.toLowerCase().split('+').map(p => p.trim());
+            const key = parts.pop();
+            if (e.key.toLowerCase() !== key) return false;
+            if (parts.includes('ctrl') !== e.ctrlKey) return false;
+            if (parts.includes('alt') !== e.altKey) return false;
+            if (parts.includes('shift') !== e.shiftKey) return false;
+            if (parts.includes('meta') !== e.metaKey) return false;
+            return true;
+        }
+
+        // --- RENDER FUNCTIONS ---
+
+        function renderPlayerDeck(side, deck, db) {
+            const view = deckViews[side];
+            const tableWrapper = document.getElementById(`deck${side}-table-wrapper`);
+            const iconWrapper = document.getElementById(`deck${side}-icon-wrapper`);
+
+            if (view === 'table') {
+                tableWrapper.style.display = 'block';
+                iconWrapper.style.display = 'none';
+                renderDeckTableView(deck, document.getElementById(`deck${side}-body`), db, side);
+            } else { // 'icon' view
+                tableWrapper.style.display = 'none';
+                iconWrapper.style.display = 'block';
+                renderDeckIconView(deck, iconWrapper, db, side);
+            }
+        }
+
+        function renderDeckTableView(deck, tableBody, db, side) {
+            if (!deck || !deck.cards || !db) {
+                tableBody.innerHTML = '<tr><td colspan="5">Waiting for data...</td></tr>';
+                return;
+            }
+            const uniqueCardIds = [...new Set(deck.cards)];
+            const sortedCards = sortCards(uniqueCardIds, db);
 
             tableBody.innerHTML = '';
-            for (const card of sortableCards) {
+            for (const card of sortedCards) {
                 const cardData = card.data;
                 const row = document.createElement('tr');
 
                 const imgCell = document.createElement('td');
                 const img = document.createElement('img');
-
-                const getCardImageUrl = (cardId) => {
-                    if (!cardId || !assetPaths.value || !assetPaths.value.cardImgPath || !database.value) {
-                        return '/assets/ptcg-telop/element/default.jpg';
-                    }
-                    const db = database.value;
-                    const cardData = db ? db[cardId] : null;
-                    const imageUrl = cardData ? cardData.image_url : null;
-                    const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg';
-                    return `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
-                };
-
                 img.src = getCardImageUrl(card.id);
                 img.title = getI18nText('deck_viewer_show_card_tip');
                 img.onerror = () => { img.src = '/assets/ptcg-telop/element/default.jpg'; };
                 img.onclick = () => {
                     const targetReplicant = (side === 'L') ? cardToShowL : cardToShowR;
-                    const imageUrl = getCardImageUrl(card.id);
-                    targetReplicant.value = imageUrl;
+                    targetReplicant.value = getCardImageUrl(card.id);
                 };
                 imgCell.appendChild(img);
                 row.appendChild(imgCell);
@@ -378,16 +481,15 @@
                 row.appendChild(nameCell);
 
                 const typeCell = document.createElement('td');
-                let typeText = (cardData.supertype || '').charAt(0).toUpperCase() + (cardData.supertype || '').slice(1);
+                let typeText = cardData.supertype;
                 if (cardData.supertype == 'pokemon') {
-                    typeText =cardData.supertype
-                    if(cardData.pokemon.option){
+                    if (cardData.pokemon && cardData.pokemon.option) {
                         typeText += ` ${cardData.pokemon.option}`;
                     }
-                    if(cardData.subtype){
+                    if (cardData.subtype) {
                         typeText += ` ${cardData.subtype}`;
                     }
-                }else{
+                } else {
                     typeText = cardData.subtype;
                 }
                 typeCell.textContent = typeText;
@@ -414,6 +516,78 @@
                 row.appendChild(deleteCell);
 
                 tableBody.appendChild(row);
+            }
+        }
+
+        function renderDeckIconView(deck, container, db, side) {
+            if (!deck || !deck.cards || !db) {
+                container.innerHTML = '<span>Waiting for data...</span>';
+                return;
+            }
+
+            const uniqueCardIds = [...new Set(deck.cards)];
+            const sortedCards = sortCards(uniqueCardIds, db);
+
+            const groupedCards = { pokemon: [], trainer: [], energy: [] };
+            for (const card of sortedCards) {
+                if (card && card.data && groupedCards[card.data.supertype]) {
+                    const count = deck.cards.filter(id => id === card.id).length;
+                    groupedCards[card.data.supertype].push({ ...card, count });
+                }
+            }
+
+            container.innerHTML = '';
+            const supertypeDisplayOrder = ['pokemon', 'trainer', 'energy'];
+            const supertypeLocaleKeys = { pokemon: 'Pokemon', trainer: 'Trainer', energy: 'Energy' }; // TODO: i18n
+
+            for (const supertype of supertypeDisplayOrder) {
+                const cardsOfType = groupedCards[supertype];
+                if (cardsOfType.length === 0) continue;
+
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'card-category';
+
+                const totalCount = cardsOfType.reduce((acc, card) => acc + card.count, 0);
+                const title = document.createElement('h3');
+                title.textContent = `${supertype.charAt(0).toUpperCase() + supertype.slice(1)} (${totalCount})`;
+                categoryDiv.appendChild(title);
+
+                const gridDiv = document.createElement('div');
+                gridDiv.className = 'card-grid';
+
+                for (const card of cardsOfType) {
+                    const cardItemDiv = document.createElement('div');
+                    cardItemDiv.className = 'card-item';
+
+                    const img = document.createElement('img');
+                    img.src = getCardImageUrl(card.id);
+                    img.title = `${card.data.name}\n${getI18nText('deck_viewer_show_card_tip')}`;
+                    img.onerror = () => { img.src = '/assets/ptcg-telop/element/default.jpg'; };
+                    img.onclick = () => {
+                        const targetReplicant = (side === 'L') ? cardToShowL : cardToShowR;
+                        targetReplicant.value = getCardImageUrl(card.id);
+                    };
+                    cardItemDiv.appendChild(img);
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'delete-btn';
+                    deleteButton.innerHTML = '&times;';
+                    deleteButton.title = getI18nText('delete');
+                    deleteButton.onclick = () => {
+                        const playerName = side === 'L' ? (playerL_name.value || 'Player L') : (playerR_name.value || 'Player R');
+                        if (confirm(`「${card.data.name}」を${playerName}のデッキから削除しますか？\n\nRemove "${card.data.name}" from ${playerName}'s deck?`)) {
+                            nodecg.sendMessage('removeCardFromDeck', { side: side, cardId: card.id })
+                                .catch(err => {
+                                    console.error(`Error removing card for player ${side}:`, err);
+                                    alert(`Failed to remove card ${card.id}. See console for details.`);
+                                });
+                        }
+                    };
+                    cardItemDiv.appendChild(deleteButton);
+                    gridDiv.appendChild(cardItemDiv);
+                }
+                categoryDiv.appendChild(gridDiv);
+                container.appendChild(categoryDiv);
             }
         }
     </script>
