@@ -568,7 +568,7 @@ body, html {
 /* --- Action Area --- */
 .player-action { 
     height: 44px; 
-    margin-bottom: 2px; 
+    margin-bottom: -3px; 
     display: flex; 
     align-items: center; 
     justify-content: space-around; 
