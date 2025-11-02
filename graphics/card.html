@@ -36,7 +36,7 @@
             transform: translateY(475px);
             justify-content: center;
             align-items: center;
-            background-image: url('/assets/ptcg-telop/element/card-bg.png');
+            background-image: var(--bg-card-area);
         }
         .card-container {
             width: 95%; 
@@ -89,11 +89,46 @@
  
         const cardToShowL = nodecg.Replicant('cardToShowL');
                  const cardToShowR = nodecg.Replicant('cardToShowR');
-                const settingsRep = nodecg.Replicant('ptcg-settings');
-                const assetPaths = nodecg.Replicant('assetPaths');
-                const deckL = nodecg.Replicant('deckL');
-                const deckR = nodecg.Replicant('deckR');
-                const cardDatabase = nodecg.Replicant('cardDatabase');
+        const settingsRep = nodecg.Replicant('ptcg-settings');
+        const assetPaths = nodecg.Replicant('assetPaths');
+        const deckL = nodecg.Replicant('deckL');
+        const deckR = nodecg.Replicant('deckR');
+        const cardDatabase = nodecg.Replicant('cardDatabase');
+        const customAssetList = nodecg.Replicant('customAssetList');
+        const language = nodecg.Replicant('language');
+        const i18nStrings = nodecg.Replicant('i18nStrings');
+
+        function resolveAssetPath(assetName, isLangSpecific = false) {
+            const customAssets = customAssetList.value || [];
+            const lang = language.value || 'jp';
+            const basePath = '/assets/ptcg-telop/';
+
+            // Sanitize the assetName to handle accidental url() wrappers and get the clean filename.
+            const potentialPath = assetName.replace(/url\((['\"]?)(.*?)\1\)/, '$2');
+            const cleanAssetName = potentialPath.split('/').pop();
+
+            // 1. Prioritize checking if the cleaned custom asset exists in the custom folder.
+            if (customAssets.includes(cleanAssetName)) {
+                return `${basePath}custom/${cleanAssetName}`;
+            }
+
+            // 2. If no custom asset is found, fall back to the default element folder.
+            if (isLangSpecific) {
+                // Assume the original assetName was the default, e.g., 'first_move_jp.png'
+                const baseName = assetName.replace(/_jp\.png$/, '');
+                const langAssetName = `${baseName}_${lang}.png`;
+                return `${basePath}element/${langAssetName}`;
+            }
+
+            // 3. For non-language-specific assets, just use the original name.
+            return `${basePath}element/${assetName}`;
+        }
+
+        function updateCustomizableAssets() {
+            const root = document.documentElement;
+            root.style.setProperty('--bg-card-area', `url(${resolveAssetPath('card-bg.png')})`);
+        }
+
         
                 const getCardImageUrl = (cardId) => {
                     if (!cardId || !assetPaths.value || !assetPaths.value.cardImgPath || !cardDatabase.value) {
@@ -123,7 +158,10 @@
         }
 
         // Wait for replicants to be ready before preloading
-        NodeCG.waitForReplicants(assetPaths, deckL, deckR).then(() => {
+        NodeCG.waitForReplicants(assetPaths, deckL, deckR, customAssetList, language, i18nStrings).then(() => {
+            updateCustomizableAssets(); // Initial asset load
+            language.on('change', updateCustomizableAssets);
+
             // Initial preload for both decks
             preloadDeckImages(deckL.value);
             preloadDeckImages(deckR.value);

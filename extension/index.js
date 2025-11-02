@@ -65,8 +65,24 @@ module.exports = function (nodecg) {
 	const firstMove = nodecg.Replicant('firstMove', { defaultValue: '' });
 	const cardToShowL = nodecg.Replicant('cardToShowL', { defaultValue: '' });
 	const cardToShowR = nodecg.Replicant('cardToShowR', { defaultValue: '' });
-	const i18nStrings = nodecg.Replicant('i18nStrings', { defaultValue: {} });
-
+	    const i18nStrings = nodecg.Replicant('i18nStrings', { defaultValue: {} });
+	
+	    const customAssetList = nodecg.Replicant('customAssetList', { defaultValue: [] });
+	    try {
+	        const customAssetDir = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', 'custom');
+	        if (fs.existsSync(customAssetDir)) {
+	            const files = fs.readdirSync(customAssetDir);
+	            // Filter out system files like .DS_Store
+	            customAssetList.value = files.filter(file => !file.startsWith('.'));
+	            nodecg.log.info(`Found ${customAssetList.value.length} custom assets.`);
+	        } else {
+	            nodecg.log.warn('Custom asset directory not found, skipping scan.');
+	            customAssetList.value = [];
+	        }
+	    } catch (e) {
+	        nodecg.log.error('Failed to scan custom assets directory:', e);
+	        customAssetList.value = [];
+	    }
 	const language = nodecg.Replicant('language', { defaultValue: 'jp' });
 
     const live_lostZoneL = nodecg.Replicant('live_lostZoneL', { defaultValue: 0 });

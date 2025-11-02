@@ -7,6 +7,25 @@
     /* All fonts are now defined in css/fonts.css */
     --font-numeric: 'Sora', sans-serif;
     --font-damage: 'Damage-Font', sans-serif;
+
+    /* Asset Filenames (can be overridden in custom.css) */
+    --asset-panel-bg: 'panel-bg.png';
+    --asset-active-bg: 'active-bg.png';
+    --asset-bench-bg: 'bench-bg.png';
+    --asset-current-turn: 'current.png';
+    --asset-vstar: 'VSTAR.webp';
+    --asset-action-energy: 'action-energy.png';
+    --asset-action-supporter: 'action-supporter.png';
+    --asset-action-retreat: 'action-retreat.png';
+    --asset-lost-zone: 'lost-zone_jp.png';
+    --asset-ability: 'ability_jp.png';
+    --asset-first-move: 'first_move_jp.png';
+    --asset-second-move: 'second_move_jp.png';
+    --asset-side-remain: 'side_remain.png';
+    --asset-side-taken: 'side_taken.png';
+    --asset-weakness: 'weakness.png';
+
+
     --color-bg-panel: #3db1ff;
     --color-bg-module: #0a406d;
     --module-border: 2px;
@@ -50,7 +69,7 @@ body, html {
     flex-shrink: 0;
     margin-bottom: 5px; 
     background-color: var(--color-bg-module);
-    background-image: url('/assets/ptcg-telop/element/active-bg.png');
+    background-image: var(--bg-active-slot);
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
@@ -271,7 +290,7 @@ body, html {
     border-radius: 6px; 
     box-sizing: border-box;
     background-color: var(--color-bg-module);
-    background-image: url('/assets/ptcg-telop/element/bench-bg.png');
+    background-image: var(--bg-bench-slot);
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
@@ -498,7 +517,7 @@ body, html {
     padding: 5px; 
     box-sizing: border-box; 
     background-color: var(--color-bg-panel); 
-    background-image: url('/assets/ptcg-telop/element/panel-bg.png');
+    background-image: var(--bg-player-area);
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
@@ -772,7 +791,7 @@ body, html {
     position: absolute;
     width: 120px; /* Same width File */
     height: 1080px; /* Same height as player-area */
-    background-image: url('/assets/ptcg-telop/element/current.png');
+    background-image: var(--bg-current-turn);
     background-size: 100% 100%; /* Stretch to fit */
     background-repeat: no-repeat;
     background-position: center;

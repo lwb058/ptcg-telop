@@ -329,6 +329,11 @@
             renderPlayerDeck('R', deckR.value, database.value);
         });
 
+        database.on('change', (newValue) => {
+            renderPlayerDeck('L', deckL.value, newValue);
+            renderPlayerDeck('R', deckR.value, newValue);
+        });
+
         // Helper Functions
         const getI18nText = (key) => {
             if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) return key;

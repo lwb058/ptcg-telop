@@ -293,8 +293,12 @@
                     if (isBattleSlot && activeAnimations.has(targetSlotEl.id)) {
                         const animationData = activeAnimations.get(targetSlotEl.id);
                         if (animationData.isWeakness) {
+                            const style = getComputedStyle(document.documentElement);
+                            const weaknessFile = style.getPropertyValue('--asset-weakness').trim().replace(/['\"]/g, '');
+                            const weaknessIconSrc = resolveAssetPath(weaknessFile);
+
                             const weaknessIcon = new Image();
-                            weaknessIcon.src = '/assets/ptcg-telop/element/weakness.png';
+                            weaknessIcon.src = weaknessIconSrc;
                             weaknessIcon.className = 'weakness-icon-fx';
 
                             const appendAndAnimate = () => {
@@ -413,10 +417,16 @@
         function updateSideArea(side, remaining) {
             const area = document.getElementById(`side-${side}-area`);
             if (!area) return;
+
+            const style = getComputedStyle(document.documentElement);
+            const takenFile = style.getPropertyValue('--asset-side-taken').trim().replace(/['\"]/g, '');
+            const remainFile = style.getPropertyValue('--asset-side-remain').trim().replace(/['\"]/g, '');
+
+            const takenIcon = resolveAssetPath(takenFile);
+            const remainingIcon = resolveAssetPath(remainFile);
+
             const icons = area.querySelectorAll('.side-icon');
             const taken = 6 - remaining;
-            const takenIcon = '/assets/ptcg-telop/element/side_taken.png';
-            const remainingIcon = '/assets/ptcg-telop/element/side_remain.png';
             icons.forEach((icon, index) => {
                 icon.src = index < taken ? takenIcon : remainingIcon;
             });
@@ -429,23 +439,16 @@
             }
         }
 
-        function getLocalizedAssetPath(basePath) {
-            const lang = language.value;
-            const supportedLangs = ['jp', 'chs', 'cht', 'en'];
-            if (supportedLangs.includes(lang)) {
-                const parts = basePath.split('_jp.');
-                const extension = parts.pop();
-                const pathWithoutExt = parts.join('.');
-                return `${pathWithoutExt}_${lang}.${extension}`;
-            }
-            return basePath; // Fallback to base path
-        }
-
         function updateFirstMoveIcon(firstMoveValue) {
             const iconL = document.getElementById('first-move-L');
             const iconR = document.getElementById('first-move-R');
-            const firstMoveIconSrc = getLocalizedAssetPath('/assets/ptcg-telop/element/first_move_jp.png');
-            const secondMoveIconSrc = getLocalizedAssetPath('/assets/ptcg-telop/element/second_move_jp.png');
+
+            const style = getComputedStyle(document.documentElement);
+            const firstMoveFile = style.getPropertyValue('--asset-first-move').trim().replace(/['\"]/g, '');
+            const secondMoveFile = style.getPropertyValue('--asset-second-move').trim().replace(/['\"]/g, '');
+
+            const firstMoveIconSrc = resolveAssetPath(firstMoveFile, true);
+            const secondMoveIconSrc = resolveAssetPath(secondMoveFile, true);
 
             if (firstMoveValue === 'L') {
                 iconL.src = firstMoveIconSrc;
@@ -466,6 +469,12 @@
         function updateLostZoneCounter(side, count) {
             const el = document.getElementById(`lost-zone-${side}-area`);
             if (!el) return;
+
+            const style = getComputedStyle(document.documentElement);
+            const lostZoneFile = style.getPropertyValue('--asset-lost-zone').trim().replace(/['\"]/g, '');
+            const lostZoneIconSrc = resolveAssetPath(lostZoneFile, true);
+            el.querySelector('img').src = lostZoneIconSrc;
+
             if (count > 0) {
                 el.querySelector('.count').textContent = count;
                 el.classList.add('visible');
@@ -957,7 +966,9 @@
                         const abilityUsedClass = (isAbility && slotData.abilityUsed) ? 'used' : '';
                         let tagHtml = '';
                         if (isAbility) {
-                            const abilityIconSrc = getLocalizedAssetPath('/assets/ptcg-telop/element/ability_jp.png');
+                            const style = getComputedStyle(document.documentElement);
+                            const abilityFile = style.getPropertyValue('--asset-ability').trim().replace(/['\"]/g, '');
+                            const abilityIconSrc = resolveAssetPath(abilityFile, true);
                             tagHtml = `<img src="${abilityIconSrc}" class="battle-skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
                         } else {
                             const cost = skill.cost || [];
@@ -1024,7 +1035,9 @@
                         const abilityUsedClass = (isAbility && slotData.abilityUsed) ? 'used' : '';
                         let tagHtml = '';
                         if (isAbility) {
-                            const abilityIconSrc = getLocalizedAssetPath('/assets/ptcg-telop/element/ability_jp.png');
+                            const style = getComputedStyle(document.documentElement);
+                            const abilityFile = style.getPropertyValue('--asset-ability').trim().replace(/['\"]/g, '');
+                            const abilityIconSrc = resolveAssetPath(abilityFile, true);
                             tagHtml = `<img src="${abilityIconSrc}" class="bench-skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
                         } else {
                             const cost = skill.cost || [];
@@ -1169,6 +1182,7 @@
 
         const i18nStrings = nodecg.Replicant('i18nStrings');
         const language = nodecg.Replicant('language');
+        const customAssetList = nodecg.Replicant('customAssetList');
 
         // A more descriptive function name for getting translated text
         const getI18nText = (key) => {
@@ -1178,6 +1192,81 @@
             // Return the text for the current language, or fallback to Japanese, then the key itself.
             return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
         };
+
+        /**
+         * Resolves the path for a UI asset, prioritizing custom assets over default ones.
+         * Also handles language-specific versions of assets.
+         * @param {string} assetName - The base name of the asset (e.g., 'panel-bg.png').
+         * @param {boolean} isLangSpecific - Whether the asset has language variants (e.g., 'first_move_jp.png').
+         * @returns {string} The resolved asset path.
+         */
+        function resolveAssetPath(assetName, isLangSpecific = false) {
+            const customAssets = customAssetList.value || [];
+            const lang = language.value || 'jp';
+            const basePath = '/assets/ptcg-telop/';
+
+            // Sanitize the assetName to handle accidental url() wrappers and get the clean filename.
+            const potentialPath = assetName.replace(/url\((['\"]?)(.*?)\1\)/, '$2');
+            const cleanAssetName = potentialPath.split('/').pop();
+
+            // 1. Prioritize checking if the cleaned custom asset exists in the custom folder.
+            if (customAssets.includes(cleanAssetName)) {
+                return `${basePath}custom/${cleanAssetName}`;
+            }
+
+            // 2. If no custom asset is found, fall back to the default element folder.
+            if (isLangSpecific) {
+                // Assume the original assetName was the default, e.g., 'first_move_jp.png'
+                const baseName = assetName.replace(/_jp\.png$/, '');
+                const langAssetName = `${baseName}_${lang}.png`;
+                return `${basePath}element/${langAssetName}`;
+            }
+
+            // 3. For non-language-specific assets, just use the original name.
+            return `${basePath}element/${assetName}`;
+        }
+
+        /**
+         * Updates all customizable UI assets, including CSS variables and image sources.
+         */
+        function updateCustomizableAssets() {
+            const root = document.documentElement;
+            const style = getComputedStyle(root);
+
+            const getFile = (varName) => style.getPropertyValue(varName).trim().replace(/['\"]/g, '');
+
+            // Set CSS Variables for backgrounds
+            root.style.setProperty('--bg-player-area', `url(${resolveAssetPath(getFile('--asset-panel-bg'))})`);
+            root.style.setProperty('--bg-active-slot', `url(${resolveAssetPath(getFile('--asset-active-bg'))})`);
+            root.style.setProperty('--bg-bench-slot', `url(${resolveAssetPath(getFile('--asset-bench-bg'))})`);
+            root.style.setProperty('--bg-current-turn', `url(${resolveAssetPath(getFile('--asset-current-turn'))})`);
+
+            // Update simple image sources
+            document.getElementById('vstar-L-icon').src = resolveAssetPath(getFile('--asset-vstar'));
+            document.getElementById('vstar-R-icon').src = resolveAssetPath(getFile('--asset-vstar'));
+            document.getElementById('action-L-energy').src = resolveAssetPath(getFile('--asset-action-energy'));
+            document.getElementById('action-L-supporter').src = resolveAssetPath(getFile('--asset-action-supporter'));
+            document.getElementById('action-L-retreat').src = resolveAssetPath(getFile('--asset-action-retreat'));
+            document.getElementById('action-R-energy').src = resolveAssetPath(getFile('--asset-action-energy'));
+            document.getElementById('action-R-supporter').src = resolveAssetPath(getFile('--asset-action-supporter'));
+            document.getElementById('action-R-retreat').src = resolveAssetPath(getFile('--asset-action-retreat'));
+
+            // Update assets that have their own dedicated functions
+            updateFirstMoveIcon(firstMove.value);
+            updateLostZoneCounter('L', live_lostZoneL.value);
+            updateLostZoneCounter('R', live_lostZoneR.value);
+            
+            // Re-render all slots to update ability icons
+            sides.forEach(side => {
+                for (let i = 0; i < 6; i++) {
+                    const replicant = live_slotReplicants[`live_slot${side}${i}`];
+                    if (replicant && replicant.value) {
+                        renderSlot(side, i, replicant.value, replicant.value);
+                    }
+                }
+            });
+        }
+
 
         // --- Language Font Switching ---
         function setLanguageClass(lang) {
@@ -1196,14 +1285,7 @@
 
         language.on('change', (newLang) => {
             setLanguageClass(newLang);
-            // When language changes, update all localized assets
-            updateFirstMoveIcon(firstMove.value);
-
-            const lostZoneIconSrc = getLocalizedAssetPath('/assets/ptcg-telop/element/lost-zone_jp.png');
-            const lostZoneLImg = document.querySelector('#lost-zone-L-area img');
-            const lostZoneRImg = document.querySelector('#lost-zone-R-area img');
-            if (lostZoneLImg) lostZoneLImg.src = lostZoneIconSrc;
-            if (lostZoneRImg) lostZoneRImg.src = lostZoneIconSrc;
+            updateCustomizableAssets(); // Update all assets when language changes
         });
         // --- End Language Font Switching ---
 
@@ -1281,10 +1363,11 @@
             });
         }
         
-        NodeCG.waitForReplicants(...replicantList).then(() => {
+        NodeCG.waitForReplicants(...replicantList, customAssetList).then(() => {
             // Set initial language class to ensure correct fonts are loaded.
             // Default to 'jp' if the replicant has no value yet.
             setLanguageClass(language.value || 'jp');
+            updateCustomizableAssets(); // Initial asset load
 
             updatePlayerInfo('L', playerL_name.value);
             updatePlayerInfo('R', playerR_name.value);

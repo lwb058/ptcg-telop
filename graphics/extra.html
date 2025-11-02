@@ -33,7 +33,7 @@
             transform: translateY(475px);
             flex-direction: column; 
             background-color: var(--color-bg-panel); 
-            background-image: url('/assets/ptcg-telop/element/extra-bg.png');
+            background-image: var(--bg-extra-area);
         }
         .bench-slots { gap: 24px; } /* Override default gap */
         .extra-bench-title {
@@ -431,17 +431,7 @@
                 container.innerHTML = html;
             }
 
-            function getLocalizedAssetPath(basePath) {
-                const lang = language.value;
-                const supportedLangs = ['jp', 'chs', 'cht', 'en'];
-                if (supportedLangs.includes(lang)) {
-                    const parts = basePath.split('_jp.');
-                    const extension = parts.pop();
-                    const pathWithoutExt = parts.join('.');
-                    return `${pathWithoutExt}_${lang}.${extension}`;
-                }
-                return basePath; // Fallback to base path
-            }
+
 
             function renderSlot(side, index, slotData, oldSlotData) {
                 const slotEl = document.getElementById(`slot-${side}${index}`);
@@ -578,7 +568,7 @@
                     const abilityUsedClass = (isAbility && slotData.abilityUsed) ? 'used' : '';
                     let tagHtml = '';
                     if (isAbility) {
-                        const abilityIconSrc = getLocalizedAssetPath('/assets/ptcg-telop/element/ability_jp.png');
+                        const abilityIconSrc = resolveAssetPath('ability_jp.png', true);
                         tagHtml = `<img src="${abilityIconSrc}" class="bench-skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
                     } else {
                         const cost = skill.cost || [];
@@ -675,6 +665,46 @@
             const deckL = nodecg.Replicant('deckL');
             const deckR = nodecg.Replicant('deckR');
             const language = nodecg.Replicant('language');
+            const customAssetList = nodecg.Replicant('customAssetList');
+            const i18nStrings = nodecg.Replicant('i18nStrings');
+
+            function resolveAssetPath(assetName, isLangSpecific = false) {
+                const customAssets = customAssetList.value || [];
+                const lang = language.value || 'jp';
+                const basePath = '/assets/ptcg-telop/';
+
+                // Sanitize the assetName to handle accidental url() wrappers and get the clean filename.
+                const potentialPath = assetName.replace(/url\((['\"]?)(.*?)\1\)/, '$2');
+                const cleanAssetName = potentialPath.split('/').pop();
+
+                // 1. Prioritize checking if the cleaned custom asset exists in the custom folder.
+                if (customAssets.includes(cleanAssetName)) {
+                    return `${basePath}custom/${cleanAssetName}`;
+                }
+
+                // 2. If no custom asset is found, fall back to the default element folder.
+                if (isLangSpecific) {
+                    // Assume the original assetName was the default, e.g., 'first_move_jp.png'
+                    const baseName = assetName.replace(/_jp\.png$/, '');
+                    const langAssetName = `${baseName}_${lang}.png`;
+                    return `${basePath}element/${langAssetName}`;
+                }
+
+                // 3. For non-language-specific assets, just use the original name.
+                return `${basePath}element/${assetName}`;
+            }
+
+            function updateCustomizableAssets() {
+                const root = document.documentElement;
+                root.style.setProperty('--bg-extra-area', `url(${resolveAssetPath('extra-bg.png')})`);
+                root.style.setProperty('--bg-bench-slot', `url(${resolveAssetPath('bench-bg.png')})`);
+                
+                const abilityIconSrc = resolveAssetPath('ability_jp.png', true);
+                document.querySelectorAll('.bench-skill-ability-tag').forEach(img => {
+                    if(img.src !== abilityIconSrc) img.src = abilityIconSrc;
+                });
+            }
+
             const replicantList = [cardDatabase, settingsRep, assetPaths, deckL, deckR, language];
             const sides = ['L', 'R'];
 
@@ -703,7 +733,10 @@
                 return `${basePath}hit-${typeString}.webm`;
             }
 
-            NodeCG.waitForReplicants(...replicantList).then(() => {
+            NodeCG.waitForReplicants(...replicantList, customAssetList, i18nStrings).then(() => {
+                updateCustomizableAssets(); // Initial asset load
+                language.on('change', updateCustomizableAssets);
+
                 const preloaderContainer = document.getElementById('video-preloader');
                 function preloadDeckImages(deck) {
                     if (!deck || !deck.cards || !assetPaths.value.cardImgPath || !preloaderContainer) return;
