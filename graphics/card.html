@@ -26,7 +26,7 @@
         })();
     </script>
     <link rel="stylesheet" href="css/common.css">
-    <link rel="stylesheet" href="css/custom.css">
+    <link id="theme-css-link" rel="stylesheet" href="" disabled>
     <style>
         /* Styles specific to the card display graphic */
         /* Common styles like body, overlay-frame, and animations are now in common.css */
@@ -74,13 +74,11 @@
          const cardImageR = document.getElementById('card-image-R');
          const defaultImage = '/assets/ptcg-telop/element/default.jpg';
  
-         // State object to track visibility and animation status for each side
          const cardState = {
              L: { isVisible: false, isAnimating: false },
              R: { isVisible: false, isAnimating: false }
          };
  
-         // Helper function to promisify animationend event
          function onAnimationEnd(element) {
              return new Promise(resolve => {
                  element.addEventListener('animationend', resolve, { once: true });
@@ -88,39 +86,35 @@
          }
  
         const cardToShowL = nodecg.Replicant('cardToShowL');
-                 const cardToShowR = nodecg.Replicant('cardToShowR');
+        const cardToShowR = nodecg.Replicant('cardToShowR');
         const settingsRep = nodecg.Replicant('ptcg-settings');
         const assetPaths = nodecg.Replicant('assetPaths');
         const deckL = nodecg.Replicant('deckL');
         const deckR = nodecg.Replicant('deckR');
         const cardDatabase = nodecg.Replicant('cardDatabase');
-        const customAssetList = nodecg.Replicant('customAssetList');
+        const themeAssets = nodecg.Replicant('themeAssets');
         const language = nodecg.Replicant('language');
-        const i18nStrings = nodecg.Replicant('i18nStrings');
 
         function resolveAssetPath(assetName, isLangSpecific = false) {
-            const customAssets = customAssetList.value || [];
+            const settings = settingsRep.value || {};
+            const activeTheme = settings.activeTheme || 'Default';
+            const themeAssetMap = themeAssets.value || {};
             const lang = language.value || 'jp';
             const basePath = '/assets/ptcg-telop/';
 
-            // Sanitize the assetName to handle accidental url() wrappers and get the clean filename.
             const potentialPath = assetName.replace(/url\((['\"]?)(.*?)\1\)/, '$2');
             const cleanAssetName = potentialPath.split('/').pop();
 
-            // 1. Prioritize checking if the cleaned custom asset exists in the custom folder.
-            if (customAssets.includes(cleanAssetName)) {
-                return `${basePath}custom/${cleanAssetName}`;
+            if (activeTheme !== 'Default' && themeAssetMap[activeTheme] && themeAssetMap[activeTheme].includes(cleanAssetName)) {
+                return `${basePath}${activeTheme}/${cleanAssetName}`;
             }
 
-            // 2. If no custom asset is found, fall back to the default element folder.
             if (isLangSpecific) {
-                // Assume the original assetName was the default, e.g., 'first_move_jp.png'
                 const baseName = assetName.replace(/_jp\.png$/, '');
                 const langAssetName = `${baseName}_${lang}.png`;
                 return `${basePath}element/${langAssetName}`;
             }
 
-            // 3. For non-language-specific assets, just use the original name.
             return `${basePath}element/${assetName}`;
         }
 
@@ -129,20 +123,18 @@
             root.style.setProperty('--bg-card-area', `url(${resolveAssetPath('card-bg.png')})`);
         }
 
-        
-                const getCardImageUrl = (cardId) => {
-                    if (!cardId || !assetPaths.value || !assetPaths.value.cardImgPath || !cardDatabase.value) {
-                        return defaultImage;
-                    }
-                    const db = cardDatabase.value;
-                    const cardData = db[cardId];
-                    const imageUrl = cardData ? cardData.image_url : null;
-                    const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg';
-                    return `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
-                };
+        const getCardImageUrl = (cardId) => {
+            if (!cardId || !assetPaths.value || !assetPaths.value.cardImgPath || !cardDatabase.value) {
+                return defaultImage;
+            }
+            const db = cardDatabase.value;
+            const cardData = db[cardId];
+            const imageUrl = cardData ? cardData.image_url : null;
+            const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg';
+            return `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
+        };
         let isReversed = false;
 
-        // --- Deck Card Preloading Logic ---
         const preloaderContainer = document.getElementById('video-preloader');
         function preloadDeckImages(deck) {
             if (!deck || !deck.cards || !assetPaths.value || !assetPaths.value.cardImgPath || !preloaderContainer) return;
@@ -157,24 +149,49 @@
             });
         }
 
-        // Wait for replicants to be ready before preloading
-        NodeCG.waitForReplicants(assetPaths, deckL, deckR, customAssetList, language, i18nStrings).then(() => {
-            updateCustomizableAssets(); // Initial asset load
-            language.on('change', updateCustomizableAssets);
+        const handleThemeChange = (settings) => {
+            const activeTheme = (settings && settings.activeTheme) || 'Default';
+            const themeCssLink = document.getElementById('theme-css-link');
 
-            // Initial preload for both decks
+            if (themeCssLink) {
+                if (activeTheme === 'Default') {
+                    themeCssLink.disabled = true;
+                    themeCssLink.href = '';
+                } else {
+                    themeCssLink.href = `css/${activeTheme}.css`;
+                    themeCssLink.disabled = false;
+                }
+            }
+            updateCustomizableAssets();
+        };
+
+        NodeCG.waitForReplicants(assetPaths, deckL, deckR, cardDatabase, themeAssets, language, settingsRep).then(() => {
+            // Initial setup
+            const settings = settingsRep.value || {};
+            isReversed = !!settings.reverseCardDisplay;
+            handleThemeChange(settings);
+            
             preloadDeckImages(deckL.value);
             preloadDeckImages(deckR.value);
 
-            // Listen for changes in both decks
             deckL.on('change', (newVal) => preloadDeckImages(newVal));
             deckR.on('change', (newVal) => preloadDeckImages(newVal));
         });
-        // --- End Preloading Logic ---
 
-        settingsRep.on('change', (newValue) => {
-            if (newValue) {
-                isReversed = !!newValue.reverseCardDisplay;
+        settingsRep.on('change', (newValue, oldValue) => {
+            const newSettings = newValue || {};
+            const oldSettings = oldValue || {};
+
+            if (newSettings.reverseCardDisplay !== oldSettings.reverseCardDisplay) {
+                isReversed = !!newSettings.reverseCardDisplay;
+            }
+
+            if (newSettings.activeTheme !== oldSettings.activeTheme) {
+                handleThemeChange(newSettings);
+            }
+
+            if (newSettings.language !== oldSettings.language) {
+                updateCustomizableAssets();
             }
         });
 
@@ -189,46 +206,37 @@
             const wantsToShow = !!newValue;
             let newSrc = newValue || defaultImage;
 
-            // Logic to construct the correct image path
             if (wantsToShow && assetPaths.value && assetPaths.value.cardImgPath) {
-                // The newValue is a path string like '.../12345.jpg'. We need to extract the ID.
                 const cardIdMatch = newValue.match(/(\d{5,})/);
                 if (cardIdMatch) {
                     const cardId = cardIdMatch[1];
-                    newSrc = getCardImageUrl(cardId); // Use the new helper function
+                    newSrc = getCardImageUrl(cardId);
                 } else {
-                    // Fallback to original value if parsing fails
                     newSrc = newValue;
                 }
             }
 
             try {
-                // Case 1: Hide the card
                 if (!wantsToShow && state.isVisible) {
-                    animatedContainer.classList.remove(`anim-slide-in-${side}`); // Clean up previous state
+                    animatedContainer.classList.remove(`anim-slide-in-${side}`);
                     animatedContainer.classList.add(`anim-slide-out-${side}`);
                     await onAnimationEnd(animatedContainer);
-                    // DO NOT remove the slide-out class. It keeps the element off-screen.
                     image.src = defaultImage;
                     state.isVisible = false;
                 } 
-                // Case 2: Show or Update the card
                 else if (wantsToShow) {
-                    // If it's an update (already visible), slide it out first.
                     if (state.isVisible) {
                         animatedContainer.classList.remove(`anim-slide-in-${side}`);
                         animatedContainer.classList.add(`anim-slide-out-${side}`);
                         await onAnimationEnd(animatedContainer);
                     }
 
-                    // Now it's off-screen. Change image, then clean up and slide in.
                     image.src = newSrc;
-                    animatedContainer.classList.remove(`anim-slide-out-${side}`); // "Self-cleanup" before sliding in
+                    animatedContainer.classList.remove(`anim-slide-out-${side}`);
                     
                     animatedContainer.classList.add(`anim-slide-in-${side}`);
                     await onAnimationEnd(animatedContainer);
                     
-                    // Leave the slide-in class on to keep it visible. It will be cleaned up by the next operation.
                     state.isVisible = true;
                 }
             } finally {

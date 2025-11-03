@@ -27,7 +27,7 @@
         })();
     </script>
     <link rel="stylesheet" href="css/common.css">
-    <link rel="stylesheet" href="css/custom.css">
+    <link id="theme-css-link" rel="stylesheet" href="" disabled>
     <style>
         /* All styles have been moved to graphics/css/common.css */
     </style>
@@ -205,11 +205,9 @@
             "無": "無", "全": "全", "竜": "竜", "妖": "妖"
         };
 
-        // Animation Timings
         const REPLACE_ANIMATION_HIDE_MS = 550;
         const REPLACE_ANIMATION_SHOW_MS = 700;
 
-        // Used to pass animation state between attack-fx and displayHpChangeNumber
         const activeAnimations = new Map();
         const g_attackAnimationTargets = new Set();
         const evolvingSlots = new Set();
@@ -218,7 +216,7 @@
 
         function hexToRgba(hex, alpha = 1.0) {
             if (!/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
-                return ''; // Return empty string for invalid hex
+                return '';
             }
             let c = hex.substring(1).split('');
             if (c.length === 3) {
@@ -256,7 +254,7 @@
                     if (progress < 1) {
                         window.requestAnimationFrame(step);
                     } else {
-                        resolve(); // Resolve the promise when animation is done
+                        resolve();
                     }
                 };
                 window.requestAnimationFrame(step);
@@ -266,7 +264,6 @@
         function displayHpChangeNumber(targetSlotEl, hpChange) {
             return new Promise(resolve => {
                 if (hpChange === 0) return resolve();
-
                 const isHeal = hpChange > 0;
                 const number = Math.abs(hpChange);
                 const text = isHeal ? `+${number}` : `${-number}`;
@@ -289,7 +286,6 @@
                     numberEl.style.top = `${imageRect.top + imageRect.height / 2}px`;
                     document.body.appendChild(numberEl);
 
-                    // Check if a weakness icon needs to be displayed
                     if (isBattleSlot && activeAnimations.has(targetSlotEl.id)) {
                         const animationData = activeAnimations.get(targetSlotEl.id);
                         if (animationData.isWeakness) {
@@ -319,7 +315,7 @@
 
                     setTimeout(() => {
                         numberEl.remove();
-                        resolve(); // Resolve the promise when the animation is complete
+                        resolve();
                     }, 1500);
                 });
             });
@@ -328,17 +324,8 @@
         function getHitVideoSrc(attackerType) {
             const basePath = '/assets/ptcg-telop/fx/';
             const typeMap = {
-                "草": "grass",
-                "炎": "fire",
-                "水": "water",
-                "雷": "lightning",
-                "超": "psychic",
-                "闘": "fighting",
-                "悪": "darkness",
-                "鋼": "metal",
-                "竜": "dragon",
-                "妖": "fairy",
-                "無": "colorless"
+                "草": "grass", "炎": "fire", "水": "water", "雷": "lightning", "超": "psychic",
+                "闘": "fighting", "悪": "darkness", "鋼": "metal", "竜": "dragon", "妖": "fairy", "無": "colorless"
             };
             const typeString = typeMap[attackerType] || 'colorless';
             return `${basePath}hit-${typeString}.webm`;
@@ -354,7 +341,6 @@
             const newUsed = newData ? newData.used : false;
             const oldUsed = oldData ? oldData.used : false;
 
-            // If nothing has changed (card ID and used status), do nothing.
             if (newCardId === oldCardId && newUsed === oldUsed) return;
 
             const newCard = newCardId ? db[newCardId] : null;
@@ -371,10 +357,8 @@
                 }
             };
 
-            // Handle animations and content updates
             if (newCardId !== oldCardId) {
-                // Card is changing
-                if (oldCardId && newCardId) { // Swapping from one card to another
+                if (oldCardId && newCardId) {
                     stadiumCardEl.classList.add('anim-slide-out-top');
                     setTimeout(() => {
                         updateContent(newCard, newUsed);
@@ -382,12 +366,12 @@
                         stadiumCardEl.classList.add('anim-slide-in-top');
                         setTimeout(() => stadiumCardEl.classList.remove('anim-slide-in-top'), 500);
                     }, 500);
-                } else if (!oldCardId && newCardId) { // Adding a new card
+                } else if (!oldCardId && newCardId) {
                     updateContent(newCard, newUsed);
                     stadiumCardEl.classList.remove('hidden');
                     stadiumCardEl.classList.add('anim-slide-in-top');
                     setTimeout(() => stadiumCardEl.classList.remove('anim-slide-in-top'), 500);
-                } else if (oldCardId && !newCardId) { // Removing a card
+                } else if (oldCardId && !newCardId) {
                     stadiumCardEl.classList.add('anim-slide-out-top');
                     setTimeout(() => {
                         stadiumCardEl.classList.add('hidden');
@@ -396,7 +380,6 @@
                     }, 500);
                 }
             } else {
-                // Only the 'used' status is changing
                 updateContent(newCard, newUsed);
             }
         }
@@ -490,7 +473,6 @@
                 const cardData = cardDatabase.value[cardId];
                 const title = cardData ? cardData.name : 'Special Energy';
                 const bgImage = getCardImageUrl(cardId, true);
-                // Note: The class controls the size (battle vs bench)
                 return `<div class="attached-special-energy-icon" style="background-image: ${bgImage}" title="${title}"></div>`;
             };
 
@@ -587,8 +569,6 @@
                 const wrapperEl = slotEl.querySelector(wrapperSelector);
                 if (!wrapperEl) return resolve();
 
-                // If the entire slot is being redrawn, don't play individual tool animations.
-                // Just render the final state directly to avoid conflicts with the slot's slide-in animation.
                 if (forceRedraw) {
                     let html = '';
                     newToolIds.forEach(id => {
@@ -1182,7 +1162,7 @@
 
         const i18nStrings = nodecg.Replicant('i18nStrings');
         const language = nodecg.Replicant('language');
-        const customAssetList = nodecg.Replicant('customAssetList');
+        const themeAssets = nodecg.Replicant('themeAssets');
 
         // A more descriptive function name for getting translated text
         const getI18nText = (key) => {
@@ -1193,55 +1173,40 @@
             return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
         };
 
-        /**
-         * Resolves the path for a UI asset, prioritizing custom assets over default ones.
-         * Also handles language-specific versions of assets.
-         * @param {string} assetName - The base name of the asset (e.g., 'panel-bg.png').
-         * @param {boolean} isLangSpecific - Whether the asset has language variants (e.g., 'first_move_jp.png').
-         * @returns {string} The resolved asset path.
-         */
         function resolveAssetPath(assetName, isLangSpecific = false) {
-            const customAssets = customAssetList.value || [];
+            const settings = settingsRep.value || {};
+            const assets = themeAssets.value || {};
             const lang = language.value || 'jp';
             const basePath = '/assets/ptcg-telop/';
+            const activeTheme = settings.activeTheme || 'Default';
 
-            // Sanitize the assetName to handle accidental url() wrappers and get the clean filename.
             const potentialPath = assetName.replace(/url\((['\"]?)(.*?)\1\)/, '$2');
             const cleanAssetName = potentialPath.split('/').pop();
 
-            // 1. Prioritize checking if the cleaned custom asset exists in the custom folder.
-            if (customAssets.includes(cleanAssetName)) {
-                return `${basePath}custom/${cleanAssetName}`;
+            if (activeTheme !== 'Default' && assets[activeTheme] && assets[activeTheme].includes(cleanAssetName)) {
+                return `${basePath}${activeTheme}/${cleanAssetName}`;
             }
 
-            // 2. If no custom asset is found, fall back to the default element folder.
             if (isLangSpecific) {
-                // Assume the original assetName was the default, e.g., 'first_move_jp.png'
                 const baseName = assetName.replace(/_jp\.png$/, '');
                 const langAssetName = `${baseName}_${lang}.png`;
                 return `${basePath}element/${langAssetName}`;
             }
-
-            // 3. For non-language-specific assets, just use the original name.
+            
             return `${basePath}element/${assetName}`;
         }
 
-        /**
-         * Updates all customizable UI assets, including CSS variables and image sources.
-         */
         function updateCustomizableAssets() {
             const root = document.documentElement;
             const style = getComputedStyle(root);
 
             const getFile = (varName) => style.getPropertyValue(varName).trim().replace(/['\"]/g, '');
 
-            // Set CSS Variables for backgrounds
             root.style.setProperty('--bg-player-area', `url(${resolveAssetPath(getFile('--asset-panel-bg'))})`);
             root.style.setProperty('--bg-active-slot', `url(${resolveAssetPath(getFile('--asset-active-bg'))})`);
             root.style.setProperty('--bg-bench-slot', `url(${resolveAssetPath(getFile('--asset-bench-bg'))})`);
             root.style.setProperty('--bg-current-turn', `url(${resolveAssetPath(getFile('--asset-current-turn'))})`);
 
-            // Update simple image sources
             document.getElementById('vstar-L-icon').src = resolveAssetPath(getFile('--asset-vstar'));
             document.getElementById('vstar-R-icon').src = resolveAssetPath(getFile('--asset-vstar'));
             document.getElementById('action-L-energy').src = resolveAssetPath(getFile('--asset-action-energy'));
@@ -1251,12 +1216,12 @@
             document.getElementById('action-R-supporter').src = resolveAssetPath(getFile('--asset-action-supporter'));
             document.getElementById('action-R-retreat').src = resolveAssetPath(getFile('--asset-action-retreat'));
 
-            // Update assets that have their own dedicated functions
             updateFirstMoveIcon(firstMove.value);
             updateLostZoneCounter('L', live_lostZoneL.value);
             updateLostZoneCounter('R', live_lostZoneR.value);
             
-            // Re-render all slots to update ability icons
+            updateSideArea('L', live_sideL.value);
+            updateSideArea('R', live_sideR.value);
             sides.forEach(side => {
                 for (let i = 0; i < 6; i++) {
                     const replicant = live_slotReplicants[`live_slot${side}${i}`];
@@ -1267,28 +1232,31 @@
             });
         }
 
-
-        // --- Language Font Switching ---
         function setLanguageClass(lang) {
             const supportedLangs = ['jp', 'chs', 'cht', 'en'];
-            
-            // Remove any existing language classes
             supportedLangs.forEach(l => {
                 document.body.classList.remove(`lang-${l}`);
             });
-
-            // Add the new one if it's valid
             if (lang && supportedLangs.includes(lang)) {
                 document.body.classList.add(`lang-${lang}`);
             }
         }
 
-        language.on('change', (newLang) => {
-            setLanguageClass(newLang);
-            updateCustomizableAssets(); // Update all assets when language changes
-        });
-        // --- End Language Font Switching ---
+        const handleThemeChange = (settings) => {
+            const theme = (settings && settings.activeTheme) ? settings.activeTheme : 'Default';
+            const themeCssLink = document.getElementById('theme-css-link');
 
+            if (themeCssLink) {
+                if (theme === 'Default') {
+                    themeCssLink.disabled = true;
+                    themeCssLink.href = '';
+                } else {
+                    themeCssLink.href = `css/${theme}.css`;
+                    themeCssLink.disabled = false;
+                }
+            }
+            updateCustomizableAssets();
+        };
 
         const cardDatabase = nodecg.Replicant('cardDatabase');
         const assetPaths = nodecg.Replicant('assetPaths');
@@ -1315,7 +1283,7 @@
             live_sideL, live_sideR, live_stadium, live_currentTurn, settingsRep, firstMove,
             live_lostZoneL, live_lostZoneR,
             deckL, deckR, language,
-            i18nStrings
+            i18nStrings, themeAssets
         ];
         sides.forEach(side => {
             actionTypes.forEach(action => {
@@ -1363,12 +1331,9 @@
             });
         }
         
-        NodeCG.waitForReplicants(...replicantList, customAssetList).then(() => {
-            // Set initial language class to ensure correct fonts are loaded.
-            // Default to 'jp' if the replicant has no value yet.
+        NodeCG.waitForReplicants(...replicantList).then(() => {
             setLanguageClass(language.value || 'jp');
-            updateCustomizableAssets(); // Initial asset load
-
+            
             updatePlayerInfo('L', playerL_name.value);
             updatePlayerInfo('R', playerR_name.value);
             updateVstarIcon('L', vstarUsedL.value);
@@ -1388,7 +1353,7 @@
                     renderSlot(side, i, replicant.value, null);
                     replicant.on('change', (newVal, oldVal) => {
                         if (!oldVal) {
-                            return; // Initial setup, no animation needed
+                            return;
                         }
                         const promise = renderSlot(side, i, newVal, oldVal);
                         addAnimationPromise(promise);
@@ -1418,7 +1383,6 @@
                 const cardImgPath = `/${assetPaths.value.cardImgPath}`;
 
                 deck.cards.forEach(cardId => {
-                    // Check if image is already preloading/preloaded to avoid duplicates
                     if (!preloaderContainer.querySelector(`img[src="${cardImgPath}${cardId}.jpg"]`)) {
                         const img = document.createElement('img');
                         img.src = `${cardImgPath}${cardId}.jpg`;
@@ -1427,15 +1391,11 @@
                 });
             }
 
-            // Initial preload for both decks
             preloadDeckImages(deckL.value);
             preloadDeckImages(deckR.value);
-
-            // Listen for changes in both decks
             deckL.on('change', (newVal) => preloadDeckImages(newVal));
             deckR.on('change', (newVal) => preloadDeckImages(newVal));
 
-            // Listener for VSTAR enabled/disabled setting
             const handleVstarVisibility = (settings) => {
                 const vstarL_icon = document.getElementById('vstar-L-icon');
                 const vstarR_icon = document.getElementById('vstar-R-icon');
@@ -1444,14 +1404,24 @@
                 if (vstarR_icon) vstarR_icon.classList.toggle('hidden', !enabled);
             };
 
-            settingsRep.on('change', (newValue) => {
-                // Handle VSTAR visibility
-                handleVstarVisibility(newValue);
+            settingsRep.on('change', (newValue, oldValue) => {
+                const oldSettings = oldValue || {};
+                const newSettings = newValue || {};
 
-                // Handle type stroke color changes
-                const oldStroke = settingsRep.value ? settingsRep.value.useTypeStroke : false;
-                const newStroke = newValue ? newValue.useTypeStroke : false;
-                if (newStroke !== oldStroke) {
+                if (oldSettings.vstarEnabled !== newSettings.vstarEnabled) {
+                    handleVstarVisibility(newSettings);
+                }
+
+                if (oldSettings.activeTheme !== newSettings.activeTheme) {
+                    handleThemeChange(newSettings);
+                }
+
+                if (oldSettings.language !== newSettings.language) {
+                    setLanguageClass(newSettings.language);
+                    updateCustomizableAssets();
+                }
+
+                if (oldSettings.useTypeStroke !== newSettings.useTypeStroke) {
                     sides.forEach(side => {
                         for (let i = 0; i < 6; i++) {
                             const replicant = live_slotReplicants[`live_slot${side}${i}`];
@@ -1461,8 +1431,8 @@
                 }
             });
             
-            // Initial visibility check on load
             handleVstarVisibility(settingsRep.value);
+            handleThemeChange(settingsRep.value);
 
             function handleSwitchAnimation(animation) {
                 return new Promise(resolve => {

@@ -266,6 +266,10 @@
                         <input type="number" id="tool-limit-input" min="1" max="10" step="1" style="width: 60px; justify-self: end;">
                     </div>
                     <div class="form-group-hotkey">
+                        <label for="theme-select" id="label-theme">Theme</label>
+                        <select id="theme-select" class="form-select" style="justify-self: end;"></select>
+                    </div>
+                    <div class="form-group-hotkey">
                         <label for="language-select" id="label-language">Language</label>
                         <select id="language-select" class="form-select">
                             <option value="jp">日本語</option>
@@ -320,10 +324,12 @@
         NodeCG.waitForReplicants(
             nodecg.Replicant('ptcg-settings'),
             nodecg.Replicant('i18nStrings'),
-            nodecg.Replicant('language')
+            nodecg.Replicant('language'),
+            nodecg.Replicant('themeList')
         ).then(() => {
             const settingsRep = nodecg.Replicant('ptcg-settings');
             const i18nStrings = nodecg.Replicant('i18nStrings');
+            const themeList = nodecg.Replicant('themeList');
             
             // --- Element References ---
             const colorContainer = document.getElementById('color-settings-container');
@@ -342,15 +348,15 @@
             const clearCardHotkeyInput = document.getElementById('clear-card-hotkey-input');
             const clearSelectionHotkeyInput = document.getElementById('clear-selection-hotkey-input');
             const toolLimitInput = document.getElementById('tool-limit-input');
+            const themeSelect = document.getElementById('theme-select');
             const languageSelect = document.getElementById('language-select');
             const saveBtn = document.getElementById('save-settings-btn');
             const clearDbBtn = document.getElementById('clear-database-btn');
             
             const getI18nText = (key) => {
-                // Use the language from the settings replicant for consistency in the settings panel
                 const lang = settingsRep.value ? settingsRep.value.language : 'jp';
                 if (!i18nStrings.value || !i18nStrings.value[key] || !lang) {
-                    return key; // Fallback to key name if not found
+                    return key;
                 }
                 return i18nStrings.value[key][lang] || i18nStrings.value[key]['jp'] || key;
             };
@@ -370,6 +376,7 @@
                 document.getElementById('label-system').textContent = getI18nText('settings_system');
                 document.getElementById('label-reverse-card-display').textContent = getI18nText('settings_reverse_card_display');
                 document.getElementById('label-type-colored-borders').textContent = getI18nText('settings_type_colored_borders');
+                document.getElementById('label-theme').textContent = getI18nText('settings_theme');
                 document.getElementById('label-tool-carry-limit').textContent = getI18nText('settings_tool_carry_limit');
                 document.getElementById('label-language').textContent = getI18nText('settings_language');
                 document.getElementById('clear-database-btn').textContent = getI18nText('settings_clear_database');
@@ -394,13 +401,23 @@
 
             let renderedColorElements = {};
 
+            function updateThemeDropdown(availableThemes, activeTheme) {
+                if (!themeSelect) return;
+                themeSelect.innerHTML = '';
+                availableThemes.forEach(themeName => {
+                    const option = document.createElement('option');
+                    option.value = themeName;
+                    option.textContent = themeName;
+                    themeSelect.appendChild(option);
+                });
+                themeSelect.value = activeTheme || 'Default';
+            }
+
             function renderAll(settings) {
                 // 1. Render Color Settings
                 colorContainer.innerHTML = '';
                 renderedColorElements = {};
                 const colorMap = (settings && settings.typeColorMap) ? settings.typeColorMap : {};
-
-                // A master list of all possible types and their UI defaults.
                 const allPossibleTypes = {
                     '草': { color: '#4DAD5B', opacity: 1.0 }, '炎': { color: '#F4813E', opacity: 1.0 },
                     '水': { color: '#4299E1', opacity: 1.0 }, '雷': { color: '#FBD100', opacity: 1.0 },
@@ -409,41 +426,31 @@
                     '無': { color: '#A8A878', opacity: 1.0 }, 
                     '妖': { color: '#E08EE0', opacity: 1.0 }, '竜': { color: '#7038F8', opacity: 1.0 },
                 };
-
-                // Use only the keys from the master list to render the UI.
                 const typeKeys = Object.keys(allPossibleTypes);
-
                 typeKeys.forEach(type => {
-                    // Use the value from the replicant if it exists, otherwise fall back to the master list.
                     const setting = colorMap[type] || allPossibleTypes[type] || { color: '#ffffff', opacity: 1.0 };
                     const colorValue = setting.color;
                     const opacityValue = setting.opacity;
                     const opacityPercent = Math.round(opacityValue * 100);
-
                     const formGroup = document.createElement('div');
                     formGroup.classList.add('form-group');
-
                     const label = document.createElement('label');
                     label.textContent = type;
-
                     const colorInput = document.createElement('input');
                     colorInput.type = 'color';
                     colorInput.value = colorValue;
-
                     const opacitySlider = document.createElement('input');
                     opacitySlider.type = 'range';
                     opacitySlider.min = 0;
                     opacitySlider.max = 100;
                     opacitySlider.step = 1;
                     opacitySlider.value = opacityPercent;
-                    
                     const opacityNumberInput = document.createElement('input');
                     opacityNumberInput.type = 'number';
                     opacityNumberInput.min = 0;
                     opacityNumberInput.max = 100;
                     opacityNumberInput.value = opacityPercent;
                     opacityNumberInput.classList.add('opacity-input-number');
-
                     opacitySlider.addEventListener('input', () => { opacityNumberInput.value = opacitySlider.value; });
                     opacityNumberInput.addEventListener('input', () => { opacitySlider.value = opacityNumberInput.value; });
                     opacityNumberInput.addEventListener('change', () => {
@@ -453,14 +460,11 @@
                         opacityNumberInput.value = value;
                         opacitySlider.value = value;
                     });
-
                     formGroup.appendChild(label);
                     formGroup.appendChild(colorInput);
                     formGroup.appendChild(opacitySlider);
                     formGroup.appendChild(opacityNumberInput);
-                    // FIX: Use the correct variable 'colorContainer'
                     colorContainer.appendChild(formGroup);
-
                     renderedColorElements[type] = { colorInput, opacityNumberInput };
                 });
 
@@ -477,32 +481,36 @@
                 weaknessDamageToggle.checked = !!(settings && settings.weaknessDamage);
                 toolLimitInput.value = (settings && settings.toolLimit) ? settings.toolLimit : 4;
                 languageSelect.value = (settings && settings.language) ? settings.language : "jp";
+                
+                // Update theme dropdown
+                updateThemeDropdown(themeList.value || ['Default'], settings ? settings.activeTheme : 'Default');
 
                 // 3. Render Hotkey Settings
                 const hotkeys = (settings && settings.hotkeys) ? settings.hotkeys : {};
                 discardHotkeyInput.value = hotkeys.discard || 'Escape';
                 applyHotkeyInput.value = hotkeys.apply || 'Control+S';
-                clearCardHotkeyInput.value = hotkeys.clearCard || 'Space'; // Default to Space
+                clearCardHotkeyInput.value = hotkeys.clearCard || 'Space';
                 clearSelectionHotkeyInput.value = hotkeys.clearSelection || 'Escape';
             }
 
             settingsRep.on('change', (newValue) => {
                 renderAll(newValue);
-                updateAllLabels(); // Update labels when settings (including language) change
+                updateAllLabels();
+            });
+
+            themeList.on('change', (newThemeList) => {
+                updateThemeDropdown(newThemeList || ['Default'], settingsRep.value ? settingsRep.value.activeTheme : 'Default');
             });
 
             saveBtn.addEventListener('click', () => {
-                // --- Gather Color Settings ---
                 const newColorMap = {};
                 const types = Object.keys(renderedColorElements);
-                
                 types.forEach(type => {
                     const elements = renderedColorElements[type];
                     if (elements && elements.colorInput && elements.opacityNumberInput) {
                         let value = parseInt(elements.opacityNumberInput.value, 10);
                         if (isNaN(value) || value < 0) value = 0;
                         if (value > 100) value = 100;
-
                         newColorMap[type] = {
                             color: elements.colorInput.value,
                             opacity: value / 100
@@ -510,7 +518,6 @@
                     }
                 });
 
-                // --- Gather Hotkey Settings ---
                 const newHotkeys = {
                     discard: discardHotkeyInput.value.trim() || 'Escape',
                     apply: applyHotkeyInput.value.trim() || 'Control+S',
@@ -518,7 +525,6 @@
                     clearSelection: clearSelectionHotkeyInput.value.trim() || 'Escape'
                 };
 
-                // --- Gather Appearance Settings ---
                 const newUseTypeStroke = typeStrokeToggle.checked;
                 const newVstarEnabled = vstarToggle.checked;
                 const newAutoRetreatToggle = autoRetreatToggle.checked;
@@ -529,14 +535,16 @@
                 const newAutoCheckSupporter = autoCheckSupporterToggle.checked;
                 const newAutoTrashTM = autoTrashTmToggle.checked;
                 const newWeaknessDamage = weaknessDamageToggle.checked;
+                const newActiveTheme = themeSelect.value;
                 const newToolLimit = parseInt(toolLimitInput.value, 10) || 4;
                 const newLanguage = languageSelect.value;
                 
-                
-                // --- Update Replicant ---
                 const currentSettings = settingsRep.value || {};
+                // Make sure to not include the old useCustomAppearance setting
+                const { useCustomAppearance, ...restOfSettings } = currentSettings;
+
                 settingsRep.value = { 
-                    ...currentSettings,
+                    ...restOfSettings,
                     typeColorMap: newColorMap,
                     hotkeys: newHotkeys,
                     useTypeStroke: newUseTypeStroke,
@@ -549,16 +557,17 @@
                     autoCheckSupporter: newAutoCheckSupporter,
                     autoTrashTM: newAutoTrashTM,
                     weaknessDamage: newWeaknessDamage,
+                    activeTheme: newActiveTheme,
                     toolLimit: newToolLimit,
                     language: newLanguage
                 };
                 saveBtn.textContent = 'Saved!';
-                updateAllLabels(); // Re-translate after saving
+                updateAllLabels();
                 setTimeout(() => {
                     saveBtn.textContent = 'Save All Settings';
                 }, 1500);
             });
-            // --- Get Bundle Version ---
+
             const versionSpan = document.getElementById('bundle-version');
             if (versionSpan) {
                 nodecg.sendMessage('getBundleVersion', (err, version) => {
@@ -572,7 +581,6 @@
                 });
             }
 
-            // --- Donation Feature Logic ---
             const supportBtn = document.getElementById('support-developer-btn');
             const donationModal = document.getElementById('donation-modal');
             const closeModalBtn = document.getElementById('donation-modal-close-btn');
@@ -582,29 +590,25 @@
             if (nodecg.bundleConfig && nodecg.bundleConfig.donation_links) {
                 supportBtn.style.display = 'inline-block';
                 const links = nodecg.bundleConfig.donation_links;
-
                 supportBtn.addEventListener('click', () => {
                     const lang = settingsRep.value ? settingsRep.value.language : 'jp';
                     donationModalTitle.textContent = getI18nText('donation_modal_title');
-                    donationContentArea.innerHTML = ''; // Clear previous content
-
+                    donationContentArea.innerHTML = '';
                     switch (lang) {
                         case 'chs':
                             if (links.wechat_qr_url) donationContentArea.innerHTML += `<img class="qr-code-wechat" src="${links.wechat_qr_url}" alt="WeChat Pay">`;
                             if (links.alipay_qr_url) donationContentArea.innerHTML += `<img class="qr-code-alipay" src="${links.alipay_qr_url}" alt="Alipay">`;
                             break;
-                            case 'jp':
-                                if (links.ofuse_url) donationContentArea.innerHTML = `<a href="${links.ofuse_url}" target="_blank" rel="noopener noreferrer" class="ofuse-custom-btn">OFUSEで応援を送る</a>`;
-                                break;
-                        default: // English and others
+                        case 'jp':
+                            if (links.ofuse_url) donationContentArea.innerHTML = `<a href="${links.ofuse_url}" target="_blank" rel="noopener noreferrer" class="ofuse-custom-btn">OFUSEで応援を送る</a>`;
+                            break;
+                        default:
                             if (links.buy_me_a_coffee_url) donationContentArea.innerHTML = `<a href="${links.buy_me_a_coffee_url}" target="_blank" rel="noopener noreferrer"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;"></a>`;
                             break;
                     }
                     donationModal.style.display = 'block';
                 });
-
                 closeModalBtn.addEventListener('click', () => { donationModal.style.display = 'none'; });
-
                 window.addEventListener('click', (event) => {
                     if (event.target == donationModal) {
                         donationModal.style.display = 'none';

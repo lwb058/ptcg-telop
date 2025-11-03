@@ -80,7 +80,7 @@ body, html {
     position: relative; /* For KO Animation Positioning */
 }
 .active-pokemon-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; gap: 4px; }
-.battle-pokemon-name { height: 35px; align-content: flex-end; font-size: 25px; font-weight: 900; }
+.battle-pokemon-name { height: 35px; display: flex; align-items: center; font-size: 25px; font-weight: 900; }
 .battle-card-image-area {
     position: relative; 
     width: 376px; 
@@ -179,8 +179,8 @@ body, html {
     top: 0; left: 0; right: 0; bottom: 0;
     display: flex;
     align-items: center;
-    justify-content: flex-end; /* Align to the right */
-    padding-right: 8px; /* Add some padding */
+    justify-content: flex-end; 
+    padding-right: 8px; 
     font-family: var(--font-numeric);
     font-size: 18px;
     font-weight: bold;
@@ -205,16 +205,17 @@ body, html {
 .battle-skills-container { height: 54px; flex-grow: 0; display: flex; flex-direction: column; justify-content: space-around; background-color: var(--sub-color);border-radius: var(--module-border-radius); padding: 2px; gap: 2px; box-sizing: border-box; }
 
 .skill-row-wrapper {
+    display: flex;
+    align-items: center;
     position: relative;
     height: 22px;
 }
 
 .battle-skill { 
-    display: grid; 
-    grid-template-columns: 1fr 50px; 
+    display: flex; 
+    align-items: center; 
     width: 100%;
     height: 100%;
-    align-items: center; 
     background-color: var(--third-color);
     border-radius: var(--module-border-radius); 
     gap: 5px; 
@@ -241,11 +242,17 @@ body, html {
     gap: 1px;
 }
 
-.battle-skill-name-wrapper { display: flex; align-items: center; gap: 5px; overflow: hidden; padding-left: 130px; }
+.battle-skill-name-wrapper { 
+    flex-grow: 1; 
+    display: flex; 
+    align-items: center; 
+    gap: 5px; 
+    overflow: hidden; 
+    padding-left: 115px; }
 
 .battle-skill-ability-tag { 
     /* background-color, color, font-size, font-weight, etc. are no longer needed for an image tag */
-    width: 116px; 
+    width: 110px; 
     height: 100%;
     left: -2px; 
     object-fit: contain; /* Ensure the image scales correctly within the dimensions */
@@ -256,6 +263,8 @@ body, html {
 .battle-skill-name { 
     font-size: 16px; 
     font-weight: 900; 
+    display: flex; 
+    align-items: center; 
     white-space: nowrap;
     overflow: hidden; 
     text-overflow: ellipsis; 
@@ -269,6 +278,8 @@ body, html {
 .battle-skill-damage {
     font-family: var(--font-numeric);
     font-size: 20px;
+    width: 50px; 
+    flex-shrink: 0; 
     font-weight: bold;
     text-align: right;
     padding-right: 10px;
@@ -327,22 +338,46 @@ body, html {
 .bench-attached-tool-item { width: 36px; height: 23px; overflow: hidden; border-radius: 3px; border: var(--module-border) solid var(--module-color-border); box-shadow: 2px 2px 5px rgba(0,0,0,0.7); position: relative; }
 .bench-attached-tool-item img { position: absolute; width: 42.63px; height: auto; left: -3.79px; top: -28.44px; transform: rotate(180deg); }
 .bench-info-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 4px; overflow: hidden; }
-.bench-pokemon-name { font-size: 16px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 21px; display: flex; align-items: flex-end; }
+.bench-pokemon-name { font-size: 16px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 21px; display: flex; align-items: center; }
 .bench-hp-gauge { display: flex; align-items: center; }
 .bench-hp-text { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; font-family: var(--font-numeric); font-size: 11px; font-weight: bold; color: white; text-shadow: 1px 1px 1px black; z-index: 2; }
 .bench-hp-bar-container { position: relative; flex-grow: 1; height: 16px; background-color: rgba(0, 0, 0, 0.5); border-radius: 8px; overflow: hidden; border: var(--hp-border) solid var(--hp-border-color); }
 .bench-hp-bar { height: 100%; transition: width 0.5s ease-in-out, background-color 0.5s ease; }
 .bench-skills-container { display: flex; flex-direction: column; justify-content: space-around; flex-grow: 0; overflow: hidden; height: 44px; }
-.bench-skill-row-wrapper { position: relative; height: 20px; }
-.bench-skill { display: grid; grid-template-columns: 1fr 40px; width: 100%; height: 100%; align-items: center; background-color: var(--third-color); border-radius: 6px; gap: 4px; }
+.bench-skill-row-wrapper { position: relative; height: 18px; }
+.bench-skill { 
+    display: flex; 
+    align-items: center;
+    width: 100%; 
+    height: 100%; 
+    background-color: var(--third-color); 
+    border-radius: 6px; 
+    gap: 4px; 
+}
 .bench-energy-cost-container, .bench-skill-ability-tag { position: absolute; left: 0; top: 0; z-index: 1; }
-.bench-energy-cost-container { background-color: rgb(201, 201, 201); border-radius: 3px 9px 9px 3px; height: 20px; display: inline-flex; align-items: center; padding: 0 2px; box-sizing: border-box; gap: 1px; }
+.bench-energy-cost-container { background-color: rgb(201, 201, 201); border-radius: 3px 9px 9px 3px; height: 100%; display: inline-flex; align-items: center; padding: 0 2px; box-sizing: border-box; gap: 1px; }
 .bench-energy-cost-container .energy-icon { width: 14px; height: 14px; margin-left: 0px; }
 .bench-skill-ability-tag { width: 79px; height: 100%; left:-1px; object-fit: contain; transition: filter 0.3s ease; filter: grayscale(0);}
-.bench-skill-name-wrapper { display: flex; align-items: center; gap: 4px; overflow: hidden; padding-left: 80px; }
-.bench-skill-name { font-size: 12px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bench-skill-name-wrapper { 
+    flex-grow: 1; 
+    display: flex; 
+    align-items: center; 
+    gap: 4px; 
+    overflow: hidden; 
+    padding-left: 80px; 
+}
+.bench-skill-name { font-size: 12px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; }
 .bench-skill-name.is-ability { color: var(--ability-tag-color); }
-.bench-skill-damage { font-family: var(--font-numeric);font-size: 14px; font-weight: bold; text-align: right; padding-right: 8px; white-space: nowrap; }
+.bench-skill-damage { 
+    font-family: var(--font-numeric);
+    font-size: 14px; 
+    font-weight: bold; 
+    text-align: right; 
+    padding-right: 8px; 
+    white-space: nowrap; 
+    width: 40px; 
+    flex-shrink: 0; 
+}
 
 /* --- Common Animation Wrapper --- */
 /* This wrapper is used in card.html and extra.html to control the visibility and animation of the entire player module. */

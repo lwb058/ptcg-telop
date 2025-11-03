@@ -67,22 +67,55 @@ module.exports = function (nodecg) {
 	const cardToShowR = nodecg.Replicant('cardToShowR', { defaultValue: '' });
 	    const i18nStrings = nodecg.Replicant('i18nStrings', { defaultValue: {} });
 	
-	    const customAssetList = nodecg.Replicant('customAssetList', { defaultValue: [] });
-	    try {
-	        const customAssetDir = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', 'custom');
-	        if (fs.existsSync(customAssetDir)) {
-	            const files = fs.readdirSync(customAssetDir);
-	            // Filter out system files like .DS_Store
-	            customAssetList.value = files.filter(file => !file.startsWith('.'));
-	            nodecg.log.info(`Found ${customAssetList.value.length} custom assets.`);
-	        } else {
-	            nodecg.log.warn('Custom asset directory not found, skipping scan.');
-	            customAssetList.value = [];
-	        }
-	    } catch (e) {
-	        nodecg.log.error('Failed to scan custom assets directory:', e);
-	        customAssetList.value = [];
-	    }
+	const themeList = nodecg.Replicant('themeList', { defaultValue: ['Default'] });
+	const themeAssets = nodecg.Replicant('themeAssets', { defaultValue: {} });
+
+	try {
+		const cssDir = path.join(projectRoot, 'nodecg', 'bundles', 'ptcg-telop', 'graphics', 'css');
+		const assetsBaseDir = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop');
+		
+		const foundThemes = [];
+		const themeAssetMap = {};
+
+		if (fs.existsSync(cssDir)) {
+			const cssFiles = fs.readdirSync(cssDir);
+			const ignoredCssFiles = ['common.css', 'fonts.css'];
+			
+			cssFiles.forEach(file => {
+				if (path.extname(file) === '.css' && !ignoredCssFiles.includes(file)) {
+					const themeName = path.basename(file, '.css');
+					const themeAssetDir = path.join(assetsBaseDir, themeName);
+
+					if (fs.existsSync(themeAssetDir) && fs.statSync(themeAssetDir).isDirectory()) {
+						foundThemes.push(themeName);
+						const assetFiles = fs.readdirSync(themeAssetDir);
+						themeAssetMap[themeName] = assetFiles.filter(f => !f.startsWith('.'));
+						nodecg.log.info(`Detected valid theme '${themeName}' with ${themeAssetMap[themeName].length} assets.`);
+					}
+				}
+			});
+		} else {
+			nodecg.log.warn('Themes CSS directory not found, skipping scan.');
+		}
+
+		const availableThemes = ['Default', ...foundThemes];
+		themeList.value = availableThemes;
+		themeAssets.value = themeAssetMap;
+
+		// Check if the currently saved theme is still valid.
+		if (ptcgSettings.value) {
+			const activeTheme = ptcgSettings.value.activeTheme;
+			if (activeTheme && !availableThemes.includes(activeTheme)) {
+				nodecg.log.warn(`Saved theme '${activeTheme}' is no longer valid. Reverting to 'Default'.`);
+				ptcgSettings.value.activeTheme = 'Default';
+			}
+		}
+
+	} catch (e) {
+		nodecg.log.error('Failed to scan for themes:', e);
+		themeList.value = ['Default'];
+		themeAssets.value = {};
+	}
 	const language = nodecg.Replicant('language', { defaultValue: 'jp' });
 
     const live_lostZoneL = nodecg.Replicant('live_lostZoneL', { defaultValue: 0 });

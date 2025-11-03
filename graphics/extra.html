@@ -26,7 +26,7 @@
         })();
     </script>
     <link rel="stylesheet" href="css/common.css">
-    <link rel="stylesheet" href="css/custom.css">
+    <link id="theme-css-link" rel="stylesheet" href="" disabled>
     <style>
         .player-area { 
             height: 560px; 
@@ -665,32 +665,29 @@
             const deckL = nodecg.Replicant('deckL');
             const deckR = nodecg.Replicant('deckR');
             const language = nodecg.Replicant('language');
-            const customAssetList = nodecg.Replicant('customAssetList');
+            const themeAssets = nodecg.Replicant('themeAssets');
             const i18nStrings = nodecg.Replicant('i18nStrings');
 
             function resolveAssetPath(assetName, isLangSpecific = false) {
-                const customAssets = customAssetList.value || [];
+                const settings = settingsRep.value || {};
+                const assets = themeAssets.value || {};
                 const lang = language.value || 'jp';
                 const basePath = '/assets/ptcg-telop/';
+                const activeTheme = settings.activeTheme || 'Default';
 
-                // Sanitize the assetName to handle accidental url() wrappers and get the clean filename.
                 const potentialPath = assetName.replace(/url\((['\"]?)(.*?)\1\)/, '$2');
                 const cleanAssetName = potentialPath.split('/').pop();
 
-                // 1. Prioritize checking if the cleaned custom asset exists in the custom folder.
-                if (customAssets.includes(cleanAssetName)) {
-                    return `${basePath}custom/${cleanAssetName}`;
+                if (activeTheme !== 'Default' && assets[activeTheme] && assets[activeTheme].includes(cleanAssetName)) {
+                    return `${basePath}${activeTheme}/${cleanAssetName}`;
                 }
 
-                // 2. If no custom asset is found, fall back to the default element folder.
                 if (isLangSpecific) {
-                    // Assume the original assetName was the default, e.g., 'first_move_jp.png'
                     const baseName = assetName.replace(/_jp\.png$/, '');
                     const langAssetName = `${baseName}_${lang}.png`;
                     return `${basePath}element/${langAssetName}`;
                 }
-
-                // 3. For non-language-specific assets, just use the original name.
+                
                 return `${basePath}element/${assetName}`;
             }
 
@@ -704,6 +701,22 @@
                     if(img.src !== abilityIconSrc) img.src = abilityIconSrc;
                 });
             }
+
+            const handleThemeChange = (settings) => {
+                const theme = (settings && settings.activeTheme) ? settings.activeTheme : 'Default';
+                const themeCssLink = document.getElementById('theme-css-link');
+
+                if (themeCssLink) {
+                    if (theme === 'Default') {
+                        themeCssLink.disabled = true;
+                        themeCssLink.href = '';
+                    } else {
+                        themeCssLink.href = `css/${theme}.css`;
+                        themeCssLink.disabled = false;
+                    }
+                }
+                updateCustomizableAssets();
+            };
 
             const replicantList = [cardDatabase, settingsRep, assetPaths, deckL, deckR, language];
             const sides = ['L', 'R'];
@@ -733,9 +746,21 @@
                 return `${basePath}hit-${typeString}.webm`;
             }
 
-            NodeCG.waitForReplicants(...replicantList, customAssetList, i18nStrings).then(() => {
-                updateCustomizableAssets(); // Initial asset load
-                language.on('change', updateCustomizableAssets);
+            NodeCG.waitForReplicants(...replicantList, themeAssets, i18nStrings).then(() => {
+                handleThemeChange(settingsRep.value);
+
+                settingsRep.on('change', (newValue, oldValue) => {
+                    const newSettings = newValue || {};
+                    const oldSettings = oldValue || {};
+
+                    if (newSettings.activeTheme !== oldSettings.activeTheme) {
+                        handleThemeChange(newSettings);
+                    }
+
+                    if (newSettings.language !== oldSettings.language) {
+                        updateCustomizableAssets();
+                    }
+                });
 
                 const preloaderContainer = document.getElementById('video-preloader');
                 function preloadDeckImages(deck) {
