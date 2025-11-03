@@ -183,8 +183,8 @@
             <div class="deck-header">
                 <h2 id="playerL-deck-title">Player L Deck</h2>
                 <div class="view-controls">
-                    <button class="view-btn active" data-view="table" data-player="L">List</button>
-                    <button class="view-btn" data-view="icon" data-player="L">Grid</button>
+                    <button class="view-btn" data-view="table" data-player="L">List</button>
+                    <button class="view-btn active" data-view="icon" data-player="L">Grid</button>
                 </div>
                 <div class="add-card-controls">
                     <input type="text" id="add-card-id-L" placeholder="Enter Deck ID or Card ID">
@@ -212,8 +212,8 @@
             <div class="deck-header">
                 <h2 id="playerR-deck-title">Player R Deck</h2>
                  <div class="view-controls">
-                    <button class="view-btn active" data-view="table" data-player="R">List</button>
-                    <button class="view-btn" data-view="icon" data-player="R">Grid</button>
+                    <button class="view-btn" data-view="table" data-player="R">List</button>
+                    <button class="view-btn active" data-view="icon" data-player="R">Grid</button>
                 </div>
                 <div class="add-card-controls">
                     <input type="text" id="add-card-id-R" placeholder="Enter Deck ID or Card ID">
@@ -267,7 +267,7 @@
         const playerRDeckTitle = document.getElementById('playerR-deck-title');
 
         // Global State
-        let deckViews = { L: 'table', R: 'table' };
+        let deckViews = { L: 'icon', R: 'icon' };
 
         // Event Listeners
         clearButton.addEventListener('click', () => {
