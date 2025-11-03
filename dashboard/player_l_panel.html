@@ -207,8 +207,8 @@
 
         <div class="form-group">
             <label for="deck-id-l">DeckID:</label>
-            <input type="text" id="deck-id-l">
-            <button id="set-deck-btn-l" class="btn" style="margin-left: 5px;">Set</button>
+            <input type="text" id="deck-id-l" placeholder="Enter Deck ID or Card ID">
+            <button id="set-deck-btn-l" class="btn" style="margin-left: 5px;">Import</button>
         </div>
 
         <div class="flex-container">
@@ -842,7 +842,7 @@
                 } else {
                     // No panel is loading
                     setDeckBtn.disabled = false;
-                    setDeckBtn.textContent = 'Set';
+                    setDeckBtn.textContent = 'Import';
                 }
             });
 
@@ -1045,14 +1045,13 @@
 
             setDeckBtn.addEventListener('click', () => {
                 const deckCode = deckIdInput.value.trim();
-                if (!deckCode) return alert('Please enter a Deck ID.');
+                if (!deckCode) return alert('Please enter a Deck ID or Card ID.');
                 deckIdL.value = deckCode;
-                setDeckBtn.textContent = 'Loading...';
-                setDeckBtn.disabled = true;
-                nodecg.sendMessage('setPlayerDeck', { side: 'L', deckCode })
-                    .finally(() => {
-                        setDeckBtn.textContent = 'Set';
-                        setDeckBtn.disabled = false;
+                // Use the new unified message
+                nodecg.sendMessage('importDeckOrCard', { side: 'L', code: deckCode })
+                    .catch(err => {
+                        console.error('Import failed', err);
+                        alert(`Failed to import: ${err.error || 'Unknown error'}`);
                     });
             });
 

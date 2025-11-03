@@ -187,8 +187,8 @@
                     <button class="view-btn" data-view="icon" data-player="L">Grid</button>
                 </div>
                 <div class="add-card-controls">
-                    <input type="text" id="add-card-id-L" placeholder="Enter Card ID to add">
-                    <button id="add-card-btn-L">Add Card</button>
+                    <input type="text" id="add-card-id-L" placeholder="Enter Deck ID or Card ID">
+                    <button id="add-card-btn-L">Import</button>
                 </div>
             </div>
             <div class="table-wrapper" id="deckL-table-wrapper">
@@ -216,8 +216,8 @@
                     <button class="view-btn" data-view="icon" data-player="R">Grid</button>
                 </div>
                 <div class="add-card-controls">
-                    <input type="text" id="add-card-id-R" placeholder="Enter Card ID to add">
-                    <button id="add-card-btn-R">Add Card</button>
+                    <input type="text" id="add-card-id-R" placeholder="Enter Deck ID or Card ID">
+                    <button id="add-card-btn-R">Import</button>
                 </div>
             </div>
             <div class="table-wrapper" id="deckR-table-wrapper">
@@ -250,6 +250,8 @@
         const assetPaths = nodecg.Replicant('assetPaths');
         const i18nStrings = nodecg.Replicant('i18nStrings');
         const language = nodecg.Replicant('language');
+
+        const deckLoadingStatus = nodecg.Replicant('deckLoadingStatus');
 
         // DOM Elements
         const deckLBody = document.getElementById('deckL-body');
@@ -300,13 +302,46 @@
         });
 
         // Init
-        NodeCG.waitForReplicants(deckL, deckR, database, playerL_name, playerR_name, i18nStrings, language).then(() => {
+        NodeCG.waitForReplicants(deckL, deckR, database, playerL_name, playerR_name, i18nStrings, language, deckLoadingStatus).then(() => {
             playerLDeckTitle.textContent = `${playerL_name.value || 'Player L'}'s Deck`;
             playerRDeckTitle.textContent = `${playerR_name.value || 'Player R'}'s Deck`;
 
             updateUIText();
             renderPlayerDeck('L', deckL.value, database.value);
             renderPlayerDeck('R', deckR.value, database.value);
+        });
+
+        deckLoadingStatus.on('change', (newStatus) => {
+            const isLoadingAny = newStatus.loading;
+            const loadingSide = newStatus.side; // 'L', 'R', or null
+
+            ['L', 'R'].forEach(side => {
+                const btn = document.getElementById(`add-card-btn-${side}`);
+                const input = document.getElementById(`add-card-id-${side}`);
+
+                if (isLoadingAny) {
+                    btn.disabled = true;
+                    input.disabled = true;
+                    
+                    if (side === loadingSide) {
+                        // This is the side being loaded
+                        const percentage = newStatus.percentage || 0;
+                        if (percentage > 0) {
+                            btn.textContent = `${percentage.toFixed(0)}%`;
+                        } else {
+                            btn.textContent = 'Loading...';
+                        }
+                    } else {
+                        // This is the other side, just show a generic loading state
+                        btn.textContent = 'Loading...';
+                    }
+                } else {
+                    // No loading is happening
+                    btn.disabled = false;
+                    input.disabled = false;
+                    btn.textContent = 'Import';
+                }
+            });
         });
 
         // Replicant Change Listeners
@@ -317,8 +352,22 @@
             playerRDeckTitle.textContent = `${newValue || 'Player R'}'s Deck`;
         });
 
-        deckL.on('change', (newValue) => renderPlayerDeck('L', newValue, database.value));
-        deckR.on('change', (newValue) => renderPlayerDeck('R', newValue, database.value));
+        deckL.on('change', (newValue) => {
+            const db = database.value;
+            if (newValue && newValue.cards && newValue.cards.every(cardId => db && db[cardId])) {
+                renderPlayerDeck('L', newValue, db);
+            } else {
+                nodecg.log.info('Deck L data arrived, but waiting for database update to render.');
+            }
+        });
+        deckR.on('change', (newValue) => {
+            const db = database.value;
+            if (newValue && newValue.cards && newValue.cards.every(cardId => db && db[cardId])) {
+                renderPlayerDeck('R', newValue, db);
+            } else {
+                nodecg.log.info('Deck R data arrived, but waiting for database update to render.');
+            }
+        });
         language.on('change', () => {
             updateUIText();
             renderPlayerDeck('L', deckL.value, database.value);
@@ -367,13 +416,13 @@
         }
 
         function handleAddCard(side, inputEl) {
-            const cardId = inputEl.value.trim();
-            if (cardId) {
-                nodecg.sendMessage('addSingleCardToDeck', { side: side, cardId: cardId })
+            const code = inputEl.value.trim();
+            if (code) {
+                nodecg.sendMessage('importDeckOrCard', { side: side, code: code })
                     .then(() => { inputEl.value = ''; })
                     .catch(err => {
-                        console.error(`Error adding card for player ${side}:`, err);
-                        alert(`Failed to add card ${cardId}. See console for details.`);
+                        console.error(`Error importing for player ${side}:`, err);
+                        alert(`Failed to import ${code}. See console for details.`);
                     });
             }
         }

@@ -259,138 +259,126 @@ module.exports = function (nodecg) {
 	}
 	// Initial load of the database and asset paths is now handled by the ptcgSettings.on('change') listener.
 
-	// Listen for messages to process deck codes
-	nodecg.listenFor('setPlayerDeck', ({ side, deckCode }, callback) => {
-		nodecg.log.info(`Received request to process deck code for Player ${side}: ${deckCode}`);
-		deckLoadingStatus.value = { loading: true, side: side };
+	// Listen for messages to process deck codes or single card IDs
+	nodecg.listenFor('importDeckOrCard', ({ side, code }, callback) => {
+		const isLikelyDeckCode = (str) => (str.match(/-/g) || []).length >= 2 && str.length > 10;
 
-		const pythonDir = path.join(__dirname, '..', 'python');
-		const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
+		if (isLikelyDeckCode(code)) {
+			// --- DECK IMPORT LOGIC ---
+			nodecg.log.info(`Treating as Deck Code. Request to process for Player ${side}: ${code}`);
+			deckLoadingStatus.value = { loading: true, side: side, percentage: 0, text: 'Starting...' };
 
-		const scriptMap = {
-			jp: 'extract_deck_cards_jp.py',
-			chs: 'extract_deck_cards_chs.py',
-			cht: 'extract_deck_cards_cht.py',
-			en: 'extract_deck_cards_en.py',
-		};
-		const pythonScriptFile = scriptMap[lang] || scriptMap.jp;
-		const pythonScriptPath = path.join(pythonDir, pythonScriptFile);
-
-		const dbFileName = `database_${lang}.json`;
-		const absoluteDbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
-		const cardImgDirName = `card_img_${lang}`;
-		const absoluteCardImgPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', cardImgDirName);
-		
-		const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
-		const command = `${pythonCommand} "${pythonScriptPath}" "${deckCode}"`;
-
-		const child = exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
-			// Final state reset
-			deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
-
-			if (error) {
-				nodecg.log.error(`exec error: ${error}`);
-				nodecg.log.error(`Python stderr: ${stderr}`);
-				if (callback) callback({ error: error.message, stderr: stderr });
-				return;
-			}
-			
-			try {
-				const deckCards = JSON.parse(stdout);
-				const deckReplicant = side === 'L' ? nodecg.Replicant('deckL') : nodecg.Replicant('deckR');
-				nodecg.log.info(`Deck for Player ${side} processed. Reloading database before updating deck replicant.`);
-                loadCardDatabase();
-				deckReplicant.value = {
-					name: deckCode, 
-					cards: deckCards.cards
-				};
-				nodecg.log.info(`Database reloaded and deck for Player ${side} updated.`);
-				if (callback) callback(null, `Deck for Player ${side} updated.`);
-			} catch (parseError) {
-				nodecg.log.error('Failed to parse python script output:', parseError);
-				nodecg.log.error('Python stdout:', stdout);
-				if (callback) callback({ error: 'Failed to parse script output.', stdout: stdout });
-			}
-		});
-
-		const progressRegex = /--- Processing card (\d+)\/(\d+):/;
-		child.stderr.on('data', (data) => {
-			const match = data.toString().match(progressRegex);
-			if (match) {
-				const current = parseInt(match[1], 10);
-				const total = parseInt(match[2], 10);
-				const percentage = Math.round((current / total) * 100);
-				const text = `${current}/${total}`;
-				deckLoadingStatus.value = { loading: true, side: side, percentage: percentage, text: text };
-			}
-		});
-	});
-
-	nodecg.listenFor('addSingleCardToDeck', ({ side, cardId }, callback) => {
-		// Sanitize the ID at the very beginning to ensure consistency.
-		const sanitizedCardId = cardId.replace('/', '-');
-		nodecg.log.info(`Request to add single card ${cardId} (sanitized to ${sanitizedCardId}) to Player ${side}'s deck.`);
-
-		const deckReplicant = side === 'L' ? deckL : deckR;
-		const db = cardDatabase.value;
-
-		const addCardToDeck = (idToAdd) => {
-			if (!Array.isArray(deckReplicant.value.cards)) {
-				deckReplicant.value.cards = [];
-			}
-			if (!deckReplicant.value.cards.includes(idToAdd)) {
-				deckReplicant.value.cards = [...deckReplicant.value.cards, idToAdd];
-				nodecg.log.info(`Card ${idToAdd} added to Player ${side}'s deck.`);
-			} else {
-				nodecg.log.info(`Card ${idToAdd} is already in Player ${side}'s deck. No changes made.`);
-			}
-			if (callback) callback(null, 'Card added to deck.');
-		};
-
-		// Use the sanitized ID for all checks and operations.
-		if (db && db[sanitizedCardId] && db[sanitizedCardId].name) {
-			nodecg.log.info(`Card ${sanitizedCardId} found in database. Adding to deck.`);
-			addCardToDeck(sanitizedCardId);
-		} else {
-			nodecg.log.info(`Card ${sanitizedCardId} not in database. Fetching with get_single_card.py...`);
-			
 			const pythonDir = path.join(__dirname, '..', 'python');
 			const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
-
 			const scriptMap = {
-				jp: 'get_single_card_jp.py',
-				chs: 'get_single_card_chs.py',
-				cht: 'get_single_card_cht.py',
-				en: 'get_single_card_en.py',
+				jp: 'extract_deck_cards_jp.py',
+				chs: 'extract_deck_cards_chs.py',
+				cht: 'extract_deck_cards_cht.py',
+				en: 'extract_deck_cards_en.py',
 			};
 			const pythonScriptFile = scriptMap[lang] || scriptMap.jp;
 			const pythonScriptPath = path.join(pythonDir, pythonScriptFile);
-
 			const dbFileName = `database_${lang}.json`;
 			const absoluteDbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
-
 			const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
-			const command = `${pythonCommand} "${pythonScriptPath}" "${sanitizedCardId}" --database-path "${absoluteDbPath}"`;
+			const command = `${pythonCommand} "${pythonScriptPath}" "${code}" --database-path "${absoluteDbPath}"`;
 
-			exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
+			const child = exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
+				deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
 				if (error) {
-					nodecg.log.error(`exec error while fetching single card: ${error}`);
+					nodecg.log.error(`Deck import exec error: ${error}`);
 					nodecg.log.error(`Python stderr: ${stderr}`);
 					if (callback) callback({ error: error.message, stderr: stderr });
 					return;
 				}
-
-				nodecg.log.info(`Python script for ${sanitizedCardId} finished. Reloading database.`);
-				loadCardDatabase();
-				
-				// CRITICAL FIX: Check for the sanitized ID and add the sanitized ID.
-				if (cardDatabase.value && cardDatabase.value[sanitizedCardId] && cardDatabase.value[sanitizedCardId].name) {
-					addCardToDeck(sanitizedCardId);
-				} else {
-					nodecg.log.error(`Failed to fetch card ${sanitizedCardId} with python script. It was not added to the database. Check python script output.`);
-					if (callback) callback({ error: `Failed to fetch card ${sanitizedCardId}.` });
+				try {
+					const deckCards = JSON.parse(stdout);
+					const deckReplicant = side === 'L' ? deckL : deckR;
+					nodecg.log.info(`Deck for Player ${side} processed. Reloading database.`);
+					loadCardDatabase();
+					deckReplicant.value = { name: code, cards: deckCards.cards };
+					nodecg.log.info(`Database reloaded and deck for Player ${side} updated.`);
+					if (callback) callback(null, `Deck for Player ${side} updated.`);
+				} catch (parseError) {
+					nodecg.log.error('Failed to parse python script output for deck:', parseError);
+					nodecg.log.error('Python stdout:', stdout);
+					if (callback) callback({ error: 'Failed to parse script output.', stdout: stdout });
 				}
 			});
+
+			const progressRegex = /--- Processing card (\d+)\/(\d+):/;
+			child.stderr.on('data', (data) => {
+				const match = data.toString().match(progressRegex);
+				if (match) {
+					const current = parseInt(match[1], 10);
+					const total = parseInt(match[2], 10);
+					const percentage = Math.round((current / total) * 100);
+					const text = `${current}/${total}`;
+					deckLoadingStatus.value = { loading: true, side: side, percentage: percentage, text: text };
+				}
+			});
+
+		} else {
+			// --- SINGLE CARD IMPORT LOGIC ---
+			const sanitizedCardId = code.replace('/', '-');
+			nodecg.log.info(`Treating as Single Card. Request to add ${code} (sanitized to ${sanitizedCardId}) to Player ${side}'s deck.`);
+			deckLoadingStatus.value = { loading: true, side: side, percentage: 0, text: 'Fetching...' }; // Show loading status
+
+			const deckReplicant = side === 'L' ? deckL : deckR;
+			const db = cardDatabase.value;
+
+			const addCardToDeck = (idToAdd) => {
+				if (!Array.isArray(deckReplicant.value.cards)) deckReplicant.value.cards = [];
+				if (!deckReplicant.value.cards.includes(idToAdd)) {
+					deckReplicant.value.cards = [...deckReplicant.value.cards, idToAdd];
+					nodecg.log.info(`Card ${idToAdd} added to Player ${side}'s deck.`);
+				} else {
+					nodecg.log.info(`Card ${idToAdd} is already in Player ${side}'s deck.`);
+				}
+				if (callback) callback(null, 'Card added to deck.');
+			};
+
+			if (db && db[sanitizedCardId] && db[sanitizedCardId].name) {
+				nodecg.log.info(`Card ${sanitizedCardId} found in database. Adding to deck.`);
+				addCardToDeck(sanitizedCardId);
+				deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' }; // Clear loading status
+			} else {
+				nodecg.log.info(`Card ${sanitizedCardId} not in database. Fetching with Python...`);
+				const pythonDir = path.join(__dirname, '..', 'python');
+				const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
+				const scriptMap = {
+					jp: 'get_single_card_jp.py',
+					chs: 'get_single_card_chs.py',
+					cht: 'get_single_card_cht.py',
+					en: 'get_single_card_en.py',
+				};
+				const pythonScriptFile = scriptMap[lang] || scriptMap.jp;
+				const pythonScriptPath = path.join(pythonDir, pythonScriptFile);
+				const dbFileName = `database_${lang}.json`;
+				const absoluteDbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
+				const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
+				const command = `${pythonCommand} "${pythonScriptPath}" "${sanitizedCardId}" --database-path "${absoluteDbPath}"`;
+
+				exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
+					deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' }; // Clear loading status
+					if (error) {
+						nodecg.log.error(`Single card fetch exec error: ${error}`);
+						nodecg.log.error(`Python stderr: ${stderr}`);
+						if (callback) callback({ error: error.message, stderr: stderr });
+						return;
+					}
+					nodecg.log.info(`Python script for ${sanitizedCardId} finished. Reloading database.`);
+					loadCardDatabase();
+					setTimeout(() => { // Add a small delay to ensure DB has reloaded
+						if (cardDatabase.value && cardDatabase.value[sanitizedCardId] && cardDatabase.value[sanitizedCardId].name) {
+							addCardToDeck(sanitizedCardId);
+						} else {
+							nodecg.log.error(`Failed to fetch card ${sanitizedCardId}. It was not added to the database.`);
+							if (callback) callback({ error: `Failed to fetch card ${sanitizedCardId}.` });
+						}
+					}, 200); // 200ms delay
+				});
+			}
 		}
 	});
 
