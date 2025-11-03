@@ -301,14 +301,33 @@
             });
         });
 
+        function renderAllDecksIfReady() {
+            const db = database.value;
+
+            // Guard: Ensure database is populated.
+            if (!db || Object.keys(db).length === 0) {
+                return;
+            }
+
+            // Render Deck L if ready
+            const deckLVal = deckL.value;
+            if (deckLVal && deckLVal.cards && deckLVal.cards.every(cardId => db[cardId])) {
+                renderPlayerDeck('L', deckLVal, db);
+            }
+
+            // Render Deck R if ready
+            const deckRVal = deckR.value;
+            if (deckRVal && deckRVal.cards && deckRVal.cards.every(cardId => db[cardId])) {
+                renderPlayerDeck('R', deckRVal, db);
+            }
+        }
+
         // Init
         NodeCG.waitForReplicants(deckL, deckR, database, playerL_name, playerR_name, i18nStrings, language, deckLoadingStatus).then(() => {
             playerLDeckTitle.textContent = `${playerL_name.value || 'Player L'}'s Deck`;
             playerRDeckTitle.textContent = `${playerR_name.value || 'Player R'}'s Deck`;
-
             updateUIText();
-            renderPlayerDeck('L', deckL.value, database.value);
-            renderPlayerDeck('R', deckR.value, database.value);
+            renderAllDecksIfReady(); // Initial render attempt
         });
 
         deckLoadingStatus.on('change', (newStatus) => {
@@ -344,45 +363,6 @@
             });
         });
 
-        // Replicant Change Listeners
-        playerL_name.on('change', (newValue) => {
-            playerLDeckTitle.textContent = `${newValue || 'Player L'}'s Deck`;
-        });
-        playerR_name.on('change', (newValue) => {
-            playerRDeckTitle.textContent = `${newValue || 'Player R'}'s Deck`;
-        });
-
-        deckL.on('change', (newValue) => {
-            const db = database.value;
-            if (newValue && newValue.cards && newValue.cards.every(cardId => db && db[cardId])) {
-                renderPlayerDeck('L', newValue, db);
-            } else {
-                nodecg.log.info('Deck L data arrived, but waiting for database update to render.');
-            }
-        });
-        deckR.on('change', (newValue) => {
-            const db = database.value;
-            if (newValue && newValue.cards && newValue.cards.every(cardId => db && db[cardId])) {
-                renderPlayerDeck('R', newValue, db);
-            } else {
-                nodecg.log.info('Deck R data arrived, but waiting for database update to render.');
-            }
-        });
-        language.on('change', () => {
-            updateUIText();
-            renderPlayerDeck('L', deckL.value, database.value);
-            renderPlayerDeck('R', deckR.value, database.value);
-        });
-        assetPaths.on('change', () => {
-            renderPlayerDeck('L', deckL.value, database.value);
-            renderPlayerDeck('R', deckR.value, database.value);
-        });
-
-        database.on('change', (newValue) => {
-            renderPlayerDeck('L', deckL.value, newValue);
-            renderPlayerDeck('R', deckR.value, newValue);
-        });
-
         // Helper Functions
         const getI18nText = (key) => {
             if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) return key;
@@ -414,6 +394,27 @@
             document.getElementById('header-r-id').textContent = getI18nText('deck_viewer_header_id');
             document.getElementById('header-r-delete').textContent = getI18nText('delete');
         }
+
+        // Replicant Change Listeners
+        playerL_name.on('change', (newValue) => {
+            playerLDeckTitle.textContent = `${newValue || 'Player L'}'s Deck`;
+        });
+        playerR_name.on('change', (newValue) => {
+            playerRDeckTitle.textContent = `${newValue || 'Player R'}'s Deck`;
+        });
+
+        // Any change to decks or database triggers a re-render check
+        deckL.on('change', renderAllDecksIfReady);
+        deckR.on('change', renderAllDecksIfReady);
+        database.on('change', renderAllDecksIfReady);
+
+        language.on('change', () => {
+            updateUIText();
+            renderAllDecksIfReady();
+        });
+        assetPaths.on('change', () => {
+            renderAllDecksIfReady();
+        });
 
         function handleAddCard(side, inputEl) {
             const code = inputEl.value.trim();
