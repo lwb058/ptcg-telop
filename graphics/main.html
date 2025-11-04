@@ -826,26 +826,13 @@
 
                 const isUnderAttack = g_attackAnimationTargets.has(slotEl.id);
 
-                const useTypeStroke = settings.useTypeStroke;
-                const typeColorMap = settings.typeColorMap || {};
                 const imageArea = slotEl.querySelector('.battle-card-image-area, .bench-card-image-area');
                 const cardData = db[slotData.cardId];
 
                 slotEl.style.borderColor = 'var(--module-color-border)';
                 if (imageArea) imageArea.style.borderColor = 'var(--module-color-border)';
 
-                if (useTypeStroke && cardData && cardData.pokemon && cardData.pokemon.color && cardData.pokemon.color.length > 0) {
-                    const primaryType = cardData.pokemon.color[0];
-                    const colorSetting = typeColorMap[primaryType];
-                    
-                    if (colorSetting && colorSetting.color) {
-                        slotEl.style.backgroundColor = hexToRgba(colorSetting.color, colorSetting.opacity);
-                    } else {
-                        slotEl.style.backgroundColor = 'var(--color-bg-module)';
-                    }
-                } else {
-                    slotEl.style.backgroundColor = 'var(--color-bg-module)';
-                }
+                slotEl.style.backgroundColor = 'var(--color-bg-module)';
 
                 const oldToolIds = oldSlotData ? (oldSlotData.attachedToolIds || []) : [];
                 const newToolIds = slotData ? (slotData.attachedToolIds || []) : [];
@@ -1419,15 +1406,6 @@
                 if (oldSettings.language !== newSettings.language) {
                     setLanguageClass(newSettings.language);
                     updateCustomizableAssets();
-                }
-
-                if (oldSettings.useTypeStroke !== newSettings.useTypeStroke) {
-                    sides.forEach(side => {
-                        for (let i = 0; i < 6; i++) {
-                            const replicant = live_slotReplicants[`live_slot${side}${i}`];
-                            renderSlot(side, i, replicant.value, null);
-                        }
-                    });
                 }
             });
             

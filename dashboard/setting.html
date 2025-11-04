@@ -87,6 +87,12 @@
             /* flex: 1; -> flex: 1 1 320px; */
             flex: 1 1 320px; /* 允许面板伸缩，并设置一个基础宽度为320px */
             margin-bottom: 0;
+            min-height: 250px;
+        }
+
+        .panel-section-flex {
+            display: flex;
+            flex-direction: column;
         }
 
         /* --- Donation Modal Styles --- */
@@ -176,6 +182,22 @@
             border-radius: 8px;
             box-sizing: border-box;
         }
+
+        summary {
+            cursor: pointer;
+            list-style-position: inside;
+        }
+
+        summary > h4 {
+            display: inline;
+            margin: 0;
+        }
+
+        #update-notification a {
+            color: #0056b3;
+            font-weight: bold;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -250,6 +272,24 @@
             </div>
         </div>
         <div class="panel-section">
+            <h3 id="label-appearance">Appearance</h3>
+            <div class="collapsible-content">
+                <div class="setting-grid">
+                    <div class="form-group-hotkey">
+                        <label for="theme-select" id="label-theme">Theme</label>
+                        <select id="theme-select" class="form-select" style="justify-self: end; width: 100%;"></select>
+                    </div>
+                </div>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
+                <details>
+                    <summary><h4 id="label-type-color">Type Color</h4></summary>
+                    <div id="color-settings-container" style="padding-top: 10px;">
+                        <!-- Color settings will be dynamically inserted here -->
+                    </div>
+                </details>
+            </div>
+        </div>
+        <div class="panel-section panel-section-flex">
             <h3 id="label-system">System</h3>
             <div class="collapsible-content">
                 <div class="setting-grid">
@@ -258,16 +298,8 @@
                         <input type="checkbox" id="reverse-card-display-toggle" style="width: auto; height: auto; justify-self: end;">
                     </div>
                     <div class="form-group-hotkey">
-                        <label for="type-stroke-toggle" id="label-type-colored-borders">Type-Colored Borders</label>
-                        <input type="checkbox" id="type-stroke-toggle" style="width: auto; height: auto; justify-self: end;">
-                    </div>
-                    <div class="form-group-hotkey">
                         <label for="tool-limit-input" id="label-tool-carry-limit">Tool Carry Limit</label>
                         <input type="number" id="tool-limit-input" min="1" max="10" step="1" style="width: 60px; justify-self: end;">
-                    </div>
-                    <div class="form-group-hotkey">
-                        <label for="theme-select" id="label-theme">Theme</label>
-                        <select id="theme-select" class="form-select" style="justify-self: end;"></select>
                     </div>
                     <div class="form-group-hotkey">
                         <label for="language-select" id="label-language">Language</label>
@@ -278,18 +310,9 @@
                             <option value="en">English</option>
                         </select>
                     </div>
-                    <button id="clear-database-btn" class="btn" style="background-color: #E74C3C; justify-self: end; width: auto;">Clear Database</button>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="panel-section">
-        <h3>Type Color</h3>
-        <div class="collapsible-content">
-            <div id="color-settings-container">
-                <!-- Color settings will be dynamically inserted here -->
-            </div>
+            <button id="clear-database-btn" class="btn" style="background-color: #E74C3C; width: auto; align-self: flex-end; margin-top: auto;">Clear Database</button>
         </div>
     </div>
 
@@ -307,6 +330,10 @@
             <a href="https://space.bilibili.com/305921" target="_blank">BiliBili</a>
         </p>
         <button id="support-developer-btn" class="support-btn" style="margin-top: 0;"></button>
+    </div>
+
+    <div id="update-notification" style="display: none; padding: 15px; background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 8px; margin: 15px; color: #856404; font-size: 16px;">
+        <!-- Update message will be injected here -->
     </div>
 
     <!-- Donation Modal -->
@@ -333,7 +360,6 @@
             
             // --- Element References ---
             const colorContainer = document.getElementById('color-settings-container');
-            const typeStrokeToggle = document.getElementById('type-stroke-toggle');
             const vstarToggle = document.getElementById('vstar-toggle');
             const autoRetreatToggle = document.getElementById('auto-retreat-toggle');
             const autoSideTake = document.getElementById('auto-sided-take');
@@ -375,8 +401,9 @@
                 document.getElementById('label-hotkey').textContent = getI18nText('settings_hotkey');
                 document.getElementById('label-system').textContent = getI18nText('settings_system');
                 document.getElementById('label-reverse-card-display').textContent = getI18nText('settings_reverse_card_display');
-                document.getElementById('label-type-colored-borders').textContent = getI18nText('settings_type_colored_borders');
+                document.getElementById('label-appearance').textContent = getI18nText('settings_appearance');
                 document.getElementById('label-theme').textContent = getI18nText('settings_theme');
+                document.getElementById('label-type-color').textContent = getI18nText('settings_type_color_title');
                 document.getElementById('label-tool-carry-limit').textContent = getI18nText('settings_tool_carry_limit');
                 document.getElementById('label-language').textContent = getI18nText('settings_language');
                 document.getElementById('clear-database-btn').textContent = getI18nText('settings_clear_database');
@@ -469,7 +496,6 @@
                 });
 
                 // 2. Render Appearance Settings
-                typeStrokeToggle.checked = !!(settings && settings.useTypeStroke);
                 vstarToggle.checked = !!(settings && settings.vstarEnabled);
                 autoRetreatToggle.checked = !!(settings && settings.autoRetreatToggle);
                 autoSideTake.checked = !!(settings && settings.autoSideTake);
@@ -525,7 +551,6 @@
                     clearSelection: clearSelectionHotkeyInput.value.trim() || 'Escape'
                 };
 
-                const newUseTypeStroke = typeStrokeToggle.checked;
                 const newVstarEnabled = vstarToggle.checked;
                 const newAutoRetreatToggle = autoRetreatToggle.checked;
                 const newAutoSideTake = autoSideTake.checked;
@@ -547,7 +572,6 @@
                     ...restOfSettings,
                     typeColorMap: newColorMap,
                     hotkeys: newHotkeys,
-                    useTypeStroke: newUseTypeStroke,
                     vstarEnabled: newVstarEnabled,
                     autoRetreatToggle: newAutoRetreatToggle,
                     autoSideTake: newAutoSideTake,

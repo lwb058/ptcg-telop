@@ -143,17 +143,29 @@
     "cht": "系統",
     "en": "System"
   },
+  "settings_appearance": {
+    "jp": "外観",
+    "chs": "外观",
+    "cht": "外觀",
+    "en": "Appearance"
+  },
+  "settings_theme": {
+    "jp": "テーマ",
+    "chs": "主题",
+    "cht": "主題",
+    "en": "Theme"
+  },
+  "settings_type_color_title": {
+    "jp": "タイプ色設定",
+    "chs": "设置属性颜色",
+    "cht": "設定屬性顏色",
+    "en": "Set Type Color"
+  },
   "settings_reverse_card_display": {
     "jp": "カードを対側に表示",
     "chs": "在对侧展示卡牌",
     "cht": "在對側展示卡牌",
     "en": "Reverse Card Display"
-  },
-  "settings_type_colored_borders": {
-    "jp": "タイプ色枠線",
-    "chs": "边框随属性变色",
-    "cht": "邊框隨屬性變色",
-    "en": "Type-Colored Borders"
   },
   "settings_tool_carry_limit": {
     "jp": "ポケモンのどうぐの所持上限",
