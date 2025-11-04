@@ -332,7 +332,7 @@
         <button id="support-developer-btn" class="support-btn" style="margin-top: 0;"></button>
     </div>
 
-    <div id="update-notification" style="display: none; padding: 15px; background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 8px; margin: 15px; color: #856404; font-size: 16px;">
+    <div id="update-notification" style="display: none; width: 15%; min-width: 350px; padding: 15px; background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 8px; color: #856404; font-size: 14px;">
         <!-- Update message will be injected here -->
     </div>
 
@@ -352,7 +352,9 @@
             nodecg.Replicant('ptcg-settings'),
             nodecg.Replicant('i18nStrings'),
             nodecg.Replicant('language'),
-            nodecg.Replicant('themeList')
+            nodecg.Replicant('themeList'),
+            nodecg.Replicant('bundleVersion'), // Added replicant
+            nodecg.Replicant('updateInfo')
         ).then(() => {
             const settingsRep = nodecg.Replicant('ptcg-settings');
             const i18nStrings = nodecg.Replicant('i18nStrings');
@@ -593,17 +595,32 @@
             });
 
             const versionSpan = document.getElementById('bundle-version');
-            if (versionSpan) {
-                nodecg.sendMessage('getBundleVersion', (err, version) => {
-                    if (err) {
-                        console.error("Failed to get bundle version:", err);
-                        return;
-                    }
-                    if (version) {
-                        versionSpan.textContent = version;
-                    }
-                });
-            }
+            const bundleVersionRep = nodecg.Replicant('bundleVersion');
+            const updateInfoRep = nodecg.Replicant('updateInfo');
+
+            bundleVersionRep.on('change', (newVal) => {
+                if (newVal && versionSpan) {
+                    versionSpan.textContent = newVal;
+                }
+            });
+
+            updateInfoRep.on('change', (newVal) => {
+                const notificationDiv = document.getElementById('update-notification');
+                if (newVal && newVal.available) {
+                                            const lang = settingsRep.value ? settingsRep.value.language : 'jp';
+                                            let message = `🎉 New version available: <strong>${newVal.latest}</strong>. <a href="${newVal.url}" target="_blank" rel="noopener noreferrer">Click here to download</a>`;
+                                            if (lang === 'jp') {
+                                                message = `🎉 新バージョン: <strong>${newVal.latest}</strong>。 <a href="${newVal.url}" target="_blank" rel="noopener noreferrer">ダウンロードはこちら</a>`;
+                                            } else if (lang === 'chs') {
+                                                message = `🎉 发现新版本: <strong>${newVal.latest}</strong>。 下载链接: <a href="https://pan.baidu.com/s/1TX3Z2CWegzJKBi-jeJ4NKg?pwd=mn49" target="_blank" rel="noopener noreferrer">百度网盘</a> <a href="https://pan.quark.cn/s/80c16eaef331" target="_blank" rel="noopener noreferrer">夸克网盘</a>`;
+                                            } else if (lang === 'cht') {
+                                                message = `🎉 發現新版本: <strong>${newVal.latest}</strong>。 <a href="${newVal.url}" target="_blank" rel="noopener noreferrer">點擊此處下載</a>`;
+                                            }                    notificationDiv.innerHTML = message;
+                    notificationDiv.style.display = 'block';
+                } else {
+                    notificationDiv.style.display = 'none';
+                }
+            });
 
             const supportBtn = document.getElementById('support-developer-btn');
             const donationModal = document.getElementById('donation-modal');

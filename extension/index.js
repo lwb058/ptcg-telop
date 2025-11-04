@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os'); // Import os for platform detection
 const { exec } = require('child_process'); // Import child_process
+const https = require('https'); // For update check
 
 module.exports = function (nodecg) {
 	nodecg.log.info('Bundle ptcg-telop starting up.');
@@ -14,10 +15,12 @@ module.exports = function (nodecg) {
 
 	// Read package.json for version info
 	const pjson = require('../package.json');
-	const bundleVersion = pjson.version;
+	const bundleVersion = nodecg.Replicant('bundleVersion', { defaultValue: '' });
+	bundleVersion.value = pjson.version;
+
 
 	nodecg.listenFor('getBundleVersion', (data, callback) => {
-		callback(null, bundleVersion);
+		callback(null, bundleVersion.value);
 	});
 
 	// Centralized settings replicant
@@ -69,6 +72,7 @@ module.exports = function (nodecg) {
 	
 	const themeList = nodecg.Replicant('themeList', { defaultValue: ['Default'] });
 	const themeAssets = nodecg.Replicant('themeAssets', { defaultValue: {} });
+	const updateInfo = nodecg.Replicant('updateInfo', { defaultValue: { available: false } });
 
 	try {
 		const cssDir = path.join(projectRoot, 'nodecg', 'bundles', 'ptcg-telop', 'graphics', 'css');
@@ -1358,6 +1362,67 @@ module.exports = function (nodecg) {
 			if (callback) callback(e);
 		}
 	});
+
+	function checkForUpdates() {
+		try {
+			const localVersion = pjson.version;
+			const repo = 'lwb058/ptcg-telop';
+			const remoteVersionUrl = `https://cdn.jsdelivr.net/gh/${repo}/package.json`;
+
+			https.get(remoteVersionUrl, (res) => {
+				let data = '';
+				res.on('data', (chunk) => { data += chunk; });
+				res.on('end', () => {
+					try {
+						const remotePackage = JSON.parse(data);
+						if (!remotePackage || !remotePackage.version) {
+							nodecg.log.warn('Update check failed: Remote package.json invalid.');
+							return;
+						}
+
+						const latestVersion = remotePackage.version.replace('v', '');
+						const currentVersion = localVersion.replace('v', '');
+
+						const latestParts = latestVersion.split('.').map(Number);
+						const currentParts = currentVersion.split('.').map(Number);
+
+						let isNewer = false;
+						for (let i = 0; i < Math.max(latestParts.length, currentParts.length); i++) {
+							const latest = latestParts[i] || 0;
+							const current = currentParts[i] || 0;
+							if (latest > current) {
+								isNewer = true;
+								break;
+							}
+							if (latest < current) {
+								break;
+							}
+						}
+
+						if (isNewer) {
+							nodecg.log.info(`Update available: ${currentVersion} -> ${latestVersion}`);
+							updateInfo.value = {
+								available: true,
+								latest: remotePackage.version,
+								current: localVersion,
+								url: `https://github.com/${repo}/releases`
+							};
+						                        } else {
+														nodecg.log.info('Bundle is up to date.');
+														updateInfo.value = { available: false };
+												}					} catch (e) {
+						nodecg.log.error('Failed to parse remote version info.', e);
+					}
+				});
+			}).on('error', (err) => {
+				nodecg.log.error('Failed to fetch remote version info.', err);
+			});
+		} catch (e) {
+			nodecg.log.error('Failed to check for updates.', e);
+		}
+	}
+
+	checkForUpdates();
 
     };
 
