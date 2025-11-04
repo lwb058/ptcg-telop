@@ -1363,69 +1363,127 @@ module.exports = function (nodecg) {
 		}
 	});
 
-	function checkForUpdates() {
-		try {
-			const localVersion = pjson.version;
-			const repo = 'lwb058/ptcg-telop';
-			const remoteVersionUrl = `https://cdn.jsdelivr.net/gh/${repo}/package.json`;
-
-			https.get(remoteVersionUrl, (res) => {
-				let data = '';
-				res.on('data', (chunk) => { data += chunk; });
-				res.on('end', () => {
-					try {
-						const remotePackage = JSON.parse(data);
-						if (!remotePackage || !remotePackage.version) {
-							nodecg.log.warn('Update check failed: Remote package.json invalid.');
-							return;
-						}
-
-						const latestVersion = remotePackage.version.replace('v', '');
-						const currentVersion = localVersion.replace('v', '');
-
-						const latestParts = latestVersion.split('.').map(Number);
-						const currentParts = currentVersion.split('.').map(Number);
-
-						let isNewer = false;
-						for (let i = 0; i < Math.max(latestParts.length, currentParts.length); i++) {
-							const latest = latestParts[i] || 0;
-							const current = currentParts[i] || 0;
-							if (latest > current) {
-								isNewer = true;
-								break;
-							}
-							if (latest < current) {
-								break;
-							}
-						}
-
-						if (isNewer) {
-							nodecg.log.info(`Update available: ${currentVersion} -> ${latestVersion}`);
-							updateInfo.value = {
-								available: true,
-								latest: remotePackage.version,
-								current: localVersion,
-								url: `https://github.com/${repo}/releases`
-							};
-						                        } else {
-														nodecg.log.info('Bundle is up to date.');
-														updateInfo.value = { available: false };
-												}					} catch (e) {
-						nodecg.log.error('Failed to parse remote version info.', e);
-					}
-				});
-			}).on('error', (err) => {
-				nodecg.log.error('Failed to fetch remote version info.', err);
-			});
-		} catch (e) {
-			nodecg.log.error('Failed to check for updates.', e);
+	function processVersionCheck(remotePackage, localVersion, repo, nodecg, updateInfo) {
+			if (!remotePackage || !remotePackage.version) {
+				nodecg.log.warn('Update check failed: Remote package.json invalid.');
+				return false; // Indicate failure
+			}
+			const latestVersion = remotePackage.version.replace('v', '').trim();
+			const currentVersion = localVersion.replace('v', '').trim();
+			const latestParts = latestVersion.split('.').map(Number);
+			const currentParts = currentVersion.split('.').map(Number);
+			let isNewer = false;
+			for (let i = 0; i < Math.max(latestParts.length, currentParts.length); i++) {
+				const latest = latestParts[i] || 0;
+				const current = currentParts[i] || 0;
+				if (latest > current) {
+					isNewer = true;
+					break;
+				}
+				if (latest < current) {
+					break;
+				}
+			}
+			if (isNewer) {
+				nodecg.log.info(`Update available: ${currentVersion} -> ${latestVersion}`);
+				updateInfo.value = {
+					available: true,
+					latest: remotePackage.version,
+					current: localVersion,
+					url: `https://github.com/${repo}/releases`
+				};
+			} else {
+				nodecg.log.info('Bundle is up to date.');
+				updateInfo.value = { available: false };
+			}
+			return true; // Indicate success
 		}
-	}
 
-	checkForUpdates();
+		function checkViaCdn(pjson, nodecg, https, updateInfo) {
+			nodecg.log.info('Falling back to update check via CDN...');
+			try {
+				const localVersion = pjson.version;
+				const repo = 'lwb058/ptcg-telop';
+				const remoteVersionUrl = `https://cdn.jsdelivr.net/gh/${repo}/package.json?t=${new Date().getTime()}`;
+				const request = https.get(remoteVersionUrl, (res) => {
+					if (res.statusCode !== 200) {
+						nodecg.log.error(`CDN request failed with status code: ${res.statusCode}`);
+						res.resume();
+						return;
+					}
+					let data = '';
+					res.on('data', (chunk) => { data += chunk; });
+					res.on('end', () => {
+						try {
+							const remotePackage = JSON.parse(data);
+							processVersionCheck(remotePackage, localVersion, repo, nodecg, updateInfo);
+						} catch (e) {
+							nodecg.log.error('Failed to parse CDN response.', e);
+						}
+					});
+				});
+				request.on('error', (err) => {
+					nodecg.log.error('CDN check also failed.', err);
+				});
+				request.setTimeout(10000, () => { // 10s timeout for CDN
+					nodecg.log.error('CDN check timed out.');
+					request.destroy();
+				});
+			} catch (e) {
+				nodecg.log.error('Catastrophic failure in CDN check.', e);
+			}
+		}
+		function checkForUpdates(pjson, nodecg, https, updateInfo) { // This is the main entry point
+			nodecg.log.info('Checking for updates via GitHub API...');
+			try {
+				const localVersion = pjson.version;
+				const repo = 'lwb058/ptcg-telop';
+				const options = {
+					hostname: 'api.github.com',
+					path: `/repos/${repo}/contents/package.json`,
+					method: 'GET',
+					headers: { 'User-Agent': 'NodeCG-PTCG-Telop-Update-Checker' }
+				};
+				const request = https.get(options, (res) => {
+					if (res.statusCode !== 200) {
+						nodecg.log.warn(`GitHub API request failed (Code: ${res.statusCode}). Falling back to CDN.`);
+						res.resume();
+						checkViaCdn(pjson, nodecg, https, updateInfo);
+						return;
+					}
+					let data = '';
+					res.on('data', (chunk) => { data += chunk; });
+					res.on('end', () => {
+						try {
+							const fileInfo = JSON.parse(data);
+							const fileContent = Buffer.from(fileInfo.content, 'base64').toString('utf8');
+							const remotePackage = JSON.parse(fileContent);
+							if (!processVersionCheck(remotePackage, localVersion, repo, nodecg, updateInfo)) {
+							   checkViaCdn(pjson, nodecg, https, updateInfo); // If processing fails, try CDN
+							}
+						} catch (e) {
+							nodecg.log.error('Failed to parse API response. Falling back to CDN.', e);
+							checkViaCdn(pjson, nodecg, https, updateInfo);
+						}
+					});
+				});
+				request.on('error', (err) => {
+					nodecg.log.warn('GitHub API check failed (Network Error). Falling back to CDN.', err.message);
+					checkViaCdn(pjson, nodecg, https, updateInfo);
+				});
+				request.setTimeout(5000, () => { // 5s timeout
+					nodecg.log.warn('GitHub API check timed out. Falling back to CDN.');
+					request.destroy();
+					checkViaCdn(pjson, nodecg, https, updateInfo);
+				});
+			} catch (e) {
+				nodecg.log.error('Catastrophic failure in API check. Falling back to CDN.', e);
+				checkViaCdn(pjson, nodecg, https, updateInfo);
+			}
+		}
 
-    };
-
+	checkForUpdates(pjson, nodecg, https, updateInfo);
+};
 
 // --- Helper Functions for Replicant Sync ---
 function syncReplicant(nodecg, liveName, draftName, defaultValue) {
