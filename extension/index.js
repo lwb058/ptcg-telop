@@ -1393,7 +1393,6 @@ module.exports = function (nodecg) {
 					url: `https://github.com/${repo}/releases`
 				};
 			} else {
-				nodecg.log.info('Bundle is up to date.');
 				updateInfo.value = { available: false };
 			}
 			return true; // Indicate success
