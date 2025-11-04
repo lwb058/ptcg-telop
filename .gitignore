@@ -1,4 +1,4 @@
 __pycache__/
 libs/
-custom.css
 card_packs.json
+graphics/css/*.css
