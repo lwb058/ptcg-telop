@@ -398,7 +398,7 @@
             border-radius: 4px;
             background-color: #255bc0;
             flex-grow: 1; /* Allow it to take space */
-            height: 200px; /* Set a max height to show opponent's field by default */
+            height: 420px; /* Set a max height to show opponent's field by default */
             overflow-y: auto; /* Add vertical scroll when content overflows */
             scrollbar-width: thin;
             scrollbar-color: #ccc #f0f2f5;
@@ -512,14 +512,15 @@
                 <p>Total Pokemons: <span id="total-pokemons">0</span></p>
                 <p>Battle Energy: <span id="battle-energy-l">L: 0</span> | <span id="battle-energy-r">R: 0</span></p>
             </div>
-            <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                <label for="first-player-select" data-i18n="first_move">First Move:</label>
-                <select id="first-player-select">
-                    <option value="">--Select--</option>
-                    <option value="L">Left Player</option>
-                    <option value="R">Right Player</option>
-                </select>
-            </div>
+        </div>
+    </div>
+
+    <div class="panel-section">
+        <h3>Turn Module</h3>
+        <div class="flex-container" style="justify-content: center; align-items: center;">
+            <label id="turn-l-label"><input type="radio" name="turn" id="turn-l" value="L"> Left Player</label>
+            <button id="end-turn-btn" class="btn btn-metal" style="margin: 0 20px;">End Turn</button>
+            <label id="turn-r-label"><input type="radio" name="turn" id="turn-r" value="R"> Right Player</label>
         </div>
     </div>
 
@@ -569,7 +570,7 @@
         <div class="form-group" style="flex-direction: column; align-items: stretch; margin-bottom: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                 <label style="margin-bottom: 0;">Select Target:</label>
-                <button id="toggle-target-height-btn" class="btn" style="padding: 2px 8px; font-size: 12px;">Expand</button>
+                <button id="toggle-target-height-btn" class="btn" style="padding: 2px 8px; font-size: 12px;">Collapse</button>
             </div>
             <div id="attack-target-field" class="target-field-container">
                 <!-- Targeting view will be rendered here by JavaScript -->
@@ -639,39 +640,7 @@
         </div>
     </div>
     
-    <div class="panel-section">
-        <h3>Turn Module</h3>
-        <div class="flex-container" style="justify-content: center; align-items: center;">
-            <label id="turn-l-label"><input type="radio" name="turn" id="turn-l" value="L"> Left Player</label>
-            <button id="end-turn-btn" class="btn btn-metal" style="margin: 0 20px;">End Turn</button>
-            <label id="turn-r-label"><input type="radio" name="turn" id="turn-r" value="R"> Right Player</label>
-        </div>
-    </div>
-    
-    <div class="panel-section">
-        <h3>Operation Queue</h3>
-        <div id="op-buttons-container" class="flex-container" style="margin-bottom: 10px;">
-            <button id="discard-op-btn" class="btn btn-danger">Discard (Esc)</button>
-            <button id="apply-op-btn" class="btn btn-primary">Apply (Ctrl+S)</button>
-        </div>
-        <div id="auto-apply-warning" class="btn" style="display: none; width: 100%; box-sizing: border-box; margin-bottom: 10px; font-weight: 800; color:#ff4040; background-color: black; pointer-events: none;">
-            \\\ WARNING: Auto-Apply Activated \\\
-        </div>
-        <div class="operation-queue" id="operation-queue">
-            <!-- Operations will be listed here -->
-        </div>
-    </div>
 
-    <div class="panel-section">
-        <h3>Danger Zone</h3>
-        <div class="flex-container" style="align-items: center;">
-            <div class="form-group" style="flex-grow: 1; margin-bottom: 0; justify-content: center;">
-                <input type="checkbox" id="auto-apply-checkbox" style="transform: scale(1.2); flex-grow: 0;">
-                <label for="auto-apply-checkbox" style="margin-left: 5px;">Auto-Apply Live</label>
-            </div>
-            <button id="reset-system-btn" class="btn btn-danger" style="flex: 1;">Reset System</button>
-        </div>
-    </div>
 
     <script>
         NodeCG.waitForReplicants(
@@ -679,7 +648,6 @@
             nodecg.Replicant('playerR_name'),
             nodecg.Replicant('cardDatabase'),
             nodecg.Replicant('selections'),
-            nodecg.Replicant('operationQueue'),
             nodecg.Replicant('deckL'),
             nodecg.Replicant('deckR'),
             nodecg.Replicant('draft_stadium'),
@@ -695,6 +663,14 @@
                 return nodecg.Replicant(`draft_slot${side}${index}`);
             })
         ).then(() => {
+            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+            let hotkeys = {
+                discard: 'Escape',
+                apply: isMac ? 'Meta+S' : 'Control+S',
+                clearSelection: 'Delete',
+                clearCard: ' '
+            };
+
             const getCardImageUrl = (cardId, isBgImage = false) => {
                 if (!cardId || !assetPaths.value.cardImgPath) {
                     const defaultPath = '/assets/ptcg-telop/element/default.jpg';
@@ -711,10 +687,8 @@
             // --- Replicant Setup ---
             const playerL_name = nodecg.Replicant('playerL_name');
             const playerR_name = nodecg.Replicant('playerR_name');
-            const firstMove = nodecg.Replicant('firstMove');
             const cardDatabase = nodecg.Replicant('cardDatabase');
             const selections = nodecg.Replicant('selections');
-            const operationQueue = nodecg.Replicant('operationQueue');
             const draft_currentTurn = nodecg.Replicant('draft_currentTurn');
             const deckL = nodecg.Replicant('deckL');
             const deckR = nodecg.Replicant('deckR');
@@ -735,15 +709,35 @@
             const totalPokemonsEl = document.getElementById('total-pokemons');
             const battleEnergyLEl = document.getElementById('battle-energy-l');
             const battleEnergyREl = document.getElementById('battle-energy-r');
-            const firstPlayerSelect = document.getElementById('first-player-select');
-            const operationQueueEl = document.getElementById('operation-queue');
-            const discardOpBtn = document.getElementById('discard-op-btn');
-            const applyOpBtn = document.getElementById('apply-op-btn');
-            const resetSystemBtn = document.getElementById('reset-system-btn');
             const showOpponentCheckbox = document.getElementById('show-opponent-field-checkbox');
-
-            // --- Drag & Drop Field ---
             const currentPlayerField = document.getElementById('current-player-field');
+            const btnSelectClear = document.getElementById('select-clear-btn');
+            const btnSelectReverse = document.getElementById('select-reverse-btn');
+            const btnSelectWithEnergy = document.getElementById('select-with-energy-btn');
+            const btnSelectWithAbility = document.getElementById('select-with-ability-btn');
+            const btnSelectWithRule = document.getElementById('select-with-rule-btn');
+            const btnSelectOpponentAll = document.getElementById('select-opponent-all-btn');
+            const btnKo0hp = document.getElementById('ko-0hp-btn');
+            const damageShortcutsContainer = document.getElementById('damage-shortcuts');
+            const selectBasicBtn = document.getElementById('select-basic-btn');
+            const selectStage2Btn = document.getElementById('select-stage2-btn');
+            const extrahpShortcutsContainer = document.getElementById('extrahp-shortcuts');
+            const energyButtonsContainer = document.getElementById('energy-buttons');
+            const toolButtonsContainer = document.getElementById('tool-buttons');
+            const attackTargetField = document.getElementById('attack-target-field');
+            const toggleTargetHeightBtn = document.getElementById('toggle-target-height-btn');
+            const attackerSelect = document.getElementById('attacker');
+            const attackSelect = document.getElementById('attack-select');
+            const damageInput = document.getElementById('damage');
+            const weaknessCheck = document.getElementById('weakness-check');
+            const attackBtn = document.getElementById('attack-btn');
+            const aimBtn = document.getElementById('aim-btn');
+            const stadiumSelect = document.getElementById('stadium-select');
+            const stadiumUsedCheckbox = document.getElementById('stadium-used-checkbox');
+
+            const turnLRadio = document.getElementById('turn-l');
+            const turnRRadio = document.getElementById('turn-r');
+            const endTurnBtn = document.getElementById('end-turn-btn');
 
             const getI18nText = (key) => {
                 if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) {
@@ -875,7 +869,7 @@
                     energyEl.addEventListener('click', () => {
                         const currentEnergies = [...(slotValue.attachedEnergy || [])];
                         currentEnergies.splice(index, 1);
-                        queueOrUpdateOperation('SET_ENERGIES', {
+                        queueOperation('SET_ENERGIES', {
                             target: slotId,
                             energies: currentEnergies
                         });
@@ -921,7 +915,7 @@
                         if (indexToRemove > -1) {
                             const newTools = [...currentTools];
                             newTools.splice(indexToRemove, 1);
-                            queueOrUpdateOperation('SET_TOOLS', {
+                            queueOperation('SET_TOOLS', {
                                 target: slotId,
                                 tools: newTools
                             });
@@ -952,15 +946,6 @@
                 return emptyEl;
             }
 
-            // --- Select Module Buttons ---
-            const btnSelectClear = document.getElementById('select-clear-btn');
-            const btnSelectReverse = document.getElementById('select-reverse-btn');
-            const btnSelectWithEnergy = document.getElementById('select-with-energy-btn');
-            const btnSelectWithAbility = document.getElementById('select-with-ability-btn');
-            const btnSelectWithRule = document.getElementById('select-with-rule-btn');
-            const btnSelectOpponentAll = document.getElementById('select-opponent-all-btn');
-            const btnKo0hp = document.getElementById('ko-0hp-btn');
-
             /**
              * Queues an operation to be sent to the backend.
              */
@@ -969,27 +954,6 @@
                     .catch(e => console.error(`Failed to queue operation ${type}`, e));
             }
 
-            /**
-             * For operations that set a numeric value (like damage or HP), this function checks
-             * if an operation of the same type for the same target already exists in the queue.
-             * If so, it updates the existing operation; otherwise, it adds a new one.
-             */
-            function queueOrUpdateOperation(type, payload) {
-                const queue = operationQueue.value;
-                if (Array.isArray(queue)) {
-                    const existingOpIndex = queue.findIndex(op =>
-                        op.type === type &&
-                        op.payload.target === payload.target
-                    );
-
-                    if (existingOpIndex > -1) {
-                        nodecg.sendMessage('updateOperation', { index: existingOpIndex, payload })
-                            .catch(e => console.error(`Failed to update operation ${type}`, e));
-                        return;
-                    }
-                }
-                queueOperation(type, payload);
-            }
             
             // --- Helper Functions ---
             const getOccupiedSlots = () => slots.filter(s => s.value && s.value.cardId).map(s => s.name.replace('draft_', ''));
@@ -1021,131 +985,40 @@
                 }
             };
 
-            function updateFirstPlayerDropdown() {
-                const lName = playerL_name.value || 'Left Player';
-                const rName = playerR_name.value || 'Right Player';
-                const currentValue = firstPlayerSelect.value;
-
-                firstPlayerSelect.innerHTML = `
-                    <option value="">--Select--</option>
-                    <option value="L">${lName}</option>
-                    <option value="R">${rName}</option>
-                `;
-                firstPlayerSelect.value = currentValue;
-            }
-
-            /**
-             * Formats an operation object into a human-readable string.
-             * @param {object} op The operation object.
-             * @returns {string} A user-friendly description of the operation.
-             */
-            function formatOperation(op) {
-                const { type, payload } = op;
-                const targetName = payload.target ? getCardName(payload.target) : '';
-
-                switch (type) {
-                    case 'SET_POKEMON':
-                        return `<b>${payload.target}</b>: Set <b>${getCardName(payload.target)}</b>`;
-                    case 'REPLACE_POKEMON':
-                        return `<b>${targetName}</b>: ${payload.actionType} to <b>${getCardName(payload.target)}</b>`;
-                    case 'SET_DAMAGE':
-                        return `<b>${targetName}</b>: Set DMG to <b>${payload.value}</b>`;
-                    case 'SET_EXTRA_HP':
-                        return `<b>${targetName}</b>: Set Ex.HP to <b>${payload.value}</b>`;
-                    case 'SET_TOOLS':
-                        const toolNames = payload.tools.map(id => cardDatabase.value[id]?.name || 'Unknown').join(', ');
-                        return `<b>${targetName}</b>: Set Tools to <b>[${toolNames}]</b>`;
-                    case 'REMOVE_POKEMON':
-                        return `<b>${targetName}</b>: Remove from play`;
-                    case 'KO_POKEMON':
-                        return `<b>${targetName}</b>: K.O.`;
-                    case 'SET_AILMENTS':
-                        return `<b>${targetName}</b>: Set Ailments to <b>[${payload.ailments.join(', ')}]</b>`;
-                    case 'SET_ABILITY_USED':
-                        return `<b>${targetName}</b>: Ability status set to <b>${payload.status}</b>`;
-                    case 'SET_ENERGIES':
-                        return `<b>${targetName}</b>: Set Energies (<b>${payload.energies.length} total</b>)`;
-                    case 'SWITCH_POKEMON':
-                        return `<b>${targetName}</b>: Switch to <b>${payload.target}</b>`;
-                    case 'ATTACK':
-                        const attackerName = getCardName(payload.attackerSlotId);
-                        const targetNames = payload.targets && payload.targets.length > 0
-                            ? payload.targets.map(getCardName).join(', ')
-                            : null;
-
-                        let description = `<b>${attackerName}</b> uses <b>${payload.attackName}</b>`;
-
-                        if (targetNames) {
-                            description += ` on <b>${targetNames}</b>`;
-                        }
-
-                        if (payload.damage > 0) {
-                            description += ` for <b>${payload.damage}</b> DMG`;
-                            if (payload.isWeakness) {
-                                description += ` (Weakness)`;
-                            }
-                        }
-                        return description;
-                    case 'SET_TURN':
-                        const turnPlayer = payload.side === 'L' ? (playerL_name.value || 'Left') : (playerR_name.value || 'Right');
-                        return `<b>TURN</b>: Set turn to <b>${turnPlayer}</b>`;
-                    case 'SET_ACTION_STATUS':
-                        return `<b>${payload.target.replace('_', ' ')}</b>: Set to <b>${payload.status}</b>`;
-                    case 'SET_SIDES':
-                        return `<b>${payload.target}</b>: Set remaining to <b>${payload.value}</b>`;
-                    case 'SET_STADIUM':
-                        const stadiumName = payload.cardId ? cardDatabase.value[payload.cardId]?.name : 'None';
-                        return `<b>STADIUM</b>: Set to <b>${stadiumName}</b>`;
-                    default:
-                        return `<b>${op.type}</b>: ${JSON.stringify(op.payload)}`;
-                }
-            }
-
-            const renderQueue = () => {
-                operationQueueEl.innerHTML = '';
-                if (!operationQueue.value) return;
-
-                operationQueue.value.forEach(op => {
-                    const item = document.createElement('div');
-                    item.classList.add('operation-item');
-                    item.dataset.opId = op.id;
-                    item.innerHTML = formatOperation(op); // Use innerHTML to render bold tags
-                    operationQueueEl.appendChild(item);
-                });
-            };
-
             // --- Event Listeners for UI Updates ---
-            slots.forEach(slot => slot.on('change', () => {
-                updateTotalPokemons();
-                renderCurrentPlayerField();
-                updateBattleEnergyCounts();       
-                            }));
-            cardDatabase.on('change', () => {
-                renderQueue(); // Re-render queue if card names change
-                renderCurrentPlayerField();
-                updateBattleEnergyCounts();
-            });
-            operationQueue.on('change', renderQueue);
             showOpponentCheckbox.addEventListener('change', () => {
                 renderCurrentPlayerField();
                 updateEnergyButtonVisibility();
                 updateToolButtonVisibility();
             });
-            playerL_name.on('change', () => {
-                renderQueue();
-                updateFirstPlayerDropdown();
-            });
-            playerR_name.on('change', () => {
-                renderQueue();
-                updateFirstPlayerDropdown();
-            });
+                        playerL_name.on('change', (newName) => {
+                            const radio = document.getElementById('turn-l');
+                            if (radio && radio.nextSibling.nodeType === Node.TEXT_NODE) {
+                                radio.nextSibling.textContent = ` ${newName || 'Left Player'}`;
+                            }
+                        });
+            
+                        playerR_name.on('change', (newName) => {
+                            const radio = document.getElementById('turn-r');
+                            if (radio && radio.nextSibling.nodeType === Node.TEXT_NODE) {
+                                radio.nextSibling.textContent = ` ${newName || 'Right Player'}`;
+                            }
+                        });
 
-            firstPlayerSelect.addEventListener('change', (e) => {
-                firstMove.value = e.target.value;
-            });
+            const handleTurnChange = (e) => {
+                const newTurn = e.target.value;
+                if (newTurn && newTurn !== draft_currentTurn.value) {
+                    queueOperation('SET_TURN', { side: newTurn });
+                }
+            };
 
-            firstMove.on('change', (newValue) => {
-                firstPlayerSelect.value = newValue;
+            turnLRadio.addEventListener('change', handleTurnChange);
+            turnRRadio.addEventListener('change', handleTurnChange);
+
+            endTurnBtn.addEventListener('click', () => {
+                const currentTurn = draft_currentTurn.value;
+                const nextTurn = currentTurn === 'L' ? 'R' : 'L';
+                queueOperation('SET_TURN', { side: nextTurn });
             });
 
             // --- Selection Button Logic ---
@@ -1214,7 +1087,6 @@
             });
 
             // --- Damage Shortcut Module Logic ---
-            const damageShortcutsContainer = document.getElementById('damage-shortcuts');
             damageShortcutsContainer.addEventListener('click', (e) => {
                 const target = e.target.closest('button[data-damage-adj]');
                 if (!target) return;
@@ -1234,7 +1106,7 @@
                         const currentDamage = parseInt(slotReplicant.value.damage || 0, 10);
                         const newDamage = Math.max(0, currentDamage - adjValue); // Damage cannot be negative
 
-                        queueOrUpdateOperation('SET_DAMAGE', {
+                        queueOperation('SET_DAMAGE', {
                             target: slotId,
                             value: newDamage
                         });
@@ -1243,9 +1115,6 @@
             });
 
             // --- Evolution Stage Selection Buttons ---
-            const selectBasicBtn = document.getElementById('select-basic-btn');
-            const selectStage2Btn = document.getElementById('select-stage2-btn');
-
             const createEvoSelectHandler = (evolvesValue) => {
                 return () => {
                     const db = cardDatabase.value;
@@ -1273,7 +1142,6 @@
             }
 
             // --- Extra HP Shortcut Module Logic ---
-            const extrahpShortcutsContainer = document.getElementById('extrahp-shortcuts');
             extrahpShortcutsContainer.addEventListener('click', (e) => {
                 const target = e.target.closest('button');
                 if (!target) return;
@@ -1301,16 +1169,13 @@
                         }
 
                         if (newExtraHp !== undefined) {
-                            queueOrUpdateOperation('SET_EXTRA_HP', { target: slotId, value: newExtraHp });
+                            queueOperation('SET_EXTRA_HP', { target: slotId, value: newExtraHp });
                         }
                     }
                 });
             });
 
             // --- Energy & Tool Module Logic (Drag and Drop) ---
-            const energyButtonsContainer = document.getElementById('energy-buttons');
-            const toolButtonsContainer = document.getElementById('tool-buttons');
-
             // 1. DRAG START: Set data when dragging an energy or tool
             energyButtonsContainer.addEventListener('dragstart', (e) => {
                 const target = e.target;
@@ -1418,8 +1283,7 @@
                     const currentTools = slotReplicant.value.attachedToolIds || [];
                     if (currentTools.length < toolLimit) {
                         const newTools = [...currentTools, toolId];
-                        // Use queueOrUpdateOperation because SET_TOOLS is idempotent
-                        queueOrUpdateOperation('SET_TOOLS', {
+                        queueOperation('SET_TOOLS', {
                             target: destinationSlotId,
                             tools: newTools
                         });
@@ -1444,14 +1308,14 @@
                         if (sourceReplicant && sourceReplicant.value) {
                             const sourceEnergies = [...(sourceReplicant.value.attachedEnergy || [])];
                             sourceEnergies.splice(energyIndex, 1);
-                            queueOrUpdateOperation('SET_ENERGIES', { target: sourceSlot, energies: sourceEnergies });
+                            queueOperation('SET_ENERGIES', { target: sourceSlot, energies: sourceEnergies });
                         }
 
                         // Add to destination
                         const destReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
                         if (destReplicant && destReplicant.value) {
                             const destEnergies = [...(destReplicant.value.attachedEnergy || []), energyIdentifier]; // Use identifier
-                            queueOrUpdateOperation('SET_ENERGIES', { target: destinationSlotId, energies: destEnergies });
+                            queueOperation('SET_ENERGIES', { target: destinationSlotId, energies: destEnergies });
                         }
 
                     } else {
@@ -1469,7 +1333,7 @@
                         const currentEnergies = slotReplicant.value.attachedEnergy || [];
                         const finalEnergies = [...currentEnergies, energyIdentifier]; // Use identifier
 
-                        queueOrUpdateOperation('SET_ENERGIES', {
+                        queueOperation('SET_ENERGIES', {
                             target: destinationSlotId,
                             energies: finalEnergies
                         });
@@ -1643,30 +1507,10 @@
                 });
             }
 
-            // Listen for changes that could affect button visibility
-            settingsRep.on('change', () => {
-                updateEnergyButtonVisibility();
-                updateToolButtonVisibility();
-            });
-            deckL.on('change', () => {
-                updateEnergyButtonVisibility();
-                updateToolButtonVisibility();
-            });
-            deckR.on('change', () => {
-                updateEnergyButtonVisibility();
-                updateToolButtonVisibility();
-            });
 
-            assetPaths.on('change', () => {
-                renderCurrentPlayerField();
-                updateToolButtonVisibility();
-            });
 
 
             // --- Targeting View Logic ---
-            const attackTargetField = document.getElementById('attack-target-field');
-            const toggleTargetHeightBtn = document.getElementById('toggle-target-height-btn');
-
             if (toggleTargetHeightBtn) {
                 toggleTargetHeightBtn.addEventListener('click', () => {
                     const currentHeight = attackTargetField.style.height;
@@ -1846,15 +1690,6 @@
 
 
             // --- Attack Module Logic ---
-            const attackerSelect = document.getElementById('attacker');
-            const attackSelect = document.getElementById('attack-select');
-            const damageInput = document.getElementById('damage');
-            const weaknessCheck = document.getElementById('weakness-check');
-            const attackBtn = document.getElementById('attack-btn');
-            const aimBtn = document.getElementById('aim-btn');
-            const stadiumSelect = document.getElementById('stadium-select');
-            const stadiumUsedCheckbox = document.getElementById('stadium-used-checkbox');
-
             // Store the original (base) damage value to handle weakness doubling correctly
             let originalDamage = 0;
 
@@ -1933,7 +1768,6 @@
              */
             function updateWeaknessCheckbox() {
                 const db = cardDatabase.value;
-                const weaknessCheck = document.getElementById('weakness-check');
                 if (!db) { weaknessCheck.checked = false; return; }
 
                 // Get info for the selected attacker
@@ -2314,73 +2148,15 @@
 
             stadiumSelect.addEventListener('change', (e) => {
                 const newStadiumId = e.target.value;
-                queueOrUpdateOperation('SET_STADIUM', { cardId: newStadiumId || null });
+                queueOperation('SET_STADIUM', { cardId: newStadiumId || null });
             });
 
             stadiumUsedCheckbox.addEventListener('change', (e) => {
                 const isUsed = e.target.checked;
-                queueOrUpdateOperation('SET_STADIUM_USED', { used: isUsed });
+                queueOperation('SET_STADIUM_USED', { used: isUsed });
             });
 
-            deckL.on('change', updateStadiumDropdown);
-            deckR.on('change', updateStadiumDropdown);
-            cardDatabase.on('change', updateStadiumDropdown);
-            draft_stadium.on('change', (newVal) => {
-                const pendingOp = operationQueue.value.find(op => op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED');
-                if (!pendingOp) {
-                    stadiumSelect.value = newVal ? newVal.cardId : "";
-                    stadiumUsedCheckbox.checked = newVal ? newVal.used : false;
-                }
-                // Disable checkbox if no stadium is selected
-                stadiumUsedCheckbox.disabled = !newVal || !newVal.cardId;
-            });
 
-            // --- Turn Module Logic ---
-            const turnLRadio = document.getElementById('turn-l');
-            const turnRRadio = document.getElementById('turn-r');
-            const turnLLabel = document.getElementById('turn-l-label');
-            const turnRLabel = document.getElementById('turn-r-label');
-            const endTurnBtn = document.getElementById('end-turn-btn');
-
-            playerL_name.on('change', (newName) => {
-                const radio = turnLLabel.querySelector('input');
-                turnLLabel.textContent = ''; // Clear existing content
-                turnLLabel.appendChild(radio);
-                turnLLabel.append(` ${newName || 'Left Player'}`);
-            });
-
-            playerR_name.on('change', (newName) => {
-                const radio = turnRLabel.querySelector('input');
-                turnRLabel.textContent = ''; // Clear existing content
-                turnRLabel.appendChild(radio);
-                turnRLabel.append(` ${newName || 'Right Player'}`);
-            });
-
-            draft_currentTurn.on('change', (newVal) => {
-                if (newVal === 'L') {
-                    turnLRadio.checked = true;
-                } else {
-                    turnRRadio.checked = true;
-                }
-                updateAttackerDropdown();
-                renderCurrentPlayerField();
-                updateEnergyButtonVisibility();
-                updateToolButtonVisibility();
-                renderTargetingField();
-            });
-
-            turnLRadio.addEventListener('change', () => {
-                if (turnLRadio.checked) queueOrUpdateOperation('SET_TURN', { side: 'L' });
-            });
-            turnRRadio.addEventListener('change', () => {
-                if (turnRRadio.checked) queueOrUpdateOperation('SET_TURN', { side: 'R' });
-            });
-            endTurnBtn.addEventListener('click', () => {
-                const currentTurn = draft_currentTurn.value;
-                const nextTurn = currentTurn === 'L' ? 'R' : 'L';
-                // Reuse the SET_TURN operation and use queueOrUpdate to ensure there's only one turn-change command in the queue
-                queueOrUpdateOperation('SET_TURN', { side: nextTurn });
-            });
 
 
             // --- Main Action Buttons & Global Handlers ---
@@ -2389,28 +2165,8 @@
             }
 
             function handleApply() {
-                // Disable the button to prevent rapid clicks
-                const originalText = applyOpBtn.textContent;
-                applyOpBtn.disabled = true;
-                applyOpBtn.textContent = 'Applying...';
-
                 nodecg.sendMessage('applyQueue').catch(e => console.error("Failed to apply queue", e));
-
-                // Re-enable the button after a 1.5-second cooldown
-                setTimeout(() => {
-                    applyOpBtn.disabled = false;
-                    applyOpBtn.textContent = originalText;
-                }, 1500);
             }
-
-            discardOpBtn.addEventListener('click', handleDiscard);
-            applyOpBtn.addEventListener('click', handleApply);
-
-            resetSystemBtn.addEventListener('click', () => {
-                if (confirm('Are you sure you want to completely reset the system? This will clear all pokemon, decks, and pending operations. This action cannot be undone.')) {
-                    nodecg.sendMessage('resetSystem').catch(e => console.error("Failed to reset system", e));
-                }
-            });
 
             // --- Unified Hotkey Handling ---
             nodecg.listenFor('hotkeyFired', (command) => {
@@ -2423,64 +2179,110 @@
             });
 
             // --- Event Listeners for UI Updates ---
+
+            // Core state changes that trigger wide UI updates
+            draft_currentTurn.on('change', (newValue) => {
+                renderCurrentPlayerField();
+                updateEnergyButtonVisibility();
+                updateToolButtonVisibility();
+                renderTargetingField();
+                updateAttackerDropdown();
+
+                if (newValue === 'L') {
+                    turnLRadio.checked = true;
+                } else if (newValue === 'R') {
+                    turnRRadio.checked = true;
+                }
+            });
+
             cardDatabase.on('change', () => {
+                console.log('Listener Fired: cardDatabase');
+                // Re-render everything that uses card data
+                renderCurrentPlayerField();
+                updateBattleEnergyCounts();
                 updateAttackerDropdown();
                 renderTargetingField();
                 updateWeaknessCheckbox();
+                updateStadiumDropdown();
+                updateToolButtonVisibility();
+                updateEnergyButtonVisibility();
             });
-            operationQueue.on('change', renderQueue);
+
+            selections.on('change', () => {
+                console.log('Listener Fired: selections');
+                // When selections change, only the targeting view and weakness check needs to be updated
+                renderTargetingField();
+                updateWeaknessCheckbox();
+            });
+
+            // A single, consolidated listener for all slot changes
+            slots.forEach(slot => {
+                slot.on('change', () => {
+                    // Using a timeout to batch updates that might come in rapid succession
+                    clearTimeout(slot._updateTimeout);
+                    slot._updateTimeout = setTimeout(() => {
+                        console.log(`Listener Fired: ${slot.name}`);
+                        updateTotalPokemons();
+                        updateBattleEnergyCounts();
+                        renderCurrentPlayerField(); 
+                        renderTargetingField(); 
+                        updateAttackerDropdown(); 
+                        updateWeaknessCheckbox();
+                    }, 50); // 50ms delay to batch updates
+                });
+            });
+
+            // Listeners for deck changes (affects energy/tool/stadium visibility)
+            const updateDeckDependentUI = () => {
+                console.log('Listener Fired: deckL or deckR');
+                updateEnergyButtonVisibility();
+                updateToolButtonVisibility();
+                updateStadiumDropdown();
+            };
+            deckL.on('change', updateDeckDependentUI);
+            deckR.on('change', updateDeckDependentUI);
+
+            // Consolidated settings listener
+            settingsRep.on('change', (newValue) => {
+                console.log('Listener Fired: ptcg-settings');
+                // Update hotkeys from settings
+                if (newValue && newValue.hotkeys) {
+                    hotkeys.discard = newValue.hotkeys.discard || 'Escape';
+                    hotkeys.apply = newValue.hotkeys.apply || (isMac ? 'Meta+S' : 'Control+S');
+                    hotkeys.clearSelection = newValue.hotkeys.clearSelection || 'Delete';
+                    hotkeys.clearCard = newValue.hotkeys.clearCard || ' ';
+                } else {
+                    // Reset to defaults if settings are cleared
+                    hotkeys = { 
+                        discard: 'Escape', 
+                        apply: isMac ? 'Meta+S' : 'Control+S', 
+                        clearSelection: 'Delete', 
+                        clearCard: ' ' 
+                    };
+                }
+                // Other UI updates that depend on settings
+                updateEnergyButtonVisibility();
+                updateToolButtonVisibility();
+            });
+
+            assetPaths.on('change', () => {
+                renderCurrentPlayerField();
+                updateToolButtonVisibility();
+            });
 
             i18nStrings.on('change', updateUIStrings);
             language.on('change', updateUIStrings);
-
-            // FIX: Moved from a duplicate block below
-            slots.forEach(slot => slot.on('change', () => {
-                updateAttackerDropdown();
-                updateTotalPokemons();
-                renderTargetingField(); // Selections might refer to a card that was just removed
-                updateWeaknessCheckbox();
-            }));
-            selections.on('change', () => {
-                updateAttackerDropdown();
-                renderTargetingField();
-                updateWeaknessCheckbox();
-            });
 
             // Initial UI Update ---
             updateUIStrings();
             updateTotalPokemons(); // Keep this
             updateBattleEnergyCounts(); // New
-            updateFirstPlayerDropdown();
-            renderQueue();
             updateAttackerDropdown();
             renderTargetingField();
             updateEnergyButtonVisibility();
             updateToolButtonVisibility();
             renderCurrentPlayerField();
-
-            // --- Unified Hotkey Handling ---
-            let hotkeys = { discard: 'Escape', apply: 'Control+S', clearSelection: 'Delete', clearCard: ' ' };
-
-            function updateButtonLabels() {
-                discardOpBtn.textContent = `Discard (${hotkeys.discard})`;
-                applyOpBtn.textContent = `Apply (${hotkeys.apply})`;
-            }
-
-            settingsRep.on('change', (newValue) => {
-                if (newValue && newValue.hotkeys) {
-                    hotkeys = newValue.hotkeys;
-                } else {
-                    hotkeys = { discard: 'Escape', apply: 'Control+S', clearSelection: 'Delete', clearCard: ' ' };
-                }
-                updateButtonLabels();
-            });
             
-            // Initial label update
-            if (settingsRep.value && settingsRep.value.hotkeys) {
-                hotkeys = settingsRep.value.hotkeys;
-            }
-            updateButtonLabels();
-
             function checkHotkey(e, hotkeyString) {
                 if (!hotkeyString || typeof hotkeyString !== 'string') return false;
                 if (hotkeyString.toLowerCase() === 'space' || hotkeyString === ' ') {
@@ -2495,52 +2297,6 @@
                 if (parts.includes('meta') !== e.metaKey) return false;
                 return true;
             }
-
-            const autoApplyCheckbox = document.getElementById('auto-apply-checkbox');
-            const opButtonsContainer = document.getElementById('op-buttons-container');
-            const autoApplyWarning = document.getElementById('auto-apply-warning');
-            const operationQueueContainer = document.getElementById('operation-queue');
-
-            settingsRep.on('change', (newValue) => {
-                const autoApplyEnabled = newValue && newValue.autoApply;
-                
-                // Update checkbox state
-                if (autoApplyCheckbox.checked !== autoApplyEnabled) {
-                    autoApplyCheckbox.checked = autoApplyEnabled;
-                }
-
-                // Toggle visibility of button containers
-                if (autoApplyEnabled) {
-                    opButtonsContainer.style.display = 'none';
-                    autoApplyWarning.style.display = 'block';
-                    operationQueueContainer.style.display = 'none';
-                } else {
-                    opButtonsContainer.style.display = 'flex';
-                    autoApplyWarning.style.display = 'none';
-                    operationQueueContainer.style.display = 'block';
-                }
-
-                // Also, re-run hotkey label updates in case settings object was reset
-                if (newValue && newValue.hotkeys) {
-                    hotkeys = newValue.hotkeys;
-                } else {
-                    hotkeys = { discard: 'Escape', apply: 'Control+S', clearSelection: 'Delete', clearCard: ' ' };
-                }
-                updateButtonLabels();
-            });
-
-            autoApplyCheckbox.addEventListener('change', (e) => {
-                const isChecked = e.target.checked;
-                if (settingsRep.value) {
-                    // Update the replicant to reflect the new autoApply setting
-                    settingsRep.value = { ...settingsRep.value, autoApply: isChecked };
-                }
-                // If the checkbox is checked and there are items in the queue, apply them.
-                if (isChecked && operationQueue.value && operationQueue.value.length > 0) {
-                    console.log('Auto-Apply enabled with items in queue. Applying now.');
-                    handleApply();
-                }
-            });
 
             document.addEventListener('keydown', (e) => {
                 if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') return;

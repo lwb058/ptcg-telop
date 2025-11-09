@@ -95,7 +95,7 @@ body, html {
     position: absolute; 
     width: 447.0px; 
     height: auto; 
-    top: -62px; 
+    top: -60px; 
     left: -35px; 
 }
 .battle-pokemon-image.is-v {
@@ -208,7 +208,7 @@ body, html {
     display: flex;
     align-items: center;
     position: relative;
-    height: 22px;
+    height: 20px;
 }
 
 .battle-skill { 
@@ -234,7 +234,7 @@ body, html {
 .energy-cost-container {
     background-color: rgba(255, 255, 255, 0.8);
     border-radius: 4px 11px 11px 4px;
-    height: 22px;
+    height: 100%;
     display: inline-flex;
     align-items: center;
     padding: 0 2px;

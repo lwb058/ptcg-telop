@@ -17,6 +17,12 @@
     "cht": "撤退",
     "en": "Retreat"
   },
+  "promote": {
+    "jp": "出撃",
+    "chs": "出击",
+    "cht": "出擊",
+    "en": "Promote"
+  },
   "manually_attach": {
     "jp": "手貼り",
     "chs": "手填",
@@ -24,7 +30,7 @@
     "en": "Attach"
   },
   "extra_bench": {
-    "jp": "エクストラベンチ",
+    "jp": "拡張ベンチ",
     "chs": "额外备战区",
     "cht": "額外備戰區",
     "en": "EXTRA BENCH"
@@ -46,12 +52,6 @@
     "chs": "卡组码:",
     "cht": "牌組編碼:",
     "en": "DeckID:"
-  },
-  "set": {
-    "jp": "セット",
-    "chs": "设置",
-    "cht": "設定",
-    "en": "Set"
   },
   "player": {
     "jp": "プレイヤー:",

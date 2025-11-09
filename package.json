@@ -73,6 +73,13 @@
         "headerColor": "#607D8B"
       },
       {
+        "name": "director-panel",
+        "title": "Director Panel",
+        "width": 3,
+        "file": "director_panel.html",
+        "headerColor": "#02924a"
+      },
+      {
         "name": "settings-panel",
         "title": "Settings",
         "file": "setting.html",
