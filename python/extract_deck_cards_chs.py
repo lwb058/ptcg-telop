@@ -19,7 +19,7 @@ def _identifier_type(identifier):
         return 'url'
     if re.match(r'^[0-9]+$', identifier):
         return 'deckId'
-    if re.match(r'^[a-zA-Z0-9]+$', identifier) and len(identifier) > 10: # Simple heuristic for deck codes
+    if re.match(r'^[a-zA-Z0-9_]+$', identifier) and len(identifier) > 10: # Simple heuristic for deck codes
         return 'deckCode'
     return 'unknown'
 
@@ -79,6 +79,7 @@ def main(identifier_arg=None):
     parser = argparse.ArgumentParser(description="Extract deck data from tcg.mik.moe.")
     parser.add_argument("identifier", nargs='?', default=identifier_arg, help="The deck code, deck ID, or URL.")
     parser.add_argument("--overwrite", action="store_true", help="Force overwrite if card exists in the database.")
+    parser.add_argument("--database-path", type=str, default=None, help="Path to the database JSON file.")
     
     args = parser.parse_args()
 
@@ -118,7 +119,7 @@ def main(identifier_arg=None):
         sys.exit(1)
 
     # --- Database Update Logic ---
-    card_database = load_database()
+    card_database = load_database(db_path=args.database_path)
     db_changed = False
     for i, card in enumerate(card_list_from_api):
         set_code = card.get('setCode')
@@ -140,7 +141,7 @@ def main(identifier_arg=None):
 
     if db_changed:
         print("\nSaving updated database to file...", file=sys.stderr)
-        save_database(card_database)
+        save_database(card_database, db_path=args.database_path)
         print("Database save complete.", file=sys.stderr)
     else:
         print("\nNo changes to the database were made.", file=sys.stderr)
@@ -157,4 +158,4 @@ def main(identifier_arg=None):
     print(json.dumps(deck_output, ensure_ascii=False))
 
 if __name__ == "__main__":
-    main()
+    main("4t9KYsibm_U_YQ2sQL")

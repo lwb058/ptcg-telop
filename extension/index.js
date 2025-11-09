@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os'); // Import os for platform detection
-const { exec } = require('child_process'); // Import child_process
+const { exec, spawn } = require('child_process'); // Import child_process
 const https = require('https'); // For update check
 
 module.exports = function (nodecg) {
@@ -304,7 +304,7 @@ module.exports = function (nodecg) {
 	nodecg.listenFor('importDeckOrCard', ({ side, code }, callback) => {
 		const tryDeckImport = () => {
 			nodecg.log.info(`[Import Flow] Attempting to import "${code}" as a DECK for Player ${side}.`);
-
+		
 			const pythonDir = path.join(__dirname, '..', 'python');
 			const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
 			const scriptMap = {
@@ -318,17 +318,41 @@ module.exports = function (nodecg) {
 			const dbFileName = `database_${lang}.json`;
 			const absoluteDbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
 			const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
-			const command = `${pythonCommand} "${pythonScriptPath}" "${code}" --database-path "${absoluteDbPath}"`;
+			
+			const args = [pythonScriptPath, code, '--database-path', absoluteDbPath];
+			const child = spawn(pythonCommand, args, { cwd: pythonDir });
 
-			const child = exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
-				if (error) {
-					nodecg.log.warn(`[Import Flow] Failed to import "${code}" as a deck. Falling back to single card import.`);
-					nodecg.log.warn(`Deck import error details: ${stderr}`);
-					trySingleCardImport(); // Fallback to single card import
-					return; // Stop deck import process
+			let stdoutData = '';
+			let stderrData = '';
+			const progressRegex = /--- Processing card (\d+)\/(\d+):/;
+
+			child.stdout.on('data', (data) => {
+				stdoutData += data.toString();
+			});
+
+			child.stderr.on('data', (data) => {
+				const dataStr = data.toString();
+				stderrData += dataStr;
+				const match = dataStr.match(progressRegex);
+				if (match) {
+					const current = parseInt(match[1], 10);
+					const total = parseInt(match[2], 10);
+					const percentage = Math.round((current / total) * 100);
+					const text = `${current}/${total}`;
+					deckLoadingStatus.value = { loading: true, side: side, percentage: percentage, text: text };
 				}
+			});
+
+			child.on('close', (exitCode) => {
+				if (exitCode !== 0) {
+					nodecg.log.warn(`[Import Flow] Failed to import "${code}" as a deck (Exit Code: ${exitCode}). Falling back to single card import.`);
+					nodecg.log.warn(`Deck import STDERR: ${stderrData}`);
+					trySingleCardImport();
+					return;
+				}
+
 				try {
-					const deckCards = JSON.parse(stdout);
+					const deckCards = JSON.parse(stdoutData);
 					const deckReplicant = side === 'L' ? deckL : deckR;
 					nodecg.log.info(`Deck for Player ${side} processed. Reloading database.`);
 					loadCardDatabase();
@@ -339,22 +363,15 @@ module.exports = function (nodecg) {
 				} catch (parseError) {
 					nodecg.log.warn(`[Import Flow] Failed to parse deck output for "${code}". Falling back to single card import.`);
 					nodecg.log.warn(`Deck import parse error details: ${parseError}`);
-					nodecg.log.warn('Python stdout:', stdout);
-					trySingleCardImport(); // Fallback to single card import
+					nodecg.log.warn('Python stdout:', stdoutData);
+					trySingleCardImport();
 				}
 			});
 
-			const progressRegex = /--- Processing card (\d+)\/(\d+):/;
-			child.stderr.on('data', (data) => {
-				const match = data.toString().match(progressRegex);
-				if (match) {
-					const current = parseInt(match[1], 10);
-					const total = parseInt(match[2], 10);
-					const percentage = Math.round((current / total) * 100);
-					const text = `${current}/${total}`;
-					deckLoadingStatus.value = { loading: true, side: side, percentage: percentage, text: text };
-				}
-			});	
+			child.on('error', (err) => {
+				nodecg.log.error(`[Import Flow] Failed to start subprocess for deck import: ${err.message}. Falling back to single card import.`);
+				trySingleCardImport();
+			});
 		};
 
 		const trySingleCardImport = () => {
