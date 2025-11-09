@@ -40,12 +40,56 @@
         }
         .card-container {
             width: 95%; 
-                    }
+        }
         .card-image {
             width: 100%;
             height: 100%;
             object-fit: contain;
             border-radius: 22px;
+        }
+
+        /* Prize Card Styles */
+        .prize-cards-container {
+            position: absolute;
+            width: 406px;
+            height: 950px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            background-image: url('/assets/ptcg-telop/element/side-bg.png');
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 35px;
+            box-sizing: border-box;
+        }
+
+        .prize-card-slot {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .prize-card-image {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 10px;
+        }
+
+        .taken-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
         }
     </style>
 </head>
@@ -57,6 +101,9 @@
                     <img id="card-image-L" class="card-image" src="/assets/ptcg-telop/element/default.jpg" alt="Left Card Image">
                 </div>
             </div>
+            <div id="prize-cards-container-L" class="prize-cards-container" style="display: none;">
+                <!-- Prize card slots for Player L will be generated here -->
+            </div>
         </div>
         <div id="animation-wrapper-R" class="animation-wrapper">
             <div class="player-area" id="player-R-area">
@@ -64,63 +111,56 @@
                     <img id="card-image-R" class="card-image" src="/assets/ptcg-telop/element/default.jpg" alt="Right Card Image">
                 </div>
             </div>
+            <div id="prize-cards-container-R" class="prize-cards-container" style="display: none;">
+                <!-- Prize card slots for Player R will be generated here -->
+            </div>
         </div>
     </div>
     <div id="video-preloader" style="position: absolute; width: 1px; height: 1px; overflow: hidden; left: -9999px; top: -9999px; visibility: hidden; pointer-events: none;"></div>
     <script>
-         const animationWrapperL = document.getElementById('animation-wrapper-L');
-         const animationWrapperR = document.getElementById('animation-wrapper-R');
-         const cardImageL = document.getElementById('card-image-L');
-         const cardImageR = document.getElementById('card-image-R');
-         const defaultImage = '/assets/ptcg-telop/element/default.jpg';
- 
-         const cardState = {
-             L: { isVisible: false, isAnimating: false },
-             R: { isVisible: false, isAnimating: false }
-         };
- 
-         function onAnimationEnd(element) {
-             return new Promise(resolve => {
-                 element.addEventListener('animationend', resolve, { once: true });
-             });
-         }
- 
+        // --- DOM Elements ---
+        const animationWrapperL = document.getElementById('animation-wrapper-L');
+        const animationWrapperR = document.getElementById('animation-wrapper-R');
+        const playerAreaL = document.getElementById('player-L-area');
+        const playerAreaR = document.getElementById('player-R-area');
+        const prizeContainerL = document.getElementById('prize-cards-container-L');
+        const prizeContainerR = document.getElementById('prize-cards-container-R');
+        const cardImageL = document.getElementById('card-image-L');
+        const cardImageR = document.getElementById('card-image-R');
+        const preloaderContainer = document.getElementById('video-preloader');
+        const defaultImage = '/assets/ptcg-telop/element/default.jpg';
+
+        // --- Replicants ---
         const cardToShowL = nodecg.Replicant('cardToShowL');
         const cardToShowR = nodecg.Replicant('cardToShowR');
         const settingsRep = nodecg.Replicant('ptcg-settings');
         const assetPaths = nodecg.Replicant('assetPaths');
-        const deckL = nodecg.Replicant('deckL');
-        const deckR = nodecg.Replicant('deckR');
         const cardDatabase = nodecg.Replicant('cardDatabase');
         const themeAssets = nodecg.Replicant('themeAssets');
         const language = nodecg.Replicant('language');
+        const deckL = nodecg.Replicant('deckL');
+        const deckR = nodecg.Replicant('deckR');
 
-        function resolveAssetPath(assetName, isLangSpecific = false) {
-            const settings = settingsRep.value || {};
-            const activeTheme = settings.activeTheme || 'Default';
-            const themeAssetMap = themeAssets.value || {};
-            const lang = language.value || 'jp';
-            const basePath = '/assets/ptcg-telop/';
+        // --- State ---
+        const displayState = {
+            L: { mode: 'hidden', isAnimating: false, data: null },
+            R: { mode: 'hidden', isAnimating: false, data: null }
+        };
+        let isReversed = false;
 
-            const potentialPath = assetName.replace(/url\((['\"]?)(.*?)\1\)/, '$2');
-            const cleanAssetName = potentialPath.split('/').pop();
-
-            if (activeTheme !== 'Default' && themeAssetMap[activeTheme] && themeAssetMap[activeTheme].includes(cleanAssetName)) {
-                return `${basePath}${activeTheme}/${cleanAssetName}`;
-            }
-
-            if (isLangSpecific) {
-                const baseName = assetName.replace(/_jp\.png$/, '');
-                const langAssetName = `${baseName}_${lang}.png`;
-                return `${basePath}element/${langAssetName}`;
-            }
-
-            return `${basePath}element/${assetName}`;
-        }
-
-        function updateCustomizableAssets() {
-            const root = document.documentElement;
-            root.style.setProperty('--bg-card-area', `url(${resolveAssetPath('card-bg.png')})`);
+        // --- Utility Functions ---
+        function onAnimationEnd(element) {
+            return new Promise(resolve => {
+                // A fallback timeout in case the animationend event doesn't fire.
+                const timeout = setTimeout(() => {
+                    console.warn('AnimationEnd fallback timeout triggered for:', element);
+                    resolve();
+                }, 1000); // 1 second timeout
+                element.addEventListener('animationend', () => {
+                    clearTimeout(timeout);
+                    resolve();
+                }, { once: true });
+            });
         }
 
         const getCardImageUrl = (cardId) => {
@@ -133,12 +173,134 @@
             const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg';
             return `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
         };
-        let isReversed = false;
 
-        const preloaderContainer = document.getElementById('video-preloader');
+        // --- Core Display Logic ---
+        async function setDisplay(side, newMode, newData) {
+            const state = displayState[side];
+            if (state.isAnimating) {
+                console.warn(`Animation for side ${side} is already in progress. Request ignored.`);
+                return;
+            }
+
+            const dataChanged = JSON.stringify(state.data) !== JSON.stringify(newData);
+            if (state.mode === newMode && !dataChanged) {
+                // If we're asked to show the same thing again, just re-animate "in"
+                if (newMode !== 'hidden') {
+                    const wrapper = side === 'L' ? animationWrapperL : animationWrapperR;
+                    wrapper.classList.remove(`anim-slide-in-${side}`);
+                    void wrapper.offsetWidth; // Trigger reflow
+                    wrapper.classList.add(`anim-slide-in-${side}`);
+                }
+                return;
+            }
+
+            state.isAnimating = true;
+
+            const wrapper = side === 'L' ? animationWrapperL : animationWrapperR;
+            const playerArea = side === 'L' ? playerAreaL : playerAreaR;
+            const prizeContainer = side === 'L' ? prizeContainerL : prizeContainerR;
+            const currentMode = state.mode;
+
+            // 1. Animate Out
+            if (currentMode !== 'hidden') {
+                wrapper.classList.remove(`anim-slide-in-${side}`);
+                wrapper.classList.add(`anim-slide-out-${side}`);
+                await onAnimationEnd(wrapper);
+            }
+
+            // 2. Update Content & State (while wrapper is hidden)
+            state.mode = newMode;
+            state.data = newData;
+
+            playerArea.style.display = 'none';
+            prizeContainer.style.display = 'none';
+
+            if (newMode === 'singleCard') {
+                const image = side === 'L' ? cardImageL : cardImageR;
+                image.src = newData; // newData is the URL
+                playerArea.style.display = 'flex';
+            } else if (newMode === 'prizeCard') {
+                prizeContainer.innerHTML = '';
+                newData.forEach(card => { // newData is the cards array
+                    const slot = document.createElement('div');
+                    slot.className = 'prize-card-slot';
+                    if (card.cardId) {
+                        const img = document.createElement('img');
+                        img.className = 'prize-card-image';
+                        img.src = getCardImageUrl(card.cardId);
+                        slot.appendChild(img);
+                        if (card.isTaken) {
+                            const overlay = document.createElement('div');
+                            overlay.className = 'taken-overlay';
+                            slot.appendChild(overlay);
+                        }
+                    }
+                    prizeContainer.appendChild(slot);
+                });
+                prizeContainer.style.display = 'grid';
+            }
+
+            // 3. Animate In
+            if (newMode !== 'hidden') {
+                wrapper.classList.remove(`anim-slide-out-${side}`);
+                wrapper.classList.add(`anim-slide-in-${side}`);
+            }
+            
+            state.isAnimating = false;
+        }
+
+        // --- Event Listeners ---
+        cardToShowL.on('change', (newValue) => {
+            const side = isReversed ? 'R' : 'L';
+            const newMode = newValue ? 'singleCard' : 'hidden';
+            const newSrc = newValue ? getCardImageUrl(newValue.match(/(\d{5,})/)[1]) : null;
+            setDisplay(side, newMode, newSrc);
+        });
+
+        cardToShowR.on('change', (newValue) => {
+            const side = isReversed ? 'L' : 'R';
+            const newMode = newValue ? 'singleCard' : 'hidden';
+            const newSrc = newValue ? getCardImageUrl(newValue.match(/(\d{5,})/)[1]) : null;
+            setDisplay(side, newMode, newSrc);
+        });
+
+        nodecg.listenFor('showPrizeCards', ({ side, cards }) => {
+            const targetSide = isReversed ? (side === 'L' ? 'R' : 'L') : side;
+            setDisplay(targetSide, 'prizeCard', cards);
+        });
+
+        nodecg.listenFor('clearCard', () => {
+            setDisplay('L', 'hidden', null);
+            setDisplay('R', 'hidden', null);
+        });
+
+        // --- Theming and Asset Preloading (unchanged) ---
+        function resolveAssetPath(assetName, isLangSpecific = false) {
+            const settings = settingsRep.value || {};
+            const activeTheme = settings.activeTheme || 'Default';
+            const themeAssetMap = themeAssets.value || {};
+            const lang = language.value || 'jp';
+            const basePath = '/assets/ptcg-telop/';
+            const potentialPath = assetName.replace(/url\((['\"]?)(.*?)\1\)/, '$2');
+            const cleanAssetName = potentialPath.split('/').pop();
+            if (activeTheme !== 'Default' && themeAssetMap[activeTheme] && themeAssetMap[activeTheme].includes(cleanAssetName)) {
+                return `${basePath}${activeTheme}/${cleanAssetName}`;
+            }
+            if (isLangSpecific) {
+                const baseName = assetName.replace(/_jp\.png$/, '');
+                const langAssetName = `${baseName}_${lang}.png`;
+                return `${basePath}element/${langAssetName}`;
+            }
+            return `${basePath}element/${assetName}`;
+        }
+
+        function updateCustomizableAssets() {
+            const root = document.documentElement;
+            root.style.setProperty('--bg-card-area', `url(${resolveAssetPath('card-bg.png')})`);
+        }
+
         function preloadDeckImages(deck) {
             if (!deck || !deck.cards || !assetPaths.value || !assetPaths.value.cardImgPath || !preloaderContainer) return;
-
             deck.cards.forEach(cardId => {
                 const fullPath = getCardImageUrl(cardId);
                 if (fullPath !== defaultImage && !preloaderContainer.querySelector(`img[src="${fullPath}"]`)) {
@@ -152,7 +314,6 @@
         const handleThemeChange = (settings) => {
             const activeTheme = (settings && settings.activeTheme) || 'Default';
             const themeCssLink = document.getElementById('theme-css-link');
-
             if (themeCssLink) {
                 if (activeTheme === 'Default') {
                     themeCssLink.disabled = true;
@@ -165,15 +326,13 @@
             updateCustomizableAssets();
         };
 
+        // --- Init ---
         NodeCG.waitForReplicants(assetPaths, deckL, deckR, cardDatabase, themeAssets, language, settingsRep).then(() => {
-            // Initial setup
             const settings = settingsRep.value || {};
             isReversed = !!settings.reverseCardDisplay;
             handleThemeChange(settings);
-            
             preloadDeckImages(deckL.value);
             preloadDeckImages(deckR.value);
-
             deckL.on('change', (newVal) => preloadDeckImages(newVal));
             deckR.on('change', (newVal) => preloadDeckImages(newVal));
         });
@@ -181,82 +340,14 @@
         settingsRep.on('change', (newValue, oldValue) => {
             const newSettings = newValue || {};
             const oldSettings = oldValue || {};
-
             if (newSettings.reverseCardDisplay !== oldSettings.reverseCardDisplay) {
                 isReversed = !!newSettings.reverseCardDisplay;
             }
-
             if (newSettings.activeTheme !== oldSettings.activeTheme) {
                 handleThemeChange(newSettings);
             }
-
             if (newSettings.language !== oldSettings.language) {
                 updateCustomizableAssets();
-            }
-        });
-
-         async function handleCardUpdate(animatedContainer, image, newValue, side) {
-            const state = cardState[side];
-            if (state.isAnimating) {
-                console.warn(`Animation for ${side} side is already in progress. Request ignored.`);
-                return;
-            }
-            state.isAnimating = true;
-
-            const wantsToShow = !!newValue;
-            let newSrc = newValue || defaultImage;
-
-            if (wantsToShow && assetPaths.value && assetPaths.value.cardImgPath) {
-                const cardIdMatch = newValue.match(/(\d{5,})/);
-                if (cardIdMatch) {
-                    const cardId = cardIdMatch[1];
-                    newSrc = getCardImageUrl(cardId);
-                } else {
-                    newSrc = newValue;
-                }
-            }
-
-            try {
-                if (!wantsToShow && state.isVisible) {
-                    animatedContainer.classList.remove(`anim-slide-in-${side}`);
-                    animatedContainer.classList.add(`anim-slide-out-${side}`);
-                    await onAnimationEnd(animatedContainer);
-                    image.src = defaultImage;
-                    state.isVisible = false;
-                } 
-                else if (wantsToShow) {
-                    if (state.isVisible) {
-                        animatedContainer.classList.remove(`anim-slide-in-${side}`);
-                        animatedContainer.classList.add(`anim-slide-out-${side}`);
-                        await onAnimationEnd(animatedContainer);
-                    }
-
-                    image.src = newSrc;
-                    animatedContainer.classList.remove(`anim-slide-out-${side}`);
-                    
-                    animatedContainer.classList.add(`anim-slide-in-${side}`);
-                    await onAnimationEnd(animatedContainer);
-                    
-                    state.isVisible = true;
-                }
-            } finally {
-                state.isAnimating = false;
-            }
-         }
-
-        cardToShowL.on('change', (newValue) => {
-            if (isReversed) {
-                handleCardUpdate(animationWrapperR, cardImageR, newValue, 'R');
-            } else {
-                handleCardUpdate(animationWrapperL, cardImageL, newValue, 'L');
-            }
-        });
- 
-        cardToShowR.on('change', (newValue) => {
-            if (isReversed) {
-                handleCardUpdate(animationWrapperL, cardImageL, newValue, 'L');
-            } else {
-                handleCardUpdate(animationWrapperR, cardImageR, newValue, 'R');
             }
         });
     </script>

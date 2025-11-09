@@ -210,6 +210,10 @@ module.exports = function (nodecg) {
 	const deckL = nodecg.Replicant('deckL', { defaultValue: { name: '', cards: [] } });
 	const deckR = nodecg.Replicant('deckR', { defaultValue: { name: '', cards: [] } });
 
+	// Prize Cards Replicants
+	const prizeCardsL = nodecg.Replicant('prizeCardsL', { defaultValue: Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false })) });
+	const prizeCardsR = nodecg.Replicant('prizeCardsR', { defaultValue: Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false })) });
+
 	// Player Slots (L0/R0 are Battle Slots)
 	// LIVE DATA: Used by graphics
 	// DRAFT DATA: Used by panels for immediate feedback
@@ -298,12 +302,8 @@ module.exports = function (nodecg) {
 
 	// Listen for messages to process deck codes or single card IDs
 	nodecg.listenFor('importDeckOrCard', ({ side, code }, callback) => {
-		const isLikelyDeckCode = (str) => (str.match(/-/g) || []).length >= 2 && str.length > 10;
-
-		if (isLikelyDeckCode(code)) {
-			// --- DECK IMPORT LOGIC ---
-			nodecg.log.info(`Treating as Deck Code. Request to process for Player ${side}: ${code}`);
-			deckLoadingStatus.value = { loading: true, side: side, percentage: 0, text: 'Starting...' };
+		const tryDeckImport = () => {
+			nodecg.log.info(`[Import Flow] Attempting to import "${code}" as a DECK for Player ${side}.`);
 
 			const pythonDir = path.join(__dirname, '..', 'python');
 			const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
@@ -321,12 +321,11 @@ module.exports = function (nodecg) {
 			const command = `${pythonCommand} "${pythonScriptPath}" "${code}" --database-path "${absoluteDbPath}"`;
 
 			const child = exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
-				deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
 				if (error) {
-					nodecg.log.error(`Deck import exec error: ${error}`);
-					nodecg.log.error(`Python stderr: ${stderr}`);
-					if (callback) callback({ error: error.message, stderr: stderr });
-					return;
+					nodecg.log.warn(`[Import Flow] Failed to import "${code}" as a deck. Falling back to single card import.`);
+					nodecg.log.warn(`Deck import error details: ${stderr}`);
+					trySingleCardImport(); // Fallback to single card import
+					return; // Stop deck import process
 				}
 				try {
 					const deckCards = JSON.parse(stdout);
@@ -336,10 +335,12 @@ module.exports = function (nodecg) {
 					deckReplicant.value = { name: code, cards: deckCards.cards };
 					nodecg.log.info(`Database reloaded and deck for Player ${side} updated.`);
 					if (callback) callback(null, `Deck for Player ${side} updated.`);
+					deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
 				} catch (parseError) {
-					nodecg.log.error('Failed to parse python script output for deck:', parseError);
-					nodecg.log.error('Python stdout:', stdout);
-					if (callback) callback({ error: 'Failed to parse script output.', stdout: stdout });
+					nodecg.log.warn(`[Import Flow] Failed to parse deck output for "${code}". Falling back to single card import.`);
+					nodecg.log.warn(`Deck import parse error details: ${parseError}`);
+					nodecg.log.warn('Python stdout:', stdout);
+					trySingleCardImport(); // Fallback to single card import
 				}
 			});
 
@@ -353,13 +354,12 @@ module.exports = function (nodecg) {
 					const text = `${current}/${total}`;
 					deckLoadingStatus.value = { loading: true, side: side, percentage: percentage, text: text };
 				}
-			});
+			});	
+		};
 
-		} else {
-			// --- SINGLE CARD IMPORT LOGIC ---
+		const trySingleCardImport = () => {
 			const sanitizedCardId = code.replace('/', '-');
-			nodecg.log.info(`Treating as Single Card. Request to add ${code} (sanitized to ${sanitizedCardId}) to Player ${side}'s deck.`);
-			deckLoadingStatus.value = { loading: true, side: side, percentage: 0, text: 'Fetching...' }; // Show loading status
+			nodecg.log.info(`[Import Flow] Attempting to import "${code}" (sanitized to ${sanitizedCardId}) as a SINGLE CARD for Player ${side}.`);
 
 			const deckReplicant = side === 'L' ? deckL : deckR;
 			const db = cardDatabase.value;
@@ -372,16 +372,17 @@ module.exports = function (nodecg) {
 				} else {
 					nodecg.log.info(`Card ${idToAdd} is already in Player ${side}'s deck.`);
 				}
+				deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
 				if (callback) callback(null, 'Card added to deck.');
 			};
 
 			if (db && db[sanitizedCardId] && db[sanitizedCardId].name) {
 				nodecg.log.info(`Card ${sanitizedCardId} found in database. Adding to deck.`);
 				addCardToDeck(sanitizedCardId);
-				deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' }; // Clear loading status
 			} else {
 				nodecg.log.info(`Card ${sanitizedCardId} not in database. Fetching with Python...`);
 				const pythonDir = path.join(__dirname, '..', 'python');
+				deckLoadingStatus.value = { loading: true, side: side, percentage: 0, text: 'Fetching...' };
 				const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
 				const scriptMap = {
 					jp: 'get_single_card_jp.py',
@@ -397,26 +398,31 @@ module.exports = function (nodecg) {
 				const command = `${pythonCommand} "${pythonScriptPath}" "${sanitizedCardId}" --database-path "${absoluteDbPath}"`;
 
 				exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
-					deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' }; // Clear loading status
 					if (error) {
-						nodecg.log.error(`Single card fetch exec error: ${error}`);
-						nodecg.log.error(`Python stderr: ${stderr}`);
+						nodecg.log.error(`[Import Flow] FINAL FAILURE: Could not import "${code}" as either a deck or a single card.`);
+						nodecg.log.error(`Single card fetch error details: ${stderr}`);
+						deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
 						if (callback) callback({ error: error.message, stderr: stderr });
 						return;
 					}
 					nodecg.log.info(`Python script for ${sanitizedCardId} finished. Reloading database.`);
 					loadCardDatabase();
-					setTimeout(() => { // Add a small delay to ensure DB has reloaded
+					setTimeout(() => {
 						if (cardDatabase.value && cardDatabase.value[sanitizedCardId] && cardDatabase.value[sanitizedCardId].name) {
 							addCardToDeck(sanitizedCardId);
 						} else {
-							nodecg.log.error(`Failed to fetch card ${sanitizedCardId}. It was not added to the database.`);
+							nodecg.log.error(`[Import Flow] FINAL FAILURE: Script ran for "${sanitizedCardId}" but it was not added to the database.`);
+							deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
 							if (callback) callback({ error: `Failed to fetch card ${sanitizedCardId}.` });
 						}
-					}, 200); // 200ms delay
+					}, 200);
 				});
 			}
-		}
+		};
+
+		// --- Main Execution Flow ---
+		deckLoadingStatus.value = { loading: true, side: side, percentage: 0, text: 'Starting...' };
+		tryDeckImport();
 	});
 
 	nodecg.listenFor('removeCardFromDeck', ({ side, cardId }, callback) => {
@@ -1275,6 +1281,10 @@ module.exports = function (nodecg) {
 			// Reset Stadium
 			live_stadium.value = { cardId: null };
 			draft_stadium.value = { cardId: null };
+
+			// Reset Prize Cards
+			nodecg.Replicant('prizeCardsL').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
+			nodecg.Replicant('prizeCardsR').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
 			
 			nodecg.log.info('System state has been completely reset.');
 			if (callback) callback(null, 'System reset successfully.');
@@ -1287,6 +1297,20 @@ module.exports = function (nodecg) {
 
 	nodecg.listenFor('resetSystem', (data, callback) => {
 		executeResetSystem(callback);
+	});
+
+	// Route messages from dashboard to graphics
+	nodecg.listenFor('_showPrizeCards', (data) => {
+		nodecg.log.info(`Broadcasting showPrizeCards for side: ${data.side}`);
+		nodecg.sendMessage('showPrizeCards', data);
+	});
+	nodecg.listenFor('_clearCard', () => {
+		nodecg.log.info('Broadcasting clearCard and clearing cardToShow replicants');
+		// Clear the source of truth replicants
+		nodecg.Replicant('cardToShowL').value = '';
+		nodecg.Replicant('cardToShowR').value = '';
+		// Broadcast to graphics to trigger hide animations
+		nodecg.sendMessage('clearCard');
 	});
 
 	// Helper function to handle the logic for auto-checking supporter action
@@ -1482,6 +1506,10 @@ module.exports = function (nodecg) {
 		}
 
 	checkForUpdates(pjson, nodecg, https, updateInfo);
+
+	// Clear transient replicants on startup for a clean slate.
+	nodecg.Replicant('cardToShowL').value = '';
+	nodecg.Replicant('cardToShowR').value = '';
 };
 
 // --- Helper Functions for Replicant Sync ---

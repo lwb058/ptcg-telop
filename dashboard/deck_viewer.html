@@ -69,7 +69,7 @@
             min-width: 0; /* Prevents content from overflowing flex item */
         }
         .table-wrapper, .icon-view-wrapper {
-            max-height: 85vh;
+            max-height: 66vh;
             overflow-y: auto;
             border: 1px solid #444;
         }
@@ -107,7 +107,7 @@
         .deck-table img:hover {
             transform: scale(1.1);
         }
-        h2 {
+        h2, h3 {
             margin: 0;
         }
         button {
@@ -130,16 +130,16 @@
         .card-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 10px;
         }
         .card-grid .card-item {
             position: relative;
-            width: 90px;
+            width: 88px;
             text-align: center;
         }
         .card-grid .card-item img {
             width: 100%;
-            cursor: pointer;
+            cursor: grab;
             transition: transform 0.1s ease-in-out;
             border-radius: 5px;
         }
@@ -171,6 +171,77 @@
             opacity: 1;
             transform: scale(1);
         }
+
+        /* Prize Card Styles */
+        .prize-section {
+            margin-bottom: 1em;
+            padding: 0.5em;
+            border: 1px solid #4f5d7b;
+            border-radius: 5px;
+            background-color: #2a3447;
+        }
+        .prize-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .prize-header > * {
+            flex: 1;
+        }
+        .prize-header .header-center {
+            text-align: center;
+        }
+        .prize-header .prize-controls {
+            text-align: right;
+        }
+        .prize-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 3%;
+            min-height: 60px;
+            background-color: #2f3a4f;
+            padding: 1% 20%;
+            border-radius: 5px;
+        }
+        .prize-slot {
+            position: relative;
+            border: 2px dashed #4f5d7b;
+            border-radius: 5px;
+            aspect-ratio: 868 / 1212;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #2a3447;
+            transition: all 0.2s;
+        }
+        .prize-slot.droppable-hover {
+            border-color: #a9c0e0;
+            background-color: #404f6c;
+        }
+        .prize-slot img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .prize-slot .taken-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -180,6 +251,18 @@
 
     <div class="container">
         <div id="playerL-deck">
+            <div class="prize-section">
+                <div class="prize-header">
+                    <h3 id="prize-title-L">Prize Cards</h3>
+                    <div class="header-center">
+                        <button id="prize-show-L" style="width: 120px">Show</button>
+                    </div>
+                    <div class="prize-controls">
+                        <button id="prize-clear-L">Clear</button>
+                    </div>
+                </div>
+                <div class="prize-grid" id="prize-grid-L"></div>
+            </div>
             <div class="deck-header">
                 <h2 id="playerL-deck-title">Player L Deck</h2>
                 <div class="view-controls">
@@ -209,6 +292,18 @@
         </div>
 
         <div id="playerR-deck">
+            <div class="prize-section">
+                <div class="prize-header">
+                    <h3 id="prize-title-R">Prize Cards</h3>
+                    <div class="header-center">
+                        <button id="prize-show-R" style="width: 120px">Show</button>
+                    </div>
+                    <div class="prize-controls">
+                        <button id="prize-clear-R">Clear</button>
+                    </div>
+                </div>
+                <div class="prize-grid" id="prize-grid-R"></div>
+            </div>
             <div class="deck-header">
                 <h2 id="playerR-deck-title">Player R Deck</h2>
                  <div class="view-controls">
@@ -239,8 +334,11 @@
     </div>
 
     <script>
+        // Replicants
         const cardToShowL = nodecg.Replicant('cardToShowL');
         const cardToShowR = nodecg.Replicant('cardToShowR');
+        const prizeCardsL = nodecg.Replicant('prizeCardsL');
+        const prizeCardsR = nodecg.Replicant('prizeCardsR');
         const deckL = nodecg.Replicant('deckL');
         const deckR = nodecg.Replicant('deckR');
         const playerL_name = nodecg.Replicant('playerL_name');
@@ -250,7 +348,6 @@
         const assetPaths = nodecg.Replicant('assetPaths');
         const i18nStrings = nodecg.Replicant('i18nStrings');
         const language = nodecg.Replicant('language');
-
         const deckLoadingStatus = nodecg.Replicant('deckLoadingStatus');
 
         // DOM Elements
@@ -265,110 +362,21 @@
         const addCardBtnR = document.getElementById('add-card-btn-R');
         const playerLDeckTitle = document.getElementById('playerL-deck-title');
         const playerRDeckTitle = document.getElementById('playerR-deck-title');
+        const prizeGridL = document.getElementById('prize-grid-L');
+        const prizeGridR = document.getElementById('prize-grid-R');
+        const prizeShowL = document.getElementById('prize-show-L');
+        const prizeShowR = document.getElementById('prize-show-R');
+        const prizeClearL = document.getElementById('prize-clear-L');
+        const prizeClearR = document.getElementById('prize-clear-R');
 
         // Global State
         let deckViews = { L: 'icon', R: 'icon' };
 
-        // Event Listeners
-        clearButton.addEventListener('click', () => {
-            cardToShowL.value = '';
-            cardToShowR.value = '';
-        });
-
-        addCardBtnL.addEventListener('click', () => handleAddCard('L', addCardIdL));
-        addCardIdL.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') handleAddCard('L', addCardIdL);
-        });
-
-        addCardBtnR.addEventListener('click', () => handleAddCard('R', addCardIdR));
-        addCardIdR.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') handleAddCard('R', addCardIdR);
-        });
-
-        document.querySelectorAll('.view-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const player = btn.dataset.player;
-                const view = btn.dataset.view;
-                deckViews[player] = view;
-
-                // Update button styles
-                document.querySelectorAll(`.view-btn[data-player="${player}"]`).forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-
-                // Re-render the deck for the correct player
-                const deck = player === 'L' ? deckL.value : deckR.value;
-                renderPlayerDeck(player, deck, database.value);
-            });
-        });
-
-        function renderAllDecksIfReady() {
-            const db = database.value;
-
-            // Guard: Ensure database is populated.
-            if (!db || Object.keys(db).length === 0) {
-                return;
-            }
-
-            // Render Deck L if ready
-            const deckLVal = deckL.value;
-            if (deckLVal && deckLVal.cards && deckLVal.cards.every(cardId => db[cardId])) {
-                renderPlayerDeck('L', deckLVal, db);
-            }
-
-            // Render Deck R if ready
-            const deckRVal = deckR.value;
-            if (deckRVal && deckRVal.cards && deckRVal.cards.every(cardId => db[cardId])) {
-                renderPlayerDeck('R', deckRVal, db);
-            }
-        }
-
-        // Init
-        NodeCG.waitForReplicants(deckL, deckR, database, playerL_name, playerR_name, i18nStrings, language, deckLoadingStatus).then(() => {
-            playerLDeckTitle.textContent = `${playerL_name.value || 'Player L'}'s Deck`;
-            playerRDeckTitle.textContent = `${playerR_name.value || 'Player R'}'s Deck`;
-            updateUIText();
-            renderAllDecksIfReady(); // Initial render attempt
-        });
-
-        deckLoadingStatus.on('change', (newStatus) => {
-            const isLoadingAny = newStatus.loading;
-            const loadingSide = newStatus.side; // 'L', 'R', or null
-
-            ['L', 'R'].forEach(side => {
-                const btn = document.getElementById(`add-card-btn-${side}`);
-                const input = document.getElementById(`add-card-id-${side}`);
-
-                if (isLoadingAny) {
-                    btn.disabled = true;
-                    input.disabled = true;
-                    
-                    if (side === loadingSide) {
-                        // This is the side being loaded
-                        const percentage = newStatus.percentage || 0;
-                        if (percentage > 0) {
-                            btn.textContent = `${percentage.toFixed(0)}%`;
-                        } else {
-                            btn.textContent = 'Loading...';
-                        }
-                    } else {
-                        // This is the other side, just show a generic loading state
-                        btn.textContent = 'Loading...';
-                    }
-                } else {
-                    // No loading is happening
-                    btn.disabled = false;
-                    input.disabled = false;
-                    btn.textContent = 'Import';
-                }
-            });
-        });
-
-        // Helper Functions
+        // --- Helper Functions ---
         const getI18nText = (key) => {
             if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) return key;
             return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
         };
-
         function getCardImageUrl(cardId) {
             if (!cardId || !assetPaths.value || !assetPaths.value.cardImgPath || !database.value) {
                 return '/assets/ptcg-telop/element/default.jpg';
@@ -379,43 +387,21 @@
             const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg';
             return `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
         }
-
         function updateUIText() {
-            // Deck table headers
-            document.getElementById('header-l-image').textContent = getI18nText('deck_viewer_header_image');
-            document.getElementById('header-l-name').textContent = getI18nText('deck_viewer_header_card_name');
-            document.getElementById('header-l-type').textContent = getI18nText('deck_viewer_header_type');
-            document.getElementById('header-l-id').textContent = getI18nText('deck_viewer_header_id');
-            document.getElementById('header-l-delete').textContent = getI18nText('delete');
-
-            document.getElementById('header-r-image').textContent = getI18nText('deck_viewer_header_image');
-            document.getElementById('header-r-name').textContent = getI18nText('deck_viewer_header_card_name');
-            document.getElementById('header-r-type').textContent = getI18nText('deck_viewer_header_type');
-            document.getElementById('header-r-id').textContent = getI18nText('deck_viewer_header_id');
-            document.getElementById('header-r-delete').textContent = getI18nText('delete');
+            ['l', 'r'].forEach(s => {
+                document.getElementById(`header-${s}-image`).textContent = getI18nText('deck_viewer_header_image');
+                document.getElementById(`header-${s}-name`).textContent = getI18nText('deck_viewer_header_card_name');
+                document.getElementById(`header-${s}-type`).textContent = getI18nText('deck_viewer_header_type');
+                document.getElementById(`header-${s}-id`).textContent = getI18nText('deck_viewer_header_id');
+                document.getElementById(`header-${s}-delete`).textContent = getI18nText('delete');
+            });
+            document.getElementById('prize-title-L').textContent = getI18nText('prize_cards');
+            document.getElementById('prize-show-L').textContent = getI18nText('show');
+            document.getElementById('prize-clear-L').textContent = getI18nText('clear');
+            document.getElementById('prize-title-R').textContent = getI18nText('prize_cards');
+            document.getElementById('prize-show-R').textContent = getI18nText('show');
+            document.getElementById('prize-clear-R').textContent = getI18nText('clear');
         }
-
-        // Replicant Change Listeners
-        playerL_name.on('change', (newValue) => {
-            playerLDeckTitle.textContent = `${newValue || 'Player L'}'s Deck`;
-        });
-        playerR_name.on('change', (newValue) => {
-            playerRDeckTitle.textContent = `${newValue || 'Player R'}'s Deck`;
-        });
-
-        // Any change to decks or database triggers a re-render check
-        deckL.on('change', renderAllDecksIfReady);
-        deckR.on('change', renderAllDecksIfReady);
-        database.on('change', renderAllDecksIfReady);
-
-        language.on('change', () => {
-            updateUIText();
-            renderAllDecksIfReady();
-        });
-        assetPaths.on('change', () => {
-            renderAllDecksIfReady();
-        });
-
         function handleAddCard(side, inputEl) {
             const code = inputEl.value.trim();
             if (code) {
@@ -427,23 +413,19 @@
                     });
             }
         }
-
         function sortCards(cardIds, db) {
             const supertypeOrder = { 'pokemon': 1, 'trainer': 2, 'energy': 3 };
             const trainerSubtypeOrder = { 'item': 1, 'tool': 2, 'supporter': 3, 'stadium': 4 };
             const energySubtypeOrder = { 'special energy': 1, 'basic energy': 2 };
             const pokemonTypeOrder = { '草': 1, '炎': 2, '水': 3, '雷': 4, '超': 5, '闘': 6, '悪': 7, '鋼': 8, '竜': 9, '無': 10, '妖': 11 };
-
             const sortableCards = cardIds.map(cardId => ({ id: cardId, data: db[cardId] })).filter(card => card.data);
-
             sortableCards.sort((a, b) => {
                 const aData = a.data;
                 const bData = b.data;
                 const supertypeComparison = (supertypeOrder[aData.supertype] || 99) - (supertypeOrder[bData.supertype] || 99);
                 if (supertypeComparison !== 0) return supertypeComparison;
-
                 if (aData.supertype === 'pokemon') {
-                    const typeConversionMap = { '火': '炎', '斗': '闘', '恶': '悪', '钢': '鋼', '龙': '竜' , "无": "無"};
+                    const typeConversionMap = { '火': '炎', '斗': '闘', '恶': '悪', '钢': '鋼', '龙': '竜' , "無": "無"};
                     const getSortableType = (card) => (card?.pokemon?.color?.[0]) ? (typeConversionMap[card.pokemon.color[0]] || card.pokemon.color[0]) : null;
                     const aSortType = getSortableType(aData);
                     const bSortType = getSortableType(bData);
@@ -463,32 +445,71 @@
             return sortableCards;
         }
 
-        // Hotkey Logic
-        let hotkeys = { clearCard: ' ' };
-        settingsRep.on('change', (newValue) => {
-            if (newValue && newValue.hotkeys) hotkeys = newValue.hotkeys;
-        });
-        document.addEventListener('keydown', (e) => {
-            if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
-            if (checkHotkey(e, hotkeys.clearCard)) {
-                e.preventDefault();
-                clearButton.click();
-            }
-        });
-        function checkHotkey(e, hotkeyString) {
-            if (!hotkeyString || typeof hotkeyString !== 'string') return false;
-            if (hotkeyString.toLowerCase() === 'space' || hotkeyString === ' ') return e.key === ' ';
-            const parts = hotkeyString.toLowerCase().split('+').map(p => p.trim());
-            const key = parts.pop();
-            if (e.key.toLowerCase() !== key) return false;
-            if (parts.includes('ctrl') !== e.ctrlKey) return false;
-            if (parts.includes('alt') !== e.altKey) return false;
-            if (parts.includes('shift') !== e.shiftKey) return false;
-            if (parts.includes('meta') !== e.metaKey) return false;
-            return true;
+        // --- Drag and Drop Handlers ---
+        function handleDragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.dataset.cardId);
+            e.dataTransfer.effectAllowed = 'copy';
+        }
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            e.currentTarget.classList.add('droppable-hover');
+        }
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('droppable-hover');
+        }
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('droppable-hover');
+            const cardId = e.dataTransfer.getData('text/plain');
+            if (!cardId) return;
+
+            const side = e.currentTarget.dataset.side;
+            const index = parseInt(e.currentTarget.dataset.index, 10);
+
+            const prizeRep = side === 'L' ? prizeCardsL : prizeCardsR;
+            const newPrizes = JSON.parse(JSON.stringify(prizeRep.value)); // Deep copy
+            newPrizes[index] = { cardId: cardId, isTaken: false };
+            prizeRep.value = newPrizes;
         }
 
-        // --- RENDER FUNCTIONS ---
+        // --- Render Functions ---
+        function renderPrizes(side, prizeData, container) {
+            if (!prizeData) return;
+            container.innerHTML = '';
+            for (let i = 0; i < 6; i++) {
+                const prize = prizeData[i] || { cardId: null, isTaken: false };
+                const slot = document.createElement('div');
+                slot.className = 'prize-slot';
+                slot.dataset.side = side;
+                slot.dataset.index = i;
+
+                if (prize.cardId) {
+                    const img = document.createElement('img');
+                    img.src = getCardImageUrl(prize.cardId);
+                    slot.appendChild(img);
+
+                    if (prize.isTaken) {
+                        const overlay = document.createElement('div');
+                        overlay.className = 'taken-overlay';
+                        overlay.textContent = 'TAKEN';
+                        slot.appendChild(overlay);
+                    }
+                    
+                    slot.addEventListener('click', () => {
+                        const prizeRep = side === 'L' ? prizeCardsL : prizeCardsR;
+                        const newPrizes = JSON.parse(JSON.stringify(prizeRep.value));
+                        newPrizes[i].isTaken = !newPrizes[i].isTaken;
+                        prizeRep.value = newPrizes;
+                    });
+                }
+
+                slot.addEventListener('dragover', handleDragOver);
+                slot.addEventListener('dragleave', handleDragLeave);
+                slot.addEventListener('drop', handleDrop);
+                container.appendChild(slot);
+            }
+        }
 
         function renderPlayerDeck(side, deck, db) {
             const view = deckViews[side];
@@ -528,6 +549,9 @@
                     const targetReplicant = (side === 'L') ? cardToShowL : cardToShowR;
                     targetReplicant.value = getCardImageUrl(card.id);
                 };
+                img.draggable = true;
+                img.dataset.cardId = card.id;
+                img.addEventListener('dragstart', handleDragStart);
                 imgCell.appendChild(img);
                 row.appendChild(imgCell);
 
@@ -593,7 +617,6 @@
 
             container.innerHTML = '';
             const supertypeDisplayOrder = ['pokemon', 'trainer', 'energy'];
-            const supertypeLocaleKeys = { pokemon: 'Pokemon', trainer: 'Trainer', energy: 'Energy' }; // TODO: i18n
 
             for (const supertype of supertypeDisplayOrder) {
                 const cardsOfType = groupedCards[supertype];
@@ -622,6 +645,9 @@
                         const targetReplicant = (side === 'L') ? cardToShowL : cardToShowR;
                         targetReplicant.value = getCardImageUrl(card.id);
                     };
+                    img.draggable = true;
+                    img.dataset.cardId = card.id;
+                    img.addEventListener('dragstart', handleDragStart);
                     cardItemDiv.appendChild(img);
 
                     const deleteButton = document.createElement('button');
@@ -645,6 +671,83 @@
                 container.appendChild(categoryDiv);
             }
         }
+
+        function renderAllDecksIfReady() {
+            const db = database.value;
+            if (!db || Object.keys(db).length === 0) return;
+            if (deckL.value) renderPlayerDeck('L', deckL.value, db);
+            if (deckR.value) renderPlayerDeck('R', deckR.value, db);
+        }
+
+        // --- Event Listeners ---
+        clearButton.addEventListener('click', () => {
+            nodecg.sendMessageToBundle('_clearCard', 'ptcg-telop');
+        });
+        addCardBtnL.addEventListener('click', () => handleAddCard('L', addCardIdL));
+        addCardIdL.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAddCard('L', addCardIdL); });
+        addCardBtnR.addEventListener('click', () => handleAddCard('R', addCardIdR));
+        addCardIdR.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAddCard('R', addCardIdR); });
+
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const player = btn.dataset.player;
+                const view = btn.dataset.view;
+                deckViews[player] = view;
+                document.querySelectorAll(`.view-btn[data-player="${player}"]`).forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderPlayerDeck(player, player === 'L' ? deckL.value : deckR.value, database.value);
+            });
+        });
+
+        prizeShowL.addEventListener('click', () => nodecg.sendMessageToBundle('_showPrizeCards', 'ptcg-telop', { side: 'L', cards: prizeCardsL.value }));
+        prizeShowR.addEventListener('click', () => nodecg.sendMessageToBundle('_showPrizeCards', 'ptcg-telop', { side: 'R', cards: prizeCardsR.value }));
+        prizeClearL.addEventListener('click', () => {
+            if (confirm('Clear Player L prize cards?')) {
+                prizeCardsL.value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
+            }
+        });
+        prizeClearR.addEventListener('click', () => {
+            if (confirm('Clear Player R prize cards?')) {
+                prizeCardsR.value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
+            }
+        });
+
+        // --- Replicant Change Listeners ---
+        playerL_name.on('change', (newValue) => { playerLDeckTitle.textContent = `${newValue || 'Player L'}'s Deck`; });
+        playerR_name.on('change', (newValue) => { playerRDeckTitle.textContent = `${newValue || 'Player R'}'s Deck`; });
+        deckL.on('change', renderAllDecksIfReady);
+        deckR.on('change', renderAllDecksIfReady);
+        database.on('change', renderAllDecksIfReady);
+        language.on('change', () => { updateUIText(); renderAllDecksIfReady(); });
+        assetPaths.on('change', renderAllDecksIfReady);
+        prizeCardsL.on('change', (newValue) => renderPrizes('L', newValue, prizeGridL));
+        prizeCardsR.on('change', (newValue) => renderPrizes('R', newValue, prizeGridR));
+
+        deckLoadingStatus.on('change', (newStatus) => {
+            const isLoadingAny = newStatus.loading;
+            const loadingSide = newStatus.side;
+            ['L', 'R'].forEach(side => {
+                const btn = document.getElementById(`add-card-btn-${side}`);
+                const input = document.getElementById(`add-card-id-${side}`);
+                btn.disabled = isLoadingAny;
+                input.disabled = isLoadingAny;
+                if (isLoadingAny) {
+                    btn.textContent = (side === loadingSide && newStatus.percentage > 0) ? `${newStatus.percentage.toFixed(0)}%` : 'Loading...';
+                } else {
+                    btn.textContent = 'Import';
+                }
+            });
+        });
+
+        // --- Init ---
+        NodeCG.waitForReplicants(deckL, deckR, database, playerL_name, playerR_name, i18nStrings, language, deckLoadingStatus, prizeCardsL, prizeCardsR).then(() => {
+            playerLDeckTitle.textContent = `${playerL_name.value || 'Player L'}'s Deck`;
+            playerRDeckTitle.textContent = `${playerR_name.value || 'Player R'}'s Deck`;
+            updateUIText();
+            renderAllDecksIfReady();
+            renderPrizes('L', prizeCardsL.value, prizeGridL);
+            renderPrizes('R', prizeCardsR.value, prizeGridR);
+        });
     </script>
 
 </body>

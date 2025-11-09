@@ -65,6 +65,12 @@
     "cht": "獎賞卡:",
     "en": "Prizes:"
   },
+  "prize_cards": {
+    "jp": "サイドカード",
+    "chs": "奖赏卡",
+    "cht": "獎賞卡",
+    "en": "Prize Cards"
+  },
   "lost_zone": {
     "jp": "ロストゾーン:",
     "chs": "放逐区:",
