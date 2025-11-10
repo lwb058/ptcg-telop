@@ -19,9 +19,7 @@ def _identifier_type(identifier):
         return 'url'
     if re.match(r'^[0-9]+$', identifier):
         return 'deckId'
-    if re.match(r'^[a-zA-Z0-9_]+$', identifier) and len(identifier) > 10: # Simple heuristic for deck codes
-        return 'deckCode'
-    return 'unknown'
+    return 'deckCode'
 
 def fetch_deck_by_code(deck_code):
     """

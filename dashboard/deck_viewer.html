@@ -117,7 +117,7 @@
 
         /* Icon View Styles */
         .card-category {
-            margin-bottom: 1.5em;
+            margin-bottom: 1em;
         }
         .card-category h3 {
             border-bottom: 1px solid #4f5d7b;
@@ -452,7 +452,12 @@
         }
         function handleDragOver(e) {
             e.preventDefault();
-            e.dataTransfer.dropEffect = 'copy';
+            // Check if the drag is a prize card move vs. a card from the deck
+            if (e.dataTransfer.types.includes('application/json')) {
+                e.dataTransfer.dropEffect = 'move'; // Internal move
+            } else {
+                e.dataTransfer.dropEffect = 'copy'; // New card from deck
+            }
             e.currentTarget.classList.add('droppable-hover');
         }
         function handleDragLeave(e) {
@@ -461,16 +466,35 @@
         function handleDrop(e) {
             e.preventDefault();
             e.currentTarget.classList.remove('droppable-hover');
+            
+            const toSide = e.currentTarget.dataset.side;
+            const toIndex = parseInt(e.currentTarget.dataset.index, 10);
+            const prizeRep = toSide === 'L' ? prizeCardsL : prizeCardsR;
+            const newPrizes = JSON.parse(JSON.stringify(prizeRep.value));
+
+            // Case 1: Swapping two prize cards
+            const prizeDragData = e.dataTransfer.getData('application/json');
+            if (prizeDragData) {
+                const { fromIndex: fromIndexStr, side: fromSide } = JSON.parse(prizeDragData);
+                const fromIndex = parseInt(fromIndexStr, 10);
+
+                if (fromSide !== toSide) return; // Cannot swap between players
+
+                // Swap the prize objects
+                const temp = newPrizes[toIndex];
+                newPrizes[toIndex] = newPrizes[fromIndex];
+                newPrizes[fromIndex] = temp;
+
+                prizeRep.value = newPrizes;
+                return;
+            }
+
+            // Case 2: Dropping a card from the deck list
             const cardId = e.dataTransfer.getData('text/plain');
-            if (!cardId) return;
-
-            const side = e.currentTarget.dataset.side;
-            const index = parseInt(e.currentTarget.dataset.index, 10);
-
-            const prizeRep = side === 'L' ? prizeCardsL : prizeCardsR;
-            const newPrizes = JSON.parse(JSON.stringify(prizeRep.value)); // Deep copy
-            newPrizes[index] = { cardId: cardId, isTaken: false };
-            prizeRep.value = newPrizes;
+            if (cardId) {
+                newPrizes[toIndex] = { cardId: cardId, isTaken: false };
+                prizeRep.value = newPrizes;
+            }
         }
 
         // --- Render Functions ---
@@ -487,6 +511,13 @@
                 if (prize.cardId) {
                     const img = document.createElement('img');
                     img.src = getCardImageUrl(prize.cardId);
+                    img.draggable = true;
+                    img.dataset.cardId = prize.cardId;
+                    img.dataset.index = i;
+                    img.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('application/json', JSON.stringify({ fromIndex: e.target.dataset.index, side: side }));
+                        e.dataTransfer.effectAllowed = 'move';
+                    });
                     slot.appendChild(img);
 
                     if (prize.isTaken) {

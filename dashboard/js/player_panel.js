@@ -876,8 +876,7 @@ function setupPlayerPanel(side) {
                 selections.value = [];
             } else if (checkHotkey(e, hotkeys.clearCard)) {
                 e.preventDefault();
-                cardToShowL.value = '';
-                cardToShowR.value = '';
+                nodecg.sendMessage('_clearCard').catch(err => console.error("Error sending clearCard signal", err));
             }
         });
     });
