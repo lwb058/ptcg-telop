@@ -36,7 +36,7 @@
             transform: translateY(475px);
             justify-content: center;
             align-items: center;
-            background-image: var(--bg-card-area);
+            background-image: var(--asset-card-bg);
         }
         .card-container {
             width: 95%; 
@@ -55,7 +55,7 @@
             height: 955px;
             transform: translateY(80px);
             z-index: 10;
-            background-image: var(--bg-side-area);
+            background-image: var(--asset-side-bg);
             background-size: 100% 100%;
             background-position: center;
             background-repeat: no-repeat;
@@ -359,8 +359,8 @@
 
         function updateCustomizableAssets() {
             const root = document.documentElement;
-            root.style.setProperty('--bg-card-area', `url(${resolveAssetPath('card-bg.png')})`);
-            root.style.setProperty('--bg-side-area', `url(${resolveAssetPath('side-bg.png')})`);
+            root.style.setProperty('--asset-card-bg', `url(${resolveAssetPath('card-bg.png')})`);
+            root.style.setProperty('--asset-side-bg', `url(${resolveAssetPath('side-bg.png')})`);
         }
 
         function preloadDeckImages(deck) {

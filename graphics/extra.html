@@ -33,7 +33,7 @@
             transform: translateY(475px);
             flex-direction: column; 
             background-color: var(--color-bg-panel); 
-            background-image: var(--bg-extra-area);
+            background-image: var(--asset-extra-bg);
         }
         .bench-slots { gap: 24px; } /* Override default gap */
         .extra-bench-title {
@@ -380,6 +380,16 @@
                 });
             }
 
+            // --- I18n ---
+            function updateBodyLanguageClass() {
+                const body = document.body;
+                // Remove all existing lang- classes
+                body.className = body.className.split(' ').filter(c => !c.startsWith('lang-')).join(' ');
+                if (language.value) {
+                    body.classList.add(`lang-${language.value}`);
+                }
+            }
+
             function renderAttachedEnergies(container, energies, getIconHtml) {
                 if (!container || !energies) return;
 
@@ -693,8 +703,8 @@
 
             function updateCustomizableAssets() {
                 const root = document.documentElement;
-                root.style.setProperty('--bg-extra-area', `url(${resolveAssetPath('extra-bg.png')})`);
-                root.style.setProperty('--bg-bench-slot', `url(${resolveAssetPath('bench-bg.png')})`);
+                root.style.setProperty('--asset-extra-bg', `url(${resolveAssetPath('extra-bg.png')})`);
+                root.style.setProperty('--asset-bench-bg', `url(${resolveAssetPath('bench-bg.png')})`);
                 
                 const abilityIconSrc = resolveAssetPath('ability_jp.png', true);
                 document.querySelectorAll('.bench-skill-ability-tag').forEach(img => {
@@ -748,6 +758,7 @@
 
             NodeCG.waitForReplicants(...replicantList, themeAssets, i18nStrings).then(() => {
                 handleThemeChange(settingsRep.value);
+                updateBodyLanguageClass();
 
                 settingsRep.on('change', (newValue, oldValue) => {
                     const newSettings = newValue || {};
@@ -759,6 +770,7 @@
 
                     if (newSettings.language !== oldSettings.language) {
                         updateCustomizableAssets();
+                        updateBodyLanguageClass();
                     }
                 });
 
