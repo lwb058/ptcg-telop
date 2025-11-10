@@ -72,34 +72,35 @@ module.exports = function (nodecg) {
 	
 	const themeList = nodecg.Replicant('themeList', { defaultValue: ['Default'] });
 	const themeAssets = nodecg.Replicant('themeAssets', { defaultValue: {} });
+	const activeThemeCss = nodecg.Replicant('activeThemeCss', { defaultValue: null });
 	const updateInfo = nodecg.Replicant('updateInfo', { defaultValue: { available: false } });
 
 	try {
-		const cssDir = path.join(projectRoot, 'nodecg', 'bundles', 'ptcg-telop', 'graphics', 'css');
 		const assetsBaseDir = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop');
-		
 		const foundThemes = [];
 		const themeAssetMap = {};
 
-		if (fs.existsSync(cssDir)) {
-			const cssFiles = fs.readdirSync(cssDir);
-			const ignoredCssFiles = ['common.css', 'fonts.css'];
-			
-			cssFiles.forEach(file => {
-				if (path.extname(file) === '.css' && !ignoredCssFiles.includes(file)) {
-					const themeName = path.basename(file, '.css');
-					const themeAssetDir = path.join(assetsBaseDir, themeName);
+		if (fs.existsSync(assetsBaseDir)) {
+			// Get all subdirectories in the assets folder
+			const subdirs = fs.readdirSync(assetsBaseDir, { withFileTypes: true })
+				.filter(dirent => dirent.isDirectory())
+				.map(dirent => dirent.name);
 
-					if (fs.existsSync(themeAssetDir) && fs.statSync(themeAssetDir).isDirectory()) {
-						foundThemes.push(themeName);
-						const assetFiles = fs.readdirSync(themeAssetDir);
-						themeAssetMap[themeName] = assetFiles.filter(f => !f.startsWith('.'));
-						nodecg.log.info(`Detected valid theme '${themeName}' with ${themeAssetMap[themeName].length} assets.`);
-					}
+			subdirs.forEach(themeName => {
+				const themeDir = path.join(assetsBaseDir, themeName);
+				const cssFile = path.join(themeDir, `${themeName}.css`);
+
+				// Check if a CSS file matching the folder name exists inside it
+				if (fs.existsSync(cssFile)) {
+					foundThemes.push(themeName);
+					const assetFilesInTheme = fs.readdirSync(themeDir);
+					// We map the assets inside the theme folder, excluding the CSS file itself and dotfiles
+					themeAssetMap[themeName] = assetFilesInTheme.filter(f => f !== `${themeName}.css` && !f.startsWith('.'));
+					nodecg.log.info(`Detected valid theme '${themeName}' with ${themeAssetMap[themeName].length} assets.`);
 				}
 			});
 		} else {
-			nodecg.log.warn('Themes CSS directory not found, skipping scan.');
+			nodecg.log.warn('Assets directory for ptcg-telop not found, skipping theme scan.');
 		}
 
 		const availableThemes = ['Default', ...foundThemes];
@@ -131,6 +132,20 @@ module.exports = function (nodecg) {
 
     ptcgSettings.on('change', (newValue, oldValue) => {
 
+		// --- START THEME CHANGE LOGIC ---
+		const newTheme = (newValue && newValue.activeTheme) || 'Default';
+		const oldTheme = (oldValue && oldValue.activeTheme) || 'Default';
+
+		if (newTheme !== oldTheme || !oldValue) { // Update on theme change or initial load
+			nodecg.log.info(`Active theme is '${newTheme}'. Updating CSS URL.`);
+			if (newTheme === 'Default' || !themeList.value.includes(newTheme)) {
+				activeThemeCss.value = null;
+			} else {
+				activeThemeCss.value = `/assets/ptcg-telop/${newTheme}/${newTheme}.css`;
+			}
+		}
+        // --- END THEME CHANGE LOGIC ---
+
 		const newLang = (newValue && newValue.language) || 'jp';
 		const oldLang = (oldValue && oldValue.language); // No default for oldLang
 
@@ -138,7 +153,7 @@ module.exports = function (nodecg) {
             language.value = newLang;
         }
 
-        if (!newValue.lostZoneEnabled) {
+        if (newValue && !newValue.lostZoneEnabled) {
             if (live_lostZoneL.value !== 0) live_lostZoneL.value = 0;
             if (draft_lostZoneL.value !== 0) draft_lostZoneL.value = 0;
             if (live_lostZoneR.value !== 0) live_lostZoneR.value = 0;

@@ -375,28 +375,28 @@
             });
         }
 
-        const handleThemeChange = (settings) => {
-            const activeTheme = (settings && settings.activeTheme) || 'Default';
+        const activeThemeCss = nodecg.Replicant('activeThemeCss');
+        activeThemeCss.on('change', (newUrl) => {
             const themeCssLink = document.getElementById('theme-css-link');
             if (themeCssLink) {
-                if (activeTheme === 'Default') {
+                if (newUrl) {
+                    themeCssLink.href = newUrl;
+                    themeCssLink.disabled = false;
+                } else {
                     themeCssLink.disabled = true;
                     themeCssLink.href = '';
-                } else {
-                    themeCssLink.href = `css/${activeTheme}.css`;
-                    themeCssLink.disabled = false;
                 }
             }
             updateCustomizableAssets();
-        };
+        });
 
         // --- Init ---
-        NodeCG.waitForReplicants(assetPaths, deckL, deckR, cardDatabase, themeAssets, language, settingsRep, i18nStrings).then(() => {
+        NodeCG.waitForReplicants(assetPaths, deckL, deckR, cardDatabase, themeAssets, language, settingsRep, i18nStrings, activeThemeCss).then(() => {
             updateUIStrings();
             updateBodyLanguageClass(); // Call on init
             const settings = settingsRep.value || {};
             isReversed = !!settings.reverseCardDisplay;
-            handleThemeChange(settings);
+            // Initial theme load is handled by the replicant's initial value and the listener above
             preloadDeckImages(deckL.value);
             preloadDeckImages(deckR.value);
             deckL.on('change', (newVal) => preloadDeckImages(newVal));
@@ -415,9 +415,7 @@
             if (newSettings.reverseCardDisplay !== oldSettings.reverseCardDisplay) {
                 isReversed = !!newSettings.reverseCardDisplay;
             }
-            if (newSettings.activeTheme !== oldSettings.activeTheme) {
-                handleThemeChange(newSettings);
-            }
+            // Theme change is handled by the activeThemeCss listener
             if (newSettings.language !== oldSettings.language) {
                 updateCustomizableAssets();
                 updateUIStrings();

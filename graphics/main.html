@@ -1229,21 +1229,21 @@
             }
         }
 
-        const handleThemeChange = (settings) => {
-            const theme = (settings && settings.activeTheme) ? settings.activeTheme : 'Default';
+        const activeThemeCss = nodecg.Replicant('activeThemeCss');
+        activeThemeCss.on('change', (newUrl) => {
             const themeCssLink = document.getElementById('theme-css-link');
-
             if (themeCssLink) {
-                if (theme === 'Default') {
+                if (newUrl) {
+                    themeCssLink.href = newUrl;
+                    themeCssLink.disabled = false;
+                } else {
                     themeCssLink.disabled = true;
                     themeCssLink.href = '';
-                } else {
-                    themeCssLink.href = `css/${theme}.css`;
-                    themeCssLink.disabled = false;
                 }
             }
+            // Update assets which might be overridden by the theme
             updateCustomizableAssets();
-        };
+        });
 
         const cardDatabase = nodecg.Replicant('cardDatabase');
         const assetPaths = nodecg.Replicant('assetPaths');
@@ -1399,9 +1399,7 @@
                     handleVstarVisibility(newSettings);
                 }
 
-                if (oldSettings.activeTheme !== newSettings.activeTheme) {
-                    handleThemeChange(newSettings);
-                }
+                // The activeTheme change is now handled by the activeThemeCss listener
 
                 if (oldSettings.language !== newSettings.language) {
                     setLanguageClass(newSettings.language);
@@ -1410,7 +1408,7 @@
             });
             
             handleVstarVisibility(settingsRep.value);
-            handleThemeChange(settingsRep.value);
+            // The initial handleThemeChange call is now handled by the replicant's initial value
 
             function handleSwitchAnimation(animation) {
                 return new Promise(resolve => {

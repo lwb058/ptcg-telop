@@ -712,23 +712,22 @@
                 });
             }
 
-            const handleThemeChange = (settings) => {
-                const theme = (settings && settings.activeTheme) ? settings.activeTheme : 'Default';
+            const activeThemeCss = nodecg.Replicant('activeThemeCss');
+            activeThemeCss.on('change', (newUrl) => {
                 const themeCssLink = document.getElementById('theme-css-link');
-
                 if (themeCssLink) {
-                    if (theme === 'Default') {
+                    if (newUrl) {
+                        themeCssLink.href = newUrl;
+                        themeCssLink.disabled = false;
+                    } else {
                         themeCssLink.disabled = true;
                         themeCssLink.href = '';
-                    } else {
-                        themeCssLink.href = `css/${theme}.css`;
-                        themeCssLink.disabled = false;
                     }
                 }
                 updateCustomizableAssets();
-            };
+            });
 
-            const replicantList = [cardDatabase, settingsRep, assetPaths, deckL, deckR, language];
+            const replicantList = [cardDatabase, settingsRep, assetPaths, deckL, deckR, language, activeThemeCss];
             const sides = ['L', 'R'];
 
             for (let i = 6; i <= 8; i++) {
@@ -757,16 +756,14 @@
             }
 
             NodeCG.waitForReplicants(...replicantList, themeAssets, i18nStrings).then(() => {
-                handleThemeChange(settingsRep.value);
+                // handleThemeChange is replaced by the activeThemeCss listener
                 updateBodyLanguageClass();
 
                 settingsRep.on('change', (newValue, oldValue) => {
                     const newSettings = newValue || {};
                     const oldSettings = oldValue || {};
 
-                    if (newSettings.activeTheme !== oldSettings.activeTheme) {
-                        handleThemeChange(newSettings);
-                    }
+                    // activeTheme change is handled by the activeThemeCss listener
 
                     if (newSettings.language !== oldSettings.language) {
                         updateCustomizableAssets();
