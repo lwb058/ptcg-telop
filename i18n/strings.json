@@ -11,12 +11,6 @@
     "cht": "移動",
     "en": "Move"
   },
-  "retreat": {
-    "jp": "逃げる",
-    "chs": "撤退",
-    "cht": "撤退",
-    "en": "Retreat"
-  },
   "promote": {
     "jp": "出撃",
     "chs": "出击",
@@ -114,10 +108,10 @@
     "en": "Show Deck Energy Only"
   },
   "settings_auto_double_weakness_damage": {
-    "jp": "弱点ダメージ自動2倍",
-    "chs": "弱点伤害自动翻倍",
-    "cht": "弱點傷害自動加倍",
-    "en": "Auto Double Weakness Damage"
+    "jp": "弱点と抵抗力を自動計算",
+    "chs": "自动计算弱点和抵抗力伤害",
+    "cht": "自動計算弱點和抵抗力傷害",
+    "en": "Auto Caculate Weakness & Resistance"
   },
   "settings_regulation": {
     "jp": "レギュレーション",
@@ -310,5 +304,17 @@
     "chs": "弱点",
     "cht": "弱點",
     "en": "Weakness"
+  },
+  "resistance": {
+    "jp": "抵抗力",
+    "chs": "抵抗力",
+    "cht": "抵抗力",
+    "en": "Resistance"
+  },
+  "retreat": {
+    "jp": "逃げる",
+    "chs": "撤退",
+    "cht": "撤退",
+    "en": "Retreat"
   }
 }

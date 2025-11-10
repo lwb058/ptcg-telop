@@ -3,505 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Master Control Panel</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            background-color: #f0f2f5;
-            color: #333;
-            margin: 15px;
-            font-size: 14px;
-        }
-        .panel-section {
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 5px;
-        }
-        .panel-section h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            border-bottom: none;
-            padding-bottom: 0;
-            font-size: 13px;
-            font-weight: bold;
-            color: #555;
-        }
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
-        }
-        .select-zone-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 5px;
-        }
-        .btn {
-            padding: 10px 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #fff;
-            cursor: pointer;
-            text-align: center;
-            transition: background-color 0.2s, border-color 0.2s;
-        }
-        .select-btn {
-            padding: 12px 8px;
-            font-size: 12px;
-        }
-        .btn:hover {
-            background-color: #f5f5f5;
-            color: black;
-        }
-        .btn-primary {
-            background-color: #4a69bd;
-            color: white;
-            border-color: #4a69bd;
-        }
-        .btn-primary:hover {
-            background-color: #3b5998;
-        }
-        .btn-danger {
-            background-color: #e74c3c;
-            color: white;
-            border-color: #e74c3c;
-        }
-        .btn-danger:hover {
-            background-color: #c0392b;
-        }
-        .btn-info {
-            background-color: #5bc0de;
-            color: white;
-            border-color: #46b8da;
-        }
-        .btn-info:hover {
-            background-color: #31b0d5;
-            border-color: #269abc;
-        }
-        .btn-left {
-            background-color: #3498db;
-            color: white;
-            border-color: #2980b9;
-        }
-        .btn-left:hover {
-            background-color: #2980b9;
-        }
-        .btn-right {
-            background-color: #e74c3c;
-            color: white;
-            border-color: #c0392b;
-        }
-        .btn-right:hover {
-            background-color: #c0392b;
-        }
-        .btn-grass {
-            background-color: #62a348;
-            color: white;
-        }
-        .btn-fire {
-            background-color: #bb0000;
-            color: white;
-        }
-        .btn-water {
-            background-color: #003bbb;
-            color: white;
-        }
-        .btn-lightning {
-            background-color: #ffee00;
-            color: black;
-        }
-        .btn-psychic {
-            background-color: #65007e;
-            color: white;
-        }
-        .btn-fighting {
-            background-color: #bd5f06;
-            color: white;
-        }
-        .btn-dark {
-            background-color: #16436d;
-            color: white;
-        }
-        .btn-metal {
-            background-color: #767880;
-            color: white;
-        }
-        .btn-colorless {
-            background-color: #ffffff;
-        }
-        .btn-black {
-            font-size: 12px;
-            background-color: #000000;
-            color: white;
-        }
-        .btn-rainbow {
-            background: linear-gradient(to bottom right, red, orange, yellow, green, blue, indigo, violet);
-            color: white;
-        }
-        .btn-rainbow:hover {
-            background: linear-gradient(to bottom right, black,white);
-        }
-        .info-zone p {
-            margin: 0 0 5px 0;
-        }
-        .info-zone span {
-            font-weight: bold;
-        }
-        .energy-btn-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 5px;
-            margin-bottom: 10px;
-        }
-        .energy-btn {
-            padding: 8px;
-            font-size: 12px;
-            border: 1px solid #ccc;
-            border-radius: 15px;
-        }
-        .energy-btn:hover {
-            background-color: #9b9b9b;
-        }
-        .energy-icon {
-            width: 50px;
-            height: 50px;
-            vertical-align: middle;
-        }
-        .special-energy-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background-size: 145%;
-            background-position: center 30%;
-            display: inline-block;
-            vertical-align: middle;
-            border: 1px solid #888;
-            cursor: grab;
-        }
-        .tool-btn-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .tool-btn {
-            padding: 5px;
-            font-size: 12px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .tool-btn:hover {
-            background-color: #9b9b9b;
-        }
-        .tool-icon {
-            height: 70px;
-            vertical-align: middle;
-        }
-        .energy-container {
-            flex-grow: 1;
-            display: flex;
-            gap: 5px;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 5px;
-            min-height: 25px; /* Match button height */
-            background: #fafafa;
-            scrollbar-width: thin;
-            scrollbar-color: #ccc #f0f2f5;
-        }
-        .energy-container::-webkit-scrollbar { height: 5px; }
-        .energy-container::-webkit-scrollbar-track { background: #f0f2f5; }
-        .energy-container::-webkit-scrollbar-thumb { background-color: #ccc; border-radius: 2px; }
-        .form-group {
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-        }
-        .form-group label {
-            margin-right: 10px;
-            font-weight: bold;
-        }
-        .form-group input, .form-group select, .form-group textarea {
-            flex-grow: 1;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .compact-input {
-            flex-grow: 0 !important;
-            width: 80px;
-        }
-        textarea {
-            resize: vertical;
-            min-height: 60px;
-        }
-        .operation-queue {
-            height: 150px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 5px;
-            overflow-y: auto;
-            background-color: #fafafa;
-            margin-bottom: 10px;
-        }
-        .operation-item {
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        .operation-item:last-child {
-            border-bottom: none;
-        }
-        .operation-item.selected {
-            background-color: #d4e6ff;
-        }
-        .flex-container {
-            display: flex;
-            gap: 10px;
-        }
-        .flex-container > * {
-            flex: 1;
-        }
-        .truncate-select {
-            min-width: 0; /* Allow the element to shrink below its content size */
-            text-overflow: ellipsis; /* Add ellipsis for overflowed text */
-        }
-        #attack-zone-flex-container > .form-group {
-            min-width: 0; /* Allow the form group (flex item) to shrink */
-        }
-        .battle-zone-pokemon {
-            border: 2px solid #ffc107 !important; /* Gold border */
-            box-shadow: 0 0 8px rgba(255, 193, 7, 0.6);
-        }
-        /* Styles for Energy & Tool Module */
-        #current-player-field h3 {
-            color: #888;
-            text-align: center;
-            font-weight: normal;
-            font-size: 12px;
-            margin-bottom: 5px;
-        }
-        .pokemon-field-row {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 10px;
-            padding: 5px;
-        }
-        .pokemon-field-row + .pokemon-field-row {
-            margin-top: 10px;
-        }
-        .pokemon-drop-target {
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 5px;
-            text-align: center;
-            position: relative;
-            display: flex; /* Make this a flex container */
-            flex-direction: column; /* Stack children vertically */
-        }
-        .pokemon-drop-target > img {
-            width: 100%;
-            border-radius: 4px;
-        }
-        .empty-slot {
-            border: 2px dashed #ddd;
-            border-radius: 5px;
-            min-height: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #aaa;
-        }
-        .attached-energy-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 2px;
-            margin-top: 4px;
-            min-height: 18px;
-        }
-        .attached-energy-icon {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-        .attached-special-energy-icon {
-            width: 14px;
-            height: 14px;
-            cursor: pointer;
-            border-radius: 50%;
-            background-size: 142%;
-            background-position: center 27.5%;
-            border: 1px solid #555;
-            display: inline-block;
-        }
-        .tool-placeholder {
-            width: 100%;
-            max-height: 40px;
-            flex-grow: 1; /* Allow placeholder to fill remaining space */
-            border-radius: 2px;
-            border: 2px dashed #ccc;
-            box-sizing: border-box;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #aaa;
-            font-size: 12px;
-            min-height: 40px; /* Prevent collapsing completely */
-        }
-        .attached-tool-container {
-            display: flex;
-            flex-direction: column; /* Stack items vertically */
-            align-items: center; /* Center items horizontally */
-            gap: 2px;
-            margin-top: 2px;
-            padding: 2px 0;
-            flex-grow: 1; /* Allow this container to grow */
-            min-height: 40px; /* Add a minimum height */
-        }
-        .attached-tool-icon {
-            cursor: pointer;
-            width: 100%;
-            height: 36px;
-            border-radius: 2px;
-            border: 2px solid #888;
-            background-size: 118%;
-            background-position: center 23%;
-            background-repeat: no-repeat;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        }
-        .manual-attach-zone {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            width: 48px;
-            height: 24px;
-            background-color: rgba(0, 123, 255, 0.8);
-            color: white;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            cursor: pointer;
-            border: 1px solid white;
-        }
-
-        /* Styles for Attack Module Targeting View */
-        .target-field-container {
-            padding: 2px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background-color: #255bc0;
-            flex-grow: 1; /* Allow it to take space */
-            height: 420px; /* Set a max height to show opponent's field by default */
-            overflow-y: auto; /* Add vertical scroll when content overflows */
-            scrollbar-width: thin;
-            scrollbar-color: #ccc #f0f2f5;
-        }
-        .target-field-container::-webkit-scrollbar { 
-            width: 8px; 
-        }
-        .target-field-container::-webkit-scrollbar-track { 
-            background: #f0f2f5; 
-        }
-        .target-field-container::-webkit-scrollbar-thumb { 
-            background-color: #ccc; 
-            border-radius: 4px; 
-        }
-        .targeting-row {
-            display: flex;
-            justify-content: center;
-            gap: 2px;
-            margin-bottom: 5px;
-        }
-        .targeting-row:last-child {
-            margin-bottom: 0;
-        }
-        .targeting-row.bench {
-            flex-wrap: wrap;
-        }
-        /* Opponent's card sizes */
-        .targeting-row.opponent-row .pokemon-target-card {
-            flex: 0 0 11%;
-            max-width: 60px;
-        }
-        .targeting-row.opponent-row.battle .pokemon-target-card {
-            flex: 0 0 20%;
-            max-width: 80px;
-        }
-
-        /* Player's card sizes (smaller) */
-        .targeting-row.player-row .pokemon-target-card {
-            flex: 0 0 11%;
-            max-width: 60px; /* ~20% smaller */
-        }
-        .targeting-row.player-row.battle .pokemon-target-card {
-            flex: 0 0 20%;
-            max-width: 80px; /* ~20% smaller */
-        }
-        .target-view-separator {
-            border-top: 2px dashed #ccc;
-            margin: 8px 5%;
-        }
-        .pokemon-target-card {
-            position: relative;
-            border: 2px solid transparent;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            aspect-ratio: 868 / 1212; /* Maintain card aspect ratio */
-        }
-        .pokemon-target-card > img {
-            width: 100%;
-            height: 100%;
-            display: block;
-            border-radius: 4px;
-            object-fit: cover;
-        }
-        .pokemon-target-card.empty-target-slot {
-            border: 2px dashed #ddd;
-            border-radius: 5px;
-            background-color: #f0f2f5;
-        }
-        .pokemon-target-card.is-targeted {
-            border-color: #e74c3c;
-            transform: scale(1.05);
-            box-shadow: 0 0 12px #e74c3c;
-        }
-        .pokemon-target-card.is-targeted::before,
-        .pokemon-target-card.is-targeted::after {
-            content: '';
-            position: absolute;
-            background-color: red;
-            z-index: 1;
-        }
-        .pokemon-target-card.is-targeted::before {
-            top: 50%;
-            left: 22%;
-            right: 22%;
-            height: 5px;
-            transform: translateY(-50%);
-        }
-        .pokemon-target-card.is-targeted::after {
-            left: 50%;
-            top: 30%;
-            bottom: 30%;
-            width: 5px;
-            transform: translateX(-50%);
-        }
-        /* Style for disabled buttons to provide visual feedback */
-        .btn:disabled {
-            cursor: not-allowed;
-            background: Grey;
-            /* Prevent hover effects on disabled buttons */
-            pointer-events: none; 
-        }
-    </style>
+    <link rel="stylesheet" href="css/dashboard.css">
 </head>
 <body>
 
@@ -585,16 +87,20 @@
             <button id="select-reverse-btn" class="btn select-btn" data-i18n="reverse">Reverse</button>
         </div>
         <div class="flex-container" style="align-items: center; gap: 15px;">
-            <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
-                <label for="damage" style="min-width: 30px; margin-right: 5px;" data-i18n="damage">Damage</label>
+            <div class="form-group" style="flex-grow: 2; margin-bottom: 0;">
+                <label for="damage" style="min-width: 60px; margin-right: 5px;" data-i18n="damage">Damage</label>
                 <input type="number" id="damage" class="compact-input" value="0" min="0" step="10">
             </div>
             <div class="form-group" style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
                 <label for="weakness-check" style="margin-right: 5px;" data-i18n="weakness">Weakness</label>
                 <input type="checkbox" id="weakness-check" style="transform: scale(1.2);">
             </div>
-            <button id="aim-btn" class="btn btn-info" style="flex-grow: 2; height: fit-content;">Aim</button>
-            <button id="attack-btn" class="btn btn-lightning" style="flex-grow: 2; height: fit-content;">Attack</button>
+            <div class="form-group" style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
+                <label for="resistance-check" style="margin-right: 5px;" data-i18n="resistance">Resistance</label>
+                <input type="checkbox" id="resistance-check" style="transform: scale(1.2);">
+            </div>
+            <button id="aim-btn" class="btn btn-info" style="flex-grow: 1; height: fit-content;">Aim</button>
+            <button id="attack-btn" class="btn btn-lightning" style="flex-grow: 1; height: fit-content;">Attack</button>
         </div>
     </div>
     
@@ -602,7 +108,7 @@
         <h3>Shortcut Module</h3>
         <div class="flex-container" style="justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <button id="ko-0hp-btn" class="btn btn-danger">Remove K.O</button>
-            <div class="form-group" style="flex-grow: 0; align-items: center; margin-bottom: 0;">
+            <div class="form-group" style="flex-grow: 2; align-items: center; margin-bottom: 0;">
                 <label for="stadium-select">Stadium:</label>
                 <select id="stadium-select" style="margin-right: 10px;"></select>
                 <input type="checkbox" id="stadium-used-checkbox" style="transform: scale(1.2);">
@@ -642,7 +148,13 @@
     
 
 
+    <script src="js/dashboard.js"></script>
     <script>
+        // --- Global Replicant Declarations ---
+        var playerL_name, playerR_name, cardDatabase, selections, draft_currentTurn, 
+            deckL, deckR, draft_stadium, settingsRep, assetPaths, i18nStrings, 
+            language, cardToShowL, cardToShowR, slots = [];
+
         NodeCG.waitForReplicants(
             nodecg.Replicant('playerL_name'),
             nodecg.Replicant('playerR_name'),
@@ -671,35 +183,21 @@
                 clearCard: ' '
             };
 
-            const getCardImageUrl = (cardId, isBgImage = false) => {
-                if (!cardId || !assetPaths.value.cardImgPath) {
-                    const defaultPath = '/assets/ptcg-telop/element/default.jpg';
-                    return isBgImage ? `url(${defaultPath})` : defaultPath;
-                }
-                const db = cardDatabase.value;
-                const cardData = db ? db[cardId] : null;
-                const imageUrl = cardData ? cardData.image_url : null;
-                const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg'; // Fallback to .jpg
-                const path = `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
-                return isBgImage ? `url(${path})` : path;
-            };
-            
-            // --- Replicant Setup ---
-            const playerL_name = nodecg.Replicant('playerL_name');
-            const playerR_name = nodecg.Replicant('playerR_name');
-            const cardDatabase = nodecg.Replicant('cardDatabase');
-            const selections = nodecg.Replicant('selections');
-            const draft_currentTurn = nodecg.Replicant('draft_currentTurn');
-            const deckL = nodecg.Replicant('deckL');
-            const deckR = nodecg.Replicant('deckR');
-            const draft_stadium = nodecg.Replicant('draft_stadium');
-            const settingsRep = nodecg.Replicant('ptcg-settings');
-            const assetPaths = nodecg.Replicant('assetPaths');
-            const i18nStrings = nodecg.Replicant('i18nStrings');
-            const language = nodecg.Replicant('language');
-            const cardToShowL = nodecg.Replicant('cardToShowL');
-            const cardToShowR = nodecg.Replicant('cardToShowR');
-            const slots = [];
+            // --- Replicant Assignments ---
+            playerL_name = nodecg.Replicant('playerL_name');
+            playerR_name = nodecg.Replicant('playerR_name');
+            cardDatabase = nodecg.Replicant('cardDatabase');
+            selections = nodecg.Replicant('selections');
+            draft_currentTurn = nodecg.Replicant('draft_currentTurn');
+            deckL = nodecg.Replicant('deckL');
+            deckR = nodecg.Replicant('deckR');
+            draft_stadium = nodecg.Replicant('draft_stadium');
+            settingsRep = nodecg.Replicant('ptcg-settings');
+            assetPaths = nodecg.Replicant('assetPaths');
+            i18nStrings = nodecg.Replicant('i18nStrings');
+            language = nodecg.Replicant('language');
+            cardToShowL = nodecg.Replicant('cardToShowL');
+            cardToShowR = nodecg.Replicant('cardToShowR');
             for (let i = 0; i < 9; i++) { // Changed from 6 to 9
                 slots.push(nodecg.Replicant(`draft_slotL${i}`));
                 slots.push(nodecg.Replicant(`draft_slotR${i}`));
@@ -738,13 +236,6 @@
             const turnLRadio = document.getElementById('turn-l');
             const turnRRadio = document.getElementById('turn-r');
             const endTurnBtn = document.getElementById('end-turn-btn');
-
-            const getI18nText = (key) => {
-                if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) {
-                    return key; // Fallback to key name if not found
-                }
-                return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
-            };
 
             function updateUIStrings() {
                 document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -944,14 +435,6 @@
                 emptyEl.dataset.slotId = slotId;
                 emptyEl.textContent = slotId.endsWith('0') ? 'Battle' : 'Bench';
                 return emptyEl;
-            }
-
-            /**
-             * Queues an operation to be sent to the backend.
-             */
-            function queueOperation(type, payload) {
-                nodecg.sendMessage('queueOperation', { type, payload })
-                    .catch(e => console.error(`Failed to queue operation ${type}`, e));
             }
 
             
@@ -1689,140 +1172,142 @@
             });
 
 
-            // --- Attack Module Logic ---
-            // Store the original (base) damage value to handle weakness doubling correctly
-            let originalDamage = 0;
+            const resistanceCheck = document.getElementById('resistance-check');
 
             /**
-             * Automatically populates the damage input based on the selected attack.
-             * - Uses the number directly if the damage value is a number.
-             * - Extracts the number from strings (e.g., "20+", "60x").
-             * - Fills with 0 for moves with no damage.
+             * Recalculates the final damage from scratch and updates the UI.
+             * This is the single source of truth for damage calculation.
              */
-            function updateDamageInput() {
+            function recalculateFinalDamage() {
                 const db = cardDatabase.value;
                 const attackerSlotId = attackerSelect.value;
                 const attackName = attackSelect.value;
 
-                // Reset damage if essential data is missing
-                if (!db || !attackerSlotId || !attackName) {
-                    damageInput.value = 0;
-                    return;
-                }
+                // 1. Determine Base Damage from the selected attack
+                let baseDamage = 0;
+                if (db && attackerSlotId && attackName) {
+                    const attackerSlotReplicant = slots.find(s => s.name === `draft_${attackerSlotId}`);
+                    const attackerCardId = attackerSlotReplicant?.value?.cardId;
+                    const attachedToolIds = attackerSlotReplicant?.value?.attachedToolIds || [];
 
-                const attackerSlotReplicant = slots.find(s => s.name === `draft_${attackerSlotId}`);
-                const attackerCardId = attackerSlotReplicant?.value?.cardId;
-                const attachedToolIds = attackerSlotReplicant?.value?.attachedToolIds || [];
-
-                if (!attackerCardId || !db[attackerCardId]) {
-                    damageInput.value = 0;
-                    return;
-                }
-
-                // Consolidate all possible attacks from the Pokémon and its tool
-                const cardData = db[attackerCardId];
-                let allAttacks = [];
-                if (cardData.pokemon?.attacks) {
-                    allAttacks.push(...cardData.pokemon.attacks);
-                }
-                attachedToolIds.forEach(toolId => {
-                    if (db[toolId]?.trainer?.attacks) {
-                        allAttacks.push(...db[toolId].trainer.attacks);
-                    }
-                });
-
-                const selectedAttack = allAttacks.find(attack => attack.name === attackName);
-
-                if (selectedAttack) {
-                    if (selectedAttack.damage) {
-                        // Original logic: Extract digits from the damage string (e.g., "120+", "60x")
-                        const damageString = String(selectedAttack.damage);
-                        const match = damageString.match(/\d+/);
-                        damageInput.value = match ? parseInt(match[0], 10) : 0;
-                    } else if (selectedAttack.text) {
-                        // New logic: Extract damage from attack text if damage field is empty.
-                        // Rule: Look for a number between "匹に、" and "ダメージ。", ignoring an optional "それぞれ".
-                        const regex = /匹に、(?:それぞれ)?(\d+)ダメージ。/;
-                        const textMatch = selectedAttack.text.match(regex);
-                        if (textMatch && textMatch[1]) {
-                            damageInput.value = parseInt(textMatch[1], 10);
-                        } else {
-                            damageInput.value = 0;
+                    if (attackerCardId && db[attackerCardId]) {
+                        const cardData = db[attackerCardId];
+                        let allAttacks = [];
+                        if (cardData.pokemon?.attacks) {
+                            allAttacks.push(...cardData.pokemon.attacks);
                         }
-                    } else {
-                        // If attack has no damage value or text, set to 0
-                        damageInput.value = 0;
+                        attachedToolIds.forEach(toolId => {
+                            if (db[toolId]?.trainer?.attacks) {
+                                allAttacks.push(...db[toolId].trainer.attacks);
+                            }
+                        });
+
+                        const selectedAttack = allAttacks.find(attack => attack.name === attackName);
+
+                        if (selectedAttack) {
+                            if (selectedAttack.damage) {
+                                const damageString = String(selectedAttack.damage);
+                                const match = damageString.match(/\d+/);
+                                baseDamage = match ? parseInt(match[0], 10) : 0;
+                            } else if (selectedAttack.text) {
+                                const regex = /匹に、(?:それぞれ)?(\d+)ダメージ。/;
+                                const textMatch = selectedAttack.text.match(regex);
+                                if (textMatch && textMatch[1]) {
+                                    baseDamage = parseInt(textMatch[1], 10);
+                                }
+                            }
+                        }
                     }
-                } else {
-                    // If no attack is found, set to 0
-                    damageInput.value = 0;
                 }
 
-                // After updating damage, also update originalDamage and handle weakness
-                updateOriginalDamage();
-                handleWeaknessDamageCalculation();
+                // 2. Apply Weakness and Resistance
+                let finalDamage = baseDamage;
+                const settings = settingsRep.value || {};
+                if (settings.weaknessDamage) {
+                    if (weaknessCheck.checked) {
+                        finalDamage *= 2;
+                    }
+                    if (resistanceCheck.checked) {
+                        finalDamage -= 30;
+                    }
+                }
+
+                // 3. Update the input field with the final, non-negative damage
+                damageInput.value = Math.max(0, finalDamage);
             }
 
             /**
-             * Automatically checks for weakness based on the attacker and the selected battle zone target.
+             * Automatically checks for weakness and resistance based on the attacker and the selected battle zone target.
              */
-            function updateWeaknessCheckbox() {
+            function updateWeaknessAndResistanceChecks() {
+                const settings = settingsRep.value || {};
+                if (!settings.weaknessDamage) {
+                    weaknessCheck.checked = false;
+                    resistanceCheck.checked = false;
+                    return;
+                }
+
                 const db = cardDatabase.value;
-                if (!db) { weaknessCheck.checked = false; return; }
+                if (!db) {
+                    weaknessCheck.checked = false;
+                    resistanceCheck.checked = false;
+                    return;
+                }
 
                 // Get info for the selected attacker
                 const attackerSlotId = attackerSelect.value;
-                if (!attackerSlotId) { weaknessCheck.checked = false; return; }
+                if (!attackerSlotId) {
+                    weaknessCheck.checked = false;
+                    resistanceCheck.checked = false;
+                    return;
+                }
                 const attackerSlotReplicant = slots.find(s => s.name === `draft_${attackerSlotId}`);
                 const attackerCardId = attackerSlotReplicant?.value?.cardId;
                 const attackerCard = attackerCardId ? db[attackerCardId] : null;
                 const attackerTypes = attackerCard?.pokemon?.color;
-                if (!attackerTypes || attackerTypes.length === 0) { weaknessCheck.checked = false; return; }
+                if (!attackerTypes || attackerTypes.length === 0) {
+                    weaknessCheck.checked = false;
+                    resistanceCheck.checked = false;
+                    return;
+                }
 
                 // Get info for the selected battle zone target
                 const currentSelections = selections.value || [];
                 const targetSlotId = currentSelections.find(id => id.endsWith('0')); // Only care about the Pokémon in the battle slot
-                if (!targetSlotId) { weaknessCheck.checked = false; return; }
+                if (!targetSlotId) {
+                    weaknessCheck.checked = false;
+                    resistanceCheck.checked = false;
+                    return;
+                }
                 const targetSlotReplicant = slots.find(s => s.name === `draft_${targetSlotId}`);
                 const targetCardId = targetSlotReplicant?.value?.cardId;
                 const targetCard = targetCardId ? db[targetCardId] : null;
+                
+                // Check Weakness
                 const targetWeaknesses = targetCard?.pokemon?.weaknesses;
-                if (!targetWeaknesses || targetWeaknesses.length === 0) { weaknessCheck.checked = false; return; }
-
-                // Weakness check: if any of the attacker's types match any of the target's weaknesses
-                const weaknessTypes = targetWeaknesses.map(w => w.type);
-                const isWeak = attackerTypes.some(type => weaknessTypes.includes(type));
-
-                weaknessCheck.checked = isWeak;
-                handleWeaknessDamageCalculation();
-            }
-
-            /**
-             * Updates the originalDamage variable.
-             * Only updates when the weakness checkbox is unchecked to prevent saving the doubled damage as the base damage.
-             */
-            function updateOriginalDamage() {
-                if (!weaknessCheck.checked) {
-                    originalDamage = parseInt(damageInput.value, 10) || 0;
-                }
-            }
-
-            /**
-             * Calculates and updates the damage input value based on originalDamage and the weakness checkbox state.
-             * This is the only weakness-related function that should modify damageInput.value.
-             */
-            function handleWeaknessDamageCalculation() {
-                if (weaknessCheck.checked) {
-                    damageInput.value = originalDamage * 2;
+                if (!targetWeaknesses || targetWeaknesses.length === 0) {
+                    weaknessCheck.checked = false;
                 } else {
-                    damageInput.value = originalDamage;
+                    const weaknessTypes = targetWeaknesses.map(w => w.type);
+                    weaknessCheck.checked = attackerTypes.some(type => weaknessTypes.includes(type));
                 }
+
+                // Check Resistance
+                const targetResistances = targetCard?.pokemon?.resistances;
+                if (!targetResistances || targetResistances.length === 0) {
+                    resistanceCheck.checked = false;
+                } else {
+                    const resistanceTypes = targetResistances.map(r => r.type);
+                    resistanceCheck.checked = attackerTypes.some(type => resistanceTypes.includes(type));
+                }
+                
+                // After updating checks, always recalculate damage
+                recalculateFinalDamage();
             }
 
-            // When the weakness checkbox is manually clicked, update the damage value.
-            weaknessCheck.addEventListener('change', handleWeaknessDamageCalculation);
-            // When the user manually inputs damage, update the original damage value.
-            damageInput.addEventListener('input', updateOriginalDamage);
+            // When the weakness or resistance checkbox is manually clicked, recalculate the damage.
+            weaknessCheck.addEventListener('change', recalculateFinalDamage);
+            resistanceCheck.addEventListener('change', recalculateFinalDamage);
             
             /**
              * Finds all attacks for a Pokémon and its entire pre-evolution line by
@@ -2007,7 +1492,7 @@
                     }
                 }
                 // After updating attacks, also update the damage input
-                updateDamageInput();
+                recalculateFinalDamage();
             }
 
             function updateAttackerDropdown() {
@@ -2060,12 +1545,12 @@
                 // After updating the dropdown, the attack list and weakness should also be updated
                 // based on the new state of the attacker dropdown.
                 updateAttackDropdown();
-                updateWeaknessCheckbox();
+                updateWeaknessAndResistanceChecks();
             }
 
             attackerSelect.addEventListener('change', () => {
                 updateAttackDropdown();
-                updateWeaknessCheckbox();
+                updateWeaknessAndResistanceChecks();
             });
 
             aimBtn.addEventListener('click', () => {
@@ -2077,7 +1562,7 @@
                 }
             });
 
-            attackSelect.addEventListener('change', updateDamageInput);
+            attackSelect.addEventListener('change', recalculateFinalDamage);
 
             attackBtn.addEventListener('click', () => {
                 const attackerSlotId = attackerSelect.value;
@@ -2202,7 +1687,7 @@
                 updateBattleEnergyCounts();
                 updateAttackerDropdown();
                 renderTargetingField();
-                updateWeaknessCheckbox();
+                updateWeaknessAndResistanceChecks();
                 updateStadiumDropdown();
                 updateToolButtonVisibility();
                 updateEnergyButtonVisibility();
@@ -2212,7 +1697,7 @@
                 console.log('Listener Fired: selections');
                 // When selections change, only the targeting view and weakness check needs to be updated
                 renderTargetingField();
-                updateWeaknessCheckbox();
+                updateWeaknessAndResistanceChecks();
             });
 
             // A single, consolidated listener for all slot changes
@@ -2227,7 +1712,7 @@
                         renderCurrentPlayerField(); 
                         renderTargetingField(); 
                         updateAttackerDropdown(); 
-                        updateWeaknessCheckbox();
+                        updateWeaknessAndResistanceChecks();
                     }, 50); // 50ms delay to batch updates
                 });
             });
@@ -2241,6 +1726,19 @@
             };
             deckL.on('change', updateDeckDependentUI);
             deckR.on('change', updateDeckDependentUI);
+
+            draft_stadium.on('change', (newValue) => {
+                console.log('Listener Fired: draft_stadium');
+                const newStadiumId = newValue ? newValue.cardId : "";
+                const isUsed = newValue ? newValue.used : false;
+
+                if (stadiumSelect.value !== newStadiumId) {
+                    stadiumSelect.value = newStadiumId;
+                }
+                if (stadiumUsedCheckbox.checked !== isUsed) {
+                    stadiumUsedCheckbox.checked = isUsed;
+                }
+            });
 
             // Consolidated settings listener
             settingsRep.on('change', (newValue) => {
@@ -2263,6 +1761,7 @@
                 // Other UI updates that depend on settings
                 updateEnergyButtonVisibility();
                 updateToolButtonVisibility();
+                updateWeaknessAndResistanceChecks();
             });
 
             assetPaths.on('change', () => {
@@ -2283,21 +1782,6 @@
             updateToolButtonVisibility();
             renderCurrentPlayerField();
             
-            function checkHotkey(e, hotkeyString) {
-                if (!hotkeyString || typeof hotkeyString !== 'string') return false;
-                if (hotkeyString.toLowerCase() === 'space' || hotkeyString === ' ') {
-                    return e.key === ' ';
-                }
-                const parts = hotkeyString.toLowerCase().split('+').map(p => p.trim());
-                const key = parts.pop();
-                if (e.key.toLowerCase() !== key) return false;
-                if (parts.includes('ctrl') !== e.ctrlKey) return false;
-                if (parts.includes('alt') !== e.altKey) return false;
-                if (parts.includes('shift') !== e.shiftKey) return false;
-                if (parts.includes('meta') !== e.metaKey) return false;
-                return true;
-            }
-
             document.addEventListener('keydown', (e) => {
                 if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') return;
                 const autoApplyEnabled = settingsRep.value && settingsRep.value.autoApply;

@@ -3,100 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Director Panel</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            background-color: #f0f2f5;
-            color: #333;
-            margin: 15px;
-            font-size: 14px;
-        }
-        .panel-section {
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 15px;
-        }
-        .panel-section h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            color: #555;
-        }
-        .btn {
-            padding: 10px 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #fff;
-            cursor: pointer;
-            text-align: center;
-            transition: background-color 0.2s, border-color 0.2s;
-        }
-        .btn:hover {
-            background-color: #f5f5f5;
-        }
-        .btn-primary {
-            background-color: #4a69bd;
-            color: white;
-            border-color: #4a69bd;
-        }
-        .btn-primary:hover {
-            background-color: #3b5998;
-        }
-        .btn-danger {
-            background-color: #e74c3c;
-            color: white;
-            border-color: #e74c3c;
-        }
-        .btn-danger:hover {
-            background-color: #c0392b;
-        }
-        .btn-metal {
-            background-color: #767880;
-            color: white;
-        }
-        .form-group {
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-        }
-        .form-group label {
-            margin-right: 10px;
-            font-weight: bold;
-        }
-        .operation-queue {
-            height: 250px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 5px;
-            overflow-y: auto;
-            background-color: #fafafa;
-            margin-bottom: 10px;
-        }
-        .operation-item {
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        .operation-item:last-child {
-            border-bottom: none;
-        }
-        .operation-item.selected {
-            background-color: #d4e6ff;
-        }
-        .flex-container {
-            display: flex;
-            gap: 10px;
-        }
-        .flex-container > * {
-            flex: 1;
-        }
-    </style>
+    <link rel="stylesheet" href="css/dashboard.css">
 </head>
 <body>
 
@@ -139,6 +46,7 @@
         </div>
     </div>
 
+    <script src="js/dashboard.js"></script>
     <script>
         NodeCG.waitForReplicants(
             nodecg.Replicant('operationQueue'),
@@ -178,11 +86,6 @@
             const resetSystemBtn = document.getElementById('reset-system-btn');
 
             // --- Core Functions ---
-            function queueOperation(type, payload) {
-                nodecg.sendMessage('queueOperation', { type, payload })
-                    .catch(e => console.error(`Failed to queue operation ${type}`, e));
-            }
-
             function getCardName(slotId) {
                 const db = cardDatabase.value;
                 const slot = slots.find(s => s.name === `draft_${slotId}`);
@@ -340,21 +243,6 @@
             renderQueue();
 
             // --- Hotkey Logic ---
-            function checkHotkey(e, hotkeyString) {
-                if (!hotkeyString || typeof hotkeyString !== 'string') return false;
-                if (hotkeyString.toLowerCase() === 'space' || hotkeyString === ' ') {
-                    return e.key === ' ';
-                }
-                const parts = hotkeyString.toLowerCase().split('+').map(p => p.trim());
-                const key = parts.pop();
-                if (e.key.toLowerCase() !== key) return false;
-                if (parts.includes('ctrl') !== e.ctrlKey) return false;
-                if (parts.includes('alt') !== e.altKey) return false;
-                if (parts.includes('shift') !== e.shiftKey) return false;
-                if (parts.includes('meta') !== e.metaKey) return false;
-                return true;
-            }
-            
             // Initial label update
             if (settingsRep.value && settingsRep.value.hotkeys) {
                 hotkeys.discard = settingsRep.value.hotkeys.discard || 'Escape';

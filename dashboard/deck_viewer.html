@@ -333,22 +333,23 @@
         </div>
     </div>
 
+    <script src="js/dashboard.js"></script>
     <script>
         // Replicants
-        const cardToShowL = nodecg.Replicant('cardToShowL');
-        const cardToShowR = nodecg.Replicant('cardToShowR');
-        const prizeCardsL = nodecg.Replicant('prizeCardsL');
-        const prizeCardsR = nodecg.Replicant('prizeCardsR');
-        const deckL = nodecg.Replicant('deckL');
-        const deckR = nodecg.Replicant('deckR');
-        const playerL_name = nodecg.Replicant('playerL_name');
-        const playerR_name = nodecg.Replicant('playerR_name');
-        const database = nodecg.Replicant('cardDatabase');
-        const settingsRep = nodecg.Replicant('ptcg-settings');
-        const assetPaths = nodecg.Replicant('assetPaths');
-        const i18nStrings = nodecg.Replicant('i18nStrings');
-        const language = nodecg.Replicant('language');
-        const deckLoadingStatus = nodecg.Replicant('deckLoadingStatus');
+        var cardToShowL = nodecg.Replicant('cardToShowL');
+        var cardToShowR = nodecg.Replicant('cardToShowR');
+        var prizeCardsL = nodecg.Replicant('prizeCardsL');
+        var prizeCardsR = nodecg.Replicant('prizeCardsR');
+        var deckL = nodecg.Replicant('deckL');
+        var deckR = nodecg.Replicant('deckR');
+        var playerL_name = nodecg.Replicant('playerL_name');
+        var playerR_name = nodecg.Replicant('playerR_name');
+        var cardDatabase = nodecg.Replicant('cardDatabase');
+        var settingsRep = nodecg.Replicant('ptcg-settings');
+        var assetPaths = nodecg.Replicant('assetPaths');
+        var i18nStrings = nodecg.Replicant('i18nStrings');
+        var language = nodecg.Replicant('language');
+        var deckLoadingStatus = nodecg.Replicant('deckLoadingStatus');
 
         // DOM Elements
         const deckLBody = document.getElementById('deckL-body');
@@ -372,21 +373,34 @@
         // Global State
         let deckViews = { L: 'icon', R: 'icon' };
 
-        // --- Helper Functions ---
-        const getI18nText = (key) => {
-            if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) return key;
-            return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
+        // --- Hotkey Handling ---
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        let hotkeys = {
+            discard: 'Escape',
+            apply: isMac ? 'Meta+S' : 'Control+S',
+            clearSelection: 'Delete',
+            clearCard: ' '
         };
-        function getCardImageUrl(cardId) {
-            if (!cardId || !assetPaths.value || !assetPaths.value.cardImgPath || !database.value) {
-                return '/assets/ptcg-telop/element/default.jpg';
+
+        settingsRep.on('change', (newValue) => {
+            if (newValue && newValue.hotkeys) {
+                hotkeys.discard = newValue.hotkeys.discard || 'Escape';
+                hotkeys.apply = newValue.hotkeys.apply || (isMac ? 'Meta+S' : 'Control+S');
+                hotkeys.clearSelection = newValue.hotkeys.clearSelection || 'Delete';
+                hotkeys.clearCard = newValue.hotkeys.clearCard || ' ';
             }
-            const db = database.value;
-            const cardData = db ? db[cardId] : null;
-            const imageUrl = cardData ? cardData.image_url : null;
-            const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg';
-            return `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
-        }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') return;
+
+            if (checkHotkey(e, hotkeys.clearCard)) {
+                e.preventDefault();
+                clearButton.click();
+            }
+        });
+
+        // --- Helper Functions ---
         function updateUIText() {
             ['l', 'r'].forEach(s => {
                 document.getElementById(`header-${s}-image`).textContent = getI18nText('deck_viewer_header_image');
@@ -704,7 +718,7 @@
         }
 
         function renderAllDecksIfReady() {
-            const db = database.value;
+            const db = cardDatabase.value;
             if (!db || Object.keys(db).length === 0) return;
             if (deckL.value) renderPlayerDeck('L', deckL.value, db);
             if (deckR.value) renderPlayerDeck('R', deckR.value, db);
@@ -726,7 +740,7 @@
                 deckViews[player] = view;
                 document.querySelectorAll(`.view-btn[data-player="${player}"]`).forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                renderPlayerDeck(player, player === 'L' ? deckL.value : deckR.value, database.value);
+                renderPlayerDeck(player, player === 'L' ? deckL.value : deckR.value, cardDatabase.value);
             });
         });
 
@@ -748,7 +762,7 @@
         playerR_name.on('change', (newValue) => { playerRDeckTitle.textContent = `${newValue || 'Player R'}'s Deck`; });
         deckL.on('change', renderAllDecksIfReady);
         deckR.on('change', renderAllDecksIfReady);
-        database.on('change', renderAllDecksIfReady);
+        cardDatabase.on('change', renderAllDecksIfReady);
         language.on('change', () => { updateUIText(); renderAllDecksIfReady(); });
         assetPaths.on('change', renderAllDecksIfReady);
         prizeCardsL.on('change', (newValue) => renderPrizes('L', newValue, prizeGridL));
@@ -771,7 +785,7 @@
         });
 
         // --- Init ---
-        NodeCG.waitForReplicants(deckL, deckR, database, playerL_name, playerR_name, i18nStrings, language, deckLoadingStatus, prizeCardsL, prizeCardsR).then(() => {
+        NodeCG.waitForReplicants(deckL, deckR, cardDatabase, playerL_name, playerR_name, i18nStrings, language, deckLoadingStatus, prizeCardsL, prizeCardsR).then(() => {
             playerLDeckTitle.textContent = `${playerL_name.value || 'Player L'}'s Deck`;
             playerRDeckTitle.textContent = `${playerR_name.value || 'Player R'}'s Deck`;
             updateUIText();

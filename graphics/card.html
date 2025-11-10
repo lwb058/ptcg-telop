@@ -316,14 +316,14 @@
         cardToShowL.on('change', (newValue) => {
             const side = isReversed ? 'R' : 'L';
             const newMode = newValue ? 'singleCard' : 'hidden';
-            const newSrc = newValue ? getCardImageUrl(newValue.match(/(\d{5,})/)[1]) : null;
+            const newSrc = newValue || null;
             setDisplay(side, newMode, newSrc);
         });
 
         cardToShowR.on('change', (newValue) => {
             const side = isReversed ? 'L' : 'R';
             const newMode = newValue ? 'singleCard' : 'hidden';
-            const newSrc = newValue ? getCardImageUrl(newValue.match(/(\d{5,})/)[1]) : null;
+            const newSrc = newValue || null;
             setDisplay(side, newMode, newSrc);
         });
 

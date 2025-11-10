@@ -1,3 +1,9 @@
+// --- Global Replicant Declarations ---
+var playerName, deckId, draft_side, draft_lostZone, deck, cardDatabase, selections, 
+    operationQueue, draft_currentTurn, draft_action_energy, draft_action_supporter, 
+    draft_action_retreat, settingsRep, draft_vstar, deckLoadingStatus, i18nStrings, 
+    language, assetPaths, cardToShowL, cardToShowR, draft_slot0;
+
 function setupPlayerPanel(side) {
     const upperCaseSide = side.toUpperCase();
     const lowerCaseSide = side.toLowerCase();
@@ -31,42 +37,29 @@ function setupPlayerPanel(side) {
         nodecg.Replicant('cardToShowR'),
         ...Array(9).fill(0).map((_, i) => nodecg.Replicant(`draft_slot${upperCaseSide}${i}`))
     ).then(() => {
-        // --- Replicants ---
-        const playerName = nodecg.Replicant(`player${upperCaseSide}_name`);
-        const deckId = nodecg.Replicant(`deckId${upperCaseSide}`);
-        const draft_side = nodecg.Replicant(`draft_side${upperCaseSide}`);
-        const draft_lostZone = nodecg.Replicant(`draft_lostZone${upperCaseSide}`);
-        const deck = nodecg.Replicant(`deck${upperCaseSide}`);
-        const cardDatabase = nodecg.Replicant('cardDatabase');
-        const selections = nodecg.Replicant('selections');
-        const operationQueue = nodecg.Replicant('operationQueue');
-        const draft_currentTurn = nodecg.Replicant('draft_currentTurn');
-        const draft_action_energy = nodecg.Replicant(`draft_action_energy_${upperCaseSide}`);
-        const draft_action_supporter = nodecg.Replicant(`draft_action_supporter_${upperCaseSide}`);
-        const draft_action_retreat = nodecg.Replicant(`draft_action_retreat_${upperCaseSide}`);
-        const settingsRep = nodecg.Replicant('ptcg-settings');
-        const draft_vstar = nodecg.Replicant(`draft_vstar_${upperCaseSide}`);
-        const deckLoadingStatus = nodecg.Replicant('deckLoadingStatus');
-        const i18nStrings = nodecg.Replicant('i18nStrings');
-        const language = nodecg.Replicant('language');
-        const assetPaths = nodecg.Replicant('assetPaths');
-        const cardToShowL = nodecg.Replicant('cardToShowL');
-        const cardToShowR = nodecg.Replicant('cardToShowR');
+        // --- Replicant Assignments ---
+        playerName = nodecg.Replicant(`player${upperCaseSide}_name`);
+        deckId = nodecg.Replicant(`deckId${upperCaseSide}`);
+        draft_side = nodecg.Replicant(`draft_side${upperCaseSide}`);
+        draft_lostZone = nodecg.Replicant(`draft_lostZone${upperCaseSide}`);
+        deck = nodecg.Replicant(`deck${upperCaseSide}`);
+        cardDatabase = nodecg.Replicant('cardDatabase');
+        selections = nodecg.Replicant('selections');
+        operationQueue = nodecg.Replicant('operationQueue');
+        draft_currentTurn = nodecg.Replicant('draft_currentTurn');
+        draft_action_energy = nodecg.Replicant(`draft_action_energy_${upperCaseSide}`);
+        draft_action_supporter = nodecg.Replicant(`draft_action_supporter_${upperCaseSide}`);
+        draft_action_retreat = nodecg.Replicant(`draft_action_retreat_${upperCaseSide}`);
+        settingsRep = nodecg.Replicant('ptcg-settings');
+        draft_vstar = nodecg.Replicant(`draft_vstar_${upperCaseSide}`);
+        deckLoadingStatus = nodecg.Replicant('deckLoadingStatus');
+        i18nStrings = nodecg.Replicant('i18nStrings');
+        language = nodecg.Replicant('language');
+        assetPaths = nodecg.Replicant('assetPaths');
+        cardToShowL = nodecg.Replicant('cardToShowL');
+        cardToShowR = nodecg.Replicant('cardToShowR');
 
-        const draft_slot0 = nodecg.Replicant(`draft_slot${upperCaseSide}0`);
-
-        const getCardImageUrl = (cardId, isBgImage = false) => {
-            if (!cardId || !assetPaths.value.cardImgPath) {
-                const defaultPath = '/assets/ptcg-telop/element/default.jpg';
-                return isBgImage ? `url(${defaultPath})` : defaultPath;
-            }
-            const db = cardDatabase.value;
-            const cardData = db ? db[cardId] : null;
-            const imageUrl = cardData ? cardData.image_url : null;
-            const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg'; // Fallback to .jpg
-            const path = `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
-            return isBgImage ? `url(${path})` : path;
-        };
+        draft_slot0 = nodecg.Replicant(`draft_slot${upperCaseSide}0`);
 
         // --- DOM Elements ---
         const playerNameInput = document.getElementById(`player-name-${lowerCaseSide}`);
@@ -93,13 +86,6 @@ function setupPlayerPanel(side) {
             lostZoneInput.value = currentValue + amount;
             lostZoneInput.dispatchEvent(new Event('change')); // Trigger change to update replicant
         }
-
-        const getI18nText = (key) => {
-            if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) {
-                return key; // Fallback to key name if not found
-            }
-            return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
-        };
 
         const extraBenchVisible = nodecg.Replicant('extraBenchVisible');
         const renderSlotDebounce = {};
@@ -149,21 +135,6 @@ function setupPlayerPanel(side) {
         }
         draft_currentTurn.on('change', updateTurnHighlight);
         updateTurnHighlight(draft_currentTurn.value); // Initial call
-
-        function hexToRgba(hex, alpha = 1.0) {
-            if (!/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
-                return '';
-            }
-            let c = hex.substring(1).split('');
-            if (c.length === 3) {
-                c = [c[0], c[0], c[1], c[1], c[2], c[2]];
-            }
-            c = '0x' + c.join('');
-            const r = (c >> 16) & 255;
-            const g = (c >> 8) & 255;
-            const b = c & 255;
-            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-        }
 
         // --- Side Area Management ---
         function renderSideButtons(remaining) {
@@ -273,28 +244,6 @@ function setupPlayerPanel(side) {
         supporterCheck.addEventListener('change', createActionHandler('supporter'));
         retreatCheck.addEventListener('change', createActionHandler('retreat'));
 
-        function queueOperation(type, payload) {
-            nodecg.sendMessage('queueOperation', { type, payload })
-                .catch(e => console.error(`Failed to queue operation ${type}`, e));
-        }
-
-        function queueOrUpdateOperation(type, payload) {
-            const queue = operationQueue.value;
-            if (Array.isArray(queue)) {
-                const existingOpIndex = queue.findIndex(op =>
-                    op.type === type &&
-                    op.payload.target === payload.target
-                );
-
-                if (existingOpIndex > -1) {
-                    nodecg.sendMessage('updateOperation', { index: existingOpIndex, payload })
-                        .catch(e => console.error(`Failed to update operation ${type}`, e));
-                    return;
-                }
-            }
-            queueOperation(type, payload);
-        }
-
         setDeckBtn.addEventListener('click', () => {
             const deckCode = deckIdInput.value.trim();
             if (!deckCode) return alert('Please enter a Deck ID or Card ID.');
@@ -309,6 +258,12 @@ function setupPlayerPanel(side) {
         function renderSlot(index, slotData, currentDeck, db) {
             const slotEl = document.getElementById(`slot-${upperCaseSide}${index}`);
             if (!slotEl) return;
+
+            // Guard clause to prevent rendering if the database isn't ready.
+            if (!db) {
+                // console.log(`renderSlot(${index}): db not ready.`);
+                return;
+            }
 
             slotEl.style.backgroundColor = '';
 
@@ -487,7 +442,7 @@ function setupPlayerPanel(side) {
                     } else {
                         energyEl = document.createElement('img');
                         energyEl.src = `/assets/ptcg-telop/icons/${energy}.png`;
-                        energyEl.classList.add('energy-icon');
+                        energyEl.classList.add('attached-energy-icon');
                         energyEl.title = `Click to remove ${energy}`;
                     }
 
@@ -806,7 +761,15 @@ function setupPlayerPanel(side) {
         extraBenchContainer.addEventListener('click', swapClickHandler);
 
         deck.on('change', updateAllEmptySlotDropdowns);
-        cardDatabase.on('change', updateAllEmptySlotDropdowns);
+        cardDatabase.on('change', (newValue) => {
+            updateAllEmptySlotDropdowns();
+            if (newValue) { // Only render if the new value is not null/undefined
+                for (let i = 0; i < 9; i++) {
+                    const slotReplicant = nodecg.Replicant(`draft_slot${upperCaseSide}${i}`);
+                    renderSlot(i, slotReplicant.value, deck.value, newValue);
+                }
+            }
+        });
         selections.on('change', syncCheckboxesWithSelections);
 
         settingsRep.on('change', () => {
@@ -845,21 +808,6 @@ function setupPlayerPanel(side) {
 
         if (settingsRep.value && settingsRep.value.hotkeys) {
             hotkeys = settingsRep.value.hotkeys;
-        }
-
-        function checkHotkey(e, hotkeyString) {
-            if (!hotkeyString || typeof hotkeyString !== 'string') return false;
-            if (hotkeyString.toLowerCase() === 'space' || hotkeyString === ' ') {
-                return e.key === ' ';
-            }
-            const parts = hotkeyString.toLowerCase().split('+').map(p => p.trim());
-            const key = parts.pop();
-            if (e.key.toLowerCase() !== key) return false;
-            if (parts.includes('ctrl') !== e.ctrlKey) return false;
-            if (parts.includes('alt') !== e.altKey) return false;
-            if (parts.includes('shift') !== e.shiftKey) return false;
-            if (parts.includes('meta') !== e.metaKey) return false;
-            return true;
         }
 
         document.addEventListener('keydown', (e) => {
