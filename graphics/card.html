@@ -55,7 +55,7 @@
             height: 955px;
             transform: translateY(80px);
             z-index: 10;
-            background-image: url('/assets/ptcg-telop/element/side-bg.png');
+            background-image: var(--bg-side-area);
             background-size: 100% 100%;
             background-position: center;
             background-repeat: no-repeat;
@@ -75,7 +75,7 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
             margin: 18px 0 18px 0;
             text-align: center;
-            background-color: var(--color-bg-module);
+            background-color: var(--third-color);
             width: 60%;
             border-radius: 25px;
             padding: 4px 8px;
@@ -360,6 +360,7 @@
         function updateCustomizableAssets() {
             const root = document.documentElement;
             root.style.setProperty('--bg-card-area', `url(${resolveAssetPath('card-bg.png')})`);
+            root.style.setProperty('--bg-side-area', `url(${resolveAssetPath('side-bg.png')})`);
         }
 
         function preloadDeckImages(deck) {

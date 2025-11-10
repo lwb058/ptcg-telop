@@ -68,7 +68,7 @@ module.exports = function (nodecg) {
 	const firstMove = nodecg.Replicant('firstMove', { defaultValue: '' });
 	const cardToShowL = nodecg.Replicant('cardToShowL', { defaultValue: '' });
 	const cardToShowR = nodecg.Replicant('cardToShowR', { defaultValue: '' });
-	    const i18nStrings = nodecg.Replicant('i18nStrings', { defaultValue: {} });
+	const i18nStrings = nodecg.Replicant('i18nStrings', { defaultValue: {} });
 	
 	const themeList = nodecg.Replicant('themeList', { defaultValue: ['Default'] });
 	const themeAssets = nodecg.Replicant('themeAssets', { defaultValue: {} });

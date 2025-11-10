@@ -124,9 +124,11 @@ function setupPlayerPanel(side) {
             }
         });
 
+        const visibilityKey = lowerCaseSide === 'l' ? 'left' : 'right';
+
         // --- Extra Bench Toggle --- 
         extraBenchVisible.on('change', (newValue) => {
-            const isVisible = newValue ? newValue[lowerCaseSide] : false;
+            const isVisible = newValue ? newValue[visibilityKey] : false;
             toggleExtraBenchBtn.textContent = isVisible ? 'Hide' : 'Show';
             toggleExtraBenchBtn.classList.toggle('btn-primary', isVisible);
         });
@@ -136,7 +138,7 @@ function setupPlayerPanel(side) {
             const currentVisibility = extraBenchVisible.value || { left: false, right: false };
             extraBenchVisible.value = {
                 ...currentVisibility,
-                [lowerCaseSide]: !currentVisibility[lowerCaseSide]
+                [visibilityKey]: !currentVisibility[visibilityKey]
             };
         });
 
