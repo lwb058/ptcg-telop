@@ -271,8 +271,6 @@ body, html {
     white-space: nowrap;
     overflow: hidden; 
     text-overflow: ellipsis; 
-    position: relative;
-    top: -1px;
 }
 .battle-skill-name.is-ability {
     color: var(--ability-tag-color);
@@ -291,7 +289,7 @@ body, html {
     justify-content: flex-end;
     height: 100%;
     position: relative;
-    top: 0px;
+    top: 0.5px;
     white-space: nowrap;
 }
 
