@@ -756,6 +756,7 @@ function setupPlayerPanel(side) {
             }
         });
 
+        const renderSlotDebounce = {};
         for (let i = 0; i < 9; i++) {
             const slotReplicant = nodecg.Replicant(`draft_slot${upperCaseSide}${i}`);
             slotReplicant.on('change', (newValue) => {
