@@ -3,248 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Deck Viewer</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            background-color: #2f3a4f;
-            color: #f0f0f0;
-            margin: 0;
-            padding: 1em;
-        }
-        .controls {
-            margin-bottom: 1em;
-        }
-        .deck-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #4f5d7b;
-            padding-bottom: 5px;
-            margin-bottom: 1em;
-            gap: 15px;
-        }
-        .deck-header h2 {
-            flex-shrink: 0;
-        }
-        .view-controls {
-            flex-grow: 1;
-            text-align: center;
-        }
-        .view-controls .view-btn {
-            padding: 5px 12px;
-            border: 1px solid #4f5d7b;
-            background-color: transparent;
-            color: #f0f0f0;
-            cursor: pointer;
-        }
-        .view-controls .view-btn.active {
-            background-color: #4f5d7b;
-            font-weight: bold;
-        }
-        .view-controls .view-btn:first-child {
-            border-top-left-radius: 5px;
-            border-bottom-left-radius: 5px;
-        }
-        .view-controls .view-btn:last-child {
-            border-top-right-radius: 5px;
-            border-bottom-right-radius: 5px;
-            border-left-width: 0;
-        }
-        .add-card-controls {
-            display: flex;
-            align-items: center;
-        }
-        .add-card-controls input {
-            padding: 5px;
-            margin-right: 5px;
-        }
-        .container {
-            display: flex;
-            gap: 20px;
-        }
-
-        #playerL-deck, #playerR-deck {
-            flex-basis: 0;
-            flex-grow: 1;
-            min-width: 0; /* Prevents content from overflowing flex item */
-        }
-        .table-wrapper, .icon-view-wrapper {
-            max-height: 66vh;
-            overflow-y: auto;
-            border: 1px solid #444;
-        }
-        .table-wrapper {
-             border-top: none;
-        }
-        .icon-view-wrapper {
-            padding: 1em;
-            display: none; /* Initially hidden */
-        }
-        .deck-table {
-            border-collapse: collapse;
-            width: 100%;
-            table-layout: fixed;
-        }
-        .deck-table th, .deck-table td {
-            border: 1px solid #444;
-            padding: 8px;
-            text-align: left;
-        }
-        .deck-table th:nth-child(1) { width: 8%; }
-        .deck-table th:nth-child(2) { width: auto; }
-        .deck-table th:nth-child(3) { width: 20%; }
-        .deck-table th:nth-child(4) { width: 10%; }
-        .deck-table th:nth-child(5) { width: 10%; }
-        .deck-table th {
-            background-color: #3a455c;
-        }
-        .deck-table img {
-            width: 45px;
-            vertical-align: middle;
-            cursor: pointer;
-            transition: transform 0.1s ease-in-out;
-        }
-        .deck-table img:hover {
-            transform: scale(1.1);
-        }
-        h2, h3 {
-            margin: 0;
-        }
-        button {
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-
-        /* Icon View Styles */
-        .card-category {
-            margin-bottom: 1em;
-        }
-        .card-category h3 {
-            border-bottom: 1px solid #4f5d7b;
-            padding-bottom: 5px;
-            margin-top: 0;
-            margin-bottom: 10px;
-            font-size: 1.2em;
-            color: #a9c0e0;
-        }
-        .card-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .card-grid .card-item {
-            position: relative;
-            width: 88px;
-            text-align: center;
-        }
-        .card-grid .card-item img {
-            width: 100%;
-            cursor: grab;
-            transition: transform 0.1s ease-in-out;
-            border-radius: 5px;
-        }
-        .card-grid .card-item img:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 10px #a9c0e0;
-        }
-        .card-item .delete-btn {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #e74c3c;
-            color: white;
-            border: 1px solid white;
-            border-radius: 50%;
-            width: 22px;
-            height: 22px;
-            font-size: 16px;
-            font-weight: bold;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            opacity: 0;
-            transform: scale(0.8);
-            transition: all 0.2s;
-        }
-        .card-item:hover .delete-btn {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        /* Prize Card Styles */
-        .prize-section {
-            margin-bottom: 1em;
-            padding: 0.5em;
-            border: 1px solid #4f5d7b;
-            border-radius: 5px;
-            background-color: #2a3447;
-        }
-        .prize-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-        .prize-header > * {
-            flex: 1;
-        }
-        .prize-header .header-center {
-            text-align: center;
-        }
-        .prize-header .prize-controls {
-            text-align: right;
-        }
-        .prize-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 3%;
-            min-height: 60px;
-            background-color: #2f3a4f;
-            padding: 1% 20%;
-            border-radius: 5px;
-        }
-        .prize-slot {
-            position: relative;
-            border: 2px dashed #4f5d7b;
-            border-radius: 5px;
-            aspect-ratio: 868 / 1212;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #2a3447;
-            transition: all 0.2s;
-        }
-        .prize-slot.droppable-hover {
-            border-color: #a9c0e0;
-            background-color: #404f6c;
-        }
-        .prize-slot img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .prize-slot .taken-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            border-radius: 4px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1.2em;
-            pointer-events: none;
-        }
-    </style>
+    <link rel="stylesheet" href="css/dashboard.css">
 </head>
-<body>
+<body class="deck-viewer-body">
     <div class="controls">
         <button id="clear-displays-btn">Clear Card Displays</button>
     </div>
@@ -258,7 +19,7 @@
                         <button id="prize-show-L" style="width: 120px">Show</button>
                     </div>
                     <div class="prize-controls">
-                        <button id="prize-clear-L">Clear</button>
+                        <button id="prize-clear-L" class="btn btn-danger">Clear</button>
                     </div>
                 </div>
                 <div class="prize-grid" id="prize-grid-L"></div>
@@ -299,7 +60,7 @@
                         <button id="prize-show-R" style="width: 120px">Show</button>
                     </div>
                     <div class="prize-controls">
-                        <button id="prize-clear-R">Clear</button>
+                        <button id="prize-clear-R" class="btn btn-danger">Clear</button>
                     </div>
                 </div>
                 <div class="prize-grid" id="prize-grid-R"></div>
@@ -334,6 +95,7 @@
     </div>
 
     <script src="js/dashboard.js"></script>
+    <script src="js/deck_importer.js"></script>
     <script>
         // Replicants
         var cardToShowL = nodecg.Replicant('cardToShowL');
@@ -415,17 +177,6 @@
             document.getElementById('prize-title-R').textContent = getI18nText('prize_cards');
             document.getElementById('prize-show-R').textContent = getI18nText('show');
             document.getElementById('prize-clear-R').textContent = getI18nText('clear');
-        }
-        function handleAddCard(side, inputEl) {
-            const code = inputEl.value.trim();
-            if (code) {
-                nodecg.sendMessage('importDeckOrCard', { side: side, code: code })
-                    .then(() => { inputEl.value = ''; })
-                    .catch(err => {
-                        console.error(`Error importing for player ${side}:`, err);
-                        alert(`Failed to import ${code}. See console for details.`);
-                    });
-            }
         }
         function sortCards(cardIds, db) {
             const supertypeOrder = { 'pokemon': 1, 'trainer': 2, 'energy': 3 };
@@ -728,10 +479,6 @@
         clearButton.addEventListener('click', () => {
             nodecg.sendMessageToBundle('_clearCard', 'ptcg-telop');
         });
-        addCardBtnL.addEventListener('click', () => handleAddCard('L', addCardIdL));
-        addCardIdL.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAddCard('L', addCardIdL); });
-        addCardBtnR.addEventListener('click', () => handleAddCard('R', addCardIdR));
-        addCardIdR.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAddCard('R', addCardIdR); });
 
         document.querySelectorAll('.view-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -766,24 +513,6 @@
         language.on('change', () => { updateUIText(); renderAllDecksIfReady(); });
         assetPaths.on('change', renderAllDecksIfReady);
         prizeCardsL.on('change', (newValue) => renderPrizes('L', newValue, prizeGridL));
-        prizeCardsR.on('change', (newValue) => renderPrizes('R', newValue, prizeGridR));
-
-        deckLoadingStatus.on('change', (newStatus) => {
-            const isLoadingAny = newStatus.loading;
-            const loadingSide = newStatus.side;
-            ['L', 'R'].forEach(side => {
-                const btn = document.getElementById(`add-card-btn-${side}`);
-                const input = document.getElementById(`add-card-id-${side}`);
-                btn.disabled = isLoadingAny;
-                input.disabled = isLoadingAny;
-                if (isLoadingAny) {
-                    btn.textContent = (side === loadingSide && newStatus.percentage > 0) ? `${newStatus.percentage.toFixed(0)}%` : 'Loading...';
-                } else {
-                    btn.textContent = 'Import';
-                }
-            });
-        });
-
         // --- Init ---
         NodeCG.waitForReplicants(deckL, deckR, cardDatabase, playerL_name, playerR_name, i18nStrings, language, deckLoadingStatus, prizeCardsL, prizeCardsR).then(() => {
             playerLDeckTitle.textContent = `${playerL_name.value || 'Player L'}'s Deck`;
@@ -792,6 +521,10 @@
             renderAllDecksIfReady();
             renderPrizes('L', prizeCardsL.value, prizeGridL);
             renderPrizes('R', prizeCardsR.value, prizeGridR);
+
+            // Setup the shared deck importers
+            setupDeckImporter({ side: 'L', inputId: 'add-card-id-L', buttonId: 'add-card-btn-L' });
+            setupDeckImporter({ side: 'R', inputId: 'add-card-id-R', buttonId: 'add-card-btn-R' });
         });
     </script>
 

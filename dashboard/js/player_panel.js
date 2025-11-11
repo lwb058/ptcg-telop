@@ -76,6 +76,16 @@ function setupPlayerPanel(side) {
         const extraBenchContainer = document.getElementById(`extra-bench-container-${lowerCaseSide}`);
         const toggleExtraBenchBtn = document.getElementById(`toggle-extra-bench-${lowerCaseSide}`);
 
+        // --- Deck Importer Setup ---
+        setupDeckImporter({
+            side: upperCaseSide,
+            inputId: `deck-id-${lowerCaseSide}`,
+            buttonId: `set-deck-btn-${lowerCaseSide}`,
+            onDeckIdChange: (newDeckId) => {
+                deckId.value = newDeckId;
+            }
+        });
+
         // --- Lost Zone Shortcut Buttons ---
         document.getElementById(`lost-zone-${lowerCaseSide}-plus1`).addEventListener('click', () => addLostZone(1));
         document.getElementById(`lost-zone-${lowerCaseSide}-plus2`).addEventListener('click', () => addLostZone(2));
@@ -88,28 +98,6 @@ function setupPlayerPanel(side) {
         }
 
         const extraBenchVisible = nodecg.Replicant('extraBenchVisible');
-        const renderSlotDebounce = {};
-
-        deckLoadingStatus.on('change', (newStatus) => {
-            const isLoading = newStatus.loading;
-            const statusSide = newStatus.side;
-
-            if (isLoading && statusSide === upperCaseSide) {
-                // This panel is loading
-                setDeckBtn.disabled = true;
-                const percentage = newStatus.percentage || 0;
-                setDeckBtn.textContent = `${percentage.toFixed(0)}%`;
-            } else if (isLoading) {
-                // Another panel is loading
-                setDeckBtn.disabled = true;
-                setDeckBtn.textContent = 'Loading...';
-            } else {
-                // No panel is loading
-                setDeckBtn.disabled = false;
-                setDeckBtn.textContent = 'Import';
-            }
-        });
-
         const visibilityKey = lowerCaseSide === 'l' ? 'left' : 'right';
 
         // --- Extra Bench Toggle --- 
@@ -243,17 +231,6 @@ function setupPlayerPanel(side) {
         energyCheck.addEventListener('change', createActionHandler('energy'));
         supporterCheck.addEventListener('change', createActionHandler('supporter'));
         retreatCheck.addEventListener('change', createActionHandler('retreat'));
-
-        setDeckBtn.addEventListener('click', () => {
-            const deckCode = deckIdInput.value.trim();
-            if (!deckCode) return alert('Please enter a Deck ID or Card ID.');
-            deckId.value = deckCode;
-            nodecg.sendMessage('importDeckOrCard', { side: upperCaseSide, code: deckCode })
-                .catch(err => {
-                    console.error('Import failed', err);
-                    alert(`Failed to import: ${err.error || 'Unknown error'}`);
-                });
-        });
 
         function renderSlot(index, slotData, currentDeck, db) {
             const slotEl = document.getElementById(`slot-${upperCaseSide}${index}`);
