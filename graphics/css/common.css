@@ -98,8 +98,8 @@ body, html {
     position: absolute; 
     width: 447.0px; 
     height: auto; 
-    top: -60px; 
-    left: -35px; 
+    top: -62px; 
+    left: -36px; 
 }
 .battle-pokemon-image.is-v {
     top: -99px;
@@ -313,7 +313,7 @@ body, html {
 }
 .bench-pokemon-wrapper { display: flex; align-items: flex-start; gap: 5px; width: 100%; height: 100%; }
 .bench-card-image-area { position: relative; width: 142px; height: 88px; margin: 0 auto; display: flex; flex-shrink: 0; overflow: hidden; border-radius: 4px; border: var(--image-border) solid var(--module-color-border); }
-.bench-pokemon-image { position: absolute; width: 171.4px; height: auto; top: -26.5px; left: -13.8px; }
+.bench-pokemon-image { position: absolute; width: 171.4px; height: auto; top: -25.5px; left: -13.8px; }
 .bench-pokemon-image.is-v { top: -45.5px; }
 .bench-attached-energies { position: absolute; bottom: -2px; left: -2px; display: flex; gap: 1px; }
 .bench-attached-energies:not(:empty) { background-color: var(--module-color-border); border-radius: 0px 11px 0px 0px; padding: 1px; border: 1px solid var(--module-color-border); box-shadow: 1px 1px 3px rgba(0,0,0,0.6); }

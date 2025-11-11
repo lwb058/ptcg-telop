@@ -32,6 +32,8 @@ body.is-inactive:hover {
 }
 .btn-danger { background-color: #e74c3c; color: white; border-color: #e74c3c; }
 .btn-danger:hover { background-color: #c0392b; }
+.btn-superdanger { background-color: black; color: #c0392b; font-weight: 900; border-color: black; }
+.btn-superdanger:hover { background-color: #4e4e4e; }
 .flex-container { display: flex; gap: 10px; align-items: center; }
 .flex-container > * {
     flex: 1;
