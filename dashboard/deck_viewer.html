@@ -16,7 +16,7 @@
                 <div class="prize-header">
                     <h3 id="prize-title-L">Prize Cards</h3>
                     <div class="header-center">
-                        <button id="prize-show-L" style="width: 120px">Show</button>
+                        <button id="prize-show-L" class="btn btn-primary" style="width: 120px">Show</button>
                     </div>
                     <div class="prize-controls">
                         <button id="prize-clear-L" class="btn btn-danger">Clear</button>
@@ -57,7 +57,7 @@
                 <div class="prize-header">
                     <h3 id="prize-title-R">Prize Cards</h3>
                     <div class="header-center">
-                        <button id="prize-show-R" style="width: 120px">Show</button>
+                        <button id="prize-show-R" class="btn btn-primary" style="width: 120px">Show</button>
                     </div>
                     <div class="prize-controls">
                         <button id="prize-clear-R" class="btn btn-danger">Clear</button>
@@ -513,6 +513,8 @@
         language.on('change', () => { updateUIText(); renderAllDecksIfReady(); });
         assetPaths.on('change', renderAllDecksIfReady);
         prizeCardsL.on('change', (newValue) => renderPrizes('L', newValue, prizeGridL));
+        prizeCardsR.on('change', (newValue) => renderPrizes('R', newValue, prizeGridR));
+
         // --- Init ---
         NodeCG.waitForReplicants(deckL, deckR, cardDatabase, playerL_name, playerR_name, i18nStrings, language, deckLoadingStatus, prizeCardsL, prizeCardsR).then(() => {
             playerLDeckTitle.textContent = `${playerL_name.value || 'Player L'}'s Deck`;
