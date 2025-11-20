@@ -39,20 +39,21 @@ module.exports = function (nodecg) {
 				"竜": { color: "#b4b432", opacity: 0.2 },
 				"無": { color: "#b9b9b9", opacity: 0.2 }
 			},
-            hotkeys: {
+			hotkeys: {
 				discard: 'Escape',
 				apply: 'Control+S'
 			},
-            lostZoneEnabled: false,
+			lostZoneEnabled: false,
 			reverseCardDisplay: false,
-            autoSideTake: true,
-            autoRetreatToggle: true,
-            showDeckEnergyOnly: true,
-            autoCheckSupporter: true,
-            autoTrashTM: true,
-            weaknessDamage: true,
-            toolLimit: 4,
-			language: "jp"
+			autoSideTake: true,
+			autoRetreatToggle: true,
+			showDeckEnergyOnly: true,
+			autoCheckSupporter: true,
+			autoTrashTM: true,
+			weaknessDamage: true,
+			toolLimit: 4,
+			language: "jp",
+			forceRefetchDeck: false
 		}
 	});
 
@@ -69,7 +70,7 @@ module.exports = function (nodecg) {
 	const cardToShowL = nodecg.Replicant('cardToShowL', { defaultValue: '' });
 	const cardToShowR = nodecg.Replicant('cardToShowR', { defaultValue: '' });
 	const i18nStrings = nodecg.Replicant('i18nStrings', { defaultValue: {} });
-	
+
 	const themeList = nodecg.Replicant('themeList', { defaultValue: ['Default'] });
 	const themeAssets = nodecg.Replicant('themeAssets', { defaultValue: {} });
 	const activeThemeCss = nodecg.Replicant('activeThemeCss', { defaultValue: null });
@@ -123,14 +124,14 @@ module.exports = function (nodecg) {
 	}
 	const language = nodecg.Replicant('language', { defaultValue: 'jp' });
 
-    const live_lostZoneL = nodecg.Replicant('live_lostZoneL', { defaultValue: 0 });
+	const live_lostZoneL = nodecg.Replicant('live_lostZoneL', { defaultValue: 0 });
 	const draft_lostZoneL = nodecg.Replicant('draft_lostZoneL', { defaultValue: 0 });
 	const live_lostZoneR = nodecg.Replicant('live_lostZoneR', { defaultValue: 0 });
 	const draft_lostZoneR = nodecg.Replicant('draft_lostZoneR', { defaultValue: 0 });
 	live_lostZoneL.once('change', (newValue) => { if (newValue !== draft_lostZoneL.value) draft_lostZoneL.value = newValue; });
 	live_lostZoneR.once('change', (newValue) => { if (newValue !== draft_lostZoneR.value) draft_lostZoneR.value = newValue; });
 
-    ptcgSettings.on('change', (newValue, oldValue) => {
+	ptcgSettings.on('change', (newValue, oldValue) => {
 
 		// --- START THEME CHANGE LOGIC ---
 		const newTheme = (newValue && newValue.activeTheme) || 'Default';
@@ -144,21 +145,21 @@ module.exports = function (nodecg) {
 				activeThemeCss.value = `/assets/ptcg-telop/${newTheme}/${newTheme}.css`;
 			}
 		}
-        // --- END THEME CHANGE LOGIC ---
+		// --- END THEME CHANGE LOGIC ---
 
 		const newLang = (newValue && newValue.language) || 'jp';
 		const oldLang = (oldValue && oldValue.language); // No default for oldLang
 
-        if (language.value !== newLang) {
-            language.value = newLang;
-        }
+		if (language.value !== newLang) {
+			language.value = newLang;
+		}
 
-        if (newValue && !newValue.lostZoneEnabled) {
-            if (live_lostZoneL.value !== 0) live_lostZoneL.value = 0;
-            if (draft_lostZoneL.value !== 0) draft_lostZoneL.value = 0;
-            if (live_lostZoneR.value !== 0) live_lostZoneR.value = 0;
-            if (draft_lostZoneR.value !== 0) draft_lostZoneR.value = 0;
-        }
+		if (newValue && !newValue.lostZoneEnabled) {
+			if (live_lostZoneL.value !== 0) live_lostZoneL.value = 0;
+			if (draft_lostZoneL.value !== 0) draft_lostZoneL.value = 0;
+			if (live_lostZoneR.value !== 0) live_lostZoneR.value = 0;
+			if (draft_lostZoneR.value !== 0) draft_lostZoneR.value = 0;
+		}
 
 
 		// Update asset path for card images
@@ -174,48 +175,48 @@ module.exports = function (nodecg) {
 			loadCardDatabase();
 			loadI18nStrings();
 		}
-    });
+	});
 
-    // Stadium
-    const live_stadium = nodecg.Replicant('live_stadium', { defaultValue: { cardId: null, used: false } });
-    const draft_stadium = nodecg.Replicant('draft_stadium', { defaultValue: { cardId: null, used: false } });
-    live_stadium.once('change', (newValue) => { if (JSON.stringify(newValue) !== JSON.stringify(draft_stadium.value)) draft_stadium.value = JSON.parse(JSON.stringify(newValue)); });
+	// Stadium
+	const live_stadium = nodecg.Replicant('live_stadium', { defaultValue: { cardId: null, used: false } });
+	const draft_stadium = nodecg.Replicant('draft_stadium', { defaultValue: { cardId: null, used: false } });
+	live_stadium.once('change', (newValue) => { if (JSON.stringify(newValue) !== JSON.stringify(draft_stadium.value)) draft_stadium.value = JSON.parse(JSON.stringify(newValue)); });
 
-    // Side/Prize Card Replicants (Live vs Draft)
-    const live_sideL = nodecg.Replicant('live_sideL', { defaultValue: 6 });
-    const draft_sideL = nodecg.Replicant('draft_sideL', { defaultValue: 6 });
-    const live_sideR = nodecg.Replicant('live_sideR', { defaultValue: 6 });
-    const draft_sideR = nodecg.Replicant('draft_sideR', { defaultValue: 6 });
-    live_sideL.once('change', (newValue) => { if (newValue !== draft_sideL.value) draft_sideL.value = newValue; });
-    live_sideR.once('change', (newValue) => { if (newValue !== draft_sideR.value) draft_sideR.value = newValue; });
+	// Side/Prize Card Replicants (Live vs Draft)
+	const live_sideL = nodecg.Replicant('live_sideL', { defaultValue: 6 });
+	const draft_sideL = nodecg.Replicant('draft_sideL', { defaultValue: 6 });
+	const live_sideR = nodecg.Replicant('live_sideR', { defaultValue: 6 });
+	const draft_sideR = nodecg.Replicant('draft_sideR', { defaultValue: 6 });
+	live_sideL.once('change', (newValue) => { if (newValue !== draft_sideL.value) draft_sideL.value = newValue; });
+	live_sideR.once('change', (newValue) => { if (newValue !== draft_sideR.value) draft_sideR.value = newValue; });
 
-    // VSTAR Power Replicants (Live vs Draft)
-    const live_vstar_L = nodecg.Replicant('live_vstar_L', { defaultValue: false });
-    const draft_vstar_L = nodecg.Replicant('draft_vstar_L', { defaultValue: false });
-    const live_vstar_R = nodecg.Replicant('live_vstar_R', { defaultValue: false });
-    const draft_vstar_R = nodecg.Replicant('draft_vstar_R', { defaultValue: false });
-    live_vstar_L.once('change', (newValue) => { if (newValue !== draft_vstar_L.value) draft_vstar_L.value = newValue; });
-    live_vstar_R.once('change', (newValue) => { if (newValue !== draft_vstar_R.value) draft_vstar_R.value = newValue; });
+	// VSTAR Power Replicants (Live vs Draft)
+	const live_vstar_L = nodecg.Replicant('live_vstar_L', { defaultValue: false });
+	const draft_vstar_L = nodecg.Replicant('draft_vstar_L', { defaultValue: false });
+	const live_vstar_R = nodecg.Replicant('live_vstar_R', { defaultValue: false });
+	const draft_vstar_R = nodecg.Replicant('draft_vstar_R', { defaultValue: false });
+	live_vstar_L.once('change', (newValue) => { if (newValue !== draft_vstar_L.value) draft_vstar_L.value = newValue; });
+	live_vstar_R.once('change', (newValue) => { if (newValue !== draft_vstar_R.value) draft_vstar_R.value = newValue; });
 
-    // Turn & Action Status Replicants (Live vs Draft)
-    const live_currentTurn = nodecg.Replicant('live_currentTurn', { defaultValue: 'L' });
-    const draft_currentTurn = nodecg.Replicant('draft_currentTurn', { defaultValue: 'L' });
-    live_currentTurn.once('change', (newValue) => { if (newValue !== draft_currentTurn.value) draft_currentTurn.value = newValue; });
+	// Turn & Action Status Replicants (Live vs Draft)
+	const live_currentTurn = nodecg.Replicant('live_currentTurn', { defaultValue: 'L' });
+	const draft_currentTurn = nodecg.Replicant('draft_currentTurn', { defaultValue: 'L' });
+	live_currentTurn.once('change', (newValue) => { if (newValue !== draft_currentTurn.value) draft_currentTurn.value = newValue; });
 
-    // Create individual, independent replicants for each action status
-    const actionTypes = ['energy', 'supporter', 'retreat'];
-    ['L', 'R'].forEach(side => {
-        actionTypes.forEach(action => {
-            const liveRep = nodecg.Replicant(`live_action_${action}_${side}`, { defaultValue: false });
-            const draftRep = nodecg.Replicant(`draft_action_${action}_${side}`, { defaultValue: false });
-            // Ensure draft is in sync with live on startup
-            liveRep.once('change', (newValue) => {
-                if (newValue !== draftRep.value) {
-                    draftRep.value = newValue;
-                }
-            });
-        });
-    });
+	// Create individual, independent replicants for each action status
+	const actionTypes = ['energy', 'supporter', 'retreat'];
+	['L', 'R'].forEach(side => {
+		actionTypes.forEach(action => {
+			const liveRep = nodecg.Replicant(`live_action_${action}_${side}`, { defaultValue: false });
+			const draftRep = nodecg.Replicant(`draft_action_${action}_${side}`, { defaultValue: false });
+			// Ensure draft is in sync with live on startup
+			liveRep.once('change', (newValue) => {
+				if (newValue !== draftRep.value) {
+					draftRep.value = newValue;
+				}
+			});
+		});
+	});
 
 	// == Player & Board State Replicants ==
 	// Selections
@@ -248,7 +249,7 @@ module.exports = function (nodecg) {
 		// Declare both live and draft replicants
 		const liveRep = nodecg.Replicant(`live_slotL${i}`, { defaultValue: slotDefault });
 		const draftRep = nodecg.Replicant(`draft_slotL${i}`, { defaultValue: slotDefault });
-		
+
 		const liveRepR = nodecg.Replicant(`live_slotR${i}`, { defaultValue: slotDefault });
 		const draftRepR = nodecg.Replicant(`draft_slotR${i}`, { defaultValue: slotDefault });
 
@@ -275,7 +276,7 @@ module.exports = function (nodecg) {
 				nodecg.log.warn(`[DB_DEBUG] Database directory does not exist, creating: ${dbDir}`);
 				fs.mkdirSync(dbDir, { recursive: true });
 			}
-			
+
 			if (!fs.existsSync(dbPath)) {
 				cardDatabase.value = {};
 				nodecg.log.error(`[DB_DEBUG] CRITICAL_PATH_TEST: Card database file does not exist at path: ${dbPath}. Initialized empty.`);
@@ -319,7 +320,7 @@ module.exports = function (nodecg) {
 	nodecg.listenFor('importDeckOrCard', ({ side, code }, callback) => {
 		const tryDeckImport = () => {
 			nodecg.log.info(`[Import Flow] Attempting to import "${code}" as a DECK for Player ${side}.`);
-		
+
 			const pythonDir = path.join(__dirname, '..', 'python');
 			const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
 			const scriptMap = {
@@ -333,8 +334,12 @@ module.exports = function (nodecg) {
 			const dbFileName = `database_${lang}.json`;
 			const absoluteDbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
 			const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
-			
+
 			const args = [pythonScriptPath, code, '--database-path', absoluteDbPath];
+			// Conditionally add --keep argument based on ptcgSettings.value.forceRefetchDeck
+			if (!(ptcgSettings.value && ptcgSettings.value.forceRefetchDeck)) {
+				args.push('--keep');
+			}
 			const child = spawn(pythonCommand, args, { cwd: pythonDir });
 
 			let stdoutData = '';
@@ -415,6 +420,7 @@ module.exports = function (nodecg) {
 				nodecg.log.info(`Card ${sanitizedCardId} not in database. Fetching with Python...`);
 				const pythonDir = path.join(__dirname, '..', 'python');
 				deckLoadingStatus.value = { loading: true, side: side, percentage: 0, text: 'Fetching...' };
+
 				const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
 				const scriptMap = {
 					jp: 'get_single_card_jp.py',
@@ -427,27 +433,42 @@ module.exports = function (nodecg) {
 				const dbFileName = `database_${lang}.json`;
 				const absoluteDbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
 				const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
-				const command = `${pythonCommand} "${pythonScriptPath}" "${sanitizedCardId}" --database-path "${absoluteDbPath}"`;
 
-				exec(command, { cwd: pythonDir }, (error, stdout, stderr) => {
-					if (error) {
-						nodecg.log.error(`[Import Flow] FINAL FAILURE: Could not import "${code}" as either a deck or a single card.`);
-						nodecg.log.error(`Single card fetch error details: ${stderr}`);
+				const args = [pythonScriptPath, sanitizedCardId, '--database-path', absoluteDbPath];
+				const child = spawn(pythonCommand, args, { cwd: pythonDir });
+
+				let stderrData = '';
+				child.stderr.on('data', (data) => {
+					stderrData += data.toString();
+				});
+
+				child.on('close', (exitCode) => {
+					if (exitCode !== 0) {
+						nodecg.log.error(`[Import Flow] Failed to fetch card ${sanitizedCardId} (Exit Code: ${exitCode}).`);
+						nodecg.log.error(`Stderr: ${stderrData}`);
 						deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
-						if (callback) callback({ error: error.message, stderr: stderr });
+						if (callback) callback(new Error(`Failed to fetch card. Exit code: ${exitCode}`));
 						return;
 					}
+
 					nodecg.log.info(`Python script for ${sanitizedCardId} finished. Reloading database.`);
 					loadCardDatabase();
+
 					setTimeout(() => {
 						if (cardDatabase.value && cardDatabase.value[sanitizedCardId] && cardDatabase.value[sanitizedCardId].name) {
 							addCardToDeck(sanitizedCardId);
 						} else {
 							nodecg.log.error(`[Import Flow] FINAL FAILURE: Script ran for "${sanitizedCardId}" but it was not added to the database.`);
 							deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
-							if (callback) callback({ error: `Failed to fetch card ${sanitizedCardId}.` });
+							if (callback) callback(new Error(`Failed to fetch card ${sanitizedCardId}.`));
 						}
 					}, 200);
+				});
+
+				child.on('error', (err) => {
+					nodecg.log.error(`[Import Flow] Failed to start subprocess for single card import: ${err.message}`);
+					deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
+					if (callback) callback(err);
 				});
 			}
 		};
@@ -459,10 +480,10 @@ module.exports = function (nodecg) {
 
 	nodecg.listenFor('removeCardFromDeck', ({ side, cardId }, callback) => {
 		nodecg.log.info(`Request to remove card ${cardId} from Player ${side}'s deck.`);
-	
+
 		const deckReplicant = side === 'L' ? deckL : deckR;
 		const currentCards = deckReplicant.value.cards;
-	
+
 		if (Array.isArray(currentCards)) {
 			const initialLength = currentCards.length;
 			const newCards = currentCards.filter(id => id !== cardId);
@@ -501,7 +522,7 @@ module.exports = function (nodecg) {
 			case 'SET_ACTION_STATUS':
 			case 'SET_ABILITY_USED':
 			case 'SET_STADIUM':
-			case 'SET_STADIUM_USED':			
+			case 'SET_STADIUM_USED':
 			case 'SET_VSTAR_STATUS':
 				return 1;
 
@@ -524,7 +545,7 @@ module.exports = function (nodecg) {
 			case 'SET_POKEMON':
 			case 'REPLACE_POKEMON': // Evolution
 			case 'EXIT_POKEMON': // Animation for REMOVE_POKEMON
-            case 'SET_TURN':
+			case 'SET_TURN':
 			case 'SET_LOST_ZONE':
 				return 5;
 			case 'APPLY_SWITCH':
@@ -583,12 +604,12 @@ module.exports = function (nodecg) {
 		// This check is bypassed for simpler replicants or operations that manage their own replicants.
 		if (type !== 'SET_POKEMON' && type !== 'APPLY_SWITCH' && type !== 'SET_ACTION_STATUS' && type !== 'SET_TURN' && type !== 'SET_SIDES' && type !== 'ATTACK' && type !== 'SET_STADIUM' && type !== 'SET_STADIUM_USED' && type !== 'SET_ABILITY_USED' && type !== 'SET_VSTAR_STATUS' && type !== 'SET_LOST_ZONE' && type !== 'SET_KO_STATUS' && (!replicant || typeof replicant.value !== 'object' || replicant.value === null)) {
 			// For PROMOTE, the logic handles its own replicants. For others, if the replicant is not ready, abort.
-				// SWITCH_POKEMON is now split and does not reach here directly.
-				nodecg.log.warn(`Operation ${type} aborted: replicant or its value is not a valid object.`);
-				return;
+			// SWITCH_POKEMON is now split and does not reach here directly.
+			nodecg.log.warn(`Operation ${type} aborted: replicant or its value is not a valid object.`);
+			return;
 		}
 
-		switch(type) {
+		switch (type) {
 			case 'SLIDE_OUT':
 				// This is an animation-only operation, no data logic needed.
 				break;
@@ -650,27 +671,27 @@ module.exports = function (nodecg) {
 				replicant.value.extraHp = value;
 				updateKOStatusForSlot(payload.target, mode);
 				break;
-                                    case 'SET_TOOLS': {
-                const toolLimit = (ptcgSettings.value && ptcgSettings.value.toolLimit) || 4;
-                const currentTools = replicant.value.attachedToolIds || [];
-                const newTools = payload.tools || [];
+			case 'SET_TOOLS': {
+				const toolLimit = (ptcgSettings.value && ptcgSettings.value.toolLimit) || 4;
+				const currentTools = replicant.value.attachedToolIds || [];
+				const newTools = payload.tools || [];
 
-                // Check if this is an addition
-                if (newTools.length > currentTools.length) {
-                    // It's an addition, so we must respect the limit.
-                    if (newTools.length <= toolLimit) {
-                        replicant.value.attachedToolIds = [...newTools];
-                        nodecg.log.info(`SET_TOOLS (add): target=${payload.target}, current=${JSON.stringify(replicant.value.attachedToolIds)}`);
-                    } else {
-                        nodecg.log.warn(`SET_TOOLS_FAILED (add): Limit of ${toolLimit} reached. Cannot add.`);
-                    }
-                } else {
-                    // It's a removal or reorder, which should always be allowed.
-                    replicant.value.attachedToolIds = [...newTools];
-                    nodecg.log.info(`SET_TOOLS (remove/reorder): target=${payload.target}, current=${JSON.stringify(replicant.value.attachedToolIds)}`);
-                }
-                break;
-            }
+				// Check if this is an addition
+				if (newTools.length > currentTools.length) {
+					// It's an addition, so we must respect the limit.
+					if (newTools.length <= toolLimit) {
+						replicant.value.attachedToolIds = [...newTools];
+						nodecg.log.info(`SET_TOOLS (add): target=${payload.target}, current=${JSON.stringify(replicant.value.attachedToolIds)}`);
+					} else {
+						nodecg.log.warn(`SET_TOOLS_FAILED (add): Limit of ${toolLimit} reached. Cannot add.`);
+					}
+				} else {
+					// It's a removal or reorder, which should always be allowed.
+					replicant.value.attachedToolIds = [...newTools];
+					nodecg.log.info(`SET_TOOLS (remove/reorder): target=${payload.target}, current=${JSON.stringify(replicant.value.attachedToolIds)}`);
+				}
+				break;
+			}
 			case 'REMOVE_POKEMON': {
 				// Reset the slot to its default empty state
 				const isBattleSlot = replicant.name.endsWith('0');
@@ -732,151 +753,152 @@ module.exports = function (nodecg) {
 				replicant.value.attachedEnergy = [...payload.energies];
 				break;
 			case 'APPLY_SWITCH': {
-                const { source, target } = payload;
-                if (!source || !target) {
-                    nodecg.log.error('Invalid PROMOTE operation: source or target missing.', payload);
-                    return;
-                }
+				const { source, target } = payload;
+				if (!source || !target) {
+					nodecg.log.error('Invalid PROMOTE operation: source or target missing.', payload);
+					return;
+				}
 
-                const side = source.charAt(4); // "slotL1" -> "L"
-                const sourceRep = nodecg.Replicant(`${prefix}${source}`);
-                const targetRep = nodecg.Replicant(`${prefix}${target}`);
+				const side = source.charAt(4); // "slotL1" -> "L"
+				const sourceRep = nodecg.Replicant(`${prefix}${source}`);
+				const targetRep = nodecg.Replicant(`${prefix}${target}`);
 
-                // Directly get deep copies of the values
-                const sourceVal = JSON.parse(JSON.stringify(sourceRep.value || {}));
-                const targetVal = JSON.parse(JSON.stringify(targetRep.value || {}));
+				// Directly get deep copies of the values
+				const sourceVal = JSON.parse(JSON.stringify(sourceRep.value || {}));
+				const targetVal = JSON.parse(JSON.stringify(targetRep.value || {}));
 
 				// Force slide-in animation for both source and target
 				sourceVal.forceSlideIn = true;
 				targetVal.forceSlideIn = true;
 
 
-                // Core logic: When a Pokémon moves into a battle slot (or swaps with it), its ailments are cleared.
-                // Check if the target is a battle slot
-                if (target.endsWith('0')) {
-                    if (sourceVal.cardId) { // Ensure we're not moving an empty slot's "ghost"
-                        sourceVal.ailments = [];
-                    }
-                }
-                // Check if the source is a battle slot and the target is not
-                if (source.endsWith('0') && !target.endsWith('0')) {
-                     if (targetVal.cardId) {
-                        targetVal.ailments = [];
-                    }
-                }
+				// Core logic: When a Pokémon moves into a battle slot (or swaps with it), its ailments are cleared.
+				// Check if the target is a battle slot
+				if (target.endsWith('0')) {
+					if (sourceVal.cardId) { // Ensure we're not moving an empty slot's "ghost"
+						sourceVal.ailments = [];
+					}
+				}
+				// Check if the source is a battle slot and the target is not
+				if (source.endsWith('0') && !target.endsWith('0')) {
+					if (targetVal.cardId) {
+						targetVal.ailments = [];
+					}
+				}
 
-                // Perform the swap
-                sourceRep.value = targetVal;
-                targetRep.value = sourceVal;
-				
+				// Perform the swap
+				sourceRep.value = targetVal;
+				targetRep.value = sourceVal;
+
 				// --- Auto Retreat Logic ---
 				const autoRetreat = ptcgSettings.value && ptcgSettings.value.autoRetreatToggle;
 				if (autoRetreat && mode === 'draft') {
 					// Check if it involves the Active Spot
 					if (source === 'slotL0') {
 						nodecg.Replicant('draft_action_retreat_L').value = true;
-												operationQueue.value.push({
-													type: 'SET_ACTION_STATUS',
-													payload: { target: 'action_retreat_L', status: true },
-													priority: 1, // State change
-													id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-												});
-											}
-											if (source === 'slotR0') {
-												nodecg.Replicant('draft_action_retreat_R').value = true;
-												operationQueue.value.push({
-													type: 'SET_ACTION_STATUS',
-													payload: { target: 'action_retreat_R', status: true },
-													priority: 1, // State change
-													id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-												});					}
+						operationQueue.value.push({
+							type: 'SET_ACTION_STATUS',
+							payload: { target: 'action_retreat_L', status: true },
+							priority: 1, // State change
+							id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+						});
+					}
+					if (source === 'slotR0') {
+						nodecg.Replicant('draft_action_retreat_R').value = true;
+						operationQueue.value.push({
+							type: 'SET_ACTION_STATUS',
+							payload: { target: 'action_retreat_R', status: true },
+							priority: 1, // State change
+							id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+						});
+					}
 				}
-                break;
-            }
-            case 'ATTACK': {
-                // This operation is not slot-specific in its call, so it doesn't use the 'replicant' parameter.
-                // It constructs the replicant name itself based on the payload and mode.
-                
-                // Robustness: Handle both single target string and array of targets
-                const targets = Array.isArray(payload.targets) ? payload.targets : [payload.target];
+				break;
+			}
+			case 'ATTACK': {
+				// This operation is not slot-specific in its call, so it doesn't use the 'replicant' parameter.
+				// It constructs the replicant name itself based on the payload and mode.
 
-                targets.forEach(slotId => {
-                    if (!slotId) return; // Skip if a target is invalid
-                    const prefix = mode === 'draft' ? 'draft_' : 'live_';
-                    const targetRep = nodecg.Replicant(slotId.replace('slot', prefix + 'slot'));
-                    if (targetRep && targetRep.value) {
-                        // Ensure damage is treated as a number
-                        const currentDamage = Number(targetRep.value.damage) || 0;
-                        const newDamage = Number(payload.damage) || 0;
-                        targetRep.value.damage = currentDamage + newDamage;
+				// Robustness: Handle both single target string and array of targets
+				const targets = Array.isArray(payload.targets) ? payload.targets : [payload.target];
 
-                        // After applying damage, check if the Pokémon is knocked out.
-                        updateKOStatusForSlot(slotId, mode);
-                    }
-                });
-                break;
-            }
-            
-                        case 'SET_TURN': {
-                const turnRep = nodecg.Replicant(`${prefix}currentTurn`);
-                turnRep.value = payload.side;
+				targets.forEach(slotId => {
+					if (!slotId) return; // Skip if a target is invalid
+					const prefix = mode === 'draft' ? 'draft_' : 'live_';
+					const targetRep = nodecg.Replicant(slotId.replace('slot', prefix + 'slot'));
+					if (targetRep && targetRep.value) {
+						// Ensure damage is treated as a number
+						const currentDamage = Number(targetRep.value.damage) || 0;
+						const newDamage = Number(payload.damage) || 0;
+						targetRep.value.damage = currentDamage + newDamage;
 
-                // Clear all selections when the turn changes.
-                selections.value = [];
+						// After applying damage, check if the Pokémon is knocked out.
+						updateKOStatusForSlot(slotId, mode);
+					}
+				});
+				break;
+			}
 
-                // When a turn ends, reset all individual action statuses for both players
-                ['L', 'R'].forEach(side => {
-                    actionTypes.forEach(action => {
-                        nodecg.Replicant(`${prefix}action_${action}_${side}`).value = false;
-                    });
-                });
-                // Also reset all ability used statuses
-                for (let i = 0; i < 9; i++) {
-                    nodecg.Replicant(`${prefix}slotL${i}`).value.abilityUsed = false;
-                    nodecg.Replicant(`${prefix}slotR${i}`).value.abilityUsed = false;
-                }
-                // Reset stadium used status
-                const stadiumRep = nodecg.Replicant(`${prefix}stadium`);
-                if (stadiumRep.value) {
-                    stadiumRep.value = { ...stadiumRep.value, used: false };
-                }
+			case 'SET_TURN': {
+				const turnRep = nodecg.Replicant(`${prefix}currentTurn`);
+				turnRep.value = payload.side;
 
-                // Auto-trash Technical Machines if the setting is enabled
-                if (ptcgSettings.value.autoTrashTM && mode === 'draft') {
-                    const db = cardDatabase.value;
-                    for (let i = 0; i < 9; i++) {
-                        ['L', 'R'].forEach(side => {
-                            const slotId = `slot${side}${i}`;
-                            const slotRep = nodecg.Replicant(`${prefix}${slotId}`);
-                            if (slotRep.value && slotRep.value.attachedToolIds && slotRep.value.attachedToolIds.length > 0) {
-                                const initialTools = slotRep.value.attachedToolIds;
-                                const toolsToKeep = initialTools.filter(toolId => {
-                                    const cardData = db[toolId];
-                                    return !(cardData && cardData.subtype === 'tool' && cardData.trainer?.attacks);
-                                });
+				// Clear all selections when the turn changes.
+				selections.value = [];
 
-                                if (initialTools.length !== toolsToKeep.length) {
-                                    // Use queueOperation directly to add a new, distinct operation
-                                    nodecg.sendMessage('queueOperation', {
-                                        type: 'SET_TOOLS',
-                                        payload: {
-                                            target: slotId,
-                                            tools: toolsToKeep
-                                        }
-                                    });
-                                }
-                            }
-                        });
-                    }
-                }
-                break;
-            }
-            case 'SET_ACTION_STATUS': {
-                // The replicant is now found by its target name, e.g., "action_energy_L"
-                const { status } = payload;
-                replicant.value = status;
-                break;
-            }
+				// When a turn ends, reset all individual action statuses for both players
+				['L', 'R'].forEach(side => {
+					actionTypes.forEach(action => {
+						nodecg.Replicant(`${prefix}action_${action}_${side}`).value = false;
+					});
+				});
+				// Also reset all ability used statuses
+				for (let i = 0; i < 9; i++) {
+					nodecg.Replicant(`${prefix}slotL${i}`).value.abilityUsed = false;
+					nodecg.Replicant(`${prefix}slotR${i}`).value.abilityUsed = false;
+				}
+				// Reset stadium used status
+				const stadiumRep = nodecg.Replicant(`${prefix}stadium`);
+				if (stadiumRep.value) {
+					stadiumRep.value = { ...stadiumRep.value, used: false };
+				}
+
+				// Auto-trash Technical Machines if the setting is enabled
+				if (ptcgSettings.value.autoTrashTM && mode === 'draft') {
+					const db = cardDatabase.value;
+					for (let i = 0; i < 9; i++) {
+						['L', 'R'].forEach(side => {
+							const slotId = `slot${side}${i}`;
+							const slotRep = nodecg.Replicant(`${prefix}${slotId}`);
+							if (slotRep.value && slotRep.value.attachedToolIds && slotRep.value.attachedToolIds.length > 0) {
+								const initialTools = slotRep.value.attachedToolIds;
+								const toolsToKeep = initialTools.filter(toolId => {
+									const cardData = db[toolId];
+									return !(cardData && cardData.subtype === 'tool' && cardData.trainer?.attacks);
+								});
+
+								if (initialTools.length !== toolsToKeep.length) {
+									// Use queueOperation directly to add a new, distinct operation
+									nodecg.sendMessage('queueOperation', {
+										type: 'SET_TOOLS',
+										payload: {
+											target: slotId,
+											tools: toolsToKeep
+										}
+									});
+								}
+							}
+						});
+					}
+				}
+				break;
+			}
+			case 'SET_ACTION_STATUS': {
+				// The replicant is now found by its target name, e.g., "action_energy_L"
+				const { status } = payload;
+				replicant.value = status;
+				break;
+			}
 
 			case 'EXIT_POKEMON':
 				// This is an animation-only operation, no data logic needed.
@@ -959,12 +981,12 @@ module.exports = function (nodecg) {
 
 		try {
 			// 1. Create a new queue with the updated operation
-            const newQueue = queue.map((op, i) => {
-                if (i === index) {
-                    return { ...op, payload: { ...op.payload, ...payload } };
-                }
-                return op;
-            });
+			const newQueue = queue.map((op, i) => {
+				if (i === index) {
+					return { ...op, payload: { ...op.payload, ...payload } };
+				}
+				return op;
+			});
 			operationQueue.value = newQueue;
 
 			// 2. Identify all affected draft replicants
@@ -992,15 +1014,15 @@ module.exports = function (nodecg) {
 					const draftRep = nodecg.Replicant(`draft_action_${action}_${side}`);
 					draftRep.value = liveRep.value;
 				});
-                // Reset VSTAR status as well
-                const liveVstarRep = nodecg.Replicant(`live_vstar_${side}`);
-                const draftVstarRep = nodecg.Replicant(`draft_vstar_${side}`);
-                draftVstarRep.value = liveVstarRep.value;
+				// Reset VSTAR status as well
+				const liveVstarRep = nodecg.Replicant(`live_vstar_${side}`);
+				const draftVstarRep = nodecg.Replicant(`draft_vstar_${side}`);
+				draftVstarRep.value = liveVstarRep.value;
 			});
-            draft_sideL.value = live_sideL.value;
-            draft_sideR.value = live_sideR.value;
-            draft_lostZoneL.value = live_lostZoneL.value;
-            draft_lostZoneR.value = live_lostZoneR.value;
+			draft_sideL.value = live_sideL.value;
+			draft_sideR.value = live_sideR.value;
+			draft_lostZoneL.value = live_lostZoneL.value;
+			draft_lostZoneR.value = live_lostZoneR.value;
 
 
 			// 4. Re-apply the entire new queue to the DRAFT states
@@ -1066,21 +1088,21 @@ module.exports = function (nodecg) {
 	 * This function implements a locking and buffering mechanism to handle "auto-apply".
 	 */
 	function doesBatchRequireAck(batch) {
-		        const animationHeavyTypes = [
-					'ATTACK',
-					'SET_DAMAGE',
-					'SET_AILMENTS',
-					'KO_POKEMON',
-					'SLIDE_OUT', // New
-					'APPLY_SWITCH', // New
-					'REPLACE_POKEMON',
-					'SET_POKEMON',
-		            'REMOVE_POKEMON', // This triggers EXIT_POKEMON animation
-					'EXIT_POKEMON',
-					'ENTER_POKEMON',
-					'SET_TOOLS',
-					'SET_ENERGIES'
-				];		return batch.some(op => animationHeavyTypes.includes(op.type));
+		const animationHeavyTypes = [
+			'ATTACK',
+			'SET_DAMAGE',
+			'SET_AILMENTS',
+			'KO_POKEMON',
+			'SLIDE_OUT', // New
+			'APPLY_SWITCH', // New
+			'REPLACE_POKEMON',
+			'SET_POKEMON',
+			'REMOVE_POKEMON', // This triggers EXIT_POKEMON animation
+			'EXIT_POKEMON',
+			'ENTER_POKEMON',
+			'SET_TOOLS',
+			'SET_ENERGIES'
+		]; return batch.some(op => animationHeavyTypes.includes(op.type));
 	}
 
 	let processorStatus = 'IDLE'; // IDLE, PROCESSING
@@ -1144,7 +1166,7 @@ module.exports = function (nodecg) {
 		const currentPriority = pendingOperations[0].priority;
 		const batchToProcess = pendingOperations.filter(op => op.priority === currentPriority);
 		const remainingOps = pendingOperations.filter(op => op.priority !== currentPriority);
-		
+
 		pendingOperations = remainingOps;
 
 		nodecg.log.info(`Processing batch with priority ${currentPriority} (${batchToProcess.length} ops).`);
@@ -1222,10 +1244,10 @@ module.exports = function (nodecg) {
 		if (doesBatchRequireAck(batchToProcess)) {
 			nodecg.log.info(`Batch (Prio ${currentPriority}) applied. Waiting for frontend acknowledgement.`);
 			const timeoutDuration = getTimeoutForPriority(currentPriority);
-            ackTimeout = setTimeout(() => {
-                nodecg.log.warn(`Acknowledgement timeout for priority ${currentPriority}! Forcing next batch.`);
-                handleAnimationComplete();
-            }, timeoutDuration);
+			ackTimeout = setTimeout(() => {
+				nodecg.log.warn(`Acknowledgement timeout for priority ${currentPriority}! Forcing next batch.`);
+				handleAnimationComplete();
+			}, timeoutDuration);
 		} else {
 			nodecg.log.info(`Batch (Prio ${currentPriority}) was data-only. Proceeding to next batch immediately.`);
 			processorStatus = 'IDLE';
@@ -1317,7 +1339,7 @@ module.exports = function (nodecg) {
 			// Reset Prize Cards
 			nodecg.Replicant('prizeCardsL').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
 			nodecg.Replicant('prizeCardsR').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
-			
+
 			nodecg.log.info('System state has been completely reset.');
 			if (callback) callback(null, 'System reset successfully.');
 
@@ -1400,10 +1422,10 @@ module.exports = function (nodecg) {
 			const dbFileName = `database_${lang}.json`;
 			const dbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
 			if (fs.existsSync(dbPath)) {
-			    fs.writeFileSync(dbPath, '{}', 'utf8');
-			    nodecg.log.info(`Database file at ${dbPath} has been cleared.`);
+				fs.writeFileSync(dbPath, '{}', 'utf8');
+				nodecg.log.info(`Database file at ${dbPath} has been cleared.`);
 			} else {
-			    nodecg.log.warn(`Database file for language '${lang}' not found. Skipping clear.`);
+				nodecg.log.warn(`Database file for language '${lang}' not found. Skipping clear.`);
 			}
 
 			// 3. Reload in-memory database
@@ -1420,122 +1442,122 @@ module.exports = function (nodecg) {
 	});
 
 	function processVersionCheck(remotePackage, localVersion, repo, nodecg, updateInfo) {
-			if (!remotePackage || !remotePackage.version) {
-				nodecg.log.warn('Update check failed: Remote package.json invalid.');
-				return false; // Indicate failure
-			}
-			const latestVersion = remotePackage.version.replace('v', '').trim();
-			const currentVersion = localVersion.replace('v', '').trim();
-			const latestParts = latestVersion.split('.').map(Number);
-			const currentParts = currentVersion.split('.').map(Number);
-			let isNewer = false;
-			for (let i = 0; i < Math.max(latestParts.length, currentParts.length); i++) {
-				const latest = latestParts[i] || 0;
-				const current = currentParts[i] || 0;
-				if (latest > current) {
-					isNewer = true;
-					break;
-				}
-				if (latest < current) {
-					break;
-				}
-			}
-			if (isNewer) {
-				nodecg.log.info(`Update available: ${currentVersion} -> ${latestVersion}`);
-				updateInfo.value = {
-					available: true,
-					latest: remotePackage.version,
-					current: localVersion,
-					url: `https://github.com/${repo}/releases`
-				};
-			} else {
-				updateInfo.value = { available: false };
-			}
-			return true; // Indicate success
+		if (!remotePackage || !remotePackage.version) {
+			nodecg.log.warn('Update check failed: Remote package.json invalid.');
+			return false; // Indicate failure
 		}
+		const latestVersion = remotePackage.version.replace('v', '').trim();
+		const currentVersion = localVersion.replace('v', '').trim();
+		const latestParts = latestVersion.split('.').map(Number);
+		const currentParts = currentVersion.split('.').map(Number);
+		let isNewer = false;
+		for (let i = 0; i < Math.max(latestParts.length, currentParts.length); i++) {
+			const latest = latestParts[i] || 0;
+			const current = currentParts[i] || 0;
+			if (latest > current) {
+				isNewer = true;
+				break;
+			}
+			if (latest < current) {
+				break;
+			}
+		}
+		if (isNewer) {
+			nodecg.log.info(`Update available: ${currentVersion} -> ${latestVersion}`);
+			updateInfo.value = {
+				available: true,
+				latest: remotePackage.version,
+				current: localVersion,
+				url: `https://github.com/${repo}/releases`
+			};
+		} else {
+			updateInfo.value = { available: false };
+		}
+		return true; // Indicate success
+	}
 
-		function checkViaCdn(pjson, nodecg, https, updateInfo) {
-			nodecg.log.info('Falling back to update check via CDN...');
-			try {
-				const localVersion = pjson.version;
-				const repo = 'lwb058/ptcg-telop';
-				const remoteVersionUrl = `https://cdn.jsdelivr.net/gh/${repo}/package.json?t=${new Date().getTime()}`;
-				const request = https.get(remoteVersionUrl, (res) => {
-					if (res.statusCode !== 200) {
-						nodecg.log.error(`CDN request failed with status code: ${res.statusCode}`);
-						res.resume();
-						return;
+	function checkViaCdn(pjson, nodecg, https, updateInfo) {
+		nodecg.log.info('Falling back to update check via CDN...');
+		try {
+			const localVersion = pjson.version;
+			const repo = 'lwb058/ptcg-telop';
+			const remoteVersionUrl = `https://cdn.jsdelivr.net/gh/${repo}/package.json?t=${new Date().getTime()}`;
+			const request = https.get(remoteVersionUrl, (res) => {
+				if (res.statusCode !== 200) {
+					nodecg.log.error(`CDN request failed with status code: ${res.statusCode}`);
+					res.resume();
+					return;
+				}
+				let data = '';
+				res.on('data', (chunk) => { data += chunk; });
+				res.on('end', () => {
+					try {
+						const remotePackage = JSON.parse(data);
+						processVersionCheck(remotePackage, localVersion, repo, nodecg, updateInfo);
+					} catch (e) {
+						nodecg.log.error('Failed to parse CDN response.', e);
 					}
-					let data = '';
-					res.on('data', (chunk) => { data += chunk; });
-					res.on('end', () => {
-						try {
-							const remotePackage = JSON.parse(data);
-							processVersionCheck(remotePackage, localVersion, repo, nodecg, updateInfo);
-						} catch (e) {
-							nodecg.log.error('Failed to parse CDN response.', e);
-						}
-					});
 				});
-				request.on('error', (err) => {
-					nodecg.log.error('CDN check also failed.', err);
-				});
-				request.setTimeout(10000, () => { // 10s timeout for CDN
-					nodecg.log.error('CDN check timed out.');
-					request.destroy();
-				});
-			} catch (e) {
-				nodecg.log.error('Catastrophic failure in CDN check.', e);
-			}
+			});
+			request.on('error', (err) => {
+				nodecg.log.error('CDN check also failed.', err);
+			});
+			request.setTimeout(10000, () => { // 10s timeout for CDN
+				nodecg.log.error('CDN check timed out.');
+				request.destroy();
+			});
+		} catch (e) {
+			nodecg.log.error('Catastrophic failure in CDN check.', e);
 		}
-		function checkForUpdates(pjson, nodecg, https, updateInfo) { // This is the main entry point
-			nodecg.log.info('Checking for updates via GitHub API...');
-			try {
-				const localVersion = pjson.version;
-				const repo = 'lwb058/ptcg-telop';
-				const options = {
-					hostname: 'api.github.com',
-					path: `/repos/${repo}/contents/package.json`,
-					method: 'GET',
-					headers: { 'User-Agent': 'NodeCG-PTCG-Telop-Update-Checker' }
-				};
-				const request = https.get(options, (res) => {
-					if (res.statusCode !== 200) {
-						nodecg.log.warn(`GitHub API request failed (Code: ${res.statusCode}). Falling back to CDN.`);
-						res.resume();
+	}
+	function checkForUpdates(pjson, nodecg, https, updateInfo) { // This is the main entry point
+		nodecg.log.info('Checking for updates via GitHub API...');
+		try {
+			const localVersion = pjson.version;
+			const repo = 'lwb058/ptcg-telop';
+			const options = {
+				hostname: 'api.github.com',
+				path: `/repos/${repo}/contents/package.json`,
+				method: 'GET',
+				headers: { 'User-Agent': 'NodeCG-PTCG-Telop-Update-Checker' }
+			};
+			const request = https.get(options, (res) => {
+				if (res.statusCode !== 200) {
+					nodecg.log.warn(`GitHub API request failed (Code: ${res.statusCode}). Falling back to CDN.`);
+					res.resume();
+					checkViaCdn(pjson, nodecg, https, updateInfo);
+					return;
+				}
+				let data = '';
+				res.on('data', (chunk) => { data += chunk; });
+				res.on('end', () => {
+					try {
+						const fileInfo = JSON.parse(data);
+						const fileContent = Buffer.from(fileInfo.content, 'base64').toString('utf8');
+						const remotePackage = JSON.parse(fileContent);
+						if (!processVersionCheck(remotePackage, localVersion, repo, nodecg, updateInfo)) {
+							checkViaCdn(pjson, nodecg, https, updateInfo); // If processing fails, try CDN
+						}
+					} catch (e) {
+						nodecg.log.error('Failed to parse API response. Falling back to CDN.', e);
 						checkViaCdn(pjson, nodecg, https, updateInfo);
-						return;
 					}
-					let data = '';
-					res.on('data', (chunk) => { data += chunk; });
-					res.on('end', () => {
-						try {
-							const fileInfo = JSON.parse(data);
-							const fileContent = Buffer.from(fileInfo.content, 'base64').toString('utf8');
-							const remotePackage = JSON.parse(fileContent);
-							if (!processVersionCheck(remotePackage, localVersion, repo, nodecg, updateInfo)) {
-							   checkViaCdn(pjson, nodecg, https, updateInfo); // If processing fails, try CDN
-							}
-						} catch (e) {
-							nodecg.log.error('Failed to parse API response. Falling back to CDN.', e);
-							checkViaCdn(pjson, nodecg, https, updateInfo);
-						}
-					});
 				});
-				request.on('error', (err) => {
-					nodecg.log.warn('GitHub API check failed (Network Error). Falling back to CDN.', err.message);
-					checkViaCdn(pjson, nodecg, https, updateInfo);
-				});
-				request.setTimeout(5000, () => { // 5s timeout
-					nodecg.log.warn('GitHub API check timed out. Falling back to CDN.');
-					request.destroy();
-					checkViaCdn(pjson, nodecg, https, updateInfo);
-				});
-			} catch (e) {
-				nodecg.log.error('Catastrophic failure in API check. Falling back to CDN.', e);
+			});
+			request.on('error', (err) => {
+				nodecg.log.warn('GitHub API check failed (Network Error). Falling back to CDN.', err.message);
 				checkViaCdn(pjson, nodecg, https, updateInfo);
-			}
+			});
+			request.setTimeout(5000, () => { // 5s timeout
+				nodecg.log.warn('GitHub API check timed out. Falling back to CDN.');
+				request.destroy();
+				checkViaCdn(pjson, nodecg, https, updateInfo);
+			});
+		} catch (e) {
+			nodecg.log.error('Catastrophic failure in API check. Falling back to CDN.', e);
+			checkViaCdn(pjson, nodecg, https, updateInfo);
 		}
+	}
 
 	checkForUpdates(pjson, nodecg, https, updateInfo);
 
@@ -1546,11 +1568,11 @@ module.exports = function (nodecg) {
 
 // --- Helper Functions for Replicant Sync ---
 function syncReplicant(nodecg, liveName, draftName, defaultValue) {
-    const liveRep = nodecg.Replicant(liveName, { defaultValue });
-    const draftRep = nodecg.Replicant(draftName, { defaultValue });
-    liveRep.once('change', (newValue) => {
-        if (JSON.stringify(newValue) !== JSON.stringify(draftRep.value)) {
-            draftRep.value = JSON.parse(JSON.stringify(newValue));
-        }
-    });
+	const liveRep = nodecg.Replicant(liveName, { defaultValue });
+	const draftRep = nodecg.Replicant(draftName, { defaultValue });
+	liveRep.once('change', (newValue) => {
+		if (JSON.stringify(newValue) !== JSON.stringify(draftRep.value)) {
+			draftRep.value = JSON.parse(JSON.stringify(newValue));
+		}
+	});
 }

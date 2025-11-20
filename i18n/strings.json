@@ -173,6 +173,12 @@
     "cht": "寶可夢道具持有上限",
     "en": "Tool Carry Limit"
   },
+  "settings_force_refetch_data": {
+    "jp": "データの強制再取得",
+    "chs": "强制重新获取数据",
+    "cht": "強制重新獲取資料",
+    "en": "Force Re-fetch Data"
+  },
   "settings_language": {
     "jp": "言語",
     "chs": "语言",

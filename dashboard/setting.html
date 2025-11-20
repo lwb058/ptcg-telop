@@ -1,467 +1,499 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <title>Global Settings</title>
-    <link rel="stylesheet" href="css/dashboard.css">
+	<meta charset="UTF-8">
+	<title>Global Settings</title>
+	<link rel="stylesheet" href="css/dashboard.css">
 </head>
+
 <body>
-    <div class="horizontal-panels">
-        <div class="panel-section">
-            <h3 id="label-basic">Basic</h3>
-            <div class="collapsible-content">
-                <div class="setting-grid">
-                    <div class="form-group-hotkey">
-                        <label for="auto-sided-take" id="label-auto-side-take">Auto Side Take</label>
-                        <input type="checkbox" id="auto-sided-take" style="width: auto; height: auto; justify-self: end;">
-                    </div>
-                    <div class="form-group-hotkey">
-                        <label for="auto-retreat-toggle" id="label-auto-retreat">Auto Retreat</label>
-                        <input type="checkbox" id="auto-retreat-toggle" style="width: auto; height: auto; justify-self: end;">
-                    </div>
-                    <div class="form-group-hotkey">
-                        <label for="auto-check-supporter-toggle" id="label-auto-check-supporter">Auto-check Supporter</label>
-                        <input type="checkbox" id="auto-check-supporter-toggle" style="width: auto; height: auto; justify-self: end;">
-                    </div>
-                    <div class="form-group-hotkey">
-                        <label for="auto-trash-tm-toggle" id="label-auto-trash-tm">Auto-Trash TM</label>
-                        <input type="checkbox" id="auto-trash-tm-toggle" style="width: auto; height: auto; justify-self: end;">
-                    </div>
-                    <div class="form-group-hotkey">
-                        <label for="show-deck-energy-only-toggle" id="label-show-deck-energy-only">Show Deck Energy Only</label>
-                        <input type="checkbox" id="show-deck-energy-only-toggle" style="width: auto; height: auto; justify-self: end;">
-                    </div>
-                    <div class="form-group-hotkey">
-                        <label for="weakness-damage-toggle" id="label-weakness-damage">Auto Double Weakness Damage</label>
-                        <input type="checkbox" id="weakness-damage-toggle" style="width: auto; height: auto; justify-self: end;">
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="panel-section">
-            <h3 id="label-regulation">Regulation</h3>
-            <div class="collapsible-content">
-                <div class="setting-grid">
-                    <div class="form-group-hotkey">
-                        <label for="lost-zone-toggle" id="label-enable-lost-zone">Enable Lost Zone</label>
-                        <input type="checkbox" id="lost-zone-toggle" style="width: auto; height: auto; justify-self: end;">
-                    </div>
-                    <div class="form-group-hotkey">
-                        <label for="vstar-toggle" id="label-enable-vstar">Enable VSTAR Power</label>
-                        <input type="checkbox" id="vstar-toggle" style="width: auto; height: auto; justify-self: end;">
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="panel-section">
-            <h3 id="label-hotkey">Hotkey</h3>
-            <div class="collapsible-content">
-                <div class="setting-grid">
-                    <div class="form-group-hotkey">
-                        <label for="discard-hotkey-input">Discard Queue</label>
-                        <input type="text" id="discard-hotkey-input" placeholder="e.g., Escape, Alt+D">
-                    </div>
-                    <div class="form-group-hotkey">
-                        <label for="apply-hotkey-input">Apply Queue</label>
-                        <input type="text" id="apply-hotkey-input" placeholder="e.g., Ctrl+S, F1">
-                    </div>
-                    <div class="form-group-hotkey">
-                        <label for="clear-card-hotkey-input">Clear Card Display</label>
-                        <input type="text" id="clear-card-hotkey-input" placeholder="e.g., Space, C">
-                    </div>
-                    <div class="form-group-hotkey">
-                        <label for="clear-selection-hotkey-input">Clear Selection</label>
-                        <input type="text" id="clear-selection-hotkey-input" placeholder="e.g., Escape">
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="panel-section">
-            <h3 id="label-appearance">Appearance</h3>
-            <div class="collapsible-content">
-                <div class="setting-grid">
-                    <div class="form-group-hotkey">
-                        <label for="theme-select" id="label-theme">Theme</label>
-                        <select id="theme-select" class="form-select" style="justify-self: end; width: 100%;"></select>
-                    </div>
-                </div>
-                <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
-                <details>
-                    <summary><h4 id="label-type-color">Type Color</h4></summary>
-                    <div id="color-settings-container" style="padding-top: 10px;">
-                        <!-- Color settings will be dynamically inserted here -->
-                    </div>
-                </details>
-            </div>
-        </div>
-        <div class="panel-section panel-section-flex">
-            <h3 id="label-system">System</h3>
-            <div class="collapsible-content">
-                <div class="setting-grid">
-                    <div class="form-group-hotkey">
-                        <label for="reverse-card-display-toggle" id="label-reverse-card-display">Reverse Card Display</label>
-                        <input type="checkbox" id="reverse-card-display-toggle" style="width: auto; height: auto; justify-self: end;">
-                    </div>
-                    <div class="form-group-hotkey">
-                        <label for="tool-limit-input" id="label-tool-carry-limit">Tool Carry Limit</label>
-                        <input type="number" id="tool-limit-input" min="1" max="10" step="1" style="width: 60px; justify-self: end;">
-                    </div>
-                    <div class="form-group-hotkey">
-                        <label for="language-select" id="label-language">Language</label>
-                        <select id="language-select" class="form-select">
-                            <option value="jp">日本語</option>
-                            <option value="chs">简体中文</option>
-                            <option value="cht">繁体中文</option>
-                            <option value="en">English</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <button id="clear-database-btn" class="btn btn-danger" style="width: auto; align-self: flex-end; margin-top: auto;">Clear Database</button>
-        </div>
-    </div>
+	<div class="horizontal-panels">
+		<div class="panel-section">
+			<h3 id="label-basic">Basic</h3>
+			<div class="collapsible-content">
+				<div class="setting-grid">
+					<div class="form-group-hotkey">
+						<label for="auto-sided-take" id="label-auto-side-take">Auto Side Take</label>
+						<input type="checkbox" id="auto-sided-take"
+							style="width: auto; height: auto; justify-self: end;">
+					</div>
+					<div class="form-group-hotkey">
+						<label for="auto-retreat-toggle" id="label-auto-retreat">Auto Retreat</label>
+						<input type="checkbox" id="auto-retreat-toggle"
+							style="width: auto; height: auto; justify-self: end;">
+					</div>
+					<div class="form-group-hotkey">
+						<label for="auto-check-supporter-toggle" id="label-auto-check-supporter">Auto-check
+							Supporter</label>
+						<input type="checkbox" id="auto-check-supporter-toggle"
+							style="width: auto; height: auto; justify-self: end;">
+					</div>
+					<div class="form-group-hotkey">
+						<label for="auto-trash-tm-toggle" id="label-auto-trash-tm">Auto-Trash TM</label>
+						<input type="checkbox" id="auto-trash-tm-toggle"
+							style="width: auto; height: auto; justify-self: end;">
+					</div>
+					<div class="form-group-hotkey">
+						<label for="show-deck-energy-only-toggle" id="label-show-deck-energy-only">Show Deck Energy
+							Only</label>
+						<input type="checkbox" id="show-deck-energy-only-toggle"
+							style="width: auto; height: auto; justify-self: end;">
+					</div>
+					<div class="form-group-hotkey">
+						<label for="weakness-damage-toggle" id="label-weakness-damage">Auto Double Weakness
+							Damage</label>
+						<input type="checkbox" id="weakness-damage-toggle"
+							style="width: auto; height: auto; justify-self: end;">
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="panel-section">
+			<h3 id="label-regulation">Regulation</h3>
+			<div class="collapsible-content">
+				<div class="setting-grid">
+					<div class="form-group-hotkey">
+						<label for="lost-zone-toggle" id="label-enable-lost-zone">Enable Lost Zone</label>
+						<input type="checkbox" id="lost-zone-toggle"
+							style="width: auto; height: auto; justify-self: end;">
+					</div>
+					<div class="form-group-hotkey">
+						<label for="vstar-toggle" id="label-enable-vstar">Enable VSTAR Power</label>
+						<input type="checkbox" id="vstar-toggle" style="width: auto; height: auto; justify-self: end;">
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="panel-section">
+			<h3 id="label-hotkey">Hotkey</h3>
+			<div class="collapsible-content">
+				<div class="setting-grid">
+					<div class="form-group-hotkey">
+						<label for="discard-hotkey-input">Discard Queue</label>
+						<input type="text" id="discard-hotkey-input" placeholder="e.g., Escape, Alt+D">
+					</div>
+					<div class="form-group-hotkey">
+						<label for="apply-hotkey-input">Apply Queue</label>
+						<input type="text" id="apply-hotkey-input" placeholder="e.g., Ctrl+S, F1">
+					</div>
+					<div class="form-group-hotkey">
+						<label for="clear-card-hotkey-input">Clear Card Display</label>
+						<input type="text" id="clear-card-hotkey-input" placeholder="e.g., Space, C">
+					</div>
+					<div class="form-group-hotkey">
+						<label for="clear-selection-hotkey-input">Clear Selection</label>
+						<input type="text" id="clear-selection-hotkey-input" placeholder="e.g., Escape">
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="panel-section">
+			<h3 id="label-appearance">Appearance</h3>
+			<div class="collapsible-content">
+				<div class="setting-grid">
+					<div class="form-group-hotkey">
+						<label for="theme-select" id="label-theme">Theme</label>
+						<select id="theme-select" class="form-select" style="justify-self: end; width: 100%;"></select>
+					</div>
+				</div>
+				<hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
+				<details>
+					<summary>
+						<h4 id="label-type-color">Type Color</h4>
+					</summary>
+					<div id="color-settings-container" style="padding-top: 10px;">
+						<!-- Color settings will be dynamically inserted here -->
+					</div>
+				</details>
+			</div>
+		</div>
+		<div class="panel-section panel-section-flex">
+			<h3 id="label-system">System</h3>
+			<div class="collapsible-content">
+				<div class="setting-grid">
+					<div class="form-group-hotkey">
+						<label for="reverse-card-display-toggle" id="label-reverse-card-display">Reverse Card
+							Display</label>
+						<input type="checkbox" id="reverse-card-display-toggle"
+							style="width: auto; height: auto; justify-self: end;">
+					</div>
+					<div class="form-group-hotkey">
+						<label for="force-refetch-deck-toggle" id="label-force-refetch-deck">Force Re-fetch Deck</label>
+						<input type="checkbox" id="force-refetch-deck-toggle"
+							style="width: auto; height: auto; justify-self: end;">
+					</div>
+					<div class="form-group-hotkey">
+						<label for="tool-limit-input" id="label-tool-carry-limit">Tool Carry Limit</label>
+						<input type="number" id="tool-limit-input" min="1" max="10" step="1"
+							style="width: 60px; justify-self: end;">
+					</div>
+					<div class="form-group-hotkey">
+						<label for="language-select" id="label-language">Language</label>
+						<select id="language-select" class="form-select">
+							<option value="jp">日本語</option>
+							<option value="chs">简体中文</option>
+							<option value="cht">繁体中文</option>
+							<option value="en">English</option>
+						</select>
+					</div>
+				</div>
+			</div>
+			<button id="clear-database-btn" class="btn btn-danger"
+				style="width: auto; align-self: flex-end; margin-top: auto;">Clear Database</button>
+		</div>
+	</div>
 
-    <div class="panel-section" style="display: flex; justify-content: center; align-items: center; min-width: 350px; margin-top: 15px;">
-        <button id="save-settings-btn" class="btn btn-primary">Save All Settings</button>
-    </div>
+	<div class="panel-section"
+		style="display: flex; justify-content: center; align-items: center; min-width: 350px; margin-top: 15px;">
+		<button id="save-settings-btn" class="btn btn-primary">Save All Settings</button>
+	</div>
 
-    <div class="panel-section" style="display: flex; justify-content: space-between; align-items: center; width: 15%; min-width: 350px; background-color: #f8f9fa;">
-        <p style="margin: 0; font-size: 12px; color: #6c757d; text-align: left;">
-            ptcg-telop Ver <span id="bundle-version">114.514</span></br>
-            Developed by ミニ49. </br>
-            <a href="https://github.com/lwb058/ptcg-telop" target="_blank">GitHub</a> | 
-            <a href="mailto:lwb058@gmail.com">Email</a> | 
-            <a href="https://x.com/i/user/437555697" target="_blank">X (Twitter)</a> | 
-            <a href="https://space.bilibili.com/305921" target="_blank">BiliBili</a>
-        </p>
-        <button id="support-developer-btn" class="support-btn" style="margin-top: 0;"></button>
-    </div>
+	<div class="panel-section"
+		style="display: flex; justify-content: space-between; align-items: center; width: 15%; min-width: 350px; background-color: #f8f9fa;">
+		<p style="margin: 0; font-size: 12px; color: #6c757d; text-align: left;">
+			ptcg-telop Ver <span id="bundle-version">114.514</span></br>
+			Developed by ミニ49. </br>
+			<a href="https://github.com/lwb058/ptcg-telop" target="_blank">GitHub</a> |
+			<a href="mailto:lwb058@gmail.com">Email</a> |
+			<a href="https://x.com/i/user/437555697" target="_blank">X (Twitter)</a> |
+			<a href="https://space.bilibili.com/305921" target="_blank">BiliBili</a>
+		</p>
+		<button id="support-developer-btn" class="support-btn" style="margin-top: 0;"></button>
+	</div>
 
-    <div id="update-notification" style="display: none; width: 15%; min-width: 350px; padding: 15px; background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 8px; color: #856404; font-size: 14px;">
-        <!-- Update message will be injected here -->
-    </div>
+	<div id="update-notification"
+		style="display: none; width: 15%; min-width: 350px; padding: 15px; background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 8px; color: #856404; font-size: 14px;">
+		<!-- Update message will be injected here -->
+	</div>
 
-    <!-- Donation Modal -->
-    <div id="donation-modal" class="donation-modal">
-      <div class="donation-modal-content">
-        <span id="donation-modal-close-btn" class="donation-modal-close">&times;</span>
-        <h3 id="donation-modal-title-text"></h3>
-        <div id="donation-content-area">
-          <!-- Donation content will be injected here by JavaScript -->
-        </div>
-      </div>
-    </div>
+	<!-- Donation Modal -->
+	<div id="donation-modal" class="donation-modal">
+		<div class="donation-modal-content">
+			<span id="donation-modal-close-btn" class="donation-modal-close">&times;</span>
+			<h3 id="donation-modal-title-text"></h3>
+			<div id="donation-content-area">
+				<!-- Donation content will be injected here by JavaScript -->
+			</div>
+		</div>
+	</div>
 
-    <script>
-        NodeCG.waitForReplicants(
-            nodecg.Replicant('ptcg-settings'),
-            nodecg.Replicant('i18nStrings'),
-            nodecg.Replicant('language'),
-            nodecg.Replicant('themeList'),
-            nodecg.Replicant('bundleVersion'), // Added replicant
-            nodecg.Replicant('updateInfo')
-        ).then(() => {
-            const settingsRep = nodecg.Replicant('ptcg-settings');
-            const i18nStrings = nodecg.Replicant('i18nStrings');
-            const themeList = nodecg.Replicant('themeList');
-            
-            // --- Element References ---
-            const colorContainer = document.getElementById('color-settings-container');
-            const vstarToggle = document.getElementById('vstar-toggle');
-            const autoRetreatToggle = document.getElementById('auto-retreat-toggle');
-            const autoSideTake = document.getElementById('auto-sided-take');
-            const lostZoneToggle = document.getElementById('lost-zone-toggle');
-            const reverseCardDisplayToggle = document.getElementById('reverse-card-display-toggle');
-            const showDeckEnergyOnlyToggle = document.getElementById('show-deck-energy-only-toggle');
-            const autoCheckSupporterToggle = document.getElementById('auto-check-supporter-toggle');
-            const autoTrashTmToggle = document.getElementById('auto-trash-tm-toggle');
-            const weaknessDamageToggle = document.getElementById('weakness-damage-toggle');
-            const discardHotkeyInput = document.getElementById('discard-hotkey-input');
-            const applyHotkeyInput = document.getElementById('apply-hotkey-input');
-            const clearCardHotkeyInput = document.getElementById('clear-card-hotkey-input');
-            const clearSelectionHotkeyInput = document.getElementById('clear-selection-hotkey-input');
-            const toolLimitInput = document.getElementById('tool-limit-input');
-            const themeSelect = document.getElementById('theme-select');
-            const languageSelect = document.getElementById('language-select');
-            const saveBtn = document.getElementById('save-settings-btn');
-            const clearDbBtn = document.getElementById('clear-database-btn');
-            
-            const getI18nText = (key) => {
-                const lang = settingsRep.value ? settingsRep.value.language : 'jp';
-                if (!i18nStrings.value || !i18nStrings.value[key] || !lang) {
-                    return key;
-                }
-                return i18nStrings.value[key][lang] || i18nStrings.value[key]['jp'] || key;
-            };
+	<script>
+		NodeCG.waitForReplicants(
+			nodecg.Replicant('ptcg-settings'),
+			nodecg.Replicant('i18nStrings'),
+			nodecg.Replicant('language'),
+			nodecg.Replicant('themeList'),
+			nodecg.Replicant('bundleVersion'), // Added replicant
+			nodecg.Replicant('updateInfo')
+		).then(() => {
+			const settingsRep = nodecg.Replicant('ptcg-settings');
+			const i18nStrings = nodecg.Replicant('i18nStrings');
+			const themeList = nodecg.Replicant('themeList');
 
-            function updateAllLabels() {
-                document.getElementById('label-basic').textContent = getI18nText('settings_basic');
-                document.getElementById('label-auto-side-take').textContent = getI18nText('settings_auto_side_take');
-                document.getElementById('label-auto-retreat').textContent = getI18nText('settings_auto_retreat');
-                document.getElementById('label-auto-check-supporter').textContent = getI18nText('settings_auto_check_supporter');
-                document.getElementById('label-auto-trash-tm').textContent = getI18nText('settings_auto_trash_tm');
-                document.getElementById('label-show-deck-energy-only').textContent = getI18nText('settings_show_deck_energy_only');
-                document.getElementById('label-weakness-damage').textContent = getI18nText('settings_auto_double_weakness_damage');
-                document.getElementById('label-regulation').textContent = getI18nText('settings_regulation');
-                document.getElementById('label-enable-lost-zone').textContent = getI18nText('settings_enable_lost_zone');
-                document.getElementById('label-enable-vstar').textContent = getI18nText('settings_enable_vstar');
-                document.getElementById('label-hotkey').textContent = getI18nText('settings_hotkey');
-                document.getElementById('label-system').textContent = getI18nText('settings_system');
-                document.getElementById('label-reverse-card-display').textContent = getI18nText('settings_reverse_card_display');
-                document.getElementById('label-appearance').textContent = getI18nText('settings_appearance');
-                document.getElementById('label-theme').textContent = getI18nText('settings_theme');
-                document.getElementById('label-type-color').textContent = getI18nText('settings_type_color_title');
-                document.getElementById('label-tool-carry-limit').textContent = getI18nText('settings_tool_carry_limit');
-                document.getElementById('label-language').textContent = getI18nText('settings_language');
-                document.getElementById('clear-database-btn').textContent = getI18nText('settings_clear_database');
-                if (document.getElementById('support-developer-btn')) {
-                    document.getElementById('support-developer-btn').textContent = getI18nText('settings_support_button');
-                }
-            }
+			// --- Element References ---
+			const colorContainer = document.getElementById('color-settings-container');
+			const vstarToggle = document.getElementById('vstar-toggle');
+			const autoRetreatToggle = document.getElementById('auto-retreat-toggle');
+			const autoSideTake = document.getElementById('auto-sided-take');
+			const lostZoneToggle = document.getElementById('lost-zone-toggle');
+			const reverseCardDisplayToggle = document.getElementById('reverse-card-display-toggle');
+			const showDeckEnergyOnlyToggle = document.getElementById('show-deck-energy-only-toggle');
+			const autoCheckSupporterToggle = document.getElementById('auto-check-supporter-toggle');
+			const autoTrashTmToggle = document.getElementById('auto-trash-tm-toggle');
+			const weaknessDamageToggle = document.getElementById('weakness-damage-toggle');
+			const discardHotkeyInput = document.getElementById('discard-hotkey-input');
+			const applyHotkeyInput = document.getElementById('apply-hotkey-input');
+			const clearCardHotkeyInput = document.getElementById('clear-card-hotkey-input');
+			const clearSelectionHotkeyInput = document.getElementById('clear-selection-hotkey-input');
+			const toolLimitInput = document.getElementById('tool-limit-input');
+			const themeSelect = document.getElementById('theme-select');
+			const languageSelect = document.getElementById('language-select');
+			const saveBtn = document.getElementById('save-settings-btn');
+			const clearDbBtn = document.getElementById('clear-database-btn');
+			const forceRefetchDeckToggle = document.getElementById('force-refetch-deck-toggle');
 
-            clearDbBtn.addEventListener('click', () => {
-                const confirmation = confirm("Are you sure you want to clear the entire card database and all downloaded images? This cannot be undone.");
-                if (confirmation) {
-                    nodecg.sendMessage('clearDatabase')
-                        .then(() => {
-                            alert('Database and card images have been cleared.');
-                        })
-                        .catch(e => {
-                            console.error("Failed to clear database:", e);
-                            alert(`Failed to clear database: ${e.message}`);
-                        });
-                }
-            });
+			const getI18nText = (key) => {
+				const lang = settingsRep.value ? settingsRep.value.language : 'jp';
+				if (!i18nStrings.value || !i18nStrings.value[key] || !lang) {
+					return key;
+				}
+				return i18nStrings.value[key][lang] || i18nStrings.value[key]['jp'] || key;
+			};
 
-            let renderedColorElements = {};
+			function updateAllLabels() {
+				document.getElementById('label-basic').textContent = getI18nText('settings_basic');
+				document.getElementById('label-auto-side-take').textContent = getI18nText('settings_auto_side_take');
+				document.getElementById('label-auto-retreat').textContent = getI18nText('settings_auto_retreat');
+				document.getElementById('label-auto-check-supporter').textContent = getI18nText('settings_auto_check_supporter');
+				document.getElementById('label-auto-trash-tm').textContent = getI18nText('settings_auto_trash_tm');
+				document.getElementById('label-show-deck-energy-only').textContent = getI18nText('settings_show_deck_energy_only');
+				document.getElementById('label-weakness-damage').textContent = getI18nText('settings_auto_double_weakness_damage');
+				document.getElementById('label-regulation').textContent = getI18nText('settings_regulation');
+				document.getElementById('label-enable-lost-zone').textContent = getI18nText('settings_enable_lost_zone');
+				document.getElementById('label-enable-vstar').textContent = getI18nText('settings_enable_vstar');
+				document.getElementById('label-hotkey').textContent = getI18nText('settings_hotkey');
+				document.getElementById('label-system').textContent = getI18nText('settings_system');
+				document.getElementById('label-reverse-card-display').textContent = getI18nText('settings_reverse_card_display');
+				document.getElementById('label-appearance').textContent = getI18nText('settings_appearance');
+				document.getElementById('label-theme').textContent = getI18nText('settings_theme');
+				document.getElementById('label-type-color').textContent = getI18nText('settings_type_color_title');
+				document.getElementById('label-tool-carry-limit').textContent = getI18nText('settings_tool_carry_limit');
+				document.getElementById('label-language').textContent = getI18nText('settings_language');
+				document.getElementById('clear-database-btn').textContent = getI18nText('settings_clear_database');
+				document.getElementById('label-force-refetch-deck').textContent = getI18nText('settings_force_refetch_data');
+				if (document.getElementById('support-developer-btn')) {
+					document.getElementById('support-developer-btn').textContent = getI18nText('settings_support_button');
+				}
+			}
 
-            function updateThemeDropdown(availableThemes, activeTheme) {
-                if (!themeSelect) return;
-                themeSelect.innerHTML = '';
-                availableThemes.forEach(themeName => {
-                    const option = document.createElement('option');
-                    option.value = themeName;
-                    option.textContent = themeName;
-                    themeSelect.appendChild(option);
-                });
-                themeSelect.value = activeTheme || 'Default';
-            }
+			clearDbBtn.addEventListener('click', () => {
+				const confirmation = confirm("Are you sure you want to clear the entire card database and all downloaded images? This cannot be undone.");
+				if (confirmation) {
+					nodecg.sendMessage('clearDatabase')
+						.then(() => {
+							alert('Database and card images have been cleared.');
+						})
+						.catch(e => {
+							console.error("Failed to clear database:", e);
+							alert(`Failed to clear database: ${e.message}`);
+						});
+				}
+			});
 
-            function renderAll(settings) {
-                // 1. Render Color Settings
-                colorContainer.innerHTML = '';
-                renderedColorElements = {};
-                const colorMap = (settings && settings.typeColorMap) ? settings.typeColorMap : {};
-                const allPossibleTypes = {
-                    '草': { color: '#4DAD5B', opacity: 1.0 }, '炎': { color: '#F4813E', opacity: 1.0 },
-                    '水': { color: '#4299E1', opacity: 1.0 }, '雷': { color: '#FBD100', opacity: 1.0 },
-                    '超': { color: '#9A549A', opacity: 1.0 }, '闘': { color: '#C46A3A', opacity: 1.0 },
-                    '悪': { color: '#705848', opacity: 1.0 }, '鋼': { color: '#B8B8D0', opacity: 1.0 },
-                    '無': { color: '#A8A878', opacity: 1.0 }, 
-                    '妖': { color: '#E08EE0', opacity: 1.0 }, '竜': { color: '#7038F8', opacity: 1.0 },
-                };
-                const typeKeys = Object.keys(allPossibleTypes);
-                typeKeys.forEach(type => {
-                    const setting = colorMap[type] || allPossibleTypes[type] || { color: '#ffffff', opacity: 1.0 };
-                    const colorValue = setting.color;
-                    const opacityValue = setting.opacity;
-                    const opacityPercent = Math.round(opacityValue * 100);
-                    const formGroup = document.createElement('div');
-                    formGroup.classList.add('form-group');
-                    const label = document.createElement('label');
-                    label.textContent = type;
-                    const colorInput = document.createElement('input');
-                    colorInput.type = 'color';
-                    colorInput.value = colorValue;
-                    const opacitySlider = document.createElement('input');
-                    opacitySlider.type = 'range';
-                    opacitySlider.min = 0;
-                    opacitySlider.max = 100;
-                    opacitySlider.step = 1;
-                    opacitySlider.value = opacityPercent;
-                    const opacityNumberInput = document.createElement('input');
-                    opacityNumberInput.type = 'number';
-                    opacityNumberInput.min = 0;
-                    opacityNumberInput.max = 100;
-                    opacityNumberInput.value = opacityPercent;
-                    opacityNumberInput.classList.add('opacity-input-number');
-                    opacitySlider.addEventListener('input', () => { opacityNumberInput.value = opacitySlider.value; });
-                    opacityNumberInput.addEventListener('input', () => { opacitySlider.value = opacityNumberInput.value; });
-                    opacityNumberInput.addEventListener('change', () => {
-                        let value = parseInt(opacityNumberInput.value, 10);
-                        if (isNaN(value) || value < 0) value = 0;
-                        if (value > 100) value = 100;
-                        opacityNumberInput.value = value;
-                        opacitySlider.value = value;
-                    });
-                    formGroup.appendChild(label);
-                    formGroup.appendChild(colorInput);
-                    formGroup.appendChild(opacitySlider);
-                    formGroup.appendChild(opacityNumberInput);
-                    colorContainer.appendChild(formGroup);
-                    renderedColorElements[type] = { colorInput, opacityNumberInput };
-                });
+			let renderedColorElements = {};
 
-                // 2. Render Appearance Settings
-                vstarToggle.checked = !!(settings && settings.vstarEnabled);
-                autoRetreatToggle.checked = !!(settings && settings.autoRetreatToggle);
-                autoSideTake.checked = !!(settings && settings.autoSideTake);
-                lostZoneToggle.checked = !!(settings && settings.lostZoneEnabled);
-                reverseCardDisplayToggle.checked = !!(settings && settings.reverseCardDisplay);
-                showDeckEnergyOnlyToggle.checked = !!(settings && settings.showDeckEnergyOnly);
-                autoCheckSupporterToggle.checked = !!(settings && settings.autoCheckSupporter);
-                autoTrashTmToggle.checked = !!(settings && settings.autoTrashTM);
-                weaknessDamageToggle.checked = !!(settings && settings.weaknessDamage);
-                toolLimitInput.value = (settings && settings.toolLimit) ? settings.toolLimit : 4;
-                languageSelect.value = (settings && settings.language) ? settings.language : "jp";
-                
-                // Update theme dropdown
-                updateThemeDropdown(themeList.value || ['Default'], settings ? settings.activeTheme : 'Default');
+			function updateThemeDropdown(availableThemes, activeTheme) {
+				if (!themeSelect) return;
+				themeSelect.innerHTML = '';
+				availableThemes.forEach(themeName => {
+					const option = document.createElement('option');
+					option.value = themeName;
+					option.textContent = themeName;
+					themeSelect.appendChild(option);
+				});
+				themeSelect.value = activeTheme || 'Default';
+			}
 
-                // 3. Render Hotkey Settings
-                const hotkeys = (settings && settings.hotkeys) ? settings.hotkeys : {};
-                discardHotkeyInput.value = hotkeys.discard || 'Escape';
-                applyHotkeyInput.value = hotkeys.apply || 'Control+S';
-                clearCardHotkeyInput.value = hotkeys.clearCard || 'Space';
-                clearSelectionHotkeyInput.value = hotkeys.clearSelection || 'Escape';
-            }
+			function renderAll(settings) {
+				// 1. Render Color Settings
+				colorContainer.innerHTML = '';
+				renderedColorElements = {};
+				const colorMap = (settings && settings.typeColorMap) ? settings.typeColorMap : {};
+				const allPossibleTypes = {
+					'草': { color: '#4DAD5B', opacity: 1.0 }, '炎': { color: '#F4813E', opacity: 1.0 },
+					'水': { color: '#4299E1', opacity: 1.0 }, '雷': { color: '#FBD100', opacity: 1.0 },
+					'超': { color: '#9A549A', opacity: 1.0 }, '闘': { color: '#C46A3A', opacity: 1.0 },
+					'悪': { color: '#705848', opacity: 1.0 }, '鋼': { color: '#B8B8D0', opacity: 1.0 },
+					'無': { color: '#A8A878', opacity: 1.0 },
+					'妖': { color: '#E08EE0', opacity: 1.0 }, '竜': { color: '#7038F8', opacity: 1.0 },
+				};
+				const typeKeys = Object.keys(allPossibleTypes);
+				typeKeys.forEach(type => {
+					const setting = colorMap[type] || allPossibleTypes[type] || { color: '#ffffff', opacity: 1.0 };
+					const colorValue = setting.color;
+					const opacityValue = setting.opacity;
+					const opacityPercent = Math.round(opacityValue * 100);
+					const formGroup = document.createElement('div');
+					formGroup.classList.add('form-group');
+					const label = document.createElement('label');
+					label.textContent = type;
+					const colorInput = document.createElement('input');
+					colorInput.type = 'color';
+					colorInput.value = colorValue;
+					const opacitySlider = document.createElement('input');
+					opacitySlider.type = 'range';
+					opacitySlider.min = 0;
+					opacitySlider.max = 100;
+					opacitySlider.step = 1;
+					opacitySlider.value = opacityPercent;
+					const opacityNumberInput = document.createElement('input');
+					opacityNumberInput.type = 'number';
+					opacityNumberInput.min = 0;
+					opacityNumberInput.max = 100;
+					opacityNumberInput.value = opacityPercent;
+					opacityNumberInput.classList.add('opacity-input-number');
+					opacitySlider.addEventListener('input', () => { opacityNumberInput.value = opacitySlider.value; });
+					opacityNumberInput.addEventListener('input', () => { opacitySlider.value = opacityNumberInput.value; });
+					opacityNumberInput.addEventListener('change', () => {
+						let value = parseInt(opacityNumberInput.value, 10);
+						if (isNaN(value) || value < 0) value = 0;
+						if (value > 100) value = 100;
+						opacityNumberInput.value = value;
+						opacitySlider.value = value;
+					});
+					formGroup.appendChild(label);
+					formGroup.appendChild(colorInput);
+					formGroup.appendChild(opacitySlider);
+					formGroup.appendChild(opacityNumberInput);
+					colorContainer.appendChild(formGroup);
+					renderedColorElements[type] = { colorInput, opacityNumberInput };
+				});
 
-            settingsRep.on('change', (newValue) => {
-                renderAll(newValue);
-                updateAllLabels();
-            });
+				// 2. Render Appearance Settings
+				vstarToggle.checked = !!(settings && settings.vstarEnabled);
+				autoRetreatToggle.checked = !!(settings && settings.autoRetreatToggle);
+				autoSideTake.checked = !!(settings && settings.autoSideTake);
+				lostZoneToggle.checked = !!(settings && settings.lostZoneEnabled);
+				reverseCardDisplayToggle.checked = !!(settings && settings.reverseCardDisplay);
+				showDeckEnergyOnlyToggle.checked = !!(settings && settings.showDeckEnergyOnly);
+				autoCheckSupporterToggle.checked = !!(settings && settings.autoCheckSupporter);
+				autoTrashTmToggle.checked = !!(settings && settings.autoTrashTM);
+				forceRefetchDeckToggle.checked = !!(settings && settings.forceRefetchDeck);
+				weaknessDamageToggle.checked = !!(settings && settings.weaknessDamage);
+				toolLimitInput.value = (settings && settings.toolLimit) ? settings.toolLimit : 4;
+				languageSelect.value = (settings && settings.language) ? settings.language : "jp";
 
-            themeList.on('change', (newThemeList) => {
-                updateThemeDropdown(newThemeList || ['Default'], settingsRep.value ? settingsRep.value.activeTheme : 'Default');
-            });
+				// Update theme dropdown
+				updateThemeDropdown(themeList.value || ['Default'], settings ? settings.activeTheme : 'Default');
 
-            saveBtn.addEventListener('click', () => {
-                const newColorMap = {};
-                const types = Object.keys(renderedColorElements);
-                types.forEach(type => {
-                    const elements = renderedColorElements[type];
-                    if (elements && elements.colorInput && elements.opacityNumberInput) {
-                        let value = parseInt(elements.opacityNumberInput.value, 10);
-                        if (isNaN(value) || value < 0) value = 0;
-                        if (value > 100) value = 100;
-                        newColorMap[type] = {
-                            color: elements.colorInput.value,
-                            opacity: value / 100
-                        };
-                    }
-                });
+				// 3. Render Hotkey Settings
+				const hotkeys = (settings && settings.hotkeys) ? settings.hotkeys : {};
+				discardHotkeyInput.value = hotkeys.discard || 'Escape';
+				applyHotkeyInput.value = hotkeys.apply || 'Control+S';
+				clearCardHotkeyInput.value = hotkeys.clearCard || 'Space';
+				clearSelectionHotkeyInput.value = hotkeys.clearSelection || 'Escape';
+			}
 
-                const newHotkeys = {
-                    discard: discardHotkeyInput.value.trim() || 'Escape',
-                    apply: applyHotkeyInput.value.trim() || 'Control+S',
-                    clearCard: clearCardHotkeyInput.value.trim() || 'Space',
-                    clearSelection: clearSelectionHotkeyInput.value.trim() || 'Escape'
-                };
+			settingsRep.on('change', (newValue) => {
+				renderAll(newValue);
+				updateAllLabels();
+			});
 
-                const newVstarEnabled = vstarToggle.checked;
-                const newAutoRetreatToggle = autoRetreatToggle.checked;
-                const newAutoSideTake = autoSideTake.checked;
-                const newLostZoneEnabled = lostZoneToggle.checked;
-                const newReverseCardDisplay = reverseCardDisplayToggle.checked;
-                const newShowDeckEnergyOnly = showDeckEnergyOnlyToggle.checked;
-                const newAutoCheckSupporter = autoCheckSupporterToggle.checked;
-                const newAutoTrashTM = autoTrashTmToggle.checked;
-                const newWeaknessDamage = weaknessDamageToggle.checked;
-                const newActiveTheme = themeSelect.value;
-                const newToolLimit = parseInt(toolLimitInput.value, 10) || 4;
-                const newLanguage = languageSelect.value;
-                
-                const currentSettings = settingsRep.value || {};
-                // Make sure to not include the old useCustomAppearance setting
-                const { useCustomAppearance, ...restOfSettings } = currentSettings;
+			themeList.on('change', (newThemeList) => {
+				updateThemeDropdown(newThemeList || ['Default'], settingsRep.value ? settingsRep.value.activeTheme : 'Default');
+			});
 
-                settingsRep.value = { 
-                    ...restOfSettings,
-                    typeColorMap: newColorMap,
-                    hotkeys: newHotkeys,
-                    vstarEnabled: newVstarEnabled,
-                    autoRetreatToggle: newAutoRetreatToggle,
-                    autoSideTake: newAutoSideTake,
-                    lostZoneEnabled: newLostZoneEnabled,
-                    reverseCardDisplay: newReverseCardDisplay,
-                    showDeckEnergyOnly: newShowDeckEnergyOnly,
-                    autoCheckSupporter: newAutoCheckSupporter,
-                    autoTrashTM: newAutoTrashTM,
-                    weaknessDamage: newWeaknessDamage,
-                    activeTheme: newActiveTheme,
-                    toolLimit: newToolLimit,
-                    language: newLanguage
-                };
-                saveBtn.textContent = 'Saved!';
-                updateAllLabels();
-                setTimeout(() => {
-                    saveBtn.textContent = 'Save All Settings';
-                }, 1500);
-            });
+			saveBtn.addEventListener('click', () => {
+				const newColorMap = {};
+				const types = Object.keys(renderedColorElements);
+				types.forEach(type => {
+					const elements = renderedColorElements[type];
+					if (elements && elements.colorInput && elements.opacityNumberInput) {
+						let value = parseInt(elements.opacityNumberInput.value, 10);
+						if (isNaN(value) || value < 0) value = 0;
+						if (value > 100) value = 100;
+						newColorMap[type] = {
+							color: elements.colorInput.value,
+							opacity: value / 100
+						};
+					}
+				});
 
-            const versionSpan = document.getElementById('bundle-version');
-            const bundleVersionRep = nodecg.Replicant('bundleVersion');
-            const updateInfoRep = nodecg.Replicant('updateInfo');
+				const newHotkeys = {
+					discard: discardHotkeyInput.value.trim() || 'Escape',
+					apply: applyHotkeyInput.value.trim() || 'Control+S',
+					clearCard: clearCardHotkeyInput.value.trim() || 'Space',
+					clearSelection: clearSelectionHotkeyInput.value.trim() || 'Escape'
+				};
 
-            bundleVersionRep.on('change', (newVal) => {
-                if (newVal && versionSpan) {
-                    versionSpan.textContent = newVal;
-                }
-            });
+				const newVstarEnabled = vstarToggle.checked;
+				const newAutoRetreatToggle = autoRetreatToggle.checked;
+				const newAutoSideTake = autoSideTake.checked;
+				const newLostZoneEnabled = lostZoneToggle.checked;
+				const newReverseCardDisplay = reverseCardDisplayToggle.checked;
+				const newShowDeckEnergyOnly = showDeckEnergyOnlyToggle.checked;
+				const newAutoCheckSupporter = autoCheckSupporterToggle.checked;
+				const newAutoTrashTM = autoTrashTmToggle.checked;
+				const newWeaknessDamage = weaknessDamageToggle.checked;
+				const newForceRefetchDeck = forceRefetchDeckToggle.checked;
+				const newActiveTheme = themeSelect.value;
+				const newToolLimit = parseInt(toolLimitInput.value, 10) || 4;
+				const newLanguage = languageSelect.value;
 
-            updateInfoRep.on('change', (newVal) => {
-                const notificationDiv = document.getElementById('update-notification');
-                if (newVal && newVal.available) {
-                                            const lang = settingsRep.value ? settingsRep.value.language : 'jp';
-                                            let message = `🎉 New version available: <strong>${newVal.latest}</strong>. <a href="${newVal.url}" target="_blank" rel="noopener noreferrer">Click here to download</a>`;
-                                            if (lang === 'jp') {
-                                                message = `🎉 新バージョン: <strong>${newVal.latest}</strong>。 <a href="${newVal.url}" target="_blank" rel="noopener noreferrer">ダウンロードはこちら</a>`;
-                                            } else if (lang === 'chs') {
-                                                message = `🎉 发现新版本: <strong>${newVal.latest}</strong>。 下载链接: <a href="https://pan.baidu.com/s/1TX3Z2CWegzJKBi-jeJ4NKg?pwd=mn49" target="_blank" rel="noopener noreferrer">百度网盘</a> <a href="https://pan.quark.cn/s/80c16eaef331" target="_blank" rel="noopener noreferrer">夸克网盘</a>`;
-                                            } else if (lang === 'cht') {
-                                                message = `🎉 發現新版本: <strong>${newVal.latest}</strong>。 <a href="${newVal.url}" target="_blank" rel="noopener noreferrer">點擊此處下載</a>`;
-                                            }                    notificationDiv.innerHTML = message;
-                    notificationDiv.style.display = 'block';
-                } else {
-                    notificationDiv.style.display = 'none';
-                }
-            });
+				const currentSettings = settingsRep.value || {};
+				// Make sure to not include the old useCustomAppearance setting
+				const { useCustomAppearance, ...restOfSettings } = currentSettings;
 
-            const supportBtn = document.getElementById('support-developer-btn');
-            const donationModal = document.getElementById('donation-modal');
-            const closeModalBtn = document.getElementById('donation-modal-close-btn');
-            const donationModalTitle = document.getElementById('donation-modal-title-text');
-            const donationContentArea = document.getElementById('donation-content-area');
+				settingsRep.value = {
+					...restOfSettings,
+					typeColorMap: newColorMap,
+					hotkeys: newHotkeys,
+					vstarEnabled: newVstarEnabled,
+					autoRetreatToggle: newAutoRetreatToggle,
+					autoSideTake: newAutoSideTake,
+					lostZoneEnabled: newLostZoneEnabled,
+					reverseCardDisplay: newReverseCardDisplay,
+					showDeckEnergyOnly: newShowDeckEnergyOnly,
+					autoCheckSupporter: newAutoCheckSupporter,
+					autoTrashTM: newAutoTrashTM,
+					weaknessDamage: newWeaknessDamage,
+					activeTheme: newActiveTheme,
+					toolLimit: newToolLimit,
+					language: newLanguage,
+					forceRefetchDeck: newForceRefetchDeck
+				};
+				saveBtn.textContent = 'Saved!';
+				updateAllLabels();
+				setTimeout(() => {
+					saveBtn.textContent = 'Save All Settings';
+				}, 1500);
+			});
 
-            if (nodecg.bundleConfig && nodecg.bundleConfig.donation_links) {
-                supportBtn.style.display = 'inline-block';
-                const links = nodecg.bundleConfig.donation_links;
-                supportBtn.addEventListener('click', () => {
-                    const lang = settingsRep.value ? settingsRep.value.language : 'jp';
-                    donationModalTitle.textContent = getI18nText('donation_modal_title');
-                    donationContentArea.innerHTML = '';
-                    switch (lang) {
-                        case 'chs':
-                            if (links.wechat_qr_url) donationContentArea.innerHTML += `<img class="qr-code-wechat" src="${links.wechat_qr_url}" alt="WeChat Pay">`;
-                            if (links.alipay_qr_url) donationContentArea.innerHTML += `<img class="qr-code-alipay" src="${links.alipay_qr_url}" alt="Alipay">`;
-                            break;
-                        case 'jp':
-                            if (links.ofuse_url) donationContentArea.innerHTML = `<a href="${links.ofuse_url}" target="_blank" rel="noopener noreferrer" class="ofuse-custom-btn">OFUSEで応援を送る</a>`;
-                            break;
-                        default:
-                            if (links.buy_me_a_coffee_url) donationContentArea.innerHTML = `<a href="${links.buy_me_a_coffee_url}" target="_blank" rel="noopener noreferrer"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;"></a>`;
-                            break;
-                    }
-                    donationModal.style.display = 'block';
-                });
-                closeModalBtn.addEventListener('click', () => { donationModal.style.display = 'none'; });
-                window.addEventListener('click', (event) => {
-                    if (event.target == donationModal) {
-                        donationModal.style.display = 'none';
-                    }
-                });
-            }
-        });
-    </script>
+			const versionSpan = document.getElementById('bundle-version');
+			const bundleVersionRep = nodecg.Replicant('bundleVersion');
+			const updateInfoRep = nodecg.Replicant('updateInfo');
+
+			bundleVersionRep.on('change', (newVal) => {
+				if (newVal && versionSpan) {
+					versionSpan.textContent = newVal;
+				}
+			});
+
+			updateInfoRep.on('change', (newVal) => {
+				const notificationDiv = document.getElementById('update-notification');
+				if (newVal && newVal.available) {
+					const lang = settingsRep.value ? settingsRep.value.language : 'jp';
+					let message = `🎉 New version available: <strong>${newVal.latest}</strong>. <a href="${newVal.url}" target="_blank" rel="noopener noreferrer">Click here to download</a>`;
+					if (lang === 'jp') {
+						message = `🎉 新バージョン: <strong>${newVal.latest}</strong>。 <a href="${newVal.url}" target="_blank" rel="noopener noreferrer">ダウンロードはこちら</a>`;
+					} else if (lang === 'chs') {
+						message = `🎉 发现新版本: <strong>${newVal.latest}</strong>。 下载链接: <a href="https://pan.baidu.com/s/1TX3Z2CWegzJKBi-jeJ4NKg?pwd=mn49" target="_blank" rel="noopener noreferrer">百度网盘</a> <a href="https://pan.quark.cn/s/80c16eaef331" target="_blank" rel="noopener noreferrer">夸克网盘</a>`;
+					} else if (lang === 'cht') {
+						message = `🎉 發現新版本: <strong>${newVal.latest}</strong>。 <a href="${newVal.url}" target="_blank" rel="noopener noreferrer">點擊此處下載</a>`;
+					} notificationDiv.innerHTML = message;
+					notificationDiv.style.display = 'block';
+				} else {
+					notificationDiv.style.display = 'none';
+				}
+			});
+
+			const supportBtn = document.getElementById('support-developer-btn');
+			const donationModal = document.getElementById('donation-modal');
+			const closeModalBtn = document.getElementById('donation-modal-close-btn');
+			const donationModalTitle = document.getElementById('donation-modal-title-text');
+			const donationContentArea = document.getElementById('donation-content-area');
+
+			if (nodecg.bundleConfig && nodecg.bundleConfig.donation_links) {
+				supportBtn.style.display = 'inline-block';
+				const links = nodecg.bundleConfig.donation_links;
+				supportBtn.addEventListener('click', () => {
+					const lang = settingsRep.value ? settingsRep.value.language : 'jp';
+					donationModalTitle.textContent = getI18nText('donation_modal_title');
+					donationContentArea.innerHTML = '';
+					switch (lang) {
+						case 'chs':
+							if (links.wechat_qr_url) donationContentArea.innerHTML += `<img class="qr-code-wechat" src="${links.wechat_qr_url}" alt="WeChat Pay">`;
+							if (links.alipay_qr_url) donationContentArea.innerHTML += `<img class="qr-code-alipay" src="${links.alipay_qr_url}" alt="Alipay">`;
+							break;
+						case 'jp':
+							if (links.ofuse_url) donationContentArea.innerHTML = `<a href="${links.ofuse_url}" target="_blank" rel="noopener noreferrer" class="ofuse-custom-btn">OFUSEで応援を送る</a>`;
+							break;
+						default:
+							if (links.buy_me_a_coffee_url) donationContentArea.innerHTML = `<a href="${links.buy_me_a_coffee_url}" target="_blank" rel="noopener noreferrer"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;"></a>`;
+							break;
+					}
+					donationModal.style.display = 'block';
+				});
+				closeModalBtn.addEventListener('click', () => { donationModal.style.display = 'none'; });
+				window.addEventListener('click', (event) => {
+					if (event.target == donationModal) {
+						donationModal.style.display = 'none';
+					}
+				});
+			}
+		});
+	</script>
 </body>
+
 </html>
