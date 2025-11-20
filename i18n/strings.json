@@ -53,17 +53,11 @@
     "cht": "玩家:",
     "en": "Player:"
   },
-  "side": {
-    "jp": "サイド:",
-    "chs": "奖赏卡:",
-    "cht": "獎賞卡:",
-    "en": "Prizes:"
-  },
   "prize_cards": {
-    "jp": "サイドカード",
+    "jp": "サイド",
     "chs": "奖赏卡",
     "cht": "獎賞卡",
-    "en": "Prize Cards"
+    "en": "Prizes"
   },
   "lost_zone": {
     "jp": "ロストゾーン:",
@@ -77,11 +71,11 @@
     "cht": "基本設定",
     "en": "Basic"
   },
-  "settings_auto_side_take": {
-    "jp": "気絶する時、サイド自動取得",
+  "settings_auto_prize_take": {
+    "jp": "サイドを自動取る",
     "chs": "气绝时自动拿取奖赏卡",
     "cht": "昏厥時自動拿取獎賞卡",
-    "en": "Auto Side Take"
+    "en": "Auto Prize Take"
   },
   "settings_auto_retreat": {
     "jp": "撤退時自動チェック",

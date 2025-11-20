@@ -14,8 +14,8 @@
 			<div class="collapsible-content">
 				<div class="setting-grid">
 					<div class="form-group-hotkey">
-						<label for="auto-sided-take" id="label-auto-side-take">Auto Side Take</label>
-						<input type="checkbox" id="auto-sided-take"
+						<label for="auto-prize-take" id="label-auto-prize-take">Auto Prize Take</label>
+						<input type="checkbox" id="auto-prize-take"
 							style="width: auto; height: auto; justify-self: end;">
 					</div>
 					<div class="form-group-hotkey">
@@ -195,7 +195,7 @@
 			const colorContainer = document.getElementById('color-settings-container');
 			const vstarToggle = document.getElementById('vstar-toggle');
 			const autoRetreatToggle = document.getElementById('auto-retreat-toggle');
-			const autoSideTake = document.getElementById('auto-sided-take');
+			const autoPrizeTake = document.getElementById('auto-prize-take');
 			const lostZoneToggle = document.getElementById('lost-zone-toggle');
 			const reverseCardDisplayToggle = document.getElementById('reverse-card-display-toggle');
 			const showDeckEnergyOnlyToggle = document.getElementById('show-deck-energy-only-toggle');
@@ -223,7 +223,7 @@
 
 			function updateAllLabels() {
 				document.getElementById('label-basic').textContent = getI18nText('settings_basic');
-				document.getElementById('label-auto-side-take').textContent = getI18nText('settings_auto_side_take');
+				document.getElementById('label-auto-prize-take').textContent = getI18nText('settings_auto_prize_take');
 				document.getElementById('label-auto-retreat').textContent = getI18nText('settings_auto_retreat');
 				document.getElementById('label-auto-check-supporter').textContent = getI18nText('settings_auto_check_supporter');
 				document.getElementById('label-auto-trash-tm').textContent = getI18nText('settings_auto_trash_tm');
@@ -333,7 +333,7 @@
 				// 2. Render Appearance Settings
 				vstarToggle.checked = !!(settings && settings.vstarEnabled);
 				autoRetreatToggle.checked = !!(settings && settings.autoRetreatToggle);
-				autoSideTake.checked = !!(settings && settings.autoSideTake);
+				autoPrizeTake.checked = !!(settings && settings.autoPrizeTake);
 				lostZoneToggle.checked = !!(settings && settings.lostZoneEnabled);
 				reverseCardDisplayToggle.checked = !!(settings && settings.reverseCardDisplay);
 				showDeckEnergyOnlyToggle.checked = !!(settings && settings.showDeckEnergyOnly);
@@ -389,7 +389,7 @@
 
 				const newVstarEnabled = vstarToggle.checked;
 				const newAutoRetreatToggle = autoRetreatToggle.checked;
-				const newAutoSideTake = autoSideTake.checked;
+				const newAutoPrizeTake = autoPrizeTake.checked;
 				const newLostZoneEnabled = lostZoneToggle.checked;
 				const newReverseCardDisplay = reverseCardDisplayToggle.checked;
 				const newShowDeckEnergyOnly = showDeckEnergyOnlyToggle.checked;
@@ -411,7 +411,7 @@
 					hotkeys: newHotkeys,
 					vstarEnabled: newVstarEnabled,
 					autoRetreatToggle: newAutoRetreatToggle,
-					autoSideTake: newAutoSideTake,
+					autoPrizeTake: newAutoPrizeTake,
 					lostZoneEnabled: newLostZoneEnabled,
 					reverseCardDisplay: newReverseCardDisplay,
 					showDeckEnergyOnly: newShowDeckEnergyOnly,

@@ -45,7 +45,7 @@ module.exports = function (nodecg) {
 			},
 			lostZoneEnabled: false,
 			reverseCardDisplay: false,
-			autoSideTake: true,
+			autoPrizeTake: true,
 			autoRetreatToggle: true,
 			showDeckEnergyOnly: true,
 			autoCheckSupporter: true,
@@ -711,10 +711,10 @@ module.exports = function (nodecg) {
 					...(isBattleSlot && { ailments: [] })
 				};
 				// Auto-prize card logic
-				const autoSideTake = ptcgSettings.value && ptcgSettings.value.autoSideTake;
+				const autoPrizeTake = ptcgSettings.value && ptcgSettings.value.autoPrizeTake;
 				// This logic should only run when applying to DRAFT, to generate the follow-up op.
 				// When applying to LIVE, the generated op will be processed from the queue itself.
-				if (autoSideTake && mode === 'draft') {
+				if (autoPrizeTake && mode === 'draft') {
 					// Determine which side was KO'd
 					const slotId = replicant.name.replace(/^draft_/, '').replace(/^live_/, '');
 					const side = slotId.charAt(4); // "slotL3" -> "L" or "R"
