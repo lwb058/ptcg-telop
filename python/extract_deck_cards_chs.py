@@ -76,8 +76,12 @@ def main(identifier_arg=None):
     """
     parser = argparse.ArgumentParser(description="Extract deck data from tcg.mik.moe.")
     parser.add_argument("identifier", nargs='?', default=identifier_arg, help="The deck code, deck ID, or URL.")
-    parser.add_argument("--overwrite", action="store_true", help="Force overwrite if card exists in the database.")
     parser.add_argument("--database-path", type=str, default=None, help="Path to the database JSON file.")
+    
+    overwrite_group = parser.add_mutually_exclusive_group()
+    overwrite_group.add_argument("--overwrite", dest="overwrite", action="store_true", help="Force overwrite if card exists in the database (default behavior).")
+    overwrite_group.add_argument("--keep", dest="overwrite", action="store_false", help="Skip writing if card exists in the database.")
+    parser.set_defaults(overwrite=True)
     
     args = parser.parse_args()
 
@@ -156,4 +160,4 @@ def main(identifier_arg=None):
     print(json.dumps(deck_output, ensure_ascii=False))
 
 if __name__ == "__main__":
-    main("4t9KYsibm_U_YQ2sQL")
+    main()

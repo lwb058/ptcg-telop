@@ -1,4 +1,8 @@
-import os, sys, re, time, argparse, json
+import os, sys, re, time, argparse, json, io
+
+# Reconfigure stdout and stderr to use UTF-8 encoding
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 # Get the absolute path of the directory where the script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
