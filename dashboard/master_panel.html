@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Master Control Panel</title>
     <link rel="stylesheet" href="css/dashboard.css">
 </head>
+
 <body>
 
     <div class="panel-section info-zone">
@@ -28,27 +30,38 @@
 
     <div class="panel-section">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-            <h3>Field Development</h3>
+            <h3>Develop Module</h3>
             <div class="form-group" style="margin-bottom: 0;">
                 <input type="checkbox" id="show-opponent-field-checkbox" style="transform: scale(1.2);">
                 <label for="show-opponent-field-checkbox" style="margin-left: 5px;">Show Opponent</label>
             </div>
         </div>
         <div id="energy-buttons" class="energy-btn-grid">
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/草.png" title="草" class="energy-icon" data-energy-type="草" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/炎.png" title="炎" class="energy-icon" data-energy-type="炎" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/水.png" title="水" class="energy-icon" data-energy-type="水" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/雷.png" title="雷" class="energy-icon" data-energy-type="雷" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/超.png" title="超" class="energy-icon" data-energy-type="超" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/闘.png" title="闘" class="energy-icon" data-energy-type="闘" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/悪.png" title="悪" class="energy-icon" data-energy-type="悪" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/鋼.png" title="鋼" class="energy-icon" data-energy-type="鋼" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/妖.png" title="妖" class="energy-icon" data-energy-type="妖" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/無.png" title="無" class="energy-icon" data-energy-type="無" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/全.png" title="全" class="energy-icon" data-energy-type="全" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/草.png" title="草" class="energy-icon"
+                    data-energy-type="草" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/炎.png" title="炎" class="energy-icon"
+                    data-energy-type="炎" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/水.png" title="水" class="energy-icon"
+                    data-energy-type="水" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/雷.png" title="雷" class="energy-icon"
+                    data-energy-type="雷" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/超.png" title="超" class="energy-icon"
+                    data-energy-type="超" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/闘.png" title="闘" class="energy-icon"
+                    data-energy-type="闘" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/悪.png" title="悪" class="energy-icon"
+                    data-energy-type="悪" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/鋼.png" title="鋼" class="energy-icon"
+                    data-energy-type="鋼" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/妖.png" title="妖" class="energy-icon"
+                    data-energy-type="妖" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/無.png" title="無" class="energy-icon"
+                    data-energy-type="無" draggable="true"></button>
+            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/全.png" title="全" class="energy-icon"
+                    data-energy-type="全" draggable="true"></button>
         </div>
         <div id="current-player-field" style="margin-top: 10px;">
-             <!-- Pokémon will be rendered here by JavaScript -->
+            <!-- Pokémon will be rendered here by JavaScript -->
         </div>
         <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
         <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 12px; font-weight: bold; color: #555;">Tools</h4>
@@ -58,7 +71,7 @@
     </div>
 
     <div class="panel-section">
-        <h3>Attack Module</h3>
+        <h3>Field Module</h3>
         <div id="attack-zone-flex-container" class="flex-container">
             <div class="form-group" style="flex-grow: 3;">
                 <label for="attacker" data-i18n="attacker">Attacker</label>
@@ -72,10 +85,26 @@
         <div class="form-group" style="flex-direction: column; align-items: stretch; margin-bottom: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                 <label style="margin-bottom: 0;">Select Target:</label>
-                <button id="toggle-target-height-btn" class="btn" style="padding: 2px 8px; font-size: 12px;">Collapse</button>
+                <button id="toggle-target-height-btn" class="btn"
+                    style="padding: 2px 8px; font-size: 12px;">Collapse</button>
             </div>
-            <div id="attack-target-field" class="target-field-container">
+            <div id="damage-transfer-control"
+                style="padding:5px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 4px 4px 0px 0px; background: lightgrey">
+                <label for="damage-transfer-amount" data-i18n="DC-Transfer">Damage Transfer:</label>
+                <input type="number" id="damage-transfer-amount" class="compact-input" value="30" min="10" step="10"
+                    style="width: 60px;">
+                <span style="border-left: 1px solid #303157; margin-left: 5px; padding-left: 15px;">Add:</span>
+                <div id="damage-pool" style="display: flex; gap: 5px;">
+                    <div class="damage-counter pool-item" draggable="true" data-damage-amount="10">10</div>
+                    <div class="damage-counter pool-item" draggable="true" data-damage-amount="20">20</div>
+                    <div class="damage-counter pool-item" draggable="true" data-damage-amount="30">30</div>
+                    <div class="damage-counter pool-item" draggable="true" data-damage-amount="50">50</div>
+                </div>
+            </div>
+            <div id="battle-field" class="battle-field-container">
                 <!-- Targeting view will be rendered here by JavaScript -->
+            </div>
+            <div id="batch-damage-drop-zone" data-i18n="batch_damage_drop_zone_text">
             </div>
         </div>
         <div class="select-zone-grid" style="margin-bottom: 10px;">
@@ -91,11 +120,13 @@
                 <label for="damage" style="min-width: 60px; margin-right: 5px;" data-i18n="damage">Damage</label>
                 <input type="number" id="damage" class="compact-input" value="0" min="0" step="10">
             </div>
-            <div class="form-group" style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
+            <div class="form-group"
+                style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
                 <label for="weakness-check" style="margin-right: 5px;" data-i18n="weakness">Weakness</label>
                 <input type="checkbox" id="weakness-check" style="transform: scale(1.2);">
             </div>
-            <div class="form-group" style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
+            <div class="form-group"
+                style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
                 <label for="resistance-check" style="margin-right: 5px;" data-i18n="resistance">Resistance</label>
                 <input type="checkbox" id="resistance-check" style="transform: scale(1.2);">
             </div>
@@ -103,7 +134,7 @@
             <button id="attack-btn" class="btn btn-lightning" style="flex-grow: 1; height: fit-content;">Attack</button>
         </div>
     </div>
-    
+
     <div class="panel-section">
         <h3>Shortcut Module</h3>
         <div class="flex-container" style="justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -117,7 +148,9 @@
         </div>
         <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
         <div id="extrahp-shortcuts">
-            <h4 style="text-align:center; margin-top: 10px; margin-bottom: 5px; font-size: 12px; font-weight: bold; color: #555;">↓↓↓ ExtraHP Adjust ↓↓↓</h4>
+            <h4
+                style="text-align:center; margin-top: 10px; margin-bottom: 5px; font-size: 12px; font-weight: bold; color: #555;">
+                ↓↓↓ ExtraHP Adjust ↓↓↓</h4>
             <div class="grid-container" style="grid-template-columns: repeat(2, 1fr); gap: 5px; margin-bottom: 10px;">
                 <button id="select-basic-btn" class="btn btn-info">Select All Basic</button>
                 <button id="select-stage2-btn" class="btn btn-info">Select All Stage 2</button>
@@ -132,7 +165,9 @@
         </div>
         <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
         <div id="damage-shortcuts">
-            <h4 style="text-align:center; margin-top: 10px; margin-bottom: 5px; font-size: 12px; font-weight: bold; color: #555;">↓↓↓ HP Adjust ↓↓↓</h4>
+            <h4
+                style="text-align:center; margin-top: 10px; margin-bottom: 5px; font-size: 12px; font-weight: bold; color: #555;">
+                ↓↓↓ HP Adjust ↓↓↓</h4>
             <div class="grid-container" style="grid-template-columns: repeat(8, 1fr); gap: 5px;">
                 <button class="btn btn-fire" data-damage-adj="-10">-10 HP</button>
                 <button class="btn btn-fire" data-damage-adj="-20">-20 HP</button>
@@ -145,14 +180,14 @@
             </div>
         </div>
     </div>
-    
+
 
 
     <script src="js/dashboard.js"></script>
     <script>
         // --- Global Replicant Declarations ---
-        var playerL_name, playerR_name, cardDatabase, selections, draft_currentTurn, 
-            deckL, deckR, draft_stadium, settingsRep, assetPaths, i18nStrings, 
+        var playerL_name, playerR_name, cardDatabase, selections, draft_currentTurn,
+            deckL, deckR, draft_stadium, settingsRep, assetPaths, i18nStrings,
             language, cardToShowL, cardToShowR, slots = [];
 
         NodeCG.waitForReplicants(
@@ -222,7 +257,7 @@
             const extrahpShortcutsContainer = document.getElementById('extrahp-shortcuts');
             const energyButtonsContainer = document.getElementById('energy-buttons');
             const toolButtonsContainer = document.getElementById('tool-buttons');
-            const attackTargetField = document.getElementById('attack-target-field');
+            const attackTargetField = document.getElementById('battle-field');
             const toggleTargetHeightBtn = document.getElementById('toggle-target-height-btn');
             const attackerSelect = document.getElementById('attacker');
             const attackSelect = document.getElementById('attack-select');
@@ -232,10 +267,63 @@
             const aimBtn = document.getElementById('aim-btn');
             const stadiumSelect = document.getElementById('stadium-select');
             const stadiumUsedCheckbox = document.getElementById('stadium-used-checkbox');
+            const damagePool = document.getElementById('damage-pool');
+            const batchDamageDropZone = document.getElementById('batch-damage-drop-zone');
 
             const turnLRadio = document.getElementById('turn-l');
             const turnRRadio = document.getElementById('turn-r');
             const endTurnBtn = document.getElementById('end-turn-btn');
+
+            // --- Global Drag Handlers for Batch Damage Zone ---
+            document.body.addEventListener('dragstart', (e) => {
+                if (e.target.classList.contains('pool-item')) {
+                    batchDamageDropZone.classList.add('show');
+                }
+            });
+            document.body.addEventListener('dragend', () => {
+                batchDamageDropZone.classList.remove('show');
+            });
+
+
+            // --- Batch Damage Drop Zone Logic ---
+            batchDamageDropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.currentTarget.classList.add('over');
+            });
+            batchDamageDropZone.addEventListener('dragleave', (e) => {
+                e.currentTarget.classList.remove('over');
+            });
+            batchDamageDropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove('over');
+
+                const isDamageAdd = e.dataTransfer.types.includes('application/ptcg-damage-add');
+                if (!isDamageAdd) return;
+
+                const amountToAdd = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                const currentSelections = selections.value || [];
+
+                if (isNaN(amountToAdd) || currentSelections.length === 0) {
+                    return;
+                }
+
+                currentSelections.forEach(slotId => {
+                    const slotReplicant = slots.find(s => s.name === `draft_${slotId}`);
+                    if (slotReplicant && slotReplicant.value && slotReplicant.value.cardId) {
+                        const currentDamage = slotReplicant.value.damage || 0;
+                        const newDamage = currentDamage + amountToAdd;
+                        queueOperation('SET_DAMAGE', { target: slotId, value: newDamage });
+                    }
+                });
+            });
+
+            damagePool.addEventListener('dragstart', (e) => {
+                if (e.target.classList.contains('pool-item')) {
+                    e.dataTransfer.setData('application/ptcg-damage-add', 'true');
+                    e.dataTransfer.setData('text/plain', e.target.dataset.damageAmount);
+                    e.dataTransfer.effectAllowed = 'copy';
+                }
+            });
 
             function updateUIStrings() {
                 document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -415,7 +503,7 @@
                 });
 
                 cardEl.appendChild(toolContainer);
-                
+
                 // Add the special drop zone for "manual turn attachment"
                 const manualAttachZone = document.createElement('div');
                 manualAttachZone.className = 'manual-attach-zone';
@@ -425,11 +513,11 @@
 
                 return cardEl;
             }
-            
+
             function createEmptySlotElement(slotId) {
                 const emptyEl = document.createElement('div');
                 emptyEl.className = 'pokemon-drop-target empty-slot';
-                 if (slotId.endsWith('0')) {
+                if (slotId.endsWith('0')) {
                     emptyEl.classList.add('battle-zone-pokemon');
                 }
                 emptyEl.dataset.slotId = slotId;
@@ -437,7 +525,7 @@
                 return emptyEl;
             }
 
-            
+
             // --- Helper Functions ---
             const getOccupiedSlots = () => slots.filter(s => s.value && s.value.cardId).map(s => s.name.replace('draft_', ''));
             const getCardName = (slotId) => {
@@ -474,19 +562,19 @@
                 updateEnergyButtonVisibility();
                 updateToolButtonVisibility();
             });
-                        playerL_name.on('change', (newName) => {
-                            const radio = document.getElementById('turn-l');
-                            if (radio && radio.nextSibling.nodeType === Node.TEXT_NODE) {
-                                radio.nextSibling.textContent = ` ${newName || 'Left Player'}`;
-                            }
-                        });
-            
-                        playerR_name.on('change', (newName) => {
-                            const radio = document.getElementById('turn-r');
-                            if (radio && radio.nextSibling.nodeType === Node.TEXT_NODE) {
-                                radio.nextSibling.textContent = ` ${newName || 'Right Player'}`;
-                            }
-                        });
+            playerL_name.on('change', (newName) => {
+                const radio = document.getElementById('turn-l');
+                if (radio && radio.nextSibling.nodeType === Node.TEXT_NODE) {
+                    radio.nextSibling.textContent = ` ${newName || 'Left Player'}`;
+                }
+            });
+
+            playerR_name.on('change', (newName) => {
+                const radio = document.getElementById('turn-r');
+                if (radio && radio.nextSibling.nodeType === Node.TEXT_NODE) {
+                    radio.nextSibling.textContent = ` ${newName || 'Right Player'}`;
+                }
+            });
 
             const handleTurnChange = (e) => {
                 const newTurn = e.target.value;
@@ -719,7 +807,7 @@
                 const isEnergyDrag = e.dataTransfer.types.includes('application/ptcg-energy-drag');
                 const isToolDrag = e.dataTransfer.types.includes('application/ptcg-tool-drag');
                 const target = e.target.closest('.pokemon-drop-target:not(.empty-slot)');
-                
+
                 if (target && (isEnergyDrag || isToolDrag)) {
                     e.preventDefault(); // Allow drop
                     target.style.boxShadow = '0 0 10px 3px #4a69bd'; // Highlight
@@ -882,7 +970,7 @@
                     const card = db[id];
                     const btn = document.createElement('button');
                     btn.className = 'tool-btn'; // Reuse style
-                    
+
                     const img = document.createElement('img');
                     img.src = getCardImageUrl(id); // Use card image for tools
                     img.title = card.name;
@@ -966,7 +1054,7 @@
                     for (const id in db) {
                         const card = db[id];
                         if (card && card.supertype === 'energy' && card.subtype !== 'basic energy') {
-                             if (!specialEnergies.has(id)) {
+                            if (!specialEnergies.has(id)) {
                                 specialEnergies.set(id, card);
                             }
                         }
@@ -1017,13 +1105,29 @@
                 const cardEl = document.createElement('div');
                 cardEl.className = 'pokemon-target-card';
                 cardEl.dataset.slotId = slotId;
-                // 卡片可拖动，用于交换位置
                 cardEl.draggable = true;
 
                 if (slotValue && slotValue.cardId) {
                     const img = document.createElement('img');
                     img.src = getCardImageUrl(slotValue.cardId);
                     cardEl.appendChild(img);
+
+                    const damage = slotValue.damage || 0;
+                    if (damage > 0) {
+                        const damageCounter = document.createElement('div');
+                        damageCounter.className = 'damage-counter on-pokemon';
+                        damageCounter.textContent = damage;
+                        damageCounter.draggable = true;
+
+                        damageCounter.addEventListener('dragstart', (e) => {
+                            e.stopPropagation(); // Prevent card drag when dragging counter
+                            e.dataTransfer.setData('application/ptcg-damage-transfer', 'true');
+                            e.dataTransfer.setData('text/plain', slotId);
+                            e.dataTransfer.effectAllowed = 'move';
+                        });
+
+                        cardEl.appendChild(damageCounter);
+                    }
                 } else {
                     cardEl.classList.add('empty-target-slot');
                 }
@@ -1035,10 +1139,8 @@
                     let newSelections = [...currentSelections];
 
                     if (index > -1) {
-                        // Already selected, so remove it
                         newSelections.splice(index, 1);
                     } else {
-                        // Not selected, so add it
                         newSelections.push(slotId);
                     }
                     selections.value = newSelections;
@@ -1114,8 +1216,10 @@
 
             // --- Logic for dragging and dropping to swap Pokémon in the targeting view --- 
             attackTargetField.addEventListener('dragstart', e => {
+                if (e.target.classList.contains('damage-counter')) {
+                    return;
+                }
                 const sourceCard = e.target.closest('.pokemon-target-card');
-                // Allow dragging only if it's not an empty slot
                 if (sourceCard && !sourceCard.classList.contains('empty-target-slot')) {
                     const sourceSlotId = sourceCard.dataset.slotId;
                     e.dataTransfer.setData('application/ptcg-pokemon-swap', 'true');
@@ -1125,43 +1229,118 @@
             });
 
             attackTargetField.addEventListener('dragover', e => {
-                // Check if draging a Pokémon swap
-                if (e.dataTransfer.types.includes('application/ptcg-pokemon-swap')) {
-                    const targetCard = e.target.closest('.pokemon-target-card');
-                    if (targetCard) { //Add highlight
+                const isDamageTransfer = e.dataTransfer.types.includes('application/ptcg-damage-transfer');
+                const isDamageAdd = e.dataTransfer.types.includes('application/ptcg-damage-add');
+                const isPokemonSwap = e.dataTransfer.types.includes('application/ptcg-pokemon-swap');
+                const targetCard = e.target.closest('.pokemon-target-card');
+
+                if (targetCard) { // Dragging over a Pokémon card
+                    if (isDamageTransfer || isDamageAdd || isPokemonSwap) {
                         e.preventDefault();
-                        targetCard.style.boxShadow = '0 0 10px 3px #3498db';
+                        if ((isDamageTransfer || isDamageAdd) && !targetCard.classList.contains('empty-target-slot')) {
+                            targetCard.classList.add('over');
+                        }
+                        if (isPokemonSwap) {
+                            targetCard.style.boxShadow = '0 0 10px 3px #3498db';
+                        }
                     }
+                } else if ((isDamageTransfer || isDamageAdd) && e.currentTarget.contains(e.target)) { // Dragging over an empty area within attackTargetField
+                    e.preventDefault();
+                    e.currentTarget.classList.add('over'); // Highlight the field itself
                 }
             });
 
             attackTargetField.addEventListener('dragleave', e => {
                 const targetCard = e.target.closest('.pokemon-target-card');
                 if (targetCard) {
-                    // Remove highlight
+                    targetCard.classList.remove('over');
                     targetCard.style.boxShadow = '';
+                } else { // Leaving the attackTargetField itself
+                    e.currentTarget.classList.remove('over');
                 }
             });
 
             attackTargetField.addEventListener('drop', e => {
                 e.preventDefault();
                 const dropTarget = e.target.closest('.pokemon-target-card');
-                if (!dropTarget) return;
 
-                dropTarget.style.boxShadow = ''; // always remove highlight after drop
+                e.currentTarget.classList.remove('over');
+                if (dropTarget) {
+                    dropTarget.classList.remove('over');
+                    dropTarget.style.boxShadow = '';
+                }
 
-                if (e.dataTransfer.types.includes('application/ptcg-pokemon-swap')) {
+                const isDamageTransfer = e.dataTransfer.types.includes('application/ptcg-damage-transfer');
+                const isDamageAdd = e.dataTransfer.types.includes('application/ptcg-damage-add');
+                const isPokemonSwap = e.dataTransfer.types.includes('application/ptcg-pokemon-swap');
+
+                if (!dropTarget) {
+                    if (isDamageTransfer) {
+                        const sourceSlotId = e.dataTransfer.getData('text/plain');
+                        const sourceReplicant = slots.find(s => s.name === `draft_${sourceSlotId}`);
+                        if (sourceReplicant) {
+                            const currentDamage = sourceReplicant.value.damage || 0;
+                            const transferAmount = parseInt(document.getElementById('damage-transfer-amount').value, 10);
+                            const newDamage = Math.max(0, currentDamage - transferAmount);
+
+                            queueOperation('SET_DAMAGE', {
+                                target: sourceSlotId,
+                                value: newDamage
+                            });
+                        }
+                    }
+                    return;
+                }
+
+                const destinationSlotId = dropTarget.dataset.slotId;
+
+                if (isDamageTransfer) {
                     const sourceSlotId = e.dataTransfer.getData('text/plain');
-                    const destinationSlotId = dropTarget.dataset.slotId;
 
-                    // Make sure both slots are valid and not the same
+                    if (sourceSlotId && destinationSlotId && sourceSlotId !== destinationSlotId && !dropTarget.classList.contains('empty-target-slot')) {
+                        const sourceReplicant = slots.find(s => s.name === `draft_${sourceSlotId}`);
+                        const destReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
+
+                        if (sourceReplicant && destReplicant) {
+                            const sourceDamage = sourceReplicant.value.damage || 0;
+                            const destDamage = destReplicant.value.damage || 0;
+                            const transferAmount = parseInt(document.getElementById('damage-transfer-amount').value, 10);
+
+                            const actualTransfer = Math.min(sourceDamage, transferAmount);
+
+                            if (actualTransfer > 0) {
+                                queueOperation('SET_DAMAGE', {
+                                    target: sourceSlotId,
+                                    value: sourceDamage - actualTransfer
+                                });
+                                queueOperation('SET_DAMAGE', {
+                                    target: destinationSlotId,
+                                    value: destDamage + actualTransfer
+                                });
+                            }
+                        }
+                    }
+                } else if (isDamageAdd) {
+                    const amountToAdd = parseInt(e.dataTransfer.getData('text/plain'), 10);
+
+                    if (destinationSlotId && !isNaN(amountToAdd) && !dropTarget.classList.contains('empty-target-slot')) {
+                        const destReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
+                        if (destReplicant) {
+                            const destDamage = destReplicant.value.damage || 0;
+                            queueOperation('SET_DAMAGE', {
+                                target: destinationSlotId,
+                                value: destDamage + amountToAdd
+                            });
+                        }
+                    }
+                } else if (isPokemonSwap) {
+                    const sourceSlotId = e.dataTransfer.getData('text/plain');
+
                     if (sourceSlotId && destinationSlotId && sourceSlotId !== destinationSlotId) {
                         const sourceSide = sourceSlotId.charAt(4);
                         const destinationSide = destinationSlotId.charAt(4);
 
-                        // Only allow swaps within the same side (player or opponent)
                         if (sourceSide === destinationSide) {
-                            // Queue the switch operation
                             queueOperation('SWITCH_POKEMON', {
                                 source: sourceSlotId,
                                 target: destinationSlotId
@@ -1282,7 +1461,7 @@
                 const targetSlotReplicant = slots.find(s => s.name === `draft_${targetSlotId}`);
                 const targetCardId = targetSlotReplicant?.value?.cardId;
                 const targetCard = targetCardId ? db[targetCardId] : null;
-                
+
                 // Check Weakness
                 const targetWeaknesses = targetCard?.pokemon?.weaknesses;
                 if (!targetWeaknesses || targetWeaknesses.length === 0) {
@@ -1300,7 +1479,7 @@
                     const resistanceTypes = targetResistances.map(r => r.type);
                     resistanceCheck.checked = attackerTypes.some(type => resistanceTypes.includes(type));
                 }
-                
+
                 // After updating checks, always recalculate damage
                 recalculateFinalDamage();
             }
@@ -1308,7 +1487,7 @@
             // When the weakness or resistance checkbox is manually clicked, recalculate the damage.
             weaknessCheck.addEventListener('change', recalculateFinalDamage);
             resistanceCheck.addEventListener('change', recalculateFinalDamage);
-            
+
             /**
              * Finds all attacks for a Pokémon and its entire pre-evolution line by
              * searching within the combined decks. This version correctly handles multiple
@@ -1339,7 +1518,7 @@
                 if (startCardData.pokemon?.evolvesFrom) {
                     startCardData.pokemon.evolvesFrom.forEach(name => namesToProcess.add(name));
                 }
-                
+
                 const processedNames = new Set();
 
                 // 3. Iterate through the pre-evolution name queue, finding all matching cards in the deck.
@@ -1396,7 +1575,7 @@
                 const db = cardDatabase.value;
                 const attackerSlotReplicant = slots.find(s => s.name === `draft_${attackerSlotId}`);
                 if (!attackerSlotReplicant || !attackerSlotReplicant.value) return;
-                
+
                 const attackerCardId = attackerSlotReplicant.value.cardId;
                 const attachedToolIds = attackerSlotReplicant.value.attachedToolIds || [];
 
@@ -1502,9 +1681,9 @@
 
                 const currentValue = attackerSelect.value;
                 attackerSelect.innerHTML = '<option value="">Select Attacker</option>';
-                
+
                 const availableAttackers = getOccupiedSlots().filter(slotId => slotId.startsWith(`slot${turn}`));
-                
+
                 const battleSlotId = `slot${turn}0`;
                 const battlePokemon = availableAttackers.find(id => id === battleSlotId);
                 const benchPokemon = availableAttackers.filter(id => id !== battleSlotId).sort(); // Sort bench for consistency
@@ -1541,7 +1720,7 @@
                 } else if (benchPokemon.length > 0) {
                     attackerSelect.value = benchPokemon[0];
                 }
-                
+
                 // After updating the dropdown, the attack list and weakness should also be updated
                 // based on the new state of the attacker dropdown.
                 updateAttackDropdown();
@@ -1709,9 +1888,9 @@
                         console.log(`Listener Fired: ${slot.name}`);
                         updateTotalPokemons();
                         updateBattleEnergyCounts();
-                        renderCurrentPlayerField(); 
-                        renderTargetingField(); 
-                        updateAttackerDropdown(); 
+                        renderCurrentPlayerField();
+                        renderTargetingField();
+                        updateAttackerDropdown();
                         updateWeaknessAndResistanceChecks();
                     }, 50); // 50ms delay to batch updates
                 });
@@ -1751,11 +1930,11 @@
                     hotkeys.clearCard = newValue.hotkeys.clearCard || ' ';
                 } else {
                     // Reset to defaults if settings are cleared
-                    hotkeys = { 
-                        discard: 'Escape', 
-                        apply: isMac ? 'Meta+S' : 'Control+S', 
-                        clearSelection: 'Delete', 
-                        clearCard: ' ' 
+                    hotkeys = {
+                        discard: 'Escape',
+                        apply: isMac ? 'Meta+S' : 'Control+S',
+                        clearSelection: 'Delete',
+                        clearCard: ' '
                     };
                 }
                 // Other UI updates that depend on settings
@@ -1781,7 +1960,7 @@
             updateEnergyButtonVisibility();
             updateToolButtonVisibility();
             renderCurrentPlayerField();
-            
+
             document.addEventListener('keydown', (e) => {
                 if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') return;
                 const autoApplyEnabled = settingsRep.value && settingsRep.value.autoApply;
@@ -1806,4 +1985,5 @@
         });
     </script>
 </body>
+
 </html>
