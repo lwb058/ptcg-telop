@@ -72,22 +72,20 @@
 
     <div class="panel-section">
         <h3>Field Module</h3>
-        <div id="attack-zone-flex-container" class="flex-container">
-            <div class="form-group" style="flex-grow: 3;">
-                <label for="attacker" data-i18n="attacker">Attacker</label>
-                <select id="attacker" class="truncate-select"></select>
-            </div>
-            <div class="form-group" style="flex-grow: 2;">
-                <label for="attack-select" style="flex: none;" data-i18n="waza">Move</label>
-                <select id="attack-select" class="truncate-select"></select>
-            </div>
+        <div class="select-zone-grid" style="margin-bottom: 10px;">
+            <button id="select-with-energy-btn" class="btn select-btn" data-i18n="select_with_energy">エネ付き</button>
+            <button id="select-with-ability-btn" class="btn select-btn" data-i18n="select_with_ability">特性あり</button>
+            <button id="select-with-rule-btn" class="btn select-btn" data-i18n="select_with_rule">ルール持ち</button>
+            <button id="select-opponent-all-btn" class="btn select-btn" data-i18n="select_opponent_all">相手全体</button>
+            <button id="select-clear-btn" class="btn btn-black" data-i18n="clear">Clear</button>
+            <button id="select-reverse-btn" class="btn select-btn" data-i18n="reverse">Reverse</button>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <label style="margin-bottom: 0;">Battle Field:</label>
+            <button id="toggle-target-height-btn" class="btn"
+                style="padding: 2px 8px; font-size: 12px;">Collapse</button>
         </div>
         <div class="form-group" style="flex-direction: column; align-items: stretch; margin-bottom: 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                <label style="margin-bottom: 0;">Select Target:</label>
-                <button id="toggle-target-height-btn" class="btn"
-                    style="padding: 2px 8px; font-size: 12px;">Collapse</button>
-            </div>
             <div id="damage-transfer-control"
                 style="padding:5px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 4px 4px 0px 0px; background: lightgrey">
                 <label for="damage-transfer-amount" data-i18n="DC-Transfer">Damage Transfer:</label>
@@ -98,7 +96,6 @@
                     <div class="damage-counter pool-item" draggable="true" data-damage-amount="10">10</div>
                     <div class="damage-counter pool-item" draggable="true" data-damage-amount="20">20</div>
                     <div class="damage-counter pool-item" draggable="true" data-damage-amount="30">30</div>
-                    <div class="damage-counter pool-item" draggable="true" data-damage-amount="50">50</div>
                 </div>
             </div>
             <div id="battle-field" class="battle-field-container">
@@ -107,15 +104,18 @@
             <div id="batch-damage-drop-zone" data-i18n="batch_damage_drop_zone_text">
             </div>
         </div>
-        <div class="select-zone-grid" style="margin-bottom: 10px;">
-            <button id="select-with-energy-btn" class="btn select-btn" data-i18n="select_with_energy">エネ付き</button>
-            <button id="select-with-ability-btn" class="btn select-btn" data-i18n="select_with_ability">特性あり</button>
-            <button id="select-with-rule-btn" class="btn select-btn" data-i18n="select_with_rule">ルール持ち</button>
-            <button id="select-opponent-all-btn" class="btn select-btn" data-i18n="select_opponent_all">相手全体</button>
-            <button id="select-clear-btn" class="btn btn-black" data-i18n="clear">Clear</button>
-            <button id="select-reverse-btn" class="btn select-btn" data-i18n="reverse">Reverse</button>
+        <div id="attack-zone-flex-container" class="flex-container">
+            <div class="form-group" style="flex-grow: 3;">
+                <label for="attacker" data-i18n="attacker">Attacker</label>
+                <select id="attacker" class="truncate-select"></select>
+            </div>
+            <div class="form-group" style="flex-grow: 2;">
+                <label for="attack-select" style="flex: none;" data-i18n="waza">Move</label>
+                <select id="attack-select" class="truncate-select"></select>
+            </div>
         </div>
         <div class="flex-container" style="align-items: center; gap: 15px;">
+            <button id="aim-btn" class="btn btn-info" style="flex-grow: 1; height: fit-content;">Aim</button>
             <div class="form-group" style="flex-grow: 2; margin-bottom: 0;">
                 <label for="damage" style="min-width: 60px; margin-right: 5px;" data-i18n="damage">Damage</label>
                 <input type="number" id="damage" class="compact-input" value="0" min="0" step="10">
@@ -130,7 +130,6 @@
                 <label for="resistance-check" style="margin-right: 5px;" data-i18n="resistance">Resistance</label>
                 <input type="checkbox" id="resistance-check" style="transform: scale(1.2);">
             </div>
-            <button id="aim-btn" class="btn btn-info" style="flex-grow: 1; height: fit-content;">Aim</button>
             <button id="attack-btn" class="btn btn-lightning" style="flex-grow: 1; height: fit-content;">Attack</button>
         </div>
     </div>
