@@ -75,7 +75,7 @@
 					</div>
 					<div class="form-group-hotkey">
 						<label for="apply-hotkey-input">Apply Queue</label>
-						<input type="text" id="apply-hotkey-input" placeholder="e.g., Ctrl+S, F1">
+						<input type="text" id="apply-hotkey-input" placeholder="e.g., Shift+S, F1">
 					</div>
 					<div class="form-group-hotkey">
 						<label for="clear-card-hotkey-input">Clear Card Display</label>
@@ -350,7 +350,7 @@
 				// 3. Render Hotkey Settings
 				const hotkeys = (settings && settings.hotkeys) ? settings.hotkeys : {};
 				discardHotkeyInput.value = hotkeys.discard || 'Escape';
-				applyHotkeyInput.value = hotkeys.apply || 'Control+S';
+				applyHotkeyInput.value = hotkeys.apply || 'Shift+S';
 				clearCardHotkeyInput.value = hotkeys.clearCard || 'Space';
 				clearSelectionHotkeyInput.value = hotkeys.clearSelection || 'Escape';
 			}
@@ -382,7 +382,7 @@
 
 				const newHotkeys = {
 					discard: discardHotkeyInput.value.trim() || 'Escape',
-					apply: applyHotkeyInput.value.trim() || 'Control+S',
+					apply: applyHotkeyInput.value.trim() || 'Shift+S',
 					clearCard: clearCardHotkeyInput.value.trim() || 'Space',
 					clearSelection: clearSelectionHotkeyInput.value.trim() || 'Escape'
 				};

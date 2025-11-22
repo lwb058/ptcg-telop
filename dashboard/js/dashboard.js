@@ -66,7 +66,7 @@ function queueOrUpdateOperation(type, payload) {
 }
 
 /**
- * Checks if a keyboard event matches a hotkey string (e.g., "Control+S").
+ * Checks if a keyboard event matches a hotkey string (e.g., "Shift+S").
  * This is a pure function with no dependencies.
  */
 function checkHotkey(e, hotkeyString) {

@@ -774,13 +774,13 @@ function setupPlayerPanel(side) {
         updateAllEmptySlotDropdowns();
         syncCheckboxesWithSelections();
 
-        let hotkeys = { discard: 'Escape', apply: 'Control+S', clearSelection: 'Delete', clearCard: ' ' };
+        let hotkeys = { discard: 'Escape', apply: 'Shift+S', clearSelection: 'Delete', clearCard: 'Space' };
 
         settingsRep.on('change', (newValue) => {
             if (newValue && newValue.hotkeys) {
                 hotkeys = newValue.hotkeys;
             } else {
-                hotkeys = { discard: 'Escape', apply: 'Control+S', clearSelection: 'Delete', clearCard: ' ' };
+                hotkeys = { discard: 'Escape', apply: 'Shift+S', clearSelection: 'Delete', clearCard: 'Space' };
             }
         });
 

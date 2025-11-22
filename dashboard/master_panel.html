@@ -8,7 +8,6 @@
 </head>
 
 <body>
-
     <div class="panel-section info-zone">
         <h3>Info Module</h3>
         <div class="flex-container" style="align-items: flex-start;">
@@ -169,8 +168,6 @@
         </div>
     </div>
 
-
-
     <script src="js/dashboard.js"></script>
     <script>
         // --- Global Replicant Declarations ---
@@ -201,9 +198,9 @@
             const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
             let hotkeys = {
                 discard: 'Escape',
-                apply: isMac ? 'Meta+S' : 'Control+S',
+                apply: 'Shift+S',
                 clearSelection: 'Delete',
-                clearCard: ' '
+                clearCard: 'Space'
             };
 
             // --- Replicant Assignments ---
@@ -1889,16 +1886,16 @@
                 // Update hotkeys from settings
                 if (newValue && newValue.hotkeys) {
                     hotkeys.discard = newValue.hotkeys.discard || 'Escape';
-                    hotkeys.apply = newValue.hotkeys.apply || (isMac ? 'Meta+S' : 'Control+S');
+                    hotkeys.apply = newValue.hotkeys.apply || 'Shift+S';
                     hotkeys.clearSelection = newValue.hotkeys.clearSelection || 'Delete';
                     hotkeys.clearCard = newValue.hotkeys.clearCard || ' ';
                 } else {
                     // Reset to defaults if settings are cleared
                     hotkeys = {
                         discard: 'Escape',
-                        apply: isMac ? 'Meta+S' : 'Control+S',
+                        apply: 'Shift+S',
                         clearSelection: 'Delete',
-                        clearCard: ' '
+                        clearCard: 'Space'
                     };
                 }
                 // Other UI updates that depend on settings

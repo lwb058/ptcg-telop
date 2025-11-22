@@ -41,7 +41,9 @@ module.exports = function (nodecg) {
 			},
 			hotkeys: {
 				discard: 'Escape',
-				apply: 'Control+S'
+				apply: 'Shift+S',
+				clearSelection: 'Delete',
+				clearCard: 'Space'
 			},
 			lostZoneEnabled: false,
 			reverseCardDisplay: false,

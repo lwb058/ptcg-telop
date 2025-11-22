@@ -141,15 +141,15 @@
         const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
         let hotkeys = {
             discard: 'Escape',
-            apply: isMac ? 'Meta+S' : 'Control+S',
+            apply: 'Shift+S',
             clearSelection: 'Delete',
-            clearCard: ' '
+            clearCard: 'Space'
         };
 
         settingsRep.on('change', (newValue) => {
             if (newValue && newValue.hotkeys) {
                 hotkeys.discard = newValue.hotkeys.discard || 'Escape';
-                hotkeys.apply = newValue.hotkeys.apply || (isMac ? 'Meta+S' : 'Control+S');
+                hotkeys.apply = newValue.hotkeys.apply || 'Shift+S';
                 hotkeys.clearSelection = newValue.hotkeys.clearSelection || 'Delete';
                 hotkeys.clearCard = newValue.hotkeys.clearCard || ' ';
             }

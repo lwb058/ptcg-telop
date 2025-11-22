@@ -24,7 +24,7 @@
             <h3>Operation Queue</h3>
             <div id="op-buttons-container" class="flex-container" style="margin-bottom: 10px;">
                 <button id="discard-op-btn" class="btn btn-danger">Discard (Esc)</button>
-                <button id="apply-op-btn" class="btn btn-primary">Apply (Ctrl+S)</button>
+                <button id="apply-op-btn" class="btn btn-primary">Apply (Shift+S)</button>
             </div>
             <div class="operation-queue" id="operation-queue">
                 <!-- Operations will be listed here -->
@@ -198,7 +198,7 @@
 
             // --- Replicant Listeners ---
             const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-            let hotkeys = { discard: 'Escape', apply: isMac ? 'Meta+S' : 'Control+S' };
+            let hotkeys = { discard: 'Escape', apply: 'Shift+S' };
 
             operationQueue.on('change', renderQueue);
             
@@ -222,9 +222,9 @@
                 // Update hotkeys from settings
                 if (newValue && newValue.hotkeys) {
                     hotkeys.discard = newValue.hotkeys.discard || 'Escape';
-                    hotkeys.apply = newValue.hotkeys.apply || (isMac ? 'Meta+S' : 'Control+S');
+                    hotkeys.apply = newValue.hotkeys.apply || 'Shift+S';
                 } else {
-                    hotkeys = { discard: 'Escape', apply: isMac ? 'Meta+S' : 'Control+S' };
+                    hotkeys = { discard: 'Escape', apply: 'Shift+S' };
                 }
                 // Update button labels with hotkeys
                 discardOpBtn.textContent = `Discard (${hotkeys.discard})`;
@@ -246,7 +246,7 @@
             // Initial label update
             if (settingsRep.value && settingsRep.value.hotkeys) {
                 hotkeys.discard = settingsRep.value.hotkeys.discard || 'Escape';
-                hotkeys.apply = settingsRep.value.hotkeys.apply || (isMac ? 'Meta+S' : 'Control+S');
+                hotkeys.apply = settingsRep.value.hotkeys.apply || 'Shift+S';
             }
             discardOpBtn.textContent = `Discard (${hotkeys.discard})`;
             applyOpBtn.textContent = `Apply (${hotkeys.apply})`;
