@@ -407,9 +407,9 @@
 
                 const abilityBtn = document.createElement('button');
                 abilityBtn.className = 'ability-btn';
-
+                abilityBtn.textContent = getI18nText('ability');
+                
                 if (hasAbility) {
-                    abilityBtn.textContent = getI18nText('ability');
                     if (slotValue.abilityUsed) {
                         abilityBtn.classList.add('used');
                     }
