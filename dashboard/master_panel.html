@@ -29,13 +29,13 @@
 
     <div class="panel-section">
         <h3>
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-            Develop Module
-            <div class="form-group" style="margin-bottom: 0;">
-                <input type="checkbox" id="show-opponent-field-checkbox" style="transform: scale(1.2);">
-                <label for="show-opponent-field-checkbox" style="margin-left: 5px;">Show Opponent</label>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                Develop Module
+                <div class="form-group" style="margin-bottom: 0;">
+                    <input type="checkbox" id="show-opponent-field-checkbox" style="transform: scale(1.2);">
+                    <label for="show-opponent-field-checkbox" style="margin-left: 5px;">Show Opponent</label>
+                </div>
             </div>
-        </div>
         </h3>
         <div id="pokemon-source-grid" class="pokemon-source-grid" style="margin-bottom: 10px;">
             <!-- Pokémon cards from the deck will be rendered here by JavaScript -->
@@ -44,7 +44,7 @@
             <!-- Pokémon will be rendered here by JavaScript -->
         </div>
         <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
-        <div id="energy-buttons" class="energy-tool-grid">
+        <div id="energy-tool-buttons" class="energy-tool-grid">
             <button class="energy-btn"><img src="/assets/ptcg-telop/icons/草.png" title="草" class="energy-icon"
                     data-energy-type="草" draggable="true"></button>
             <button class="energy-btn"><img src="/assets/ptcg-telop/icons/炎.png" title="炎" class="energy-icon"
@@ -67,17 +67,17 @@
                     data-energy-type="無" draggable="true"></button>
             <button class="energy-btn"><img src="/assets/ptcg-telop/icons/全.png" title="全" class="energy-icon"
                     data-energy-type="全" draggable="true"></button>
-            <!-- Tool cards will be rendered here by JavaScript -->
+            <!-- Special Enrgy & Tool cards will be rendered here by JavaScript -->
         </div>
     </div>
 
     <div class="panel-section">
         <h3>
-        <div style="display: flex; justify-content: space-between; align-items: center; ">
-            Field Module 
+            <div style="display: flex; justify-content: space-between; align-items: center; ">
+                Field Module
             <button id="toggle-field-height-btn" class="btn"
                 style="padding: 2px 8px; font-size: 12px;">Collapse Field</button>
-        </div>
+            </div>
         </h3>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
             <div class="form-group" style="flex-grow: 2; align-items: center; margin-bottom: 0;">
@@ -241,7 +241,7 @@
             const selectBasicBtn = document.getElementById('select-basic-btn');
             const selectStage2Btn = document.getElementById('select-stage2-btn');
             const extrahpShortcutsContainer = document.getElementById('extrahp-shortcuts');
-            const energyButtonsContainer = document.getElementById('energy-buttons');
+            const energyToolsContainer = document.getElementById('energy-tool-buttons');
             const battleField = document.getElementById('battle-field');
             const toggleFieldHeightBtn = document.getElementById('toggle-field-height-btn');
             const attackerSelect = document.getElementById('attacker');
@@ -408,7 +408,7 @@
                 const abilityBtn = document.createElement('button');
                 abilityBtn.className = 'ability-btn';
                 abilityBtn.textContent = getI18nText('ability');
-                
+
                 if (hasAbility) {
                     if (slotValue.abilityUsed) {
                         abilityBtn.classList.add('used');
@@ -571,8 +571,7 @@
             // --- Event Listeners for UI Updates ---
             showOpponentCheckbox.addEventListener('change', () => {
                 renderCurrentPlayerField();
-                updateEnergyButtonVisibility();
-                updateToolButtonVisibility();
+                updateEnergyAndToolButtons();
                 updatePokemonSourceGrid();
             });
             playerL_name.on('change', (newName) => {
@@ -733,7 +732,7 @@
 
             // --- Energy & Tool Module Logic (Drag and Drop) ---
             // 1. DRAG START: Set data when dragging an energy or tool
-            energyButtonsContainer.addEventListener('dragstart', (e) => {
+            energyToolsContainer.addEventListener('dragstart', (e) => {
                 const target = e.target;
                 // Handle Basic Energy (IMG tag)
                 if (target.tagName === 'IMG' && target.dataset.energyType) {
@@ -747,8 +746,8 @@
                     e.dataTransfer.setData('text/plain', `special:${target.dataset.specialEnergyId}`);
                     e.dataTransfer.effectAllowed = 'copy';
                 }
-                // Handle Tool (IMG tag)
-                else if (target.tagName === 'IMG' && target.dataset.toolId) {
+                // Handle Tool (now a DIV tag)
+                else if (target.dataset.toolId) {
                     e.dataTransfer.setData('application/ptcg-tool-drag', 'true');
                     e.dataTransfer.setData('text/plain', target.dataset.toolId);
                     e.dataTransfer.effectAllowed = 'copy';
@@ -1022,13 +1021,13 @@
                     ids.forEach(id => {
                         const card = db[id];
                         const btn = document.createElement('button');
-                    btn.className = 'pokemon-btn';
+                        btn.className = 'pokemon-btn';
 
                         const img = document.createElement('img');
                         img.src = getCardImageUrl(id);
                         img.title = card.name;
-                    img.className = 'pokemon-icon';
-                    img.dataset.pokemonId = id; // New data attribute
+                        img.className = 'pokemon-icon';
+                        img.dataset.pokemonId = id; // New data attribute
                         img.draggable = true;
 
                         btn.appendChild(img);
@@ -1046,59 +1045,13 @@
                     const basicRow = createRow(basicPokemonIds);
                     pokemonSourceContainer.appendChild(basicRow);
                 }
-                
+
                 // Change main container style from grid to flex column
                 pokemonSourceContainer.style.display = 'flex';
                 pokemonSourceContainer.style.flexDirection = 'column';
             }
 
-            function updateToolButtonVisibility() {
-                const db = cardDatabase.value;
-                const deckLVal = deckL.value;
-                const deckRVal = deckR.value;
-                const baseTurn = draft_currentTurn.value;
-                const isOpponentView = showOpponentCheckbox.checked;
-
-                // Clear only the dynamically added tool buttons
-                energyButtonsContainer.querySelectorAll('.dynamic-pokemon-btn').forEach(btn => btn.remove());
-
-                let displayTurn = baseTurn;
-                if (isOpponentView && baseTurn) {
-                    displayTurn = baseTurn === 'L' ? 'R' : 'L';
-                }
-
-                if (!db || !deckLVal || !deckRVal || !displayTurn) {
-                    return; // Exit if data is not ready
-                }
-
-                const targetDeck = displayTurn === 'L' ? deckLVal.cards : deckRVal.cards;
-                if (!targetDeck) return;
-
-                const uniqueToolIds = [...new Set(targetDeck)].filter(id => {
-                    const card = db[id];
-                    return card && card.supertype === 'trainer' && card.subtype === 'tool';
-                });
-
-                uniqueToolIds.forEach(id => {
-                    const card = db[id];
-                    const btn = document.createElement('button');
-                    // Add both classes for styling and for specific removal
-                    btn.className = 'energy-btn dynamic-pokemon-btn';
-
-                    const img = document.createElement('img');
-                    img.src = getCardImageUrl(id); // Use card image for tools
-                    img.title = card.name;
-                    img.className = 'energy-icon'; // Reuse energy icon styling
-                    img.dataset.toolId = id;
-                    img.draggable = true;
-
-                    btn.appendChild(img);
-                    energyButtonsContainer.appendChild(btn);
-                });
-            }
-
-
-            function updateEnergyButtonVisibility() {
+            function updateEnergyAndToolButtons() {
                 const settings = settingsRep.value || {};
                 const db = cardDatabase.value;
                 const deckLVal = deckL.value;
@@ -1111,12 +1064,18 @@
                     displayTurn = baseTurn === 'L' ? 'R' : 'L';
                 }
 
-                const energyIcons = energyButtonsContainer.querySelectorAll('img[data-energy-type]');
-                energyButtonsContainer.querySelectorAll('.special-energy-btn').forEach(btn => btn.remove());
+                // Clear previous dynamic buttons (both special energy and tools)
+                energyToolsContainer.querySelectorAll('.dynamic-btn').forEach(btn => btn.remove());
 
-                if (!db) return; // Need database to proceed
+                const energyIcons = energyToolsContainer.querySelectorAll('img[data-energy-type]');
+
+                if (!db) { // Need database to proceed
+                    energyIcons.forEach(icon => icon.parentElement.style.display = 'none');
+                    return;
+                }
 
                 const specialEnergies = new Map();
+                const toolCards = new Map();
 
                 if (settings.showDeckEnergyOnly) {
                     // --- DECK-ONLY LOGIC ---
@@ -1132,15 +1091,16 @@
 
                     uniqueCardIds.forEach(id => {
                         const card = db[id];
-                        if (card && card.supertype === 'energy') {
+                        if (!card) return;
+
+                        if (card.supertype === 'energy') {
                             if (card.subtype === 'basic energy' && card.energy) {
-                                // Directly use the 'energy' property from the card data
                                 deckEnergies.add(card.energy);
-                            } else {
-                                if (!specialEnergies.has(id)) {
-                                    specialEnergies.set(id, card);
-                                }
+                            } else if (card.subtype !== 'basic energy') {
+                                if (!specialEnergies.has(id)) specialEnergies.set(id, card);
                             }
+                        } else if (card.supertype === 'trainer' && card.subtype === 'tool') {
+                            if (!toolCards.has(id)) toolCards.set(id, card);
                         }
                     });
 
@@ -1149,11 +1109,7 @@
                         const parentButton = icon.parentElement;
                         if (parentButton.tagName !== 'BUTTON') return;
                         // Show only if it's in the deck
-                        if (deckEnergies.has(energyType)) {
-                            parentButton.style.display = '';
-                        } else {
-                            parentButton.style.display = 'none';
-                        }
+                        parentButton.style.display = deckEnergies.has(energyType) ? '' : 'none';
                     });
 
                 } else {
@@ -1165,32 +1121,38 @@
                         }
                     });
 
-                    // 2. Find all special energies in the entire database
+                    // 2. Find all special energies and tools in the entire database
                     for (const id in db) {
                         const card = db[id];
-                        if (card && card.supertype === 'energy' && card.subtype !== 'basic energy') {
-                            if (!specialEnergies.has(id)) {
-                                specialEnergies.set(id, card);
+                        if (card) {
+                            if (card.supertype === 'energy' && card.subtype !== 'basic energy') {
+                                if (!specialEnergies.has(id)) specialEnergies.set(id, card);
+                            } else if (card.supertype === 'trainer' && card.subtype === 'tool') {
+                                if (!toolCards.has(id)) toolCards.set(id, card);
                             }
                         }
                     }
                 }
 
-                // --- COMMON LOGIC: Render all found special energies ---
-                specialEnergies.forEach((card, id) => {
+                // --- COMMON LOGIC: Render all found special energies and tools ---
+                const createButton = (card, id, typeClass, dataType, dataAttribute) => {
                     const btn = document.createElement('button');
-                    btn.className = 'energy-btn special-energy-btn';
+                    // A generic class for clearing, and a specific class for styling
+                    btn.className = `energy-btn dynamic-btn ${typeClass}-btn`;
 
                     const div = document.createElement('div');
-                    div.className = 'special-energy-icon';
+                    div.className = `${typeClass}-icon`; // e.g., 'special-energy-icon' or 'tool-card-icon'
                     div.style.backgroundImage = getCardImageUrl(id, true);
                     div.title = card.name;
-                    div.dataset.specialEnergyId = id;
                     div.draggable = true;
+                    div.dataset[dataAttribute] = id;
 
                     btn.appendChild(div);
-                    energyButtonsContainer.appendChild(btn);
-                });
+                    energyToolsContainer.appendChild(btn);
+                };
+
+                specialEnergies.forEach((card, id) => createButton(card, id, 'special-energy', 'specialEnergyId', 'specialEnergyId'));
+                toolCards.forEach((card, id) => createButton(card, id, 'tool-card', 'toolId', 'toolId'));
             }
 
 
@@ -1966,8 +1928,7 @@
             // Core state changes that trigger wide UI updates
             draft_currentTurn.on('change', (newValue) => {
                 renderCurrentPlayerField();
-                updateEnergyButtonVisibility();
-                updateToolButtonVisibility();
+                updateEnergyAndToolButtons();
                 updatePokemonSourceGrid();
                 renderTargetingField();
                 updateAttackerDropdown();
@@ -1988,8 +1949,7 @@
                 renderTargetingField();
                 updateWeaknessAndResistanceChecks();
                 updateStadiumDropdown();
-                updateToolButtonVisibility();
-                updateEnergyButtonVisibility();
+                updateEnergyAndToolButtons();
                 updatePokemonSourceGrid();
             });
 

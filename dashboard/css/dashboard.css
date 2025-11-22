@@ -209,7 +209,7 @@ body.player-r .pokemon-slot.selected {
 .ability-btn {
     width: 100%;
     height: fit-content;
-    border: 1px solid #6c757d;
+    border: 2px solid #6c757d;
     background-color: #da1818;
     color: white;
     font-size: 10px;
@@ -455,7 +455,6 @@ details[open]>summary::before {
 
 .tool-placeholder {
     width: 60px;
-    max-height: 40px;
     flex-grow: 1;
     border-radius: 2px;
     border: 2px dashed #ccc;
@@ -466,6 +465,7 @@ details[open]>summary::before {
     color: #aaa;
     font-size: 12px;
     min-height: 40px;
+    margin-top: auto
 }
 
 .tool-icon-image {
@@ -734,11 +734,12 @@ textarea {
     background-position: center 23%;
     background-repeat: no-repeat;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    margin-top: auto;
 }
 
 .manual-attach-zone {
     position: absolute;
-    top: 48%;
+    top: 92px;
     right: 2px;
     width: 48px;
     height: 24px;
@@ -766,7 +767,7 @@ textarea {
 }
 
 #battle-field {
-    background-image: 
+    background-image:
         linear-gradient(#255bc0de, #255bc0de),
         var(--stadium-background-image);
     background-repeat: no-repeat;
@@ -925,6 +926,7 @@ textarea {
     right: -5px;
     z-index: 10;
 }
+
 .pool-item {
     position: relative;
 }
@@ -1158,14 +1160,28 @@ summary>h4 {
 
 .energy-tool-grid .energy-icon,
 .energy-tool-grid .special-energy-icon {
+    width: 50px;
+    aspect-ratio: 1 / 1;
+    vertical-align: middle;
+}
+
+.energy-tool-grid .tool-card-icon {
+    width: 100%;
     height: 50px;
     vertical-align: middle;
+    cursor: pointer;
+    border-radius: 4px;
+    background-size: 116%;
+    background-position: center 10%;
+    border: 1px solid #555;
+    display: inline-block;
+    box-sizing: border-box;
 }
 
 .attached-energy-icon,
 .attached-special-energy-icon {
     width: 16px;
-    height: 16px;
+    aspect-ratio: 1 / 1;
     flex-shrink: 0;
 }
 
