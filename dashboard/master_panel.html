@@ -37,6 +37,9 @@
             </div>
         </div>
         </h3>
+        <div id="pokemon-source-grid" class="pokemon-source-grid" style="margin-bottom: 10px;">
+            <!-- Pokémon cards from the deck will be rendered here by JavaScript -->
+        </div>
         <div id="current-player-field" style="margin-top: 10px;">
             <!-- Pokémon will be rendered here by JavaScript -->
         </div>
@@ -226,6 +229,7 @@
             const battleEnergyREl = document.getElementById('battle-energy-r');
             const showOpponentCheckbox = document.getElementById('show-opponent-field-checkbox');
             const currentPlayerField = document.getElementById('current-player-field');
+            const pokemonSourceContainer = document.getElementById('pokemon-source-grid');
             const btnSelectClear = document.getElementById('select-clear-btn');
             const btnSelectReverse = document.getElementById('select-reverse-btn');
             const btnSelectWithEnergy = document.getElementById('select-with-energy-btn');
@@ -542,6 +546,7 @@
                 renderCurrentPlayerField();
                 updateEnergyButtonVisibility();
                 updateToolButtonVisibility();
+                updatePokemonSourceGrid();
             });
             playerL_name.on('change', (newName) => {
                 const radio = document.getElementById('turn-l');
@@ -723,6 +728,16 @@
                 }
             });
 
+            pokemonSourceContainer.addEventListener('dragstart', (e) => {
+                const target = e.target;
+                if (target.tagName === 'IMG' && target.dataset.pokemonId) {
+                    e.dataTransfer.setData('application/ptcg-pokemon-place', 'true');
+                    e.dataTransfer.setData('text/plain', target.dataset.pokemonId);
+                    e.dataTransfer.effectAllowed = 'copy';
+                }
+            });
+
+
             // Listen for drag start on the field itself (for moving attached energies)
             currentPlayerField.addEventListener('dragstart', (e) => {
                 const target = e.target;
@@ -757,18 +772,20 @@
             currentPlayerField.addEventListener('dragover', (e) => {
                 const isEnergyDrag = e.dataTransfer.types.includes('application/ptcg-energy-drag');
                 const isToolDrag = e.dataTransfer.types.includes('application/ptcg-tool-drag');
-                const target = e.target.closest('.pokemon-drop-target:not(.empty-slot)');
+                const isPokemonPlace = e.dataTransfer.types.includes('application/ptcg-pokemon-place');
+                const isPokemonSwap = e.dataTransfer.types.includes('application/ptcg-pokemon-swap');
+                const target = e.target.closest('.pokemon-drop-target');
 
-                if (target && (isEnergyDrag || isToolDrag)) {
-                    e.preventDefault(); // Allow drop
-                    target.style.boxShadow = '0 0 10px 3px #4a69bd'; // Highlight
-                }
-            });
-
-            // Extend dragover to handle Pokémon swaps (allowing drops on empty slots too)
-            currentPlayerField.addEventListener('dragover', (e) => {
-                if (e.dataTransfer.types.includes('application/ptcg-pokemon-swap') && e.target.closest('.pokemon-drop-target')) {
-                    e.preventDefault();
+                if (target) {
+                    if ((isEnergyDrag || isToolDrag) && !target.classList.contains('empty-slot')) {
+                        e.preventDefault();
+                        target.style.boxShadow = '0 0 10px 3px #4a69bd';
+                    } else if (isPokemonPlace) {
+                        e.preventDefault();
+                        target.style.boxShadow = '0 0 10px 3px #3498db';
+                    } else if (isPokemonSwap) {
+                        e.preventDefault();
+                    }
                 }
             });
 
@@ -792,8 +809,60 @@
                 const isEnergyDrag = e.dataTransfer.types.includes('application/ptcg-energy-drag');
                 const isToolDrag = e.dataTransfer.types.includes('application/ptcg-tool-drag');
                 const isPokemonSwap = e.dataTransfer.types.includes('application/ptcg-pokemon-swap');
+                const isPokemonPlace = e.dataTransfer.types.includes('application/ptcg-pokemon-place');
 
-                if (isToolDrag) {
+                if (isPokemonPlace) {
+                    // --- Handle POKEMON placement (from source grid) ---
+                    const draggedCardId = e.dataTransfer.getData('text/plain');
+                    if (!draggedCardId) return;
+
+                    const isTargetEmpty = dropTarget.classList.contains('empty-slot');
+
+                    if (isTargetEmpty) {
+                        // Drop on an empty slot -> SET_POKEMON
+                        queueOperation('SET_POKEMON', {
+                            target: destinationSlotId,
+                            cardId: draggedCardId
+                        });
+                    } else {
+                        // Drop on an existing pokemon -> determine actionType
+                        const slotReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
+                        if (!slotReplicant || !slotReplicant.value || !slotReplicant.value.cardId) return;
+
+                        const sourceCardId = slotReplicant.value.cardId;
+
+                        // Prevent dropping the same card onto itself
+                        if (draggedCardId === sourceCardId) return;
+
+                        const db = cardDatabase.value;
+                        if (!db) return;
+
+                        const sourceCardData = db[sourceCardId];
+                        const draggedCardData = db[draggedCardId];
+
+                        let actionType = 'Replace'; // Default action
+
+                        if (sourceCardData && sourceCardData.pokemon && draggedCardData && draggedCardData.pokemon) {
+                            const sourceEvolvesFrom = sourceCardData.pokemon.evolvesFrom || [];
+                            const draggedEvolvesFrom = draggedCardData.pokemon.evolvesFrom || [];
+
+                            if (draggedEvolvesFrom.includes(sourceCardData.name)) {
+                                actionType = 'Evolve';
+                            } else if (sourceEvolvesFrom.includes(draggedCardData.name)) {
+                                actionType = 'Devolve';
+                            }
+                        }
+
+                        queueOperation('REPLACE_POKEMON', {
+                            target: destinationSlotId,
+                            cardId: draggedCardId,
+                            actionType: actionType
+                        });
+
+                        // Reset ability used status after replacing
+                        queueOperation('SET_ABILITY_USED', { target: destinationSlotId, status: false });
+                    }
+                } else if (isToolDrag) {
                     // --- Handle TOOL attachment ---
                     const toolId = e.dataTransfer.getData('text/plain');
                     if (!toolId) return;
@@ -891,6 +960,71 @@
                 }
             });
 
+            function updatePokemonSourceGrid() {
+                const db = cardDatabase.value;
+                const deckLVal = deckL.value;
+                const deckRVal = deckR.value;
+                const baseTurn = draft_currentTurn.value;
+                const isOpponentView = showOpponentCheckbox.checked;
+                pokemonSourceContainer.innerHTML = ''; // Clear previous
+
+                let displayTurn = baseTurn;
+                if (isOpponentView && baseTurn) {
+                    displayTurn = baseTurn === 'L' ? 'R' : 'L';
+                }
+
+                if (!db || !deckLVal || !deckRVal || !displayTurn) {
+                    return; // Exit if data is not ready
+                }
+
+                const targetDeck = displayTurn === 'L' ? deckLVal.cards : deckRVal.cards;
+                if (!targetDeck) return;
+
+                const uniquePokemonIds = [...new Set(targetDeck)].filter(id => {
+                    const card = db[id];
+                    return card && card.supertype === 'pokemon';
+                });
+
+                // Split into basic and evolved
+                const basicPokemonIds = uniquePokemonIds.filter(id => db[id]?.pokemon?.evolves === 'たね');
+                const evolvedPokemonIds = uniquePokemonIds.filter(id => db[id]?.pokemon?.evolves !== 'たね');
+
+                const createRow = (ids) => {
+                    const row = document.createElement('div');
+                    row.className = 'pokemon-source-grid';
+                    ids.forEach(id => {
+                        const card = db[id];
+                        const btn = document.createElement('button');
+                    btn.className = 'pokemon-btn';
+
+                        const img = document.createElement('img');
+                        img.src = getCardImageUrl(id);
+                        img.title = card.name;
+                    img.className = 'pokemon-icon';
+                    img.dataset.pokemonId = id; // New data attribute
+                        img.draggable = true;
+
+                        btn.appendChild(img);
+                        row.appendChild(btn);
+                    });
+                    return row;
+                };
+
+                if (evolvedPokemonIds.length > 0) {
+                    const evolvedRow = createRow(evolvedPokemonIds);
+                    pokemonSourceContainer.appendChild(evolvedRow);
+                }
+
+                if (basicPokemonIds.length > 0) {
+                    const basicRow = createRow(basicPokemonIds);
+                    pokemonSourceContainer.appendChild(basicRow);
+                }
+                
+                // Change main container style from grid to flex column
+                pokemonSourceContainer.style.display = 'flex';
+                pokemonSourceContainer.style.flexDirection = 'column';
+            }
+
             function updateToolButtonVisibility() {
                 const db = cardDatabase.value;
                 const deckLVal = deckL.value;
@@ -899,7 +1033,7 @@
                 const isOpponentView = showOpponentCheckbox.checked;
 
                 // Clear only the dynamically added tool buttons
-                energyButtonsContainer.querySelectorAll('.dynamic-tool-btn').forEach(btn => btn.remove());
+                energyButtonsContainer.querySelectorAll('.dynamic-pokemon-btn').forEach(btn => btn.remove());
 
                 let displayTurn = baseTurn;
                 if (isOpponentView && baseTurn) {
@@ -922,7 +1056,7 @@
                     const card = db[id];
                     const btn = document.createElement('button');
                     // Add both classes for styling and for specific removal
-                    btn.className = 'energy-btn dynamic-tool-btn';
+                    btn.className = 'energy-btn dynamic-pokemon-btn';
 
                     const img = document.createElement('img');
                     img.src = getCardImageUrl(id); // Use card image for tools
@@ -1807,6 +1941,7 @@
                 renderCurrentPlayerField();
                 updateEnergyButtonVisibility();
                 updateToolButtonVisibility();
+                updatePokemonSourceGrid();
                 renderTargetingField();
                 updateAttackerDropdown();
 
@@ -1828,6 +1963,7 @@
                 updateStadiumDropdown();
                 updateToolButtonVisibility();
                 updateEnergyButtonVisibility();
+                updatePokemonSourceGrid();
             });
 
             selections.on('change', () => {
@@ -1859,6 +1995,7 @@
                 console.log('Listener Fired: deckL or deckR');
                 updateEnergyButtonVisibility();
                 updateToolButtonVisibility();
+                updatePokemonSourceGrid();
                 updateStadiumDropdown();
             };
             deckL.on('change', updateDeckDependentUI);
@@ -1916,6 +2053,7 @@
             assetPaths.on('change', () => {
                 renderCurrentPlayerField();
                 updateToolButtonVisibility();
+                updatePokemonSourceGrid();
             });
 
             i18nStrings.on('change', updateUIStrings);
@@ -1929,6 +2067,7 @@
             renderTargetingField();
             updateEnergyButtonVisibility();
             updateToolButtonVisibility();
+            updatePokemonSourceGrid();
             renderCurrentPlayerField();
             updateStadiumBackground();
 

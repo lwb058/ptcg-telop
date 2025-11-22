@@ -431,7 +431,7 @@ details[open]>summary::before {
     border-radius: 2px;
     border: 2px solid #888;
     background-size: 127%;
-    background-position: center 21%;
+    background-position: center 23%;
     background-repeat: no-repeat;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
@@ -570,25 +570,24 @@ details[open]>summary::before {
     background-color: #9b9b9b;
 }
 
-.tool-btn-grid {
+.pokemon-source-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 10px;
-    margin-bottom: 10px;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 5px;
 }
 
-.tool-btn {
-    padding: 5px;
+.pokemon-btn {
+    padding: 3px;
     font-size: 12px;
     border: 1px solid #ccc;
     border-radius: 5px;
 }
 
-.tool-btn:hover {
+.pokemon-btn:hover {
     background-color: #9b9b9b;
 }
 
-.tool-icon {
+.pokemon-icon {
     height: 70px;
     vertical-align: middle;
 }
