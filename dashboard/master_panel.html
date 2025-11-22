@@ -113,7 +113,7 @@
                 <label for="attacker" data-i18n="attacker">Attacker</label>
                 <select id="attacker" class="truncate-select"></select>
             </div>
-            <div class="form-group" style="flex-grow: 2;">
+            <div class="form-group" style="flex-grow: 3;">
                 <label for="attack-select" style="flex: none;" data-i18n="waza">Move</label>
                 <select id="attack-select" class="truncate-select"></select>
             </div>
@@ -1878,7 +1878,19 @@
                 if (stadiumUsedCheckbox.checked !== isUsed) {
                     stadiumUsedCheckbox.checked = isUsed;
                 }
+                updateStadiumBackground(); // Add this call
             });
+
+            // Function to update stadium background
+            function updateStadiumBackground() {
+                const stadium = draft_stadium.value;
+                if (stadium && stadium.cardId) {
+                    const imageUrl = getCardImageUrl(stadium.cardId);
+                    battleField.style.setProperty('--stadium-background-image', `url('${imageUrl}')`);
+                } else {
+                    battleField.style.removeProperty('--stadium-background-image');
+                }
+            }
 
             // Consolidated settings listener
             settingsRep.on('change', (newValue) => {
@@ -1921,6 +1933,7 @@
             updateEnergyButtonVisibility();
             updateToolButtonVisibility();
             renderCurrentPlayerField();
+            updateStadiumBackground();
 
             document.addEventListener('keydown', (e) => {
                 if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') return;

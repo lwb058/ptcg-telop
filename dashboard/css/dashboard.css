@@ -722,6 +722,16 @@ textarea {
     scrollbar-color: #ccc #f0f2f5;
 }
 
+#battle-field {
+    background-image: 
+        linear-gradient(#255bc0de, #255bc0de),
+        var(--stadium-background-image);
+    background-repeat: no-repeat;
+    background-size: 160%;
+    background-position: center 23%;
+    background-blend-mode: soft-light;
+}
+
 .battle-field-container::-webkit-scrollbar {
     width: 8px;
 }
