@@ -792,6 +792,10 @@ textarea {
     object-fit: cover;
 }
 
+.pokemon-target-card.is-ko img {
+    filter: grayscale(100%);
+}
+
 .pokemon-target-card.empty-target-slot {
     border: 2px dashed #ddd;
     border-radius: 5px;
@@ -826,6 +830,11 @@ textarea {
     bottom: 30%;
     width: 5px;
     transform: translateX(-50%);
+}
+
+.pokemon-target-card.over {
+    box-shadow: 0 0 10px 4px #f7a000;
+    /* Yellow highlight for drop target */
 }
 
 .btn:disabled {
@@ -863,12 +872,6 @@ textarea {
     right: 5px;
     z-index: 10;
 }
-
-.pokemon-target-card.over {
-    box-shadow: 0 0 10px 4px #f7a000;
-    /* Yellow highlight for drop target */
-}
-
 .pool-item {
     position: relative;
 }

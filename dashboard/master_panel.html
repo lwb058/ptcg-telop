@@ -96,6 +96,8 @@
                     <div class="damage-counter pool-item" draggable="true" data-damage-amount="10">10</div>
                     <div class="damage-counter pool-item" draggable="true" data-damage-amount="20">20</div>
                     <div class="damage-counter pool-item" draggable="true" data-damage-amount="30">30</div>
+                    <div class="damage-counter pool-item" draggable="true" data-damage-amount="50">50</div>
+                    <div class="damage-counter pool-item" draggable="true" data-damage-amount="130">130</div>
                 </div>
             </div>
             <div id="battle-field" class="battle-field-container">
@@ -113,13 +115,13 @@
                 <label for="attack-select" style="flex: none;" data-i18n="waza">Move</label>
                 <select id="attack-select" class="truncate-select"></select>
             </div>
-        </div>
-        <div class="flex-container" style="align-items: center; gap: 15px;">
-            <button id="aim-btn" class="btn btn-info" style="flex-grow: 1; height: fit-content;">Aim</button>
             <div class="form-group" style="flex-grow: 2; margin-bottom: 0;">
                 <label for="damage" style="min-width: 60px; margin-right: 5px;" data-i18n="damage">Damage</label>
                 <input type="number" id="damage" class="compact-input" value="0" min="0" step="10">
             </div>
+        </div>
+        <div class="flex-container" style="align-items: center; gap: 15px;">
+            <button id="aim-btn" class="btn btn-info" style="flex-grow: 1; height: fit-content;">Aim</button>
             <div class="form-group"
                 style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
                 <label for="weakness-check" style="margin-right: 5px;" data-i18n="weakness">Weakness</label>
@@ -131,13 +133,13 @@
                 <input type="checkbox" id="resistance-check" style="transform: scale(1.2);">
             </div>
             <button id="attack-btn" class="btn btn-lightning" style="flex-grow: 1; height: fit-content;">Attack</button>
+            <button id="ko-0hp-btn" class="btn btn-danger" style="flex-grow: 1; height: fit-content;">Remove K.O</button>
         </div>
     </div>
 
     <div class="panel-section">
         <h3>Shortcut Module</h3>
         <div class="flex-container" style="justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <button id="ko-0hp-btn" class="btn btn-danger">Remove K.O</button>
             <div class="form-group" style="flex-grow: 2; align-items: center; margin-bottom: 0;">
                 <label for="stadium-select">Stadium:</label>
                 <select id="stadium-select" style="margin-right: 10px;"></select>
@@ -1105,6 +1107,10 @@
                 cardEl.className = 'pokemon-target-card';
                 cardEl.dataset.slotId = slotId;
                 cardEl.draggable = true;
+
+                if (slotValue && slotValue.isKO) {
+                    cardEl.classList.add('is-ko');
+                }
 
                 if (slotValue && slotValue.cardId) {
                     const img = document.createElement('img');
