@@ -552,11 +552,11 @@ details[open]>summary::before {
     font-weight: bold;
 }
 
-.energy-btn-grid {
+.energy-tool-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 5px;
-    margin-bottom: 10px;
+    margin-top: 10px;
 }
 
 .energy-btn {
@@ -830,7 +830,7 @@ textarea {
     top: 50%;
     left: 22%;
     right: 22%;
-    height: 5px;
+    height: 8%;
     transform: translateY(-50%);
 }
 
@@ -838,7 +838,7 @@ textarea {
     left: 50%;
     top: 30%;
     bottom: 30%;
-    width: 5px;
+    width: 12%;
     transform: translateX(-50%);
 }
 
@@ -878,8 +878,8 @@ textarea {
 
 .on-pokemon {
     position: absolute;
-    top: 5px;
-    right: 5px;
+    top: -3px;
+    right: -5px;
     z-index: 10;
 }
 .pool-item {
@@ -1113,9 +1113,8 @@ summary>h4 {
 
 /* --- Consolidated Energy Icon Styles --- */
 
-.energy-btn-grid .energy-icon,
-.energy-btn-grid .special-energy-icon {
-    width: 50px;
+.energy-tool-grid .energy-icon,
+.energy-tool-grid .special-energy-icon {
     height: 50px;
     vertical-align: middle;
 }

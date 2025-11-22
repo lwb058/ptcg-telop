@@ -37,7 +37,11 @@
             </div>
         </div>
         </h3>
-        <div id="energy-buttons" class="energy-btn-grid">
+        <div id="current-player-field" style="margin-top: 10px;">
+            <!-- Pokémon will be rendered here by JavaScript -->
+        </div>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
+        <div id="energy-buttons" class="energy-tool-grid">
             <button class="energy-btn"><img src="/assets/ptcg-telop/icons/草.png" title="草" class="energy-icon"
                     data-energy-type="草" draggable="true"></button>
             <button class="energy-btn"><img src="/assets/ptcg-telop/icons/炎.png" title="炎" class="energy-icon"
@@ -60,13 +64,6 @@
                     data-energy-type="無" draggable="true"></button>
             <button class="energy-btn"><img src="/assets/ptcg-telop/icons/全.png" title="全" class="energy-icon"
                     data-energy-type="全" draggable="true"></button>
-        </div>
-        <div id="current-player-field" style="margin-top: 10px;">
-            <!-- Pokémon will be rendered here by JavaScript -->
-        </div>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
-        <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 12px; font-weight: bold; color: #555;">Tools</h4>
-        <div id="tool-buttons" class="tool-btn-grid">
             <!-- Tool cards will be rendered here by JavaScript -->
         </div>
     </div>
@@ -241,7 +238,6 @@
             const selectStage2Btn = document.getElementById('select-stage2-btn');
             const extrahpShortcutsContainer = document.getElementById('extrahp-shortcuts');
             const energyButtonsContainer = document.getElementById('energy-buttons');
-            const toolButtonsContainer = document.getElementById('tool-buttons');
             const battleField = document.getElementById('battle-field');
             const toggleFieldHeightBtn = document.getElementById('toggle-field-height-btn');
             const attackerSelect = document.getElementById('attacker');
@@ -719,12 +715,10 @@
                     e.dataTransfer.setData('text/plain', `special:${target.dataset.specialEnergyId}`);
                     e.dataTransfer.effectAllowed = 'copy';
                 }
-            });
-
-            toolButtonsContainer.addEventListener('dragstart', (e) => {
-                if (e.target.tagName === 'IMG' && e.target.dataset.toolId) {
-                    e.dataTransfer.setData('application/ptcg-tool-drag', 'true'); // New, specific data type for tools
-                    e.dataTransfer.setData('text/plain', e.target.dataset.toolId);
+                // Handle Tool (IMG tag)
+                else if (target.tagName === 'IMG' && target.dataset.toolId) {
+                    e.dataTransfer.setData('application/ptcg-tool-drag', 'true');
+                    e.dataTransfer.setData('text/plain', target.dataset.toolId);
                     e.dataTransfer.effectAllowed = 'copy';
                 }
             });
@@ -904,7 +898,8 @@
                 const baseTurn = draft_currentTurn.value;
                 const isOpponentView = showOpponentCheckbox.checked;
 
-                toolButtonsContainer.innerHTML = ''; // Clear existing tools
+                // Clear only the dynamically added tool buttons
+                energyButtonsContainer.querySelectorAll('.dynamic-tool-btn').forEach(btn => btn.remove());
 
                 let displayTurn = baseTurn;
                 if (isOpponentView && baseTurn) {
@@ -926,19 +921,21 @@
                 uniqueToolIds.forEach(id => {
                     const card = db[id];
                     const btn = document.createElement('button');
-                    btn.className = 'tool-btn'; // Reuse style
+                    // Add both classes for styling and for specific removal
+                    btn.className = 'energy-btn dynamic-tool-btn';
 
                     const img = document.createElement('img');
                     img.src = getCardImageUrl(id); // Use card image for tools
                     img.title = card.name;
-                    img.className = 'tool-icon'; // Reuse style
+                    img.className = 'energy-icon'; // Reuse energy icon styling
                     img.dataset.toolId = id;
                     img.draggable = true;
 
                     btn.appendChild(img);
-                    toolButtonsContainer.appendChild(btn);
+                    energyButtonsContainer.appendChild(btn);
                 });
             }
+
 
             function updateEnergyButtonVisibility() {
                 const settings = settingsRep.value || {};
