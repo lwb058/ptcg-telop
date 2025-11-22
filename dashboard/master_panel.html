@@ -399,6 +399,33 @@
                 cardEl.dataset.slotId = slotId;
                 cardEl.draggable = true; // Make the entire card element draggable
 
+                // --- Ability Toggle ---
+                const abilityWrapper = document.createElement('div');
+                abilityWrapper.className = 'field-ability-wrapper';
+
+                const hasAbility = cardData.pokemon && cardData.pokemon.abilities && cardData.pokemon.abilities.length > 0;
+
+                const abilityBtn = document.createElement('button');
+                abilityBtn.className = 'ability-btn';
+
+                if (hasAbility) {
+                    abilityBtn.textContent = getI18nText('ability');
+                    if (slotValue.abilityUsed) {
+                        abilityBtn.classList.add('used');
+                    }
+                    abilityBtn.title = 'Toggle Ability Used';
+                    abilityBtn.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent card drag
+                        const newStatus = !slotValue.abilityUsed;
+                        queueOperation('SET_ABILITY_USED', { target: slotId, status: newStatus });
+                    });
+                } else {
+                    abilityBtn.disabled = true;
+                }
+                abilityWrapper.appendChild(abilityBtn);
+                cardEl.appendChild(abilityWrapper);
+
+
                 const img = document.createElement('img');
                 img.src = getCardImageUrl(slotValue.cardId);
                 cardEl.appendChild(img);

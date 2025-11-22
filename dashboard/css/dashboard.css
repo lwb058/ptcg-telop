@@ -179,7 +179,7 @@ body.player-r .pokemon-slot.selected {
 }
 
 .ability-icon {
-    width: 84px;
+    width: 100%;
     height: 16px;
     cursor: pointer;
     transition: filter 0.2s ease;
@@ -190,6 +190,49 @@ body.player-r .pokemon-slot.selected {
 .ability-icon.used {
     filter: grayscale(1) brightness(0.4);
     /* Used: dark gray */
+}
+
+.field-ability-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.field-ability-placeholder {
+    height: 13px;
+    width: 100%;
+    border: 2px dashed #ccc;
+    border-radius: 4px;
+}
+
+.ability-btn {
+    width: 100%;
+    height: 16px;
+    border: 1px solid #6c757d;
+    background-color: #da1818;
+    color: white;
+    font-size: 10px;
+    font-weight: bolder;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.ability-btn:hover {
+    background-color: #ff7676;
+}
+
+.ability-btn.used {
+    background-color: #3f3636;
+    color: white;
+    text-decoration: line-through;
+}
+
+.ability-btn:disabled {
+    background-color: transparent;
+    border: 2px dashed #ccc;
+    cursor: not-allowed;
 }
 
 body.player-l .pokemon-slot.battle-slot {
@@ -694,7 +737,7 @@ textarea {
 
 .manual-attach-zone {
     position: absolute;
-    top: 2px;
+    top: 48%;
     right: 2px;
     width: 48px;
     height: 24px;
