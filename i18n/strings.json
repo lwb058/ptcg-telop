@@ -227,6 +227,18 @@
     "chs": "对方全体",
     "cht": "對方全體"
   },
+  "select_basic": {
+    "jp": "たね",
+    "en": "Basic",
+    "chs": "基础",
+    "cht": "基礎"
+  },
+  "select_stage2": {
+    "jp": "２進化",
+    "en": "Stage 2",
+    "chs": "二阶进化",
+    "cht": "二階進化"
+  },
   "clear": {
     "jp": "クリア",
     "en": "Clear",
@@ -312,9 +324,9 @@
     "en": "Resistance"
   },
   "DC-Transfer": {
-    "jp": "ダメカンのせ替え",
-    "chs": "伤害转移",
-    "cht": "傷害轉移",
+    "jp": "のせ替え",
+    "chs": "转移量",
+    "cht": "轉移量",
     "en": "Damage Transfer"
   },
   "batch_damage_drop_zone_text": {

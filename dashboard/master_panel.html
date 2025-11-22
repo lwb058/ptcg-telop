@@ -29,13 +29,15 @@
     </div>
 
     <div class="panel-section">
+        <h3>
         <div style="display: flex; align-items: center; justify-content: space-between;">
-            <h3>Develop Module</h3>
+            Develop Module
             <div class="form-group" style="margin-bottom: 0;">
                 <input type="checkbox" id="show-opponent-field-checkbox" style="transform: scale(1.2);">
                 <label for="show-opponent-field-checkbox" style="margin-left: 5px;">Show Opponent</label>
             </div>
         </div>
+        </h3>
         <div id="energy-buttons" class="energy-btn-grid">
             <button class="energy-btn"><img src="/assets/ptcg-telop/icons/草.png" title="草" class="energy-icon"
                     data-energy-type="草" draggable="true"></button>
@@ -71,19 +73,20 @@
     </div>
 
     <div class="panel-section">
-        <h3>Field Module</h3>
-        <div class="select-zone-grid" style="margin-bottom: 10px;">
-            <button id="select-with-energy-btn" class="btn select-btn" data-i18n="select_with_energy">エネ付き</button>
-            <button id="select-with-ability-btn" class="btn select-btn" data-i18n="select_with_ability">特性あり</button>
-            <button id="select-with-rule-btn" class="btn select-btn" data-i18n="select_with_rule">ルール持ち</button>
-            <button id="select-opponent-all-btn" class="btn select-btn" data-i18n="select_opponent_all">相手全体</button>
-            <button id="select-clear-btn" class="btn btn-black" data-i18n="clear">Clear</button>
-            <button id="select-reverse-btn" class="btn select-btn" data-i18n="reverse">Reverse</button>
+        <h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; ">
+            Field Module 
+            <button id="toggle-field-height-btn" class="btn"
+                style="padding: 2px 8px; font-size: 12px;">Collapse Field</button>
         </div>
+        </h3>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-            <label style="margin-bottom: 0;">Battle Field:</label>
-            <button id="toggle-target-height-btn" class="btn"
-                style="padding: 2px 8px; font-size: 12px;">Collapse</button>
+            <div class="form-group" style="flex-grow: 2; align-items: center; margin-bottom: 0;">
+                <label for="stadium-select">Stadium:</label>
+                <select id="stadium-select" style="margin-right: 10px;"></select>
+                <input type="checkbox" id="stadium-used-checkbox" style="transform: scale(1.2);">
+                <label for="stadium-used-checkbox" style="margin-left: 5px;">Used</label>
+            </div>
         </div>
         <div class="form-group" style="flex-direction: column; align-items: stretch; margin-bottom: 10px;">
             <div id="damage-transfer-control"
@@ -91,7 +94,7 @@
                 <label for="damage-transfer-amount" data-i18n="DC-Transfer">Damage Transfer:</label>
                 <input type="number" id="damage-transfer-amount" class="compact-input" value="30" min="10" step="10"
                     style="width: 60px;">
-                <span style="border-left: 1px solid #303157; margin-left: 5px; padding-left: 15px;">Add:</span>
+                <span style="border-left: 1px solid #303157; margin-left: 5px; padding-left: 15px;">Damage:</span>
                 <div id="damage-pool" style="display: flex; gap: 5px;">
                     <div class="damage-counter pool-item" draggable="true" data-damage-amount="10">10</div>
                     <div class="damage-counter pool-item" draggable="true" data-damage-amount="20">20</div>
@@ -133,19 +136,21 @@
                 <input type="checkbox" id="resistance-check" style="transform: scale(1.2);">
             </div>
             <button id="attack-btn" class="btn btn-lightning" style="flex-grow: 1; height: fit-content;">Attack</button>
-            <button id="ko-0hp-btn" class="btn btn-danger" style="flex-grow: 1; height: fit-content;">Remove K.O</button>
+            <button id="ko-0hp-btn" class="btn btn-danger" style="flex-grow: 1; height: fit-content;">K.O</button>
         </div>
     </div>
 
     <div class="panel-section">
         <h3>Shortcut Module</h3>
-        <div class="flex-container" style="justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <div class="form-group" style="flex-grow: 2; align-items: center; margin-bottom: 0;">
-                <label for="stadium-select">Stadium:</label>
-                <select id="stadium-select" style="margin-right: 10px;"></select>
-                <input type="checkbox" id="stadium-used-checkbox" style="transform: scale(1.2);">
-                <label for="stadium-used-checkbox" style="margin-left: 5px;">Used</label>
-            </div>
+        <div class="select-zone-grid" style="margin-bottom: 10px;">
+            <button id="select-clear-btn" class="btn btn-black" data-i18n="clear">Clear</button>
+            <button id="select-reverse-btn" class="btn btn-lightning" data-i18n="reverse">Reverse</button>
+            <button id="select-basic-btn" class="btn btn-grass" data-i18n="select_basic">Basic</button>
+            <button id="select-stage2-btn" class="btn btn-grass" data-i18n="select_stage2">Stage 2</button>
+            <button id="select-with-energy-btn" class="btn select-btn" data-i18n="select_with_energy">エネ付き</button>
+            <button id="select-with-ability-btn" class="btn select-btn" data-i18n="select_with_ability">特性あり</button>
+            <button id="select-with-rule-btn" class="btn select-btn" data-i18n="select_with_rule">ルール持ち</button>
+            <button id="select-opponent-all-btn" class="btn select-btn" data-i18n="select_opponent_all">相手全体</button>
         </div>
         <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
         <div id="extrahp-shortcuts">
@@ -153,8 +158,6 @@
                 style="text-align:center; margin-top: 10px; margin-bottom: 5px; font-size: 12px; font-weight: bold; color: #555;">
                 ↓↓↓ ExtraHP Adjust ↓↓↓</h4>
             <div class="grid-container" style="grid-template-columns: repeat(2, 1fr); gap: 5px; margin-bottom: 10px;">
-                <button id="select-basic-btn" class="btn btn-info">Select All Basic</button>
-                <button id="select-stage2-btn" class="btn btn-info">Select All Stage 2</button>
             </div>
             <div class="grid-container" style="grid-template-columns: repeat(5, 1fr); gap: 5px;">
                 <button class="btn btn-grass" data-extrahp-adj="+30">+30 MaxHP</button>
@@ -162,22 +165,6 @@
                 <button class="btn btn-grass" data-extrahp-adj="+100">+100 MaxHP</button>
                 <button class="btn btn-fire" data-extrahp-adj="-30">-30 MaxHP</button>
                 <button class="btn btn-black" data-extrahp-set="0">No ExtraHP</button>
-            </div>
-        </div>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
-        <div id="damage-shortcuts">
-            <h4
-                style="text-align:center; margin-top: 10px; margin-bottom: 5px; font-size: 12px; font-weight: bold; color: #555;">
-                ↓↓↓ HP Adjust ↓↓↓</h4>
-            <div class="grid-container" style="grid-template-columns: repeat(8, 1fr); gap: 5px;">
-                <button class="btn btn-fire" data-damage-adj="-10">-10 HP</button>
-                <button class="btn btn-fire" data-damage-adj="-20">-20 HP</button>
-                <button class="btn btn-fire" data-damage-adj="-30">-30 HP</button>
-                <button class="btn btn-fire" data-damage-adj="-50">-50 HP</button>
-                <button class="btn btn-grass" data-damage-adj="+10">+10 HP</button>
-                <button class="btn btn-grass" data-damage-adj="+20">+20 HP</button>
-                <button class="btn btn-grass" data-damage-adj="+30">+30 HP</button>
-                <button class="btn btn-grass" data-damage-adj="+50">+50 HP</button>
             </div>
         </div>
     </div>
@@ -258,8 +245,8 @@
             const extrahpShortcutsContainer = document.getElementById('extrahp-shortcuts');
             const energyButtonsContainer = document.getElementById('energy-buttons');
             const toolButtonsContainer = document.getElementById('tool-buttons');
-            const attackTargetField = document.getElementById('battle-field');
-            const toggleTargetHeightBtn = document.getElementById('toggle-target-height-btn');
+            const battleField = document.getElementById('battle-field');
+            const toggleFieldHeightBtn = document.getElementById('toggle-field-height-btn');
             const attackerSelect = document.getElementById('attacker');
             const attackSelect = document.getElementById('attack-select');
             const damageInput = document.getElementById('damage');
@@ -654,34 +641,6 @@
                 slots.forEach(slot => {
                     if (slot.value && slot.value.cardId && slot.value.isKO) {
                         queueOperation('KO_POKEMON', { target: slot.name.replace('draft_', '') });
-                    }
-                });
-            });
-
-            // --- Damage Shortcut Module Logic ---
-            damageShortcutsContainer.addEventListener('click', (e) => {
-                const target = e.target.closest('button[data-damage-adj]');
-                if (!target) return;
-
-                const adjValue = parseInt(target.dataset.damageAdj, 10);
-                if (isNaN(adjValue)) return;
-
-                const currentSelections = selections.value;
-                if (!currentSelections || currentSelections.length === 0) {
-                    console.log('No Pokémon selected for damage adjustment.');
-                    return; // Or show a user-friendly message
-                }
-
-                currentSelections.forEach(slotId => {
-                    const slotReplicant = slots.find(s => s.name === `draft_${slotId}`);
-                    if (slotReplicant && slotReplicant.value && slotReplicant.value.cardId) {
-                        const currentDamage = parseInt(slotReplicant.value.damage || 0, 10);
-                        const newDamage = Math.max(0, currentDamage - adjValue); // Damage cannot be negative
-
-                        queueOperation('SET_DAMAGE', {
-                            target: slotId,
-                            value: newDamage
-                        });
                     }
                 });
             });
@@ -1083,15 +1042,15 @@
 
 
             // --- Targeting View Logic ---
-            if (toggleTargetHeightBtn) {
-                toggleTargetHeightBtn.addEventListener('click', () => {
-                    const currentHeight = attackTargetField.style.height;
-                    if (currentHeight === '420px') {
-                        attackTargetField.style.height = '200px';
-                        toggleTargetHeightBtn.textContent = 'Expand';
+            if (toggleFieldHeightBtn) {
+                toggleFieldHeightBtn.addEventListener('click', () => {
+                    const currentHeight = battleField.style.height;
+                    if (currentHeight === '200px') {
+                        battleField.style.height = '420px';
+                        toggleFieldHeightBtn.textContent = 'Collapse';
                     } else {
-                        attackTargetField.style.height = '420px';
-                        toggleTargetHeightBtn.textContent = 'Collapse';
+                        battleField.style.height = '200px';
+                        toggleFieldHeightBtn.textContent = 'Expand';
                     }
                 });
             }
@@ -1158,8 +1117,8 @@
              * Renders the entire battlefield in the targeting view, from the current player's perspective.
              */
             function renderTargetingField() {
-                if (!attackTargetField) return;
-                attackTargetField.innerHTML = ''; // Clear view
+                if (!battleField) return;
+                battleField.innerHTML = ''; // Clear view
 
                 const turn = draft_currentTurn.value;
                 if (!turn) return;
@@ -1205,22 +1164,22 @@
                 const hasPlayerBench = populateRow(playerBenchRow, currentPlayerId, [1, 2, 3, 4, 5, 6, 7, 8]);
 
                 // Append rows in the correct order only if they have content
-                if (hasOpponentBench) attackTargetField.appendChild(opponentBenchRow);
-                if (hasOpponentBattle) attackTargetField.appendChild(opponentBattleRow);
+                if (hasOpponentBench) battleField.appendChild(opponentBenchRow);
+                if (hasOpponentBattle) battleField.appendChild(opponentBattleRow);
 
                 // Add separator if both opponent and player have pokemon on the field
                 if ((hasOpponentBench || hasOpponentBattle) && (hasPlayerBattle || hasPlayerBench)) {
                     const separator = document.createElement('div');
                     separator.className = 'target-view-separator';
-                    attackTargetField.appendChild(separator);
+                    battleField.appendChild(separator);
                 }
 
-                if (hasPlayerBattle) attackTargetField.appendChild(playerBattleRow);
-                if (hasPlayerBench) attackTargetField.appendChild(playerBenchRow);
+                if (hasPlayerBattle) battleField.appendChild(playerBattleRow);
+                if (hasPlayerBench) battleField.appendChild(playerBenchRow);
             }
 
             // --- Logic for dragging and dropping to swap Pokémon in the targeting view --- 
-            attackTargetField.addEventListener('dragstart', e => {
+            battleField.addEventListener('dragstart', e => {
                 if (e.target.classList.contains('damage-counter')) {
                     return;
                 }
@@ -1233,7 +1192,7 @@
                 }
             });
 
-            attackTargetField.addEventListener('dragover', e => {
+            battleField.addEventListener('dragover', e => {
                 const isDamageTransfer = e.dataTransfer.types.includes('application/ptcg-damage-transfer');
                 const isDamageAdd = e.dataTransfer.types.includes('application/ptcg-damage-add');
                 const isPokemonSwap = e.dataTransfer.types.includes('application/ptcg-pokemon-swap');
@@ -1249,23 +1208,23 @@
                             targetCard.style.boxShadow = '0 0 10px 3px #3498db';
                         }
                     }
-                } else if ((isDamageTransfer || isDamageAdd) && e.currentTarget.contains(e.target)) { // Dragging over an empty area within attackTargetField
+                } else if ((isDamageTransfer || isDamageAdd) && e.currentTarget.contains(e.target)) { // Dragging over an empty area within battleField
                     e.preventDefault();
                     e.currentTarget.classList.add('over'); // Highlight the field itself
                 }
             });
 
-            attackTargetField.addEventListener('dragleave', e => {
+            battleField.addEventListener('dragleave', e => {
                 const targetCard = e.target.closest('.pokemon-target-card');
                 if (targetCard) {
                     targetCard.classList.remove('over');
                     targetCard.style.boxShadow = '';
-                } else { // Leaving the attackTargetField itself
+                } else { // Leaving the battleField itself
                     e.currentTarget.classList.remove('over');
                 }
             });
 
-            attackTargetField.addEventListener('drop', e => {
+            battleField.addEventListener('drop', e => {
                 e.preventDefault();
                 const dropTarget = e.target.closest('.pokemon-target-card');
 
