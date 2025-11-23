@@ -277,6 +277,7 @@
             });
             document.body.addEventListener('dragend', () => {
                 batchDamageDropZone.classList.remove('show');
+                document.body.classList.remove('dragging-energy');
             });
 
 
@@ -524,14 +525,14 @@
                     });
                 });
 
-                cardEl.appendChild(toolContainer);
-
                 // Add the special drop zone for "manual turn attachment"
                 const manualAttachZone = document.createElement('div');
                 manualAttachZone.className = 'manual-attach-zone';
                 manualAttachZone.textContent = getI18nText('manually_attach');
                 manualAttachZone.title = 'Set as Turn Energy';
-                cardEl.appendChild(manualAttachZone);
+                toolContainer.appendChild(manualAttachZone); // NEW: Append to toolContainer
+
+                cardEl.appendChild(toolContainer);
 
                 return cardEl;
             }
@@ -746,12 +747,14 @@
                 const target = e.target;
                 // Handle Basic Energy (IMG tag)
                 if (target.tagName === 'IMG' && target.dataset.energyType) {
+                    document.body.classList.add('dragging-energy'); // Add class
                     e.dataTransfer.setData('application/ptcg-energy-drag', 'true');
                     e.dataTransfer.setData('text/plain', target.dataset.energyType);
                     e.dataTransfer.effectAllowed = 'copy';
                 }
                 // Handle Special Energy (DIV tag)
                 else if (target.dataset.specialEnergyId) {
+                    document.body.classList.add('dragging-energy'); // Add class
                     e.dataTransfer.setData('application/ptcg-energy-drag', 'true');
                     e.dataTransfer.setData('text/plain', `special:${target.dataset.specialEnergyId}`);
                     e.dataTransfer.effectAllowed = 'copy';
