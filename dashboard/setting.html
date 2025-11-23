@@ -70,20 +70,36 @@
 			<div class="collapsible-content">
 				<div class="setting-grid">
 					<div class="form-group-hotkey">
-						<label for="discard-hotkey-input">Discard Queue</label>
-						<input type="text" id="discard-hotkey-input" placeholder="e.g., Escape, Alt+D">
+						<label for="discard-hotkey-mod">Discard Queue</label>
+						<div style="display: flex; gap: 5px; justify-self: end;">
+							<select id="discard-hotkey-mod" class="hotkey-mod-select"></select>
+							<label for="discard-hotkey-mod"> + </label>
+							<input type="text" id="discard-hotkey-key" class="hotkey-key-input" maxlength="1" placeholder ="None">
+						</div>
 					</div>
 					<div class="form-group-hotkey">
-						<label for="apply-hotkey-input">Apply Queue</label>
-						<input type="text" id="apply-hotkey-input" placeholder="e.g., Shift+S, F1">
+						<label for="apply-hotkey-mod">Apply Queue</label>
+						<div style="display: flex; gap: 5px; justify-self: end;">
+							<select id="apply-hotkey-mod" class="hotkey-mod-select"></select>
+							<label for="discard-hotkey-mod"> + </label>
+							<input type="text" id="apply-hotkey-key" class="hotkey-key-input" maxlength="1" placeholder ="None">
+						</div>
 					</div>
 					<div class="form-group-hotkey">
-						<label for="clear-card-hotkey-input">Clear Card Display</label>
-						<input type="text" id="clear-card-hotkey-input" placeholder="e.g., Space, C">
+						<label for="clear-card-hotkey-mod">Clear Card Display</label>
+						<div style="display: flex; gap: 5px; justify-self: end;">
+							<select id="clear-card-hotkey-mod" class="hotkey-mod-select"></select>
+							<label for="discard-hotkey-mod"> + </label>
+							<input type="text" id="clear-card-hotkey-key" class="hotkey-key-input" maxlength="1" placeholder ="None">
+						</div>
 					</div>
 					<div class="form-group-hotkey">
-						<label for="clear-selection-hotkey-input">Clear Selection</label>
-						<input type="text" id="clear-selection-hotkey-input" placeholder="e.g., Escape">
+						<label for="clear-selection-hotkey-mod">Clear Selection</label>
+						<div style="display: flex; gap: 5px; justify-self: end;">
+							<select id="clear-selection-hotkey-mod" class="hotkey-mod-select"></select>
+							<label for="discard-hotkey-mod"> + </label>
+							<input type="text" id="clear-selection-hotkey-key" class="hotkey-key-input" maxlength="1" placeholder ="None">
+						</div>
 					</div>
 				</div>
 			</div>
@@ -202,10 +218,17 @@
 			const autoCheckSupporterToggle = document.getElementById('auto-check-supporter-toggle');
 			const autoTrashTmToggle = document.getElementById('auto-trash-tm-toggle');
 			const weaknessDamageToggle = document.getElementById('weakness-damage-toggle');
-			const discardHotkeyInput = document.getElementById('discard-hotkey-input');
-			const applyHotkeyInput = document.getElementById('apply-hotkey-input');
-			const clearCardHotkeyInput = document.getElementById('clear-card-hotkey-input');
-			const clearSelectionHotkeyInput = document.getElementById('clear-selection-hotkey-input');
+
+			// Hotkey Elements
+			const hotkeyIds = ['discard', 'apply', 'clear-card', 'clear-selection'];
+			const hotkeyElements = {};
+			hotkeyIds.forEach(id => {
+				hotkeyElements[id] = {
+					mod: document.getElementById(`${id}-hotkey-mod`),
+					key: document.getElementById(`${id}-hotkey-key`)
+				};
+			});
+
 			const toolLimitInput = document.getElementById('tool-limit-input');
 			const themeSelect = document.getElementById('theme-select');
 			const languageSelect = document.getElementById('language-select');
@@ -347,12 +370,90 @@
 				// Update theme dropdown
 				updateThemeDropdown(themeList.value || ['Default'], settings ? settings.activeTheme : 'Default');
 
+				// --- Hotkey Logic ---
+				const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+
+				function populateHotkeyDropdowns() {
+					const options = [
+						{ value: 'none', label: 'None' },
+						{ value: 'ctrl', label: isMac ? 'Command' : 'Ctrl' },
+						{ value: 'alt', label: isMac ? 'Option' : 'Alt' },
+						{ value: 'shift', label: 'Shift' },
+						{ value: 'meta', label: isMac ? 'Control' : 'Win' },
+						{ value: 'space', label: 'Space', special: true },
+						{ value: 'enter', label: 'Enter', special: true },
+						{ value: 'tab', label: 'Tab', special: true },
+						{ value: 'escape', label: 'Escape', special: true },
+						{ value: 'delete', label: 'Delete', special: true },
+						{ value: 'backspace', label: 'BackSpace', special: true }
+					];
+
+					hotkeyIds.forEach(id => {
+						const select = hotkeyElements[id].mod;
+						const input = hotkeyElements[id].key;
+						select.innerHTML = '';
+						options.forEach(opt => {
+							const el = document.createElement('option');
+							el.value = opt.value;
+							el.textContent = opt.label;
+							select.appendChild(el);
+						});
+					});
+				}
+				populateHotkeyDropdowns();
+
+				function parseHotkey(hotkeyString) {
+					if (!hotkeyString) return { mod: 'none', key: '' };
+
+					const lower = hotkeyString.toLowerCase();
+					const parts = lower.split('+').map(p => p.trim());
+
+					// Known dropdown values (modifiers + special keys)
+					const dropdownValues = ['ctrl', 'alt', 'shift', 'meta', 'win', 'space', 'enter', 'tab', 'escape', 'delete', 'backspace'];
+
+					// Case 1: Single part
+					if (parts.length === 1) {
+						const part = parts[0];
+						if (dropdownValues.includes(part)) {
+							// It's a special key or modifier used as a key
+							return { mod: part === 'win' ? 'meta' : part, key: '' };
+						} else {
+							// It's a regular key
+							return { mod: 'none', key: part };
+						}
+					}
+
+					// Case 2: Multiple parts (Mod + Key)
+					let mod = 'none';
+					let key = parts.pop(); // The last part is the key
+
+					if (parts.includes('ctrl')) mod = 'ctrl';
+					else if (parts.includes('alt')) mod = 'alt';
+					else if (parts.includes('shift')) mod = 'shift';
+					else if (parts.includes('meta') || parts.includes('win')) mod = 'meta';
+
+					return { mod, key };
+				}
+
+				function renderHotkeys(settings) {
+					const hotkeys = (settings && settings.hotkeys) ? settings.hotkeys : {};
+
+					const mappings = {
+						'discard': hotkeys.discard || 'Escape',
+						'apply': hotkeys.apply || 'Shift+S',
+						'clear-card': hotkeys.clearCard || 'Space',
+						'clear-selection': hotkeys.clearSelection || 'Escape'
+					};
+
+					hotkeyIds.forEach(id => {
+						const parsed = parseHotkey(mappings[id]);
+						hotkeyElements[id].mod.value = parsed.mod;
+						hotkeyElements[id].key.value = parsed.key;
+					});
+				}
+
 				// 3. Render Hotkey Settings
-				const hotkeys = (settings && settings.hotkeys) ? settings.hotkeys : {};
-				discardHotkeyInput.value = hotkeys.discard || 'Escape';
-				applyHotkeyInput.value = hotkeys.apply || 'Shift+S';
-				clearCardHotkeyInput.value = hotkeys.clearCard || 'Space';
-				clearSelectionHotkeyInput.value = hotkeys.clearSelection || 'Escape';
+				renderHotkeys(settings);
 			}
 
 			settingsRep.on('change', (newValue) => {
@@ -380,11 +481,36 @@
 					}
 				});
 
+				function getHotkeyString(id) {
+					const mod = hotkeyElements[id].mod.value;
+					const key = hotkeyElements[id].key.value.trim();
+
+					// Case 4: None + Empty -> No Hotkey
+					if (mod === 'none' && !key) {
+						return '';
+					}
+
+					// Case 1: Dropdown Val + Empty -> Dropdown Val
+					if (mod !== 'none' && !key) {
+						return mod.charAt(0).toUpperCase() + mod.slice(1);
+					}
+
+					// Case 2: None + Val -> Val
+					if (mod === 'none' && key) {
+						return key;
+					}
+
+					// Case 3: Dropdown Val + Val -> Val+Val
+					// Capitalize modifier for standard format
+					const modDisplay = mod.charAt(0).toUpperCase() + mod.slice(1);
+					return `${modDisplay}+${key.toUpperCase()}`;
+				}
+
 				const newHotkeys = {
-					discard: discardHotkeyInput.value.trim() || 'Escape',
-					apply: applyHotkeyInput.value.trim() || 'Shift+S',
-					clearCard: clearCardHotkeyInput.value.trim() || 'Space',
-					clearSelection: clearSelectionHotkeyInput.value.trim() || 'Escape'
+					discard: getHotkeyString('discard'),
+					apply: getHotkeyString('apply'),
+					clearCard: getHotkeyString('clear-card'),
+					clearSelection: getHotkeyString('clear-selection')
 				};
 
 				const newVstarEnabled = vstarToggle.checked;

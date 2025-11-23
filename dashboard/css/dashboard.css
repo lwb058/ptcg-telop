@@ -1019,6 +1019,8 @@ textarea {
 }
 
 .form-group-hotkey label {
+    display: flex;
+    align-items: center;
     font-weight: bold;
 }
 
@@ -1028,6 +1030,8 @@ textarea {
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box;
+    width: 50px;
+    text-align: center;
 }
 
 .horizontal-panels {

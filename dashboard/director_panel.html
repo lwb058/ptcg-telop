@@ -200,7 +200,6 @@
             });
 
             // --- Replicant Listeners ---
-            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
             const hotkeyManager = new HotkeyManager(nodecg, settingsRep);
 
             operationQueue.on('change', renderQueue);

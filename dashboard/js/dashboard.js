@@ -74,13 +74,37 @@ function checkHotkey(e, hotkeyString) {
     if (hotkeyString.toLowerCase() === 'space' || hotkeyString === ' ') {
         return e.key === ' ';
     }
+
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
     const parts = hotkeyString.toLowerCase().split('+').map(p => p.trim());
     const key = parts.pop();
+
     if (e.key.toLowerCase() !== key) return false;
-    if (parts.includes('ctrl') !== e.ctrlKey) return false;
-    if (parts.includes('alt') !== e.altKey) return false;
-    if (parts.includes('shift') !== e.shiftKey) return false;
-    if (parts.includes('meta') !== e.metaKey) return false;
+
+    const configCtrl = parts.includes('ctrl');
+    const configAlt = parts.includes('alt');
+    const configMeta = parts.includes('meta') || parts.includes('win');
+
+    if (isMac) {
+        // Mac Mappings:
+        // Config Ctrl -> Mac Command (metaKey)
+        // Config Alt -> Mac Option (altKey)
+        // Config Meta/Win -> Mac Control (ctrlKey)
+
+        if (configCtrl !== e.metaKey) return false;
+        if (configAlt !== e.altKey) return false;
+        if (configMeta !== e.ctrlKey) return false;
+    } else {
+        // Windows/Linux Mappings (Standard):
+        // Config Ctrl -> Ctrl
+        // Config Alt -> Alt
+        // Config Meta/Win -> Meta (Windows Key)
+
+        if (configCtrl !== e.ctrlKey) return false;
+        if (configAlt !== e.altKey) return false;
+        if (configMeta !== e.metaKey) return false;
+    }
+
     return true;
 }
 

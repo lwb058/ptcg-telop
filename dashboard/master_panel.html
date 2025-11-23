@@ -196,7 +196,6 @@
                 return nodecg.Replicant(`draft_slot${side}${index}`);
             })
         ).then(() => {
-            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
             let hotkeys = {
                 discard: 'Escape',
                 apply: 'Shift+S',

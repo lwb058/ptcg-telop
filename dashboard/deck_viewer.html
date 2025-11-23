@@ -138,7 +138,6 @@
         let deckViews = { L: 'icon', R: 'icon' };
 
         // --- Hotkey Handling ---
-        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
         const hotkeyManager = new HotkeyManager(nodecg, settingsRep);
 
         hotkeyManager.on('clearCard', () => clearButton.click());
