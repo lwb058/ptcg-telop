@@ -41,7 +41,7 @@
             <!-- Pokémon cards from the deck will be rendered here by JavaScript -->
         </div>
         <div id="current-player-field" style="margin-top: 10px;">
-            <!-- Pokémon will be rendered here by JavaScript -->
+            <!-- Player's Field will be rendered here by JavaScript -->
         </div>
         <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
         <div id="energy-tool-buttons" class="energy-tool-grid">
@@ -79,12 +79,14 @@
                     Collapse Field</button>
             </div>
         </h3>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-            <div class="form-group" style="flex-grow: 2; align-items: center; margin-bottom: 0;">
-                <label for="stadium-select">Stadium:</label>
-                <select id="stadium-select" style="margin-right: 10px;"></select>
-                <input type="checkbox" id="stadium-used-checkbox" style="transform: scale(1.2);">
-                <label for="stadium-used-checkbox" style="margin-left: 5px;">Used</label>
+        <div style="justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <div class="form-group" style="align-items: center; margin-bottom: 0;">
+                <label for="stadium-list">Stadium:</label>
+                <div id="stadium-list" class="stadium-list">
+                    <!-- Stadium will be rendered here by JavaScript -->
+                </div>
+                <input type="checkbox" id="stadium-used-checkbox" style="transform: scale(1.8); margin-left: 10px;">
+                <label for="stadium-used-checkbox" style="margin-left: 5px; font-size: 18px;">Used</label>
             </div>
         </div>
         <div class="form-group" style="flex-direction: column; align-items: stretch; margin-bottom: 10px;">
@@ -251,7 +253,7 @@
             const weaknessCheck = document.getElementById('weakness-check');
             const attackBtn = document.getElementById('attack-btn');
             const aimBtn = document.getElementById('aim-btn');
-            const stadiumSelect = document.getElementById('stadium-select');
+            const stadiumList = document.getElementById('stadium-list');
             const stadiumUsedCheckbox = document.getElementById('stadium-used-checkbox');
             const damagePool = document.getElementById('damage-pool');
             const batchDamageDropZone = document.getElementById('batch-damage-drop-zone');
@@ -331,7 +333,7 @@
                     displayTurn = baseTurn === 'L' ? 'R' : 'L';
                 }
 
-                currentPlayerField.innerHTML = '<h3>↓↓↓ Drag & Drop ↓↓↓</h3>';
+                currentPlayerField.innerHTML = '<h3>↓↓↓ Drop Pokémon & Tools & Energy Here ↓↓↓</h3>';
 
                 if (!displayTurn || !db) {
                     currentPlayerField.innerHTML += '<p style="color: #888; text-align: center;">No player to display.</p>';
@@ -1866,7 +1868,7 @@
             });
 
             // --- Stadium Logic ---
-            function updateStadiumDropdown() {
+            function updateStadiumButtons() {
                 const db = cardDatabase.value;
                 const deckLVal = deckL.value;
                 const deckRVal = deckR.value;
@@ -1880,22 +1882,44 @@
                     .filter(card => card.data && card.data.subtype === 'stadium');
 
                 const currentStadiumId = draft_stadium.value ? draft_stadium.value.cardId : "";
-                stadiumSelect.innerHTML = '<option value="">Select Stadium</option>';
+                stadiumList.innerHTML = '';
+
+                // Add "None" button
+                const noneBtn = document.createElement('button');
+                noneBtn.className = 'stadium-btn none-stadium';
+                noneBtn.textContent = 'None';
+                noneBtn.dataset.stadiumId = '';
+                if (!currentStadiumId) {
+                    noneBtn.classList.add('selected');
+                }
+                noneBtn.addEventListener('click', () => {
+                    queueOrUpdateOperation('SET_STADIUM', { cardId: null });
+                    queueOrUpdateOperation('SET_STADIUM_USED', { used: false });
+                });
+                stadiumList.appendChild(noneBtn);
 
                 stadiumCards.forEach(card => {
-                    const option = document.createElement('option');
-                    option.value = card.id;
-                    option.textContent = card.data.name;
-                    stadiumSelect.appendChild(option);
+                    const btn = document.createElement('button');
+                    btn.className = 'stadium-btn';
+                    if (card.id === currentStadiumId) {
+                        btn.classList.add('selected');
+                    }
+                    btn.dataset.stadiumId = card.id;
+                    btn.title = card.data.name;
+
+                    const icon = document.createElement('div');
+                    icon.className = 'stadium-icon';
+                    icon.style.backgroundImage = getCardImageUrl(card.id, true);
+
+                    btn.appendChild(icon);
+
+                    btn.addEventListener('click', () => {
+                        queueOrUpdateOperation('SET_STADIUM', { cardId: card.id });
+                        queueOrUpdateOperation('SET_STADIUM_USED', { used: false });
+                    });
+                    stadiumList.appendChild(btn);
                 });
-
-                stadiumSelect.value = currentStadiumId;
             }
-
-            stadiumSelect.addEventListener('change', (e) => {
-                const newStadiumId = e.target.value;
-                queueOrUpdateOperation('SET_STADIUM', { cardId: newStadiumId || null });
-            });
 
             stadiumUsedCheckbox.addEventListener('change', (e) => {
                 const isUsed = e.target.checked;
@@ -1946,7 +1970,8 @@
                 updateAttackerDropdown();
                 renderTargetingField();
                 updateWeaknessAndResistanceChecks();
-                updateStadiumDropdown();
+
+                updateStadiumButtons();
                 updateEnergyAndToolButtons();
                 updatePokemonSourceGrid();
             });
@@ -1980,7 +2005,7 @@
                 console.log('Listener Fired: deckL or deckR');
                 updateEnergyAndToolButtons();
                 updatePokemonSourceGrid();
-                updateStadiumDropdown();
+                updateStadiumButtons();
             };
             deckL.on('change', updateDeckDependentUI);
             deckR.on('change', updateDeckDependentUI);
@@ -1990,9 +2015,19 @@
                 const newStadiumId = newValue ? newValue.cardId : "";
                 const isUsed = newValue ? newValue.used : false;
 
-                if (stadiumSelect.value !== newStadiumId) {
-                    stadiumSelect.value = newStadiumId;
-                }
+                // Update selected button
+                const buttons = stadiumList.querySelectorAll('.stadium-btn');
+                buttons.forEach(btn => {
+                    if (btn.dataset.stadiumId === newStadiumId || (newStadiumId === "" && btn.dataset.stadiumId === "")) {
+                        btn.classList.add('selected');
+                        // Scroll into view if needed
+                        if (newStadiumId) {
+                            btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        }
+                    } else {
+                        btn.classList.remove('selected');
+                    }
+                });
                 if (stadiumUsedCheckbox.checked !== isUsed) {
                     stadiumUsedCheckbox.checked = isUsed;
                 }
