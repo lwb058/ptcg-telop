@@ -8,168 +8,175 @@
 </head>
 
 <body>
-    <div class="panel-section info-zone">
-        <h3>Info Module</h3>
-        <div class="flex-container" style="align-items: flex-start;">
-            <div>
-                <p>Total Pokemons: <span id="total-pokemons">0</span></p>
-                <p>Battle Energy: <span id="battle-energy-l">L: 0</span> | <span id="battle-energy-r">R: 0</span></p>
-            </div>
-        </div>
-    </div>
-
-    <div class="panel-section">
-        <h3>Turn Module</h3>
-        <div class="flex-container" style="justify-content: center; align-items: center;">
-            <label id="turn-l-label"><input type="radio" name="turn" id="turn-l" value="L"> Left Player</label>
-            <button id="end-turn-btn" class="btn btn-metal" style="margin: 0 20px;">End Turn</button>
-            <label id="turn-r-label"><input type="radio" name="turn" id="turn-r" value="R"> Right Player</label>
-        </div>
-    </div>
-
-    <div class="panel-section">
-        <h3>
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                Develop Module
-                <div class="form-group" style="margin-bottom: 0;">
-                    <input type="checkbox" id="show-opponent-field-checkbox" style="transform: scale(1.2);">
-                    <label for="show-opponent-field-checkbox" style="margin-left: 5px;">Show Opponent</label>
+    <div class="horizontal-panels">
+        <div class="panel-section info-zone">
+            <h3>Info Module</h3>
+            <div class="flex-container" style="align-items: flex-start;">
+                <div>
+                    <p>Total Pokemons: <span id="total-pokemons">0</span></p>
+                    <p>Battle Energy: <span id="battle-energy-l">L: 0</span> | <span id="battle-energy-r">R: 0</span>
+                    </p>
                 </div>
             </div>
-        </h3>
-        <div id="pokemon-source-grid" class="pokemon-source-grid" style="margin-bottom: 10px;">
-            <!-- Pokémon cards from the deck will be rendered here by JavaScript -->
-        </div>
-        <div id="current-player-field" style="margin-top: 10px;">
-            <!-- Player's Field will be rendered here by JavaScript -->
-        </div>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
-        <div id="energy-tool-buttons" class="energy-tool-grid">
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/草.png" title="草" class="energy-icon"
-                    data-energy-type="草" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/炎.png" title="炎" class="energy-icon"
-                    data-energy-type="炎" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/水.png" title="水" class="energy-icon"
-                    data-energy-type="水" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/雷.png" title="雷" class="energy-icon"
-                    data-energy-type="雷" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/超.png" title="超" class="energy-icon"
-                    data-energy-type="超" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/闘.png" title="闘" class="energy-icon"
-                    data-energy-type="闘" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/悪.png" title="悪" class="energy-icon"
-                    data-energy-type="悪" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/鋼.png" title="鋼" class="energy-icon"
-                    data-energy-type="鋼" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/妖.png" title="妖" class="energy-icon"
-                    data-energy-type="妖" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/無.png" title="無" class="energy-icon"
-                    data-energy-type="無" draggable="true"></button>
-            <button class="energy-btn"><img src="/assets/ptcg-telop/icons/全.png" title="全" class="energy-icon"
-                    data-energy-type="全" draggable="true"></button>
-            <!-- Special Enrgy & Tool cards will be rendered here by JavaScript -->
-        </div>
-    </div>
-
-    <div class="panel-section">
-        <h3>
-            <div style="display: flex; justify-content: space-between; align-items: center; ">
-                Field Module
-                <button id="toggle-field-height-btn" class="btn" style="padding: 2px 8px; font-size: 12px;">
-                    Collapse Field</button>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
+            <div class="flex-container" style="justify-content: center; align-items: center;">
+                <label id="turn-l-label"><input type="radio" name="turn" id="turn-l" value="L"> Left Player</label>
+                <button id="end-turn-btn" class="btn btn-metal" style="margin: 0 20px;">End Turn</button>
+                <label id="turn-r-label"><input type="radio" name="turn" id="turn-r" value="R"> Right Player</label>
             </div>
-        </h3>
-        <div style="justify-content: space-between; align-items: center; margin-bottom: 5px;">
-            <div class="form-group" style="align-items: center; margin-bottom: 0;">
-                <label for="stadium-list">Stadium:</label>
-                <div id="stadium-list" class="stadium-list">
-                    <!-- Stadium will be rendered here by JavaScript -->
+        </div>
+
+        <div class="panel-section">
+            <h3>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    Develop Module
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <input type="checkbox" id="show-opponent-field-checkbox" style="transform: scale(1.2);">
+                        <label for="show-opponent-field-checkbox" style="margin-left: 5px;">Show Opponent</label>
+                    </div>
                 </div>
-                <input type="checkbox" id="stadium-used-checkbox" style="transform: scale(1.8); margin-left: 10px;">
-                <label for="stadium-used-checkbox" style="margin-left: 5px; font-size: 18px;">Used</label>
+            </h3>
+            <div id="pokemon-source-grid" class="pokemon-source-grid" style="margin-bottom: 10px;">
+                <!-- Pokémon cards from the deck will be rendered here by JavaScript -->
+            </div>
+            <div id="current-player-field" style="margin-top: 10px;">
+                <!-- Player's Field will be rendered here by JavaScript -->
+            </div>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
+            <div id="energy-tool-buttons" class="energy-tool-grid">
+                <button class="energy-btn"><img src="/assets/ptcg-telop/icons/草.png" title="草" class="energy-icon"
+                        data-energy-type="草" draggable="true"></button>
+                <button class="energy-btn"><img src="/assets/ptcg-telop/icons/炎.png" title="炎" class="energy-icon"
+                        data-energy-type="炎" draggable="true"></button>
+                <button class="energy-btn"><img src="/assets/ptcg-telop/icons/水.png" title="水" class="energy-icon"
+                        data-energy-type="水" draggable="true"></button>
+                <button class="energy-btn"><img src="/assets/ptcg-telop/icons/雷.png" title="雷" class="energy-icon"
+                        data-energy-type="雷" draggable="true"></button>
+                <button class="energy-btn"><img src="/assets/ptcg-telop/icons/超.png" title="超" class="energy-icon"
+                        data-energy-type="超" draggable="true"></button>
+                <button class="energy-btn"><img src="/assets/ptcg-telop/icons/闘.png" title="闘" class="energy-icon"
+                        data-energy-type="闘" draggable="true"></button>
+                <button class="energy-btn"><img src="/assets/ptcg-telop/icons/悪.png" title="悪" class="energy-icon"
+                        data-energy-type="悪" draggable="true"></button>
+                <button class="energy-btn"><img src="/assets/ptcg-telop/icons/鋼.png" title="鋼" class="energy-icon"
+                        data-energy-type="鋼" draggable="true"></button>
+                <button class="energy-btn"><img src="/assets/ptcg-telop/icons/妖.png" title="妖" class="energy-icon"
+                        data-energy-type="妖" draggable="true"></button>
+                <button class="energy-btn"><img src="/assets/ptcg-telop/icons/無.png" title="無" class="energy-icon"
+                        data-energy-type="無" draggable="true"></button>
+                <button class="energy-btn"><img src="/assets/ptcg-telop/icons/全.png" title="全" class="energy-icon"
+                        data-energy-type="全" draggable="true"></button>
+                <!-- Special Enrgy & Tool cards will be rendered here by JavaScript -->
             </div>
         </div>
-        <div class="form-group" style="flex-direction: column; align-items: stretch; margin-bottom: 10px;">
-            <div id="damage-transfer-control"
-                style="padding:5px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 4px 4px 0px 0px; background: lightgrey">
-                <label for="damage-transfer-amount" data-i18n="DC-Transfer">Damage Transfer:</label>
-                <input type="number" id="damage-transfer-amount" class="compact-input" value="30" min="10" step="10"
-                    style="width: 60px;">
-                <span style="border-left: 1px solid #303157; margin-left: 5px; padding-left: 15px;">Damage:</span>
-                <div id="damage-pool" style="display: flex; gap: 5px;">
-                    <div class="damage-counter pool-item" draggable="true" data-damage-amount="10">10</div>
-                    <div class="damage-counter pool-item" draggable="true" data-damage-amount="20">20</div>
-                    <div class="damage-counter pool-item" draggable="true" data-damage-amount="30">30</div>
-                    <div class="damage-counter pool-item" draggable="true" data-damage-amount="50">50</div>
-                    <div class="damage-counter pool-item" draggable="true" data-damage-amount="130">130</div>
+
+        <div class="panel-section">
+            <h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; ">
+                    Field Module
+                    <button id="toggle-field-height-btn" class="btn" style="padding: 2px 8px; font-size: 12px;">
+                        Collapse Field</button>
+                </div>
+            </h3>
+            <div style="justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <div class="form-group" style="align-items: center; margin-bottom: 0;">
+                    <label for="stadium-list">Stadium:</label>
+                    <div id="stadium-list" class="stadium-list">
+                        <!-- Stadium will be rendered here by JavaScript -->
+                    </div>
+                    <input type="checkbox" id="stadium-used-checkbox" style="transform: scale(1.8); margin-left: 10px;">
+                    <label for="stadium-used-checkbox" style="margin-left: 5px; font-size: 18px;">Used</label>
                 </div>
             </div>
-            <div id="battle-field" class="battle-field-container">
-                <!-- Targeting view will be rendered here by JavaScript -->
+            <div class="form-group" style="flex-direction: column; align-items: stretch; margin-bottom: 10px;">
+                <div id="damage-transfer-control"
+                    style="padding:5px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 4px 4px 0px 0px; background: lightgrey">
+                    <label for="damage-transfer-amount" data-i18n="DC-Transfer">Damage Transfer:</label>
+                    <input type="number" id="damage-transfer-amount" class="compact-input" value="30" min="10" step="10"
+                        style="width: 60px;">
+                    <span style="border-left: 1px solid #303157; margin-left: 5px; padding-left: 15px;">Damage:</span>
+                    <div id="damage-pool" style="display: flex; gap: 5px;">
+                        <div class="damage-counter pool-item" draggable="true" data-damage-amount="10">10</div>
+                        <div class="damage-counter pool-item" draggable="true" data-damage-amount="20">20</div>
+                        <div class="damage-counter pool-item" draggable="true" data-damage-amount="30">30</div>
+                        <div class="damage-counter pool-item" draggable="true" data-damage-amount="50">50</div>
+                        <div class="damage-counter pool-item" draggable="true" data-damage-amount="130">130</div>
+                    </div>
+                </div>
+                <div id="battle-field" class="battle-field-container">
+                    <!-- Battle field will be rendered here by JavaScript -->
+                </div>
+                <div id="batch-damage-drop-zone" data-i18n="batch_damage_drop_zone_text">
+                </div>
             </div>
-            <div id="batch-damage-drop-zone" data-i18n="batch_damage_drop_zone_text">
+            <div id="attack-zone-flex-container" class="flex-container">
+                <div class="form-group" style="flex-grow: 3;">
+                    <label for="attacker" data-i18n="attacker">Attacker</label>
+                    <select id="attacker" class="truncate-select"></select>
+                </div>
+                <div class="form-group" style="flex-grow: 3;">
+                    <label for="attack-select" style="flex: none;" data-i18n="waza">Move</label>
+                    <select id="attack-select" class="truncate-select"></select>
+                </div>
+                <div class="form-group" style="flex-grow: 2; margin-bottom: 0;">
+                    <label for="damage" style="min-width: 60px; margin-right: 5px;" data-i18n="damage">Damage</label>
+                    <input type="number" id="damage" class="compact-input" value="0" min="0" step="10">
+                </div>
+            </div>
+            <div class="flex-container" style="align-items: center; gap: 15px;">
+                <button id="aim-btn" class="btn btn-info" style="flex-grow: 1; height: fit-content;">Aim</button>
+                <div class="form-group"
+                    style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
+                    <label for="weakness-check" style="margin-right: 5px;" data-i18n="weakness">Weakness</label>
+                    <input type="checkbox" id="weakness-check" style="transform: scale(1.2);">
+                </div>
+                <div class="form-group"
+                    style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
+                    <label for="resistance-check" style="margin-right: 5px;" data-i18n="resistance">Resistance</label>
+                    <input type="checkbox" id="resistance-check" style="transform: scale(1.2);">
+                </div>
+                <button id="attack-btn" class="btn btn-lightning"
+                    style="flex-grow: 1; height: fit-content;">Attack</button>
+                <button id="ko-0hp-btn" class="btn btn-danger" style="flex-grow: 1; height: fit-content;">K.O</button>
             </div>
         </div>
-        <div id="attack-zone-flex-container" class="flex-container">
-            <div class="form-group" style="flex-grow: 3;">
-                <label for="attacker" data-i18n="attacker">Attacker</label>
-                <select id="attacker" class="truncate-select"></select>
+
+        <div class="panel-section">
+            <h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; ">
+                    Shortcut Module
+                </div>
+            </h3>
+            <div class="select-zone-grid" style="margin-bottom: 10px;">
+                <button id="select-clear-btn" class="btn btn-black" data-i18n="clear">Clear</button>
+                <button id="select-reverse-btn" class="btn btn-lightning" data-i18n="reverse">Reverse</button>
+                <button id="select-basic-btn" class="btn btn-grass" data-i18n="select_basic">Basic</button>
+                <button id="select-stage2-btn" class="btn btn-grass" data-i18n="select_stage2">Stage 2</button>
+                <button id="select-with-energy-btn" class="btn select-btn" data-i18n="select_with_energy">エネ付き</button>
+                <button id="select-with-ability-btn" class="btn select-btn"
+                    data-i18n="select_with_ability">特性あり</button>
+                <button id="select-with-rule-btn" class="btn select-btn" data-i18n="select_with_rule">ルール持ち</button>
+                <button id="select-opponent-all-btn" class="btn select-btn"
+                    data-i18n="select_opponent_all">相手全体</button>
             </div>
-            <div class="form-group" style="flex-grow: 3;">
-                <label for="attack-select" style="flex: none;" data-i18n="waza">Move</label>
-                <select id="attack-select" class="truncate-select"></select>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
+            <div id="extrahp-shortcuts">
+                <h4
+                    style="text-align:center; margin-top: 10px; margin-bottom: 5px; font-size: 12px; font-weight: bold; color: #555;">
+                    ↓↓↓ ExtraHP Adjust ↓↓↓</h4>
+                <div class="grid-container"
+                    style="grid-template-columns: repeat(2, 1fr); gap: 5px; margin-bottom: 10px;">
+                </div>
+                <div class="grid-container" style="grid-template-columns: repeat(5, 1fr); gap: 5px;">
+                    <button class="btn btn-grass" data-extrahp-adj="+30">+30 MaxHP</button>
+                    <button class="btn btn-grass" data-extrahp-adj="+50">+50 MaxHP</button>
+                    <button class="btn btn-grass" data-extrahp-adj="+100">+100 MaxHP</button>
+                    <button class="btn btn-fire" data-extrahp-adj="-30">-30 MaxHP</button>
+                    <button class="btn btn-black" data-extrahp-set="0">No ExtraHP</button>
+                </div>
             </div>
-            <div class="form-group" style="flex-grow: 2; margin-bottom: 0;">
-                <label for="damage" style="min-width: 60px; margin-right: 5px;" data-i18n="damage">Damage</label>
-                <input type="number" id="damage" class="compact-input" value="0" min="0" step="10">
-            </div>
-        </div>
-        <div class="flex-container" style="align-items: center; gap: 15px;">
-            <button id="aim-btn" class="btn btn-info" style="flex-grow: 1; height: fit-content;">Aim</button>
-            <div class="form-group"
-                style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
-                <label for="weakness-check" style="margin-right: 5px;" data-i18n="weakness">Weakness</label>
-                <input type="checkbox" id="weakness-check" style="transform: scale(1.2);">
-            </div>
-            <div class="form-group"
-                style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
-                <label for="resistance-check" style="margin-right: 5px;" data-i18n="resistance">Resistance</label>
-                <input type="checkbox" id="resistance-check" style="transform: scale(1.2);">
-            </div>
-            <button id="attack-btn" class="btn btn-lightning" style="flex-grow: 1; height: fit-content;">Attack</button>
-            <button id="ko-0hp-btn" class="btn btn-danger" style="flex-grow: 1; height: fit-content;">K.O</button>
         </div>
     </div>
-
-    <div class="panel-section">
-        <h3>Shortcut Module</h3>
-        <div class="select-zone-grid" style="margin-bottom: 10px;">
-            <button id="select-clear-btn" class="btn btn-black" data-i18n="clear">Clear</button>
-            <button id="select-reverse-btn" class="btn btn-lightning" data-i18n="reverse">Reverse</button>
-            <button id="select-basic-btn" class="btn btn-grass" data-i18n="select_basic">Basic</button>
-            <button id="select-stage2-btn" class="btn btn-grass" data-i18n="select_stage2">Stage 2</button>
-            <button id="select-with-energy-btn" class="btn select-btn" data-i18n="select_with_energy">エネ付き</button>
-            <button id="select-with-ability-btn" class="btn select-btn" data-i18n="select_with_ability">特性あり</button>
-            <button id="select-with-rule-btn" class="btn select-btn" data-i18n="select_with_rule">ルール持ち</button>
-            <button id="select-opponent-all-btn" class="btn select-btn" data-i18n="select_opponent_all">相手全体</button>
-        </div>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
-        <div id="extrahp-shortcuts">
-            <h4
-                style="text-align:center; margin-top: 10px; margin-bottom: 5px; font-size: 12px; font-weight: bold; color: #555;">
-                ↓↓↓ ExtraHP Adjust ↓↓↓</h4>
-            <div class="grid-container" style="grid-template-columns: repeat(2, 1fr); gap: 5px; margin-bottom: 10px;">
-            </div>
-            <div class="grid-container" style="grid-template-columns: repeat(5, 1fr); gap: 5px;">
-                <button class="btn btn-grass" data-extrahp-adj="+30">+30 MaxHP</button>
-                <button class="btn btn-grass" data-extrahp-adj="+50">+50 MaxHP</button>
-                <button class="btn btn-grass" data-extrahp-adj="+100">+100 MaxHP</button>
-                <button class="btn btn-fire" data-extrahp-adj="-30">-30 MaxHP</button>
-                <button class="btn btn-black" data-extrahp-set="0">No ExtraHP</button>
-            </div>
-        </div>
-    </div>
-
     <script src="js/dashboard.js"></script>
     <script>
         // --- Global Replicant Declarations ---
@@ -1165,11 +1172,11 @@
             if (toggleFieldHeightBtn) {
                 toggleFieldHeightBtn.addEventListener('click', () => {
                     const currentHeight = battleField.style.height;
-                    if (currentHeight === '200px') {
-                        battleField.style.height = '420px';
+                    if (currentHeight === '215px') {
+                        battleField.style.height = '430px';
                         toggleFieldHeightBtn.textContent = 'Collapse';
                     } else {
-                        battleField.style.height = '200px';
+                        battleField.style.height = '215px';
                         toggleFieldHeightBtn.textContent = 'Expand';
                     }
                 });

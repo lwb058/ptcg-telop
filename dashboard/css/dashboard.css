@@ -25,6 +25,7 @@ body.is-inactive:hover {
     border-radius: 8px;
     padding: 10px;
     margin-bottom: 15px;
+    max-width: 530px;
 }
 
 .panel-section h3 {
@@ -760,7 +761,7 @@ textarea {
     border-radius: 0px 0px 4px 4px;
     background-color: #255bc0;
     flex-grow: 1;
-    height: 420px;
+    height: 430px;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: #ccc #f0f2f5;
@@ -1108,7 +1109,6 @@ textarea {
 .horizontal-panels>.panel-section {
     flex: 1 1 320px;
     margin-bottom: 0;
-    min-height: 250px;
 }
 
 .panel-section-flex {
