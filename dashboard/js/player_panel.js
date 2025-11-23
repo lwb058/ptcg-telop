@@ -1,7 +1,7 @@
 // --- Global Replicant Declarations ---
-var playerName, deckId, draft_side, draft_lostZone, deck, cardDatabase, selections, 
-    operationQueue, draft_currentTurn, draft_action_energy, draft_action_supporter, 
-    draft_action_retreat, settingsRep, draft_vstar, deckLoadingStatus, i18nStrings, 
+var playerName, deckId, draft_side, draft_lostZone, deck, cardDatabase, selections,
+    operationQueue, draft_currentTurn, draft_action_energy, draft_action_supporter,
+    draft_action_retreat, settingsRep, draft_vstar, deckLoadingStatus, i18nStrings,
     language, assetPaths, cardToShowL, cardToShowR, draft_slot0;
 
 function setupPlayerPanel(side) {
@@ -140,9 +140,9 @@ function setupPlayerPanel(side) {
                     radio.checked = true;
                 }
                 radio.addEventListener('change', () => {
-                    queueOrUpdateOperation('SET_SIDES', { 
-                        target: `side${upperCaseSide}`, 
-                        value: parseInt(radio.value, 10) 
+                    queueOrUpdateOperation('SET_SIDES', {
+                        target: `side${upperCaseSide}`,
+                        value: parseInt(radio.value, 10)
                     });
                 });
                 wrapper.appendChild(radio);
@@ -177,9 +177,9 @@ function setupPlayerPanel(side) {
         });
 
         lostZoneInput.addEventListener('change', () => {
-            queueOrUpdateOperation('SET_LOST_ZONE', { 
-                target: `lostZone${upperCaseSide}`, 
-                value: parseInt(lostZoneInput.value, 10) || 0 
+            queueOrUpdateOperation('SET_LOST_ZONE', {
+                target: `lostZone${upperCaseSide}`,
+                value: parseInt(lostZoneInput.value, 10) || 0
             });
         });
 
@@ -217,9 +217,9 @@ function setupPlayerPanel(side) {
         const createActionHandler = (actionType) => {
             return (event) => {
                 const isChecked = event.target.checked;
-                queueOrUpdateOperation('SET_ACTION_STATUS', { 
+                queueOrUpdateOperation('SET_ACTION_STATUS', {
                     target: `action_${actionType}_${upperCaseSide}`,
-                    status: isChecked 
+                    status: isChecked
                 });
             };
         };
@@ -268,7 +268,7 @@ function setupPlayerPanel(side) {
                 } else {
                     const battleSlotData = draft_slot0.value;
                     const isBattleSlotEmpty = !battleSlotData || !battleSlotData.cardId;
-                    
+
                     if (isBattleSlotEmpty) {
                         swapBtn.textContent = getI18nText('promote');
                         swapBtn.removeAttribute('data-bs-toggle');
@@ -287,7 +287,7 @@ function setupPlayerPanel(side) {
             if (cardInfo && cardInfo.pokemon && cardInfo.pokemon.color && cardInfo.pokemon.color.length > 0) {
                 const primaryType = cardInfo.pokemon.color[0];
                 const colorSetting = typeColorMap[primaryType];
-                
+
                 if (colorSetting) {
                     let finalColor = '';
                     if (typeof colorSetting === 'string') {
@@ -295,13 +295,13 @@ function setupPlayerPanel(side) {
                     } else if (typeof colorSetting === 'object' && colorSetting.color) {
                         finalColor = hexToRgba(colorSetting.color, colorSetting.opacity);
                     }
-                    
+
                     if (finalColor) {
                         slotEl.style.backgroundColor = finalColor;
                     }
                 }
             }
-            
+
             if (!cardInfo || !cardInfo.pokemon) {
                 pokemonView.querySelector('.name').textContent = 'Error: Invalid Card Data';
                 return;
@@ -331,10 +331,10 @@ function setupPlayerPanel(side) {
                 abilityCheckboxWrapper.innerHTML = '';
                 abilityCheckboxWrapper.classList.add('hidden');
             }
-            
+
             pokemonView.querySelector('.damage-input').value = slotData.damage || 0;
             pokemonView.querySelector('.extrahp-input').value = slotData.extraHp || 0;
-            
+
             const toolDisplay = pokemonView.querySelector('.tool-display');
             if (toolDisplay) {
                 while (toolDisplay.firstChild) {
@@ -379,7 +379,7 @@ function setupPlayerPanel(side) {
 
                 const evolutions = allPokemonInDeck.filter(item => item.data.pokemon.evolvesFrom?.includes(currentCardName));
                 const devolutions = allPokemonInDeck.filter(item => currentCardEvolvesFrom.includes(item.data.name));
-                
+
                 const evolutionIds = evolutions.map(p => p.id);
                 const devolutionIds = devolutions.map(p => p.id);
                 const others = allPokemonInDeck.filter(item => !evolutionIds.includes(item.id) && !devolutionIds.includes(item.id));
@@ -420,15 +420,17 @@ function setupPlayerPanel(side) {
                         energyEl = document.createElement('img');
                         energyEl.src = `/assets/ptcg-telop/icons/${energy}.png`;
                         energyEl.classList.add('attached-energy-icon');
+                        energyEl.style.width = '20px';
+                        energyEl.style.height = '20px';
                         energyEl.title = `Click to remove ${energy}`;
                     }
 
                     energyEl.addEventListener('click', () => {
                         const currentEnergies = [...(slotData.attachedEnergy || [])];
                         currentEnergies.splice(energyIndex, 1);
-                        queueOrUpdateOperation('SET_ENERGIES', { 
-                            target: `slot${upperCaseSide}${index}`, 
-                            energies: currentEnergies 
+                        queueOrUpdateOperation('SET_ENERGIES', {
+                            target: `slot${upperCaseSide}${index}`,
+                            energies: currentEnergies
                         });
                     });
                     energyContainer.appendChild(energyEl);
@@ -465,7 +467,7 @@ function setupPlayerPanel(side) {
             });
 
             const pokemonView = slotEl.querySelector('.pokemon-view');
-            
+
             pokemonView.querySelector('.damage-input').addEventListener('change', (e) => {
                 queueOrUpdateOperation('SET_DAMAGE', { target: slotId, value: parseInt(e.target.value, 10) || 0 });
             });
@@ -498,9 +500,9 @@ function setupPlayerPanel(side) {
                             if (indexToRemove > -1) {
                                 const newTools = [...currentTools];
                                 newTools.splice(indexToRemove, 1);
-                                queueOrUpdateOperation('SET_TOOLS', { 
-                                    target: slotId, 
-                                    tools: newTools 
+                                queueOrUpdateOperation('SET_TOOLS', {
+                                    target: slotId,
+                                    tools: newTools
                                 });
                             }
                         }
@@ -514,13 +516,13 @@ function setupPlayerPanel(side) {
                 if (newCardId) {
                     const selectedOption = select.options[select.selectedIndex];
                     const actionType = selectedOption.dataset.actionType;
-                    
-                    queueOperation('REPLACE_POKEMON', { 
-                        target: slotId, 
+
+                    queueOperation('REPLACE_POKEMON', {
+                        target: slotId,
                         cardId: newCardId,
                         actionType: actionType
                     });
-                    
+
                     queueOrUpdateOperation('SET_ABILITY_USED', { target: slotId, status: false });
                     select.value = "";
                 }
@@ -671,7 +673,7 @@ function setupPlayerPanel(side) {
             for (let i = 1; i < 9; i++) {
                 const slotReplicant = nodecg.Replicant(`draft_slot${upperCaseSide}${i}`);
                 if (slotReplicant.value && slotReplicant.value.cardId) {
-                     renderSlot(i, slotReplicant.value, deck.value, cardDatabase.value);
+                    renderSlot(i, slotReplicant.value, deck.value, cardDatabase.value);
                 }
             }
         });
@@ -681,7 +683,7 @@ function setupPlayerPanel(side) {
             const sourceSlotEl = swapButton.closest('.pokemon-slot');
             const sourceSlotId = sourceSlotEl.id.replace('-', '');
             const menuEl = sourceSlotEl.querySelector('.swap-menu');
-            
+
             menuEl.innerHTML = '';
 
             const db = cardDatabase.value;
@@ -699,7 +701,7 @@ function setupPlayerPanel(side) {
 
                 const slotRep = nodecg.Replicant(`draft_${targetSlotId}`);
                 const slotData = slotRep.value;
-                
+
                 let targetName = `////EMPTY////`;
                 if (slotData && slotData.cardId && db[slotData.cardId]) {
                     targetName = db[slotData.cardId].name;
@@ -711,10 +713,10 @@ function setupPlayerPanel(side) {
                 a.href = '#';
                 a.dataset.sourceSlot = sourceSlotId;
                 a.dataset.targetSlot = targetSlotId;
-                
+
                 let positionLabel = i === 0 ? 'Battle' : `Bench ${i}`;
                 a.textContent = `${positionLabel}: ${targetName}`;
-                
+
                 li.appendChild(a);
                 menuEl.appendChild(li);
             }
@@ -723,12 +725,12 @@ function setupPlayerPanel(side) {
         pokemonSlotsContainer.addEventListener('show.bs.dropdown', populateSwapDropdown);
         extraBenchContainer.addEventListener('show.bs.dropdown', populateSwapDropdown);
 
-        const swapClickHandler = function(event) {
+        const swapClickHandler = function (event) {
             if (event.target.matches('.swap-menu .dropdown-item')) {
                 event.preventDefault();
                 const source = event.target.dataset.sourceSlot;
                 const target = event.target.dataset.targetSlot;
-                
+
                 if (source && target) {
                     queueOperation('SWITCH_POKEMON', { source, target });
                 }
@@ -770,7 +772,7 @@ function setupPlayerPanel(side) {
             renderSlot(i, slotReplicant.value, deck.value, cardDatabase.value);
             setupSlotEventListeners(i);
         }
-        
+
         updateAllEmptySlotDropdowns();
         syncCheckboxesWithSelections();
 

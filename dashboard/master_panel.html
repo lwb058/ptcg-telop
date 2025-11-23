@@ -75,8 +75,8 @@
         <h3>
             <div style="display: flex; justify-content: space-between; align-items: center; ">
                 Field Module
-            <button id="toggle-field-height-btn" class="btn"
-                style="padding: 2px 8px; font-size: 12px;">Collapse Field</button>
+                <button id="toggle-field-height-btn" class="btn" style="padding: 2px 8px; font-size: 12px;">Collapse
+                    Field</button>
             </div>
         </h3>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
@@ -173,7 +173,7 @@
         // --- Global Replicant Declarations ---
         var playerL_name, playerR_name, cardDatabase, selections, draft_currentTurn,
             deckL, deckR, draft_stadium, settingsRep, assetPaths, i18nStrings,
-            language, cardToShowL, cardToShowR, slots = [];
+            language, cardToShowL, cardToShowR, operationQueue, slots = [];
 
         NodeCG.waitForReplicants(
             nodecg.Replicant('playerL_name'),
@@ -189,6 +189,7 @@
             nodecg.Replicant('language'),
             nodecg.Replicant('cardToShowL'),
             nodecg.Replicant('cardToShowR'),
+            nodecg.Replicant('operationQueue'),
             ...Array(18).fill(0).map((_, i) => { // Changed from 12 to 18
                 const side = i < 9 ? 'L' : 'R';
                 const index = i % 9;
@@ -218,6 +219,7 @@
             language = nodecg.Replicant('language');
             cardToShowL = nodecg.Replicant('cardToShowL');
             cardToShowR = nodecg.Replicant('cardToShowR');
+            operationQueue = nodecg.Replicant('operationQueue');
             for (let i = 0; i < 9; i++) { // Changed from 6 to 9
                 slots.push(nodecg.Replicant(`draft_slotL${i}`));
                 slots.push(nodecg.Replicant(`draft_slotR${i}`));
@@ -297,7 +299,7 @@
                     if (slotReplicant && slotReplicant.value && slotReplicant.value.cardId) {
                         const currentDamage = slotReplicant.value.damage || 0;
                         const newDamage = currentDamage + amountToAdd;
-                        queueOperation('SET_DAMAGE', { target: slotId, value: newDamage });
+                        queueOrUpdateOperation('SET_DAMAGE', { target: slotId, value: newDamage });
                     }
                 });
             });
@@ -417,7 +419,7 @@
                     abilityBtn.addEventListener('click', (e) => {
                         e.stopPropagation(); // Prevent card drag
                         const newStatus = !slotValue.abilityUsed;
-                        queueOperation('SET_ABILITY_USED', { target: slotId, status: newStatus });
+                        queueOrUpdateOperation('SET_ABILITY_USED', { target: slotId, status: newStatus });
                     });
                 } else {
                     abilityBtn.disabled = true;
@@ -460,7 +462,7 @@
                     energyEl.addEventListener('click', () => {
                         const currentEnergies = [...(slotValue.attachedEnergy || [])];
                         currentEnergies.splice(index, 1);
-                        queueOperation('SET_ENERGIES', {
+                        queueOrUpdateOperation('SET_ENERGIES', {
                             target: slotId,
                             energies: currentEnergies
                         });
@@ -506,7 +508,7 @@
                         if (indexToRemove > -1) {
                             const newTools = [...currentTools];
                             newTools.splice(indexToRemove, 1);
-                            queueOperation('SET_TOOLS', {
+                            queueOrUpdateOperation('SET_TOOLS', {
                                 target: slotId,
                                 tools: newTools
                             });
@@ -591,7 +593,7 @@
             const handleTurnChange = (e) => {
                 const newTurn = e.target.value;
                 if (newTurn && newTurn !== draft_currentTurn.value) {
-                    queueOperation('SET_TURN', { side: newTurn });
+                    queueOrUpdateOperation('SET_TURN', { side: newTurn });
                 }
             };
 
@@ -601,7 +603,7 @@
             endTurnBtn.addEventListener('click', () => {
                 const currentTurn = draft_currentTurn.value;
                 const nextTurn = currentTurn === 'L' ? 'R' : 'L';
-                queueOperation('SET_TURN', { side: nextTurn });
+                queueOrUpdateOperation('SET_TURN', { side: nextTurn });
             });
 
             // --- Selection Button Logic ---
@@ -724,7 +726,7 @@
                         }
 
                         if (newExtraHp !== undefined) {
-                            queueOperation('SET_EXTRA_HP', { target: slotId, value: newExtraHp });
+                            queueOrUpdateOperation('SET_EXTRA_HP', { target: slotId, value: newExtraHp });
                         }
                     }
                 });
@@ -900,7 +902,7 @@
                     const currentTools = slotReplicant.value.attachedToolIds || [];
                     if (currentTools.length < toolLimit) {
                         const newTools = [...currentTools, toolId];
-                        queueOperation('SET_TOOLS', {
+                        queueOrUpdateOperation('SET_TOOLS', {
                             target: destinationSlotId,
                             tools: newTools
                         });
@@ -925,14 +927,14 @@
                         if (sourceReplicant && sourceReplicant.value) {
                             const sourceEnergies = [...(sourceReplicant.value.attachedEnergy || [])];
                             sourceEnergies.splice(energyIndex, 1);
-                            queueOperation('SET_ENERGIES', { target: sourceSlot, energies: sourceEnergies });
+                            queueOrUpdateOperation('SET_ENERGIES', { target: sourceSlot, energies: sourceEnergies });
                         }
 
                         // Add to destination
                         const destReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
                         if (destReplicant && destReplicant.value) {
                             const destEnergies = [...(destReplicant.value.attachedEnergy || []), energyIdentifier]; // Use identifier
-                            queueOperation('SET_ENERGIES', { target: destinationSlotId, energies: destEnergies });
+                            queueOrUpdateOperation('SET_ENERGIES', { target: destinationSlotId, energies: destEnergies });
                         }
 
                     } else {
@@ -950,7 +952,7 @@
                         const currentEnergies = slotReplicant.value.attachedEnergy || [];
                         const finalEnergies = [...currentEnergies, energyIdentifier]; // Use identifier
 
-                        queueOperation('SET_ENERGIES', {
+                        queueOrUpdateOperation('SET_ENERGIES', {
                             target: destinationSlotId,
                             energies: finalEnergies
                         });
@@ -958,7 +960,7 @@
                         if (isManualAttach) {
                             const turn = draft_currentTurn.value;
                             const actionStatusTarget = `action_energy_${turn}`;
-                            queueOperation('SET_ACTION_STATUS', { target: actionStatusTarget, status: true });
+                            queueOrUpdateOperation('SET_ACTION_STATUS', { target: actionStatusTarget, status: true });
                         }
                     }
                 } else if (isPokemonSwap) {
@@ -979,7 +981,7 @@
                             const turn = draft_currentTurn.value;
                             if (turn) {
                                 const actionStatusTarget = `action_retreat_${turn}`;
-                                queueOperation('SET_ACTION_STATUS', { target: actionStatusTarget, status: true });
+                                queueOrUpdateOperation('SET_ACTION_STATUS', { target: actionStatusTarget, status: true });
                             }
                         }
                     }
@@ -1364,7 +1366,7 @@
                             const transferAmount = parseInt(document.getElementById('damage-transfer-amount').value, 10);
                             const newDamage = Math.max(0, currentDamage - transferAmount);
 
-                            queueOperation('SET_DAMAGE', {
+                            queueOrUpdateOperation('SET_DAMAGE', {
                                 target: sourceSlotId,
                                 value: newDamage
                             });
@@ -1390,11 +1392,11 @@
                             const actualTransfer = Math.min(sourceDamage, transferAmount);
 
                             if (actualTransfer > 0) {
-                                queueOperation('SET_DAMAGE', {
+                                queueOrUpdateOperation('SET_DAMAGE', {
                                     target: sourceSlotId,
                                     value: sourceDamage - actualTransfer
                                 });
-                                queueOperation('SET_DAMAGE', {
+                                queueOrUpdateOperation('SET_DAMAGE', {
                                     target: destinationSlotId,
                                     value: destDamage + actualTransfer
                                 });
@@ -1408,7 +1410,7 @@
                         const destReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
                         if (destReplicant) {
                             const destDamage = destReplicant.value.damage || 0;
-                            queueOperation('SET_DAMAGE', {
+                            queueOrUpdateOperation('SET_DAMAGE', {
                                 target: destinationSlotId,
                                 value: destDamage + amountToAdd
                             });
@@ -1980,8 +1982,7 @@
             // Listeners for deck changes (affects energy/tool/stadium visibility)
             const updateDeckDependentUI = () => {
                 console.log('Listener Fired: deckL or deckR');
-                updateEnergyButtonVisibility();
-                updateToolButtonVisibility();
+                updateEnergyAndToolButtons();
                 updatePokemonSourceGrid();
                 updateStadiumDropdown();
             };
@@ -2032,14 +2033,13 @@
                     };
                 }
                 // Other UI updates that depend on settings
-                updateEnergyButtonVisibility();
-                updateToolButtonVisibility();
+                updateEnergyAndToolButtons();
                 updateWeaknessAndResistanceChecks();
             });
 
             assetPaths.on('change', () => {
                 renderCurrentPlayerField();
-                updateToolButtonVisibility();
+                updateEnergyAndToolButtons();
                 updatePokemonSourceGrid();
             });
 
@@ -2052,8 +2052,7 @@
             updateBattleEnergyCounts(); // New
             updateAttackerDropdown();
             renderTargetingField();
-            updateEnergyButtonVisibility();
-            updateToolButtonVisibility();
+            updateEnergyAndToolButtons();
             updatePokemonSourceGrid();
             renderCurrentPlayerField();
             updateStadiumBackground();
