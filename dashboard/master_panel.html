@@ -75,8 +75,8 @@
         <h3>
             <div style="display: flex; justify-content: space-between; align-items: center; ">
                 Field Module
-            <button id="toggle-field-height-btn" class="btn" style="padding: 2px 8px; font-size: 12px;">
-                Collapse Field</button>
+                <button id="toggle-field-height-btn" class="btn" style="padding: 2px 8px; font-size: 12px;">
+                    Collapse Field</button>
             </div>
         </h3>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
@@ -1916,14 +1916,11 @@
             }
 
             // --- Unified Hotkey Handling ---
-            nodecg.listenFor('hotkeyFired', (command) => {
-                console.log(`Master panel received hotkey command: ${command}`);
-                if (command === 'discard') {
-                    handleDiscard();
-                } else if (command === 'apply') {
-                    handleApply();
-                }
-            });
+            const hotkeyManager = new HotkeyManager(nodecg, settingsRep);
+
+            hotkeyManager.on('discard', handleDiscard);
+            hotkeyManager.on('apply', handleApply);
+            hotkeyManager.on('clearSelection', () => btnSelectClear.click());
 
             // --- Event Listeners for UI Updates ---
 
@@ -2017,21 +2014,7 @@
             // Consolidated settings listener
             settingsRep.on('change', (newValue) => {
                 console.log('Listener Fired: ptcg-settings');
-                // Update hotkeys from settings
-                if (newValue && newValue.hotkeys) {
-                    hotkeys.discard = newValue.hotkeys.discard || 'Escape';
-                    hotkeys.apply = newValue.hotkeys.apply || 'Shift+S';
-                    hotkeys.clearSelection = newValue.hotkeys.clearSelection || 'Delete';
-                    hotkeys.clearCard = newValue.hotkeys.clearCard || ' ';
-                } else {
-                    // Reset to defaults if settings are cleared
-                    hotkeys = {
-                        discard: 'Escape',
-                        apply: 'Shift+S',
-                        clearSelection: 'Delete',
-                        clearCard: 'Space'
-                    };
-                }
+
                 // Other UI updates that depend on settings
                 updateEnergyAndToolButtons();
                 updateWeaknessAndResistanceChecks();
@@ -2057,26 +2040,6 @@
             renderCurrentPlayerField();
             updateStadiumBackground();
 
-            document.addEventListener('keydown', (e) => {
-                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') return;
-                const autoApplyEnabled = settingsRep.value && settingsRep.value.autoApply;
-
-                if (checkHotkey(e, hotkeys.discard)) {
-                    if (autoApplyEnabled) return; // Ignore discard hotkey if auto-apply is enabled
-                    e.preventDefault();
-                    nodecg.sendMessage('hotkeyFired', 'discard').catch(err => console.error("Error sending discard hotkey signal", err));
-                } else if (checkHotkey(e, hotkeys.apply)) {
-                    if (autoApplyEnabled) return; // Ignore apply hotkey if auto-apply is enabled
-                    e.preventDefault();
-                    nodecg.sendMessage('hotkeyFired', 'apply').catch(err => console.error("Error sending apply hotkey signal", err));
-                } else if (checkHotkey(e, hotkeys.clearSelection)) {
-                    e.preventDefault();
-                    btnSelectClear.click();
-                } else if (checkHotkey(e, hotkeys.clearCard)) {
-                    e.preventDefault();
-                    nodecg.sendMessage('_clearCard').catch(err => console.error("Error sending clearCard signal", err));
-                }
-            });
 
         });
     </script>

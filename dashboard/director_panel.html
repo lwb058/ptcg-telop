@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Director Panel</title>
     <link rel="stylesheet" href="css/dashboard.css">
 </head>
+
 <body>
 
     <div class="panel-section">
@@ -18,7 +20,7 @@
             </select>
         </div>
     </div>
-    
+
     <div class="panel-section">
         <div id="queue-manual-controls">
             <h3>Operation Queue</h3>
@@ -30,7 +32,8 @@
                 <!-- Operations will be listed here -->
             </div>
         </div>
-        <div id="auto-apply-warning" class="btn" style="display: none; width: 100%; box-sizing: border-box; font-weight: 800; color:#ff4040; background-color: black; pointer-events: none;">
+        <div id="auto-apply-warning" class="btn"
+            style="display: none; width: 100%; box-sizing: border-box; font-weight: 800; color:#ff4040; background-color: black; pointer-events: none;">
             \\\\\\ WARNING: Auto-Apply Activated \\\\\\
         </div>
     </div>
@@ -198,10 +201,10 @@
 
             // --- Replicant Listeners ---
             const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-            let hotkeys = { discard: 'Escape', apply: 'Shift+S' };
+            const hotkeyManager = new HotkeyManager(nodecg, settingsRep);
 
             operationQueue.on('change', renderQueue);
-            
+
             draft_currentTurn.on('change', (newValue) => {
                 // The turn radio buttons are gone, so this listener is now empty.
                 // It can be removed if no other logic is added here.
@@ -219,16 +222,10 @@
                 autoApplyWarning.style.display = autoApply ? 'block' : 'none';
                 queueManualControls.style.display = autoApply ? 'none' : 'block';
 
-                // Update hotkeys from settings
-                if (newValue && newValue.hotkeys) {
-                    hotkeys.discard = newValue.hotkeys.discard || 'Escape';
-                    hotkeys.apply = newValue.hotkeys.apply || 'Shift+S';
-                } else {
-                    hotkeys = { discard: 'Escape', apply: 'Shift+S' };
-                }
                 // Update button labels with hotkeys
-                discardOpBtn.textContent = `Discard (${hotkeys.discard})`;
-                applyOpBtn.textContent = `Apply (${hotkeys.apply})`;
+                const currentHotkeys = hotkeyManager.hotkeys;
+                discardOpBtn.textContent = `Discard (${currentHotkeys.discard})`;
+                applyOpBtn.textContent = `Apply (${currentHotkeys.apply})`;
             });
 
             playerL_name.on('change', (newName) => {
@@ -243,41 +240,20 @@
             renderQueue();
 
             // --- Hotkey Logic ---
+            hotkeyManager.on('discard', () => discardOpBtn.click());
+            hotkeyManager.on('apply', () => applyOpBtn.click());
+
+            hotkeyManager.on('hotkeysChanged', (newHotkeys) => {
+                discardOpBtn.textContent = `Discard (${newHotkeys.discard})`;
+                applyOpBtn.textContent = `Apply (${newHotkeys.apply})`;
+            });
+
             // Initial label update
-            if (settingsRep.value && settingsRep.value.hotkeys) {
-                hotkeys.discard = settingsRep.value.hotkeys.discard || 'Escape';
-                hotkeys.apply = settingsRep.value.hotkeys.apply || 'Shift+S';
-            }
-            discardOpBtn.textContent = `Discard (${hotkeys.discard})`;
-            applyOpBtn.textContent = `Apply (${hotkeys.apply})`;
-
-
-            document.addEventListener('keydown', (e) => {
-                // Ignore if typing in an input field
-                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') return;
-                
-                const autoApplyEnabled = settingsRep.value && settingsRep.value.autoApply;
-
-                if (checkHotkey(e, hotkeys.discard)) {
-                    if (autoApplyEnabled) return;
-                    e.preventDefault();
-                    discardOpBtn.click();
-                } else if (checkHotkey(e, hotkeys.apply)) {
-                    if (autoApplyEnabled) return;
-                    e.preventDefault();
-                    applyOpBtn.click();
-                }
-            });
-
-            // Listen for hotkey commands from other panels
-            nodecg.listenFor('hotkeyFired', (command) => {
-                if (command === 'discard') {
-                    discardOpBtn.click();
-                } else if (command === 'apply') {
-                    applyOpBtn.click();
-                }
-            });
+            const initialHotkeys = hotkeyManager.hotkeys;
+            discardOpBtn.textContent = `Discard (${initialHotkeys.discard})`;
+            applyOpBtn.textContent = `Apply (${initialHotkeys.apply})`;
         });
     </script>
 </body>
+
 </html>

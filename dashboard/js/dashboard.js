@@ -101,3 +101,126 @@ function hexToRgba(hex, opacity) {
     console.error('Bad Hex:', hex);
     return `rgba(255,255,255,${opacity})`; // Fallback to white
 }
+
+/**
+ * Manages hotkeys for the dashboard panels.
+ * Handles keydown events, checks against configured hotkeys, and executes callbacks or sends messages.
+ */
+class HotkeyManager {
+    constructor(nodecg, settingsReplicant) {
+        this.nodecg = nodecg;
+        this.settingsReplicant = settingsReplicant;
+        this.hotkeys = {
+            discard: 'Escape',
+            apply: 'Shift+S',
+            clearSelection: 'Delete',
+            clearCard: 'Space'
+        };
+        this.callbacks = {};
+        this.eventListeners = {};
+
+        // Initialize hotkeys from settings
+        this._updateHotkeys(this.settingsReplicant.value);
+
+        // Listen for settings changes
+        this.settingsReplicant.on('change', (newValue) => {
+            this._updateHotkeys(newValue);
+            this._emit('hotkeysChanged', this.hotkeys);
+        });
+
+        // Listen for keydown events
+        document.addEventListener('keydown', (e) => this._handleKeydown(e));
+
+        // Listen for global hotkey messages (if this panel should respond to them)
+        this.nodecg.listenFor('hotkeyFired', (command) => {
+            this._executeCallback(command);
+        });
+    }
+
+    /**
+     * Registers a callback for a specific action or event.
+     * Supported actions: 'discard', 'apply', 'clearSelection', 'clearCard'.
+     * Supported events: 'hotkeysChanged'.
+     */
+    on(action, callback) {
+        if (!this.callbacks[action]) {
+            this.callbacks[action] = [];
+        }
+        this.callbacks[action].push(callback);
+    }
+
+    _updateHotkeys(settings) {
+        if (settings && settings.hotkeys) {
+            this.hotkeys.discard = settings.hotkeys.discard || 'Escape';
+            this.hotkeys.apply = settings.hotkeys.apply || 'Shift+S';
+            this.hotkeys.clearSelection = settings.hotkeys.clearSelection || 'Delete';
+            this.hotkeys.clearCard = settings.hotkeys.clearCard || ' ';
+        } else {
+            // Defaults
+            this.hotkeys = {
+                discard: 'Escape',
+                apply: 'Shift+S',
+                clearSelection: 'Delete',
+                clearCard: 'Space'
+            };
+        }
+    }
+
+    _handleKeydown(e) {
+        // Ignore inputs
+        if (document.activeElement.tagName === 'INPUT' ||
+            document.activeElement.tagName === 'TEXTAREA' ||
+            document.activeElement.tagName === 'SELECT') {
+            return;
+        }
+
+        const autoApplyEnabled = this.settingsReplicant.value && this.settingsReplicant.value.autoApply;
+
+        if (checkHotkey(e, this.hotkeys.discard)) {
+            if (autoApplyEnabled) return; // Ignore if auto-apply is enabled
+            e.preventDefault();
+            this._triggerAction('discard');
+        } else if (checkHotkey(e, this.hotkeys.apply)) {
+            if (autoApplyEnabled) return; // Ignore if auto-apply is enabled
+            e.preventDefault();
+            this._triggerAction('apply');
+        } else if (checkHotkey(e, this.hotkeys.clearSelection)) {
+            e.preventDefault();
+            this._triggerAction('clearSelection');
+        } else if (checkHotkey(e, this.hotkeys.clearCard)) {
+            e.preventDefault();
+            this._triggerAction('clearCard');
+        }
+    }
+
+    _triggerAction(action) {
+        // If local callbacks exist, execute them.
+        // For 'discard' and 'apply', if NO local callbacks exist, send a message to other panels.
+        // For 'clearCard', if NO local callbacks exist, send the default _clearCard message.
+
+        if (this.callbacks[action] && this.callbacks[action].length > 0) {
+            this._executeCallback(action);
+        } else {
+            // Default behaviors if no local handler is defined
+            if (action === 'discard' || action === 'apply' || action === 'clearSelection') {
+                this.nodecg.sendMessage('hotkeyFired', action)
+                    .catch(err => console.error(`Error sending ${action} hotkey signal`, err));
+            } else if (action === 'clearCard') {
+                this.nodecg.sendMessage('_clearCard')
+                    .catch(err => console.error("Error sending clearCard signal", err));
+            }
+        }
+    }
+
+    _executeCallback(action) {
+        if (this.callbacks[action]) {
+            this.callbacks[action].forEach(cb => cb());
+        }
+    }
+
+    _emit(event, data) {
+        if (this.callbacks[event]) {
+            this.callbacks[event].forEach(cb => cb(data));
+        }
+    }
+}

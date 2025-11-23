@@ -139,30 +139,9 @@
 
         // --- Hotkey Handling ---
         const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-        let hotkeys = {
-            discard: 'Escape',
-            apply: 'Shift+S',
-            clearSelection: 'Delete',
-            clearCard: 'Space'
-        };
+        const hotkeyManager = new HotkeyManager(nodecg, settingsRep);
 
-        settingsRep.on('change', (newValue) => {
-            if (newValue && newValue.hotkeys) {
-                hotkeys.discard = newValue.hotkeys.discard || 'Escape';
-                hotkeys.apply = newValue.hotkeys.apply || 'Shift+S';
-                hotkeys.clearSelection = newValue.hotkeys.clearSelection || 'Delete';
-                hotkeys.clearCard = newValue.hotkeys.clearCard || ' ';
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') return;
-
-            if (checkHotkey(e, hotkeys.clearCard)) {
-                e.preventDefault();
-                clearButton.click();
-            }
-        });
+        hotkeyManager.on('clearCard', () => clearButton.click());
 
         // --- Helper Functions ---
         function updateUIText() {

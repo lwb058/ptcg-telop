@@ -776,38 +776,9 @@ function setupPlayerPanel(side) {
         updateAllEmptySlotDropdowns();
         syncCheckboxesWithSelections();
 
-        let hotkeys = { discard: 'Escape', apply: 'Shift+S', clearSelection: 'Delete', clearCard: 'Space' };
-
-        settingsRep.on('change', (newValue) => {
-            if (newValue && newValue.hotkeys) {
-                hotkeys = newValue.hotkeys;
-            } else {
-                hotkeys = { discard: 'Escape', apply: 'Shift+S', clearSelection: 'Delete', clearCard: 'Space' };
-            }
-        });
-
-        if (settingsRep.value && settingsRep.value.hotkeys) {
-            hotkeys = settingsRep.value.hotkeys;
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') {
-                return;
-            }
-
-            if (checkHotkey(e, hotkeys.discard)) {
-                e.preventDefault();
-                nodecg.sendMessage('hotkeyFired', 'discard').catch(err => console.error("Error sending discard hotkey signal", err));
-            } else if (checkHotkey(e, hotkeys.apply)) {
-                e.preventDefault();
-                nodecg.sendMessage('hotkeyFired', 'apply').catch(err => console.error("Error sending apply hotkey signal", err));
-            } else if (checkHotkey(e, hotkeys.clearSelection)) {
-                e.preventDefault();
-                selections.value = [];
-            } else if (checkHotkey(e, hotkeys.clearCard)) {
-                e.preventDefault();
-                nodecg.sendMessage('_clearCard').catch(err => console.error("Error sending clearCard signal", err));
-            }
+        const hotkeyManager = new HotkeyManager(nodecg, settingsRep);
+        hotkeyManager.on('clearSelection', () => {
+            selections.value = [];
         });
     });
 }
