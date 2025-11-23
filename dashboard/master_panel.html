@@ -75,8 +75,8 @@
         <h3>
             <div style="display: flex; justify-content: space-between; align-items: center; ">
                 Field Module
-                <button id="toggle-field-height-btn" class="btn" style="padding: 2px 8px; font-size: 12px;">Collapse
-                    Field</button>
+            <button id="toggle-field-height-btn" class="btn" style="padding: 2px 8px; font-size: 12px;">
+                Collapse Field</button>
             </div>
         </h3>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
@@ -881,14 +881,14 @@
                             }
                         }
 
-                        queueOperation('REPLACE_POKEMON', {
+                        queueOrUpdateOperation('REPLACE_POKEMON', {
                             target: destinationSlotId,
                             cardId: draggedCardId,
                             actionType: actionType
                         });
 
                         // Reset ability used status after replacing
-                        queueOperation('SET_ABILITY_USED', { target: destinationSlotId, status: false });
+                        queueOrUpdateOperation('SET_ABILITY_USED', { target: destinationSlotId, status: false });
                     }
                 } else if (isToolDrag) {
                     // --- Handle TOOL attachment ---
@@ -1895,12 +1895,12 @@
 
             stadiumSelect.addEventListener('change', (e) => {
                 const newStadiumId = e.target.value;
-                queueOperation('SET_STADIUM', { cardId: newStadiumId || null });
+                queueOrUpdateOperation('SET_STADIUM', { cardId: newStadiumId || null });
             });
 
             stadiumUsedCheckbox.addEventListener('change', (e) => {
                 const isUsed = e.target.checked;
-                queueOperation('SET_STADIUM_USED', { used: isUsed });
+                queueOrUpdateOperation('SET_STADIUM_USED', { used: isUsed });
             });
 
 

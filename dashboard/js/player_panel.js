@@ -517,7 +517,7 @@ function setupPlayerPanel(side) {
                     const selectedOption = select.options[select.selectedIndex];
                     const actionType = selectedOption.dataset.actionType;
 
-                    queueOperation('REPLACE_POKEMON', {
+                    queueOrUpdateOperation('REPLACE_POKEMON', {
                         target: slotId,
                         cardId: newCardId,
                         actionType: actionType
