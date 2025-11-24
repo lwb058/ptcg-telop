@@ -1026,6 +1026,54 @@ body.dragging-energy .manual-attach-zone {
     background-color: rgba(251, 192, 45, 0.3);
 }
 
+/* Pokemon Action Drop Zones (Remove & K.O.) */
+.pokemon-action-drop-zones {
+    display: none;
+    /* Hidden by default */
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.pokemon-action-drop-zones.show {
+    display: flex;
+    /* Show as flex when dragging pokemon */
+}
+
+.pokemon-action-drop-zone {
+    flex: 1;
+    padding: 15px;
+    border: 3px dashed;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.pokemon-action-drop-zone.remove-zone {
+    border-color: #f39c12;
+    color: #f39c12;
+    background-color: rgba(243, 156, 18, 0.1);
+}
+
+.pokemon-action-drop-zone.remove-zone.over {
+    background-color: rgba(243, 156, 18, 0.3);
+    transform: scale(1.02);
+}
+
+.pokemon-action-drop-zone.ko-zone {
+    border-color: #e74c3c;
+    color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+.pokemon-action-drop-zone.ko-zone.over {
+    background-color: rgba(231, 76, 60, 0.3);
+    transform: scale(1.02);
+}
+
+
 /* Setting Panel Specific Styles */
 #color-settings-container {
     display: grid;

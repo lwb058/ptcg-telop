@@ -69,6 +69,14 @@
                         data-energy-type="全" draggable="true"></button>
                 <!-- Special Enrgy & Tool cards will be rendered here by JavaScript -->
             </div>
+            <div id="pokemon-action-drop-zones" class="pokemon-action-drop-zones">
+                <div id="pokemon-remove-drop-zone" class="pokemon-action-drop-zone remove-zone">
+                    Drop here to Remove
+                </div>
+                <div id="pokemon-ko-drop-zone" class="pokemon-action-drop-zone ko-zone">
+                    Drop here to K.O.
+                </div>
+            </div>
         </div>
 
         <div class="panel-section">
@@ -272,6 +280,9 @@
             const stadiumUsedCheckbox = document.getElementById('stadium-used-checkbox');
             const damagePool = document.getElementById('damage-pool');
             const batchDamageDropZone = document.getElementById('batch-damage-drop-zone');
+            const pokemonActionDropZones = document.getElementById('pokemon-action-drop-zones');
+            const pokemonRemoveDropZone = document.getElementById('pokemon-remove-drop-zone');
+            const pokemonKoDropZone = document.getElementById('pokemon-ko-drop-zone');
 
             const turnLRadio = document.getElementById('turn-l');
             const turnRRadio = document.getElementById('turn-r');
@@ -282,9 +293,15 @@
                 if (e.target.classList.contains('pool-item')) {
                     batchDamageDropZone.classList.add('show');
                 }
+                // Show Pokemon action drop zones when dragging from pokemon-drop-target
+                const pokemonCard = e.target.closest('.pokemon-drop-target');
+                if (pokemonCard && !pokemonCard.classList.contains('empty-slot') && (e.target === pokemonCard || e.target.tagName === 'IMG')) {
+                    pokemonActionDropZones.classList.add('show');
+                }
             });
             document.body.addEventListener('dragend', () => {
                 batchDamageDropZone.classList.remove('show');
+                pokemonActionDropZones.classList.remove('show');
                 document.body.classList.remove('dragging-energy');
             });
 
@@ -319,6 +336,61 @@
                         queueOrUpdateOperation('SET_DAMAGE', { target: slotId, value: newDamage });
                     }
                 });
+            });
+
+            // --- Pokemon Action Drop Zones Logic ---
+            // Remove Zone
+            pokemonRemoveDropZone.addEventListener('dragover', (e) => {
+                const isPokemonSwap = e.dataTransfer.types.includes('application/ptcg-pokemon-swap');
+                if (isPokemonSwap) {
+                    e.preventDefault();
+                    e.currentTarget.classList.add('over');
+                }
+            });
+            pokemonRemoveDropZone.addEventListener('dragleave', (e) => {
+                e.currentTarget.classList.remove('over');
+            });
+            pokemonRemoveDropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove('over');
+
+                const isPokemonSwap = e.dataTransfer.types.includes('application/ptcg-pokemon-swap');
+                if (isPokemonSwap) {
+                    const sourceSlotId = e.dataTransfer.getData('text/plain');
+                    if (sourceSlotId) {
+                        // Use REMOVE_POKEMON operation to match the Remove button behavior
+                        queueOperation('REMOVE_POKEMON', {
+                            target: sourceSlotId
+                        });
+                    }
+                }
+            });
+
+            // K.O. Zone
+            pokemonKoDropZone.addEventListener('dragover', (e) => {
+                const isPokemonSwap = e.dataTransfer.types.includes('application/ptcg-pokemon-swap');
+                if (isPokemonSwap) {
+                    e.preventDefault();
+                    e.currentTarget.classList.add('over');
+                }
+            });
+            pokemonKoDropZone.addEventListener('dragleave', (e) => {
+                e.currentTarget.classList.remove('over');
+            });
+            pokemonKoDropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove('over');
+
+                const isPokemonSwap = e.dataTransfer.types.includes('application/ptcg-pokemon-swap');
+                if (isPokemonSwap) {
+                    const sourceSlotId = e.dataTransfer.getData('text/plain');
+                    if (sourceSlotId) {
+                        // K.O. the Pokemon
+                        queueOperation('KO_POKEMON', {
+                            target: sourceSlotId
+                        });
+                    }
+                }
             });
 
             damagePool.addEventListener('dragstart', (e) => {
