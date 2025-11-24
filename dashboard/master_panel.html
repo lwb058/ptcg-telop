@@ -39,8 +39,9 @@
             <div id="pokemon-source-grid" class="pokemon-source-grid" style="margin-bottom: 10px;">
                 <!-- Pokémon cards from the deck will be rendered here by JavaScript -->
             </div>
-            <div id="current-player-field" style="margin-top: 10px;">
-                <!-- Player's Field will be rendered here by JavaScript -->
+            <div id="field-wrapper">
+                <div id="field-container-L" style="display: none;"></div>
+                <div id="field-container-R" style="display: none;"></div>
             </div>
             <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
             <div id="energy-tool-buttons" class="energy-tool-grid">
@@ -242,7 +243,10 @@
             const battleEnergyLEl = document.getElementById('battle-energy-l');
             const battleEnergyREl = document.getElementById('battle-energy-r');
             const showOpponentCheckbox = document.getElementById('show-opponent-field-checkbox');
-            const currentPlayerField = document.getElementById('current-player-field');
+            const fieldWrapper = document.getElementById('field-wrapper');
+            const fieldContainerL = document.getElementById('field-container-L');
+            const fieldContainerR = document.getElementById('field-container-R');
+            let isTabPressed = false;
             const pokemonSourceContainer = document.getElementById('pokemon-source-grid');
             const btnSelectClear = document.getElementById('select-clear-btn');
             const btnSelectReverse = document.getElementById('select-reverse-btn');
@@ -333,26 +337,18 @@
             }
 
             /**
-             * Renders the current turn player's field in the drop target area.
+             * Renders a specific player's field into the given container.
              */
-            function renderCurrentPlayerField() {
-                const baseTurn = draft_currentTurn.value;
+            function renderField(side, container) {
                 const db = cardDatabase.value;
-                const isOpponentView = showOpponentCheckbox.checked;
+                container.innerHTML = '<h3>↓↓↓ Drop Pokémon & Tools & Energy Here ↓↓↓</h3>';
 
-                let displayTurn = baseTurn;
-                if (isOpponentView && baseTurn) {
-                    displayTurn = baseTurn === 'L' ? 'R' : 'L';
-                }
-
-                currentPlayerField.innerHTML = '<h3>↓↓↓ Drop Pokémon & Tools & Energy Here ↓↓↓</h3>';
-
-                if (!displayTurn || !db) {
-                    currentPlayerField.innerHTML += '<p style="color: #888; text-align: center;">No player to display.</p>';
+                if (!side || !db) {
+                    container.innerHTML += '<p style="color: #888; text-align: center;">No player to display.</p>';
                     return;
                 }
 
-                const playerPrefix = `slot${displayTurn}`;
+                const playerPrefix = `slot${side}`;
 
                 // --- Pre-calculate max tool counts for alignment ---
                 const getSlotValue = (index) => slots.find(s => s.name === `draft_${playerPrefix}${index}`)?.value;
@@ -375,7 +371,7 @@
                         mainRowContainer.appendChild(createEmptySlotElement(`${playerPrefix}${i}`));
                     }
                 });
-                currentPlayerField.appendChild(mainRowContainer);
+                container.appendChild(mainRowContainer);
 
                 const extraRowContainer = document.createElement('div');
                 extraRowContainer.className = 'pokemon-field-row';
@@ -393,9 +389,64 @@
                 });
 
                 if (hasExtraBenchPokemon) {
-                    currentPlayerField.appendChild(extraRowContainer);
+                    container.appendChild(extraRowContainer);
                 }
             }
+
+            /**
+             * Renders both players' fields and updates visibility.
+             */
+            function renderCurrentPlayerField() {
+                renderField('L', fieldContainerL);
+                renderField('R', fieldContainerR);
+                updateDevelopModuleState();
+            }
+
+            /**
+             * Determines the side to display based on turn, checkbox, and hotkey.
+             */
+            function getEffectiveDisplaySide() {
+                const baseTurn = draft_currentTurn.value;
+                const isOpponentView = showOpponentCheckbox.checked;
+
+                // Determine the "intended" view based on turn and checkbox
+                let intendedSide = baseTurn;
+                if (isOpponentView && baseTurn) {
+                    intendedSide = baseTurn === 'L' ? 'R' : 'L';
+                }
+
+                // Apply hotkey toggle
+                let finalSide = intendedSide;
+                if (isTabPressed && intendedSide) {
+                    finalSide = intendedSide === 'L' ? 'R' : 'L';
+                }
+                return finalSide;
+            }
+
+            function updateDevelopModuleState() {
+                const finalSide = getEffectiveDisplaySide();
+
+                // 1. Update Field Visibility
+                if (finalSide === 'L') {
+                    fieldContainerL.style.display = 'block';
+                    fieldContainerR.style.display = 'none';
+                } else if (finalSide === 'R') {
+                    fieldContainerL.style.display = 'none';
+                    fieldContainerR.style.display = 'block';
+                } else {
+                    fieldContainerL.style.display = 'none';
+                    fieldContainerR.style.display = 'none';
+                }
+
+                // 2. Update Pokemon Source Grid
+                updatePokemonSourceGrid();
+
+                // 3. Update Energy and Tool Buttons
+                updateEnergyAndToolButtons();
+            }
+
+            // --- Hotkey Listeners ---
+            // Uses global checkHotkey from dashboard.js
 
             /**
              * Creates a DOM element for a Pokémon card.
@@ -585,9 +636,7 @@
 
             // --- Event Listeners for UI Updates ---
             showOpponentCheckbox.addEventListener('change', () => {
-                renderCurrentPlayerField();
-                updateEnergyAndToolButtons();
-                updatePokemonSourceGrid();
+                updateDevelopModuleState();
             });
             playerL_name.on('change', (newName) => {
                 const radio = document.getElementById('turn-l');
@@ -782,7 +831,7 @@
 
 
             // Listen for drag start on the field itself (for moving attached energies)
-            currentPlayerField.addEventListener('dragstart', (e) => {
+            fieldWrapper.addEventListener('dragstart', (e) => {
                 const target = e.target;
                 if (target.dataset.energyIdentifier) { // Check for the generic identifier
                     const moveData = {
@@ -798,7 +847,7 @@
             });
 
             // Listen for drag start on the field itself (for moving Pokémon)
-            currentPlayerField.addEventListener('dragstart', (e) => {
+            fieldWrapper.addEventListener('dragstart', (e) => {
                 const sourceCard = e.target.closest('.pokemon-drop-target');
                 // Ensure we are dragging a Pokémon card itself, not an energy/tool on it.
                 // The check `e.target === sourceCard` or `e.target.tagName === 'IMG'` ensures this.
@@ -812,7 +861,7 @@
 
 
             // 2. DRAG OVER: Allow dropping and provide visual feedback
-            currentPlayerField.addEventListener('dragover', (e) => {
+            fieldWrapper.addEventListener('dragover', (e) => {
                 const isEnergyDrag = e.dataTransfer.types.includes('application/ptcg-energy-drag');
                 const isToolDrag = e.dataTransfer.types.includes('application/ptcg-tool-drag');
                 const isPokemonPlace = e.dataTransfer.types.includes('application/ptcg-pokemon-place');
@@ -832,7 +881,7 @@
                 }
             });
 
-            currentPlayerField.addEventListener('dragleave', (e) => {
+            fieldWrapper.addEventListener('dragleave', (e) => {
                 const target = e.target.closest('.pokemon-drop-target');
                 if (target) {
                     target.style.boxShadow = ''; // Remove highlight
@@ -840,7 +889,7 @@
             });
 
             // 3. DROP: Handle the attachment
-            currentPlayerField.addEventListener('drop', (e) => {
+            fieldWrapper.addEventListener('drop', (e) => {
                 e.preventDefault();
                 const dropTarget = e.target.closest('.pokemon-drop-target');
                 if (!dropTarget) return;
@@ -1007,14 +1056,8 @@
                 const db = cardDatabase.value;
                 const deckLVal = deckL.value;
                 const deckRVal = deckR.value;
-                const baseTurn = draft_currentTurn.value;
-                const isOpponentView = showOpponentCheckbox.checked;
+                const displayTurn = getEffectiveDisplaySide();
                 pokemonSourceContainer.innerHTML = ''; // Clear previous
-
-                let displayTurn = baseTurn;
-                if (isOpponentView && baseTurn) {
-                    displayTurn = baseTurn === 'L' ? 'R' : 'L';
-                }
 
                 if (!db || !deckLVal || !deckRVal || !displayTurn) {
                     return; // Exit if data is not ready
@@ -1073,13 +1116,7 @@
                 const db = cardDatabase.value;
                 const deckLVal = deckL.value;
                 const deckRVal = deckR.value;
-                const baseTurn = draft_currentTurn.value;
-                const isOpponentView = showOpponentCheckbox.checked;
-
-                let displayTurn = baseTurn;
-                if (isOpponentView && baseTurn) {
-                    displayTurn = baseTurn === 'L' ? 'R' : 'L';
-                }
+                const displayTurn = getEffectiveDisplaySide();
 
                 // Clear previous dynamic buttons (both special energy and tools)
                 energyToolsContainer.querySelectorAll('.dynamic-btn').forEach(btn => btn.remove());
@@ -1958,6 +1995,10 @@
             hotkeyManager.on('discard', handleDiscard);
             hotkeyManager.on('apply', handleApply);
             hotkeyManager.on('clearSelection', () => btnSelectClear.click());
+            hotkeyManager.on('peekOpponent', (isActive) => {
+                isTabPressed = isActive;
+                updateDevelopModuleState();
+            });
 
             // --- Event Listeners for UI Updates ---
 

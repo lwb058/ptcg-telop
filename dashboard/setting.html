@@ -74,7 +74,8 @@
 						<div style="display: flex; gap: 5px; justify-self: end;">
 							<select id="discard-hotkey-mod" class="hotkey-mod-select"></select>
 							<label for="discard-hotkey-mod"> + </label>
-							<input type="text" id="discard-hotkey-key" class="hotkey-key-input" maxlength="1" placeholder ="None">
+							<input type="text" id="discard-hotkey-key" class="hotkey-key-input" maxlength="1"
+								placeholder="None">
 						</div>
 					</div>
 					<div class="form-group-hotkey">
@@ -82,7 +83,8 @@
 						<div style="display: flex; gap: 5px; justify-self: end;">
 							<select id="apply-hotkey-mod" class="hotkey-mod-select"></select>
 							<label for="discard-hotkey-mod"> + </label>
-							<input type="text" id="apply-hotkey-key" class="hotkey-key-input" maxlength="1" placeholder ="None">
+							<input type="text" id="apply-hotkey-key" class="hotkey-key-input" maxlength="1"
+								placeholder="None">
 						</div>
 					</div>
 					<div class="form-group-hotkey">
@@ -90,7 +92,8 @@
 						<div style="display: flex; gap: 5px; justify-self: end;">
 							<select id="clear-card-hotkey-mod" class="hotkey-mod-select"></select>
 							<label for="discard-hotkey-mod"> + </label>
-							<input type="text" id="clear-card-hotkey-key" class="hotkey-key-input" maxlength="1" placeholder ="None">
+							<input type="text" id="clear-card-hotkey-key" class="hotkey-key-input" maxlength="1"
+								placeholder="None">
 						</div>
 					</div>
 					<div class="form-group-hotkey">
@@ -98,7 +101,17 @@
 						<div style="display: flex; gap: 5px; justify-self: end;">
 							<select id="clear-selection-hotkey-mod" class="hotkey-mod-select"></select>
 							<label for="discard-hotkey-mod"> + </label>
-							<input type="text" id="clear-selection-hotkey-key" class="hotkey-key-input" maxlength="1" placeholder ="None">
+							<input type="text" id="clear-selection-hotkey-key" class="hotkey-key-input" maxlength="1"
+								placeholder="None">
+						</div>
+					</div>
+					<div class="form-group-hotkey">
+						<label for="peek-opponent-hotkey-mod">Peek Opponent Field</label>
+						<div style="display: flex; gap: 5px; justify-self: end;">
+							<select id="peek-opponent-hotkey-mod" class="hotkey-mod-select"></select>
+							<label for="discard-hotkey-mod"> + </label>
+							<input type="text" id="peek-opponent-hotkey-key" class="hotkey-key-input" maxlength="1"
+								placeholder="None">
 						</div>
 					</div>
 				</div>
@@ -156,7 +169,7 @@
 				</div>
 			</div>
 			<button id="clear-database-btn" class="btn btn-danger"
-				style="width: auto; align-self: flex-end; margin-top: auto;">Clear Database</button>
+				style="width: auto; align-self: flex-end; margin-top: 25px;">Clear Database</button>
 		</div>
 	</div>
 
@@ -220,7 +233,7 @@
 			const weaknessDamageToggle = document.getElementById('weakness-damage-toggle');
 
 			// Hotkey Elements
-			const hotkeyIds = ['discard', 'apply', 'clear-card', 'clear-selection'];
+			const hotkeyIds = ['discard', 'apply', 'clear-card', 'clear-selection', 'peek-opponent'];
 			const hotkeyElements = {};
 			hotkeyIds.forEach(id => {
 				hotkeyElements[id] = {
@@ -442,7 +455,8 @@
 						'discard': hotkeys.discard || 'Escape',
 						'apply': hotkeys.apply || 'Shift+S',
 						'clear-card': hotkeys.clearCard || 'Space',
-						'clear-selection': hotkeys.clearSelection || 'Escape'
+						'clear-selection': hotkeys.clearSelection || 'Escape',
+						'peek-opponent': hotkeys.peekOpponent || 'Tab'
 					};
 
 					hotkeyIds.forEach(id => {
@@ -510,7 +524,8 @@
 					discard: getHotkeyString('discard'),
 					apply: getHotkeyString('apply'),
 					clearCard: getHotkeyString('clear-card'),
-					clearSelection: getHotkeyString('clear-selection')
+					clearSelection: getHotkeyString('clear-selection'),
+					peekOpponent: getHotkeyString('peek-opponent')
 				};
 
 				const newVstarEnabled = vstarToggle.checked;

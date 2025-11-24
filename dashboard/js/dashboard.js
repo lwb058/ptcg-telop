@@ -138,10 +138,12 @@ class HotkeyManager {
             discard: 'Escape',
             apply: 'Shift+S',
             clearSelection: 'Delete',
-            clearCard: 'Space'
+            clearCard: 'Space',
+            peekOpponent: 'Tab'
         };
         this.callbacks = {};
         this.eventListeners = {};
+        this.peekOpponentActive = false;
 
         // Initialize hotkeys from settings
         this._updateHotkeys(this.settingsReplicant.value);
@@ -154,6 +156,7 @@ class HotkeyManager {
 
         // Listen for keydown events
         document.addEventListener('keydown', (e) => this._handleKeydown(e));
+        document.addEventListener('keyup', (e) => this._handleKeyup(e));
 
         // Listen for global hotkey messages (if this panel should respond to them)
         this.nodecg.listenFor('hotkeyFired', (command) => {
@@ -179,13 +182,15 @@ class HotkeyManager {
             this.hotkeys.apply = settings.hotkeys.apply || 'Shift+S';
             this.hotkeys.clearSelection = settings.hotkeys.clearSelection || 'Delete';
             this.hotkeys.clearCard = settings.hotkeys.clearCard || ' ';
+            this.hotkeys.peekOpponent = settings.hotkeys.peekOpponent || 'Tab';
         } else {
             // Defaults
             this.hotkeys = {
                 discard: 'Escape',
                 apply: 'Shift+S',
                 clearSelection: 'Delete',
-                clearCard: 'Space'
+                clearCard: 'Space',
+                peekOpponent: 'Tab'
             };
         }
     }
@@ -214,16 +219,31 @@ class HotkeyManager {
         } else if (checkHotkey(e, this.hotkeys.clearCard)) {
             e.preventDefault();
             this._triggerAction('clearCard');
+        } else if (checkHotkey(e, this.hotkeys.peekOpponent)) {
+            e.preventDefault();
+            if (!this.peekOpponentActive) {
+                this.peekOpponentActive = true;
+                this._triggerAction('peekOpponent', true);
+            }
         }
     }
 
-    _triggerAction(action) {
+    _handleKeyup(e) {
+        if (checkHotkey(e, this.hotkeys.peekOpponent)) {
+            if (this.peekOpponentActive) {
+                this.peekOpponentActive = false;
+                this._triggerAction('peekOpponent', false);
+            }
+        }
+    }
+
+    _triggerAction(action, data) {
         // If local callbacks exist, execute them.
         // For 'discard' and 'apply', if NO local callbacks exist, send a message to other panels.
         // For 'clearCard', if NO local callbacks exist, send the default _clearCard message.
 
         if (this.callbacks[action] && this.callbacks[action].length > 0) {
-            this._executeCallback(action);
+            this._executeCallback(action, data);
         } else {
             // Default behaviors if no local handler is defined
             if (action === 'discard' || action === 'apply' || action === 'clearSelection') {
@@ -236,9 +256,9 @@ class HotkeyManager {
         }
     }
 
-    _executeCallback(action) {
+    _executeCallback(action, data) {
         if (this.callbacks[action]) {
-            this.callbacks[action].forEach(cb => cb());
+            this.callbacks[action].forEach(cb => cb(data));
         }
     }
 
