@@ -80,12 +80,16 @@
             </h3>
             <div style="justify-content: space-between; align-items: center; margin-bottom: 5px;">
                 <div class="form-group" style="align-items: center; margin-bottom: 0;">
-                    <label for="stadium-list">Stadium:</label>
+                    <div style="display:flex; flex-direction: column;">
+                        <label for="stadium-list" style="display:flex; justify-content: end;">Stadium:</label>
+                        <div style="display:flex; flex-direction: row;">
+                            <input type="checkbox" id="stadium-used-checkbox" style="transform: scale(1.5);">
+                            <label for="stadium-used-checkbox" style="margin-left: 5px; font-size: 18px;">Used</label>
+                        </div>
+                    </div>
                     <div id="stadium-list" class="stadium-list">
                         <!-- Stadium will be rendered here by JavaScript -->
                     </div>
-                    <input type="checkbox" id="stadium-used-checkbox" style="transform: scale(1.8); margin-left: 10px;">
-                    <label for="stadium-used-checkbox" style="margin-left: 5px; font-size: 18px;">Used</label>
                 </div>
             </div>
             <div class="form-group" style="flex-direction: column; align-items: stretch; margin-bottom: 10px;">
