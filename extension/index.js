@@ -1279,14 +1279,13 @@ module.exports = function (nodecg) {
 
 	// Listen for a message to reset the entire board state
 	function executeResetSystem(callback) {
-		nodecg.log.warn('!!! Executing system state reset !!!');
 
 		try {
-			// Reset Operation Queue
-			operationQueue.value = [];
+			executeRestart(null)
 
-			// Reset Selections
-			selections.value = [];
+			// Reset Turn and Action Status (both LIVE and DRAFT)
+			live_currentTurn.value = 'L';
+			draft_currentTurn.value = 'L';
 
 			// Reset Deck Loading Status
 			deckLoadingStatus.value = { loading: false, side: null };
@@ -1294,6 +1293,29 @@ module.exports = function (nodecg) {
 			// Reset Decks
 			deckL.value = { name: '', cards: [] };
 			deckR.value = { name: '', cards: [] };
+
+			if (callback) callback(null, 'System reset successfully.');
+
+		} catch (e) {
+			nodecg.log.error('Failed to reset system state:', e);
+			if (callback) callback(e.toString());
+		}
+	}
+
+	// Listen for a message to restart the Game board
+	function executeRestart(callback) {
+
+		try {
+			// Reset Current Turn based on firstMove
+			const initialTurn = firstMove.value || 'L';
+			live_currentTurn.value = initialTurn;
+			draft_currentTurn.value = initialTurn;
+
+			// Reset Operation Queue
+			operationQueue.value = [];
+
+			// Reset Selections
+			selections.value = [];
 
 			// Reset all player slots (both LIVE and DRAFT)
 			for (let i = 0; i < 9; i++) {
@@ -1309,9 +1331,6 @@ module.exports = function (nodecg) {
 				nodecg.Replicant(`draft_slotR${i}`).value = JSON.parse(JSON.stringify(slotDefault));
 			}
 
-			// Reset Turn and Action Status (both LIVE and DRAFT)
-			live_currentTurn.value = 'L';
-			draft_currentTurn.value = 'L';
 			['L', 'R'].forEach(side => {
 				actionTypes.forEach(action => {
 					nodecg.Replicant(`live_action_${action}_${side}`).value = false;
@@ -1342,8 +1361,7 @@ module.exports = function (nodecg) {
 			nodecg.Replicant('prizeCardsL').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
 			nodecg.Replicant('prizeCardsR').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
 
-			nodecg.log.info('System state has been completely reset.');
-			if (callback) callback(null, 'System reset successfully.');
+			if (callback) callback(null, 'Game Restart successfully.');
 
 		} catch (e) {
 			nodecg.log.error('Failed to reset system state:', e);
@@ -1352,7 +1370,15 @@ module.exports = function (nodecg) {
 	}
 
 	nodecg.listenFor('resetSystem', (data, callback) => {
+		nodecg.log.warn('!!! Executing system state reset !!!');
 		executeResetSystem(callback);
+		nodecg.log.info('System state has been completely reset.');
+	});
+
+	nodecg.listenFor('reStart', (data, callback) => {
+		nodecg.log.warn('!!! Executing Game Restart !!!');
+		executeRestart(callback);
+		nodecg.log.info('Game state has been completely restart.');
 	});
 
 	// Route messages from dashboard to graphics

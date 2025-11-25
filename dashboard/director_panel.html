@@ -22,8 +22,15 @@
     </div>
 
     <div class="panel-section">
+        <h3>
+            <div style="display: flex; align-items: center; justify-content: space-between;">Operation Queue
+                <div class="form-group" style="margin-bottom: 0; justify-content: center;">
+                    <input type="checkbox" id="auto-apply-checkbox" style="transform: scale(1.2); flex-grow: 0;">
+                    <label for="auto-apply-checkbox" style="margin-left: 5px;">Auto-Apply</label>
+                </div>
+            </div>
+        </h3>
         <div id="queue-manual-controls">
-            <h3>Operation Queue</h3>
             <div id="op-buttons-container" class="flex-container" style="margin-bottom: 10px;">
                 <button id="discard-op-btn" class="btn btn-danger">Discard (Esc)</button>
                 <button id="apply-op-btn" class="btn btn-primary">Apply (Shift+S)</button>
@@ -41,10 +48,7 @@
     <div class="panel-section">
         <h3>Danger Zone</h3>
         <div class="flex-container" style="align-items: center;">
-            <div class="form-group" style="flex-grow: 1; margin-bottom: 0; justify-content: center;">
-                <input type="checkbox" id="auto-apply-checkbox" style="transform: scale(1.2); flex-grow: 0;">
-                <label for="auto-apply-checkbox" style="margin-left: 5px;">Auto-Apply Live</label>
-            </div>
+            <button id="restart-btn" class="btn btn-danger" style="flex: 1;">Restart Game</button>
             <button id="reset-system-btn" class="btn btn-superdanger" style="flex: 1;">Reset System</button>
         </div>
     </div>
@@ -87,6 +91,7 @@
             const autoApplyWarning = document.getElementById('auto-apply-warning');
             const autoApplyCheckbox = document.getElementById('auto-apply-checkbox');
             const resetSystemBtn = document.getElementById('reset-system-btn');
+            const restartBtn = document.getElementById('restart-btn');
 
             // --- Core Functions ---
             function getCardName(slotId) {
@@ -193,6 +198,11 @@
             resetSystemBtn.addEventListener('click', () => {
                 if (confirm('Are you sure you want to reset the entire system? This cannot be undone.')) {
                     nodecg.sendMessage('resetSystem');
+                }
+            });
+            restartBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to restart game? This cannot be undone.')) {
+                    nodecg.sendMessage('reStart');
                 }
             });
             autoApplyCheckbox.addEventListener('change', (e) => {
