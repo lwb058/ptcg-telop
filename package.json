@@ -1,6 +1,6 @@
 {
   "name": "ptcg-telop",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "Pokemon TCG Telop System",
   "main": "extension/index.js",
   "nodecg": {
@@ -37,32 +37,32 @@
       }
     },
     "assetCategories": [
-    {
-      "name": "fx",
-      "title": "エフェクト動画",
-      "allowedTypes": [
-        "webm"
-      ]
-    },
-    {
-      "name": "icons",
-      "title": "アイコン",
-      "allowedTypes": [
-        "png",
-        "webp"
-      ]
-    },
-    {
-      "name": "element",
-      "title": "UI構成",
-      "allowedTypes": [
-        "jpg",
-        "jpeg",
-        "gif",
-        "png",
-        "webm"
-      ]
-    }
+      {
+        "name": "fx",
+        "title": "エフェクト動画",
+        "allowedTypes": [
+          "webm"
+        ]
+      },
+      {
+        "name": "icons",
+        "title": "アイコン",
+        "allowedTypes": [
+          "png",
+          "webp"
+        ]
+      },
+      {
+        "name": "element",
+        "title": "UI構成",
+        "allowedTypes": [
+          "jpg",
+          "jpeg",
+          "gif",
+          "png",
+          "webm"
+        ]
+      }
     ],
     "dashboardPanels": [
       {
