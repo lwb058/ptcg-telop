@@ -1700,12 +1700,16 @@ module.exports = function (nodecg) {
 
 	let playbackInterval = null;
 	const PLAYBACK_TICK_RATE = 100; // ms
+	let playbackQueue = []; // Queue for OpsPacks found during playback
+	let isPlaybackProcessing = false; // Lock for playback processor
 
 	function stopPlaybackInterval() {
 		if (playbackInterval) {
 			clearInterval(playbackInterval);
 			playbackInterval = null;
 		}
+		playbackQueue = [];
+		isPlaybackProcessing = false;
 	}
 
 	function formatTimeMs(ms) {
@@ -1773,74 +1777,94 @@ module.exports = function (nodecg) {
 		});
 	}
 
+
+	// Async function to process the playback queue with delays
+	async function processPlaybackQueue() {
+		if (isPlaybackProcessing) return;
+		isPlaybackProcessing = true;
+
+		while (playbackQueue.length > 0) {
+			const pack = playbackQueue.shift();
+
+			// Sort ops by priority
+			const sortedOps = [...pack.ops].sort((a, b) => a.priority - b.priority);
+
+			// Group by priority
+			const opsByPriority = new Map();
+			sortedOps.forEach(op => {
+				if (!opsByPriority.has(op.priority)) {
+					opsByPriority.set(op.priority, []);
+				}
+				opsByPriority.get(op.priority).push(op);
+			});
+
+			// Process each priority group sequentially
+			const priorities = Array.from(opsByPriority.keys()).sort((a, b) => a - b);
+
+			for (const priority of priorities) {
+				const batch = opsByPriority.get(priority);
+
+				nodecg.log.info(`Playback: Processing batch priority ${priority} (${batch.length} ops)`);
+
+				// 1. Trigger Visuals
+				triggerVisualsForOps(batch);
+
+				// 2. Apply Data
+				batch.forEach(op => {
+					if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
+						applyOperationLogic(nodecg.Replicant(`live_${op.payload.target}`), op, 'live');
+					} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
+						applyOperationLogic(live_stadium, op, 'live');
+					} else if (op.payload.target && op.payload.target.startsWith('slot')) {
+						applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live');
+					} else {
+						applyOperationLogic(null, op, 'live');
+					}
+				});
+				syncLiveToDraft();
+
+				// 3. Wait if needed
+				if (doesBatchRequireAck(batch)) {
+					const delay = getTimeoutForPriority(priority);
+					nodecg.log.info(`Playback: Waiting ${delay}ms for animation...`);
+					await new Promise(resolve => setTimeout(resolve, delay));
+				}
+			}
+		}
+
+		isPlaybackProcessing = false;
+	}
+
 	function startPlaybackInterval() {
-		stopPlaybackInterval(); // Ensure no duplicates
+		if (playbackInterval) return; // Already running
 
 		playbackInterval = setInterval(() => {
-			if (!playbackStatus.value.isPlaying) {
-				stopPlaybackInterval();
-				return;
-			}
+			if (!playbackStatus.value.isPlaying) return;
 
-			// 1. Increment Timer
-			const newTimeMs = playbackStatus.value.playbackTimeMs + PLAYBACK_TICK_RATE;
+			let foundNewPacks = false;
+			playbackStatus.value.playbackTimeMs += PLAYBACK_TICK_RATE;
+			playbackStatus.value.currentTime = formatTimeMs(playbackStatus.value.playbackTimeMs);
 
-			// 2. Check for OpsPacks to apply
-			const timelineData = timeline.value;
-			let nextIndex = playbackStatus.value.currentIndex + 1;
-			let appliedCount = 0;
-
-			while (nextIndex < timelineData.length) {
-				const pack = timelineData[nextIndex];
+			// Check for OpsPacks to apply
+			for (let i = playbackStatus.value.currentIndex + 1; i < timeline.value.length; i++) {
+				const pack = timeline.value[i];
 				const packTimeMs = parseTime(pack.timestamp);
 
-				if (packTimeMs <= newTimeMs) {
-					// Apply this pack
+				if (packTimeMs <= playbackStatus.value.playbackTimeMs) {
 					if (pack.status !== 'skipped') {
-						nodecg.log.info(`Playback: Applying OpsPack ${nextIndex} at ${pack.timestamp}`);
-
-						// Sort ops by priority to ensure correct visual order
-						const sortedOps = [...pack.ops].sort((a, b) => a.priority - b.priority);
-
-						// Trigger Visuals
-						triggerVisualsForOps(sortedOps);
-
-						sortedOps.forEach(op => {
-							// For playback, we apply to LIVE state.
-							// We also sync DRAFT state to match.
-							if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
-								applyOperationLogic(nodecg.Replicant(`live_${op.payload.target}`), op, 'live');
-							} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
-								applyOperationLogic(live_stadium, op, 'live');
-							} else if (op.payload.target && op.payload.target.startsWith('slot')) {
-								applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live');
-							} else {
-								applyOperationLogic(null, op, 'live');
-							}
-						});
+						playbackQueue.push(pack);
+						foundNewPacks = true;
 					}
-					nextIndex++;
-					appliedCount++;
+					playbackStatus.value.currentIndex = i;
 				} else {
-					// Next pack is in the future
-					break;
+					break; // Packs are sorted by time
 				}
 			}
 
-			if (appliedCount > 0) {
-				syncLiveToDraft();
+			// 4. Trigger Processing if needed
+			if (foundNewPacks) {
+				processPlaybackQueue();
 			}
-
-			// 3. Update Status
-			playbackStatus.value = {
-				isPlaying: true,
-				playbackTimeMs: newTimeMs,
-				currentIndex: nextIndex - 1,
-				currentTime: formatTimeMs(newTimeMs)
-			};
-
-			// 4. Check for End of Timeline (Optional: Stop if no more ops? Or keep running like a real timer?)
-			// User requested "timer needs to real-time tick", so we keep running.
 
 		}, PLAYBACK_TICK_RATE);
 	}
