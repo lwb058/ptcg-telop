@@ -106,6 +106,13 @@
         "file": "deck_viewer.html",
         "headerColor": "#2E8B57",
         "fullbleed": true
+      },
+      {
+        "name": "history-panel",
+        "title": "History & Timeline",
+        "file": "history.html",
+        "headerColor": "#4CAF50",
+        "fullbleed": true
       }
     ],
     "graphics": [

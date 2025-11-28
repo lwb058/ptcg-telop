@@ -10,20 +10,29 @@
 <body>
 
     <div class="panel-section">
-        <h3>Game Setup</h3>
-        <div class="form-group" style="flex: 1; margin-bottom: 0;">
-            <label for="first-player-select" data-i18n="first_move">First Move:</label>
-            <select id="first-player-select">
-                <option value="">--Select--</option>
-                <option value="L">Left Player</option>
-                <option value="R">Right Player</option>
-            </select>
+        <h3>Game Setup & Timer</h3>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <label for="first-player-select" data-i18n="first_move">First Move:</label>
+                <select id="first-player-select">
+                    <option value="">--Select--</option>
+                    <option value="L">Left Player</option>
+                    <option value="R">Right Player</option>
+                </select>
+            </div>
+            <div class="timer-module"
+                style="flex: 1; display: flex; align-items: center; gap: 5px; background: #333; padding: 5px; border-radius: 4px;">
+                <div id="timer-display"
+                    style="font-family: monospace; font-size: 1.5em; font-weight: bold; color: #fff;">00:00</div>
+                <button id="timer-toggle-btn" class="btn btn-primary" style="padding: 2px 8px;">Start</button>
+                <button id="timer-edit-btn" class="btn btn-secondary" style="padding: 2px 8px;">Edit</button>
+            </div>
         </div>
     </div>
 
     <div class="panel-section">
         <h3>
-            <div style="display: flex; align-items: center; justify-content: space-between;">Operation Queue
+            <div style="display: flex; align-items: center; justify-content: space-between;">Draft (Next OpsPack)
                 <div class="form-group" style="margin-bottom: 0; justify-content: center;">
                     <input type="checkbox" id="auto-apply-checkbox" style="transform: scale(1.2); flex-grow: 0;">
                     <label for="auto-apply-checkbox" style="margin-left: 5px;">Auto-Apply</label>
@@ -33,7 +42,7 @@
         <div id="queue-manual-controls">
             <div id="op-buttons-container" class="flex-container" style="margin-bottom: 10px;">
                 <button id="discard-op-btn" class="btn btn-danger">Discard (Esc)</button>
-                <button id="apply-op-btn" class="btn btn-primary">Apply (Shift+S)</button>
+                <button id="apply-op-btn" class="btn btn-success">Apply & Record (Shift+S)</button>
             </div>
             <div class="operation-queue" id="operation-queue">
                 <!-- Operations will be listed here -->
@@ -76,7 +85,9 @@
             const playerL_name = nodecg.Replicant('playerL_name');
             const playerR_name = nodecg.Replicant('playerR_name');
             const cardDatabase = nodecg.Replicant('cardDatabase');
-            const firstMove = nodecg.Replicant('firstMove'); // Added
+            const firstMove = nodecg.Replicant('firstMove');
+            const matchTimer = nodecg.Replicant('matchTimer'); // Added
+            const gameTimeSettings = nodecg.Replicant('gameTimeSettings'); // Added
             const slots = [];
             for (let i = 0; i < 9; i++) {
                 slots.push(nodecg.Replicant(`draft_slotL${i}`));
@@ -84,7 +95,7 @@
             }
 
             // --- DOM Element Setup ---
-            const firstPlayerSelect = document.getElementById('first-player-select'); // Added
+            const firstPlayerSelect = document.getElementById('first-player-select');
             const operationQueueEl = document.getElementById('operation-queue');
             const discardOpBtn = document.getElementById('discard-op-btn');
             const applyOpBtn = document.getElementById('apply-op-btn');
@@ -92,6 +103,11 @@
             const autoApplyCheckbox = document.getElementById('auto-apply-checkbox');
             const resetSystemBtn = document.getElementById('reset-system-btn');
             const restartBtn = document.getElementById('restart-btn');
+
+            // Timer DOM
+            const timerDisplay = document.getElementById('timer-display');
+            const timerToggleBtn = document.getElementById('timer-toggle-btn');
+            const timerEditBtn = document.getElementById('timer-edit-btn');
 
             // --- Core Functions ---
             function getCardName(slotId) {
@@ -188,25 +204,92 @@
                 });
             };
 
+            // --- Timer Logic ---
+            let timerInterval;
+            function updateTimerDisplay() {
+                if (!matchTimer.value) return;
+
+                let elapsed = matchTimer.value.offset;
+                if (matchTimer.value.isRunning && matchTimer.value.startTime) {
+                    elapsed += (Date.now() - matchTimer.value.startTime);
+                }
+
+                // Handle Countdown vs Countup
+                let displayTime = elapsed;
+                if (gameTimeSettings.value && gameTimeSettings.value.useCountdown) {
+                    const limit = (gameTimeSettings.value.limit || 1500) * 1000;
+                    displayTime = Math.max(0, limit - elapsed);
+                }
+
+                const totalSeconds = Math.floor(displayTime / 1000);
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                if (matchTimer.value.isRunning) {
+                    timerToggleBtn.textContent = 'Stop';
+                    timerToggleBtn.classList.remove('btn-primary');
+                    timerToggleBtn.classList.add('btn-warning');
+                } else {
+                    timerToggleBtn.textContent = 'Start';
+                    timerToggleBtn.classList.remove('btn-warning');
+                    timerToggleBtn.classList.add('btn-primary');
+                }
+            }
+
             // --- Event Listeners ---
             firstPlayerSelect.addEventListener('change', (e) => {
                 firstMove.value = e.target.value;
             });
 
             discardOpBtn.addEventListener('click', () => nodecg.sendMessage('discardQueue'));
-            applyOpBtn.addEventListener('click', () => nodecg.sendMessage('applyQueue'));
+
+            // Updated Apply Button Logic
+            applyOpBtn.addEventListener('click', () => {
+                // Use applyOpsPack instead of applyQueue
+                nodecg.sendMessage('applyOpsPack');
+
+                // Cooldown UI
+                applyOpBtn.disabled = true;
+                applyOpBtn.textContent = 'Applying...';
+                setTimeout(() => {
+                    applyOpBtn.disabled = false;
+                    const currentHotkeys = hotkeyManager.hotkeys;
+                    applyOpBtn.textContent = `Apply & Record (${currentHotkeys.apply})`;
+                }, 2000);
+            });
+
             resetSystemBtn.addEventListener('click', () => {
                 if (confirm('Are you sure you want to reset the entire system? This cannot be undone.')) {
                     nodecg.sendMessage('resetSystem');
+                    nodecg.sendMessage('timerControl', { action: 'reset' }); // Also reset timer
                 }
             });
             restartBtn.addEventListener('click', () => {
                 if (confirm('Are you sure you want to restart game? This cannot be undone.')) {
                     nodecg.sendMessage('reStart');
+                    nodecg.sendMessage('timerControl', { action: 'reset' }); // Also reset timer
                 }
             });
             autoApplyCheckbox.addEventListener('change', (e) => {
                 settingsRep.value.autoApply = e.target.checked;
+            });
+
+            // Timer Controls
+            timerToggleBtn.addEventListener('click', () => {
+                const action = matchTimer.value.isRunning ? 'stop' : 'start';
+                nodecg.sendMessage('timerControl', { action });
+            });
+
+            timerEditBtn.addEventListener('click', () => {
+                const currentSeconds = Math.floor(matchTimer.value.offset / 1000);
+                const newSecondsStr = prompt('Enter elapsed time in seconds:', currentSeconds);
+                if (newSecondsStr !== null) {
+                    const newSeconds = parseInt(newSecondsStr, 10);
+                    if (!isNaN(newSeconds)) {
+                        nodecg.sendMessage('timerControl', { action: 'edit', seconds: newSeconds });
+                    }
+                }
             });
 
             // --- Replicant Listeners ---
@@ -234,7 +317,7 @@
                 // Update button labels with hotkeys
                 const currentHotkeys = hotkeyManager.hotkeys;
                 discardOpBtn.textContent = `Discard (${currentHotkeys.discard})`;
-                applyOpBtn.textContent = `Apply (${currentHotkeys.apply})`;
+                applyOpBtn.textContent = `Apply & Record (${currentHotkeys.apply})`;
             });
 
             playerL_name.on('change', (newName) => {
@@ -245,6 +328,23 @@
                 updateFirstPlayerDropdown();
             });
 
+            matchTimer.on('change', (newValue) => {
+                updateTimerDisplay();
+                // Start/Stop interval based on running state
+                if (newValue.isRunning) {
+                    if (!timerInterval) {
+                        timerInterval = setInterval(updateTimerDisplay, 100);
+                    }
+                } else {
+                    if (timerInterval) {
+                        clearInterval(timerInterval);
+                        timerInterval = null;
+                    }
+                }
+            });
+
+            gameTimeSettings.on('change', updateTimerDisplay);
+
             // Initial setup
             renderQueue();
 
@@ -254,13 +354,13 @@
 
             hotkeyManager.on('hotkeysChanged', (newHotkeys) => {
                 discardOpBtn.textContent = `Discard (${newHotkeys.discard})`;
-                applyOpBtn.textContent = `Apply (${newHotkeys.apply})`;
+                applyOpBtn.textContent = `Apply & Record (${newHotkeys.apply})`;
             });
 
             // Initial label update
             const initialHotkeys = hotkeyManager.hotkeys;
             discardOpBtn.textContent = `Discard (${initialHotkeys.discard})`;
-            applyOpBtn.textContent = `Apply (${initialHotkeys.apply})`;
+            applyOpBtn.textContent = `Apply & Record (${initialHotkeys.apply})`;
         });
     </script>
 </body>

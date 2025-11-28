@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>History & Timeline</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        .timeline-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .timeline-item {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .timeline-item:hover {
+            background: #3a3a3a;
+        }
+
+        .timeline-item.active {
+            border-color: #4CAF50;
+            background: #2e3e2e;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            color: #ddd;
+        }
+
+        .timeline-details {
+            margin-top: 5px;
+            font-size: 0.9em;
+            color: #aaa;
+            display: none;
+        }
+
+        .timeline-item.expanded .timeline-details {
+            display: block;
+        }
+
+        .controls-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #222;
+            border-bottom: 1px solid #444;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="controls-bar">
+        <div class="btn-group">
+            <button id="play-btn" class="btn btn-success">Play All</button>
+            <button id="pause-btn" class="btn btn-warning" style="display: none;">Pause</button>
+            <button id="resume-btn" class="btn btn-success" style="display: none;">Resume</button>
+        </div>
+        <div class="btn-group">
+            <button id="export-btn" class="btn btn-secondary">Export JSON</button>
+            <button id="import-btn" class="btn btn-secondary">Import JSON</button>
+        </div>
+        <input type="file" id="import-file" style="display: none;" accept=".json">
+    </div>
+
+    <div class="panel-section">
+        <h3>Timeline History</h3>
+        <div id="timeline-list" class="timeline-container">
+            <!-- Timeline items will be injected here -->
+        </div>
+    </div>
+
+    <script src="js/dashboard.js"></script>
+    <script>
+        NodeCG.waitForReplicants(
+            nodecg.Replicant('timeline'),
+            nodecg.Replicant('cardDatabase'),
+            nodecg.Replicant('deckL'),
+            nodecg.Replicant('deckR'),
+            nodecg.Replicant('ptcg-settings'),
+            nodecg.Replicant('playbackStatus')
+        ).then(() => {
+            const timeline = nodecg.Replicant('timeline');
+            const cardDatabase = nodecg.Replicant('cardDatabase');
+            const deckL = nodecg.Replicant('deckL');
+            const deckR = nodecg.Replicant('deckR');
+            const settingsRep = nodecg.Replicant('ptcg-settings');
+            const playbackStatus = nodecg.Replicant('playbackStatus');
+            const timelineList = document.getElementById('timeline-list');
+            const playBtn = document.getElementById('play-btn');
+            const pauseBtn = document.getElementById('pause-btn');
+            const resumeBtn = document.getElementById('resume-btn');
+            const exportBtn = document.getElementById('export-btn');
+            const importBtn = document.getElementById('import-file'); // Fixed ID reference
+
+            // Add Playback Timer Display
+            const header = document.querySelector('h3');
+            const timerDisplay = document.createElement('span');
+            timerDisplay.style.marginLeft = '20px';
+            timerDisplay.style.fontSize = '0.8em';
+            timerDisplay.style.color = '#666';
+            timerDisplay.innerText = 'Playback: 00:00';
+            header.appendChild(timerDisplay);
+
+            function getCardName(cardId) {
+                const db = cardDatabase.value;
+                if (db && db[cardId]) {
+                    return db[cardId].name;
+                }
+                return cardId;
+            }
+
+            function formatOpSummary(op) {
+                // Simplified summary for the timeline list
+                const { type, payload } = op;
+                const target = payload.target || '';
+                switch (type) {
+                    case 'ATTACK': return `Attack: ${payload.attackName}`;
+                    case 'SET_POKEMON': return `Set: ${getCardName(payload.cardId)}`;
+                    case 'KO_POKEMON': return `KO: ${target}`;
+                    default: return `${type} (${target})`;
+                }
+            }
+
+            function renderTimeline() {
+                timelineList.innerHTML = '';
+                if (!timeline.value || timeline.value.length === 0) {
+                    timelineList.innerHTML = '<div style="color: #666; padding: 10px;">No history recorded.</div>';
+                    return;
+                }
+
+                timeline.value.forEach((pack, index) => {
+                    const item = document.createElement('div');
+                    item.classList.add('timeline-item');
+                    item.dataset.index = index;
+
+                    // Highlight active item
+                    if (playbackStatus.value && playbackStatus.value.currentIndex === index) {
+                        item.style.border = '2px solid #4CAF50';
+                        item.style.backgroundColor = '#e8f5e9';
+                        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        item.style.border = '1px solid #ddd';
+                        item.style.backgroundColor = '#fff';
+                    }
+
+                    const opCount = pack.ops.length;
+                    const summary = pack.ops.slice(0, 3).map(formatOpSummary).join(', ') + (opCount > 3 ? '...' : '');
+
+                    item.innerHTML = `
+                        <div class="timeline-header">
+                            <span>[${pack.timestamp}] ${opCount} Ops</span>
+                            <div>
+                                <span class="badge" style="background: ${pack.status === 'done' ? '#4CAF50' : '#888'}">${pack.status}</span>
+                                <button class="btn btn-sm btn-primary seek-btn" data-index="${index}" style="margin-left: 10px;">Seek</button>
+                            </div>
+                        </div>
+                        <div class="timeline-details">
+                            ${summary}
+                        </div>
+                    `;
+
+                    item.addEventListener('click', (e) => {
+                        if (e.target.classList.contains('seek-btn')) return; // Don't toggle if clicking seek
+                        item.classList.toggle('expanded');
+                    });
+
+                    const seekBtn = item.querySelector('.seek-btn');
+                    seekBtn.addEventListener('click', () => {
+                        if (confirm(`Seek to timestamp ${pack.timestamp}? This will reset the board and fast-forward.`)) {
+                            nodecg.sendMessage('seekTimeline', index);
+                        }
+                    });
+
+                    timelineList.appendChild(item);
+                });
+            }
+
+            timeline.on('change', renderTimeline);
+
+            playbackStatus.on('change', (newVal) => {
+                if (newVal) {
+                    timerDisplay.innerText = `Playback: ${newVal.currentTime}`;
+                    renderTimeline(); // Re-render to update highlights
+
+                    // Update Button States
+                    if (newVal.isPlaying) {
+                        playBtn.style.display = 'none';
+                        pauseBtn.style.display = 'inline-block';
+                        resumeBtn.style.display = 'none';
+                    } else {
+                        // If paused but has content (time > 0), show Resume
+                        if (newVal.playbackTimeMs > 0) {
+                            playBtn.style.display = 'inline-block'; // Allow restart
+                            playBtn.innerText = 'Restart';
+                            pauseBtn.style.display = 'none';
+                            resumeBtn.style.display = 'inline-block';
+                        } else {
+                            playBtn.style.display = 'inline-block';
+                            playBtn.innerText = 'Play All';
+                            pauseBtn.style.display = 'none';
+                            resumeBtn.style.display = 'none';
+                        }
+                    }
+                }
+            });
+
+            playBtn.addEventListener('click', () => {
+                if (confirm('Re-simulate entire timeline?')) {
+                    nodecg.sendMessage('playTimeline');
+                }
+            });
+
+            pauseBtn.addEventListener('click', () => {
+                nodecg.sendMessage('pauseTimeline');
+            });
+
+            resumeBtn.addEventListener('click', () => {
+                nodecg.sendMessage('resumeTimeline');
+            });
+
+            exportBtn.addEventListener('click', () => {
+                const exportData = {
+                    language: (settingsRep.value && settingsRep.value.language) || 'jp',
+                    deckL: deckL.value,
+                    deckR: deckR.value,
+                    timeline: timeline.value
+                };
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", `match_data_${Date.now()}.json`);
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            });
+
+            importBtn.addEventListener('click', () => {
+                importFile.click();
+            });
+
+            importFile.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const json = event.target.result;
+                        // Validate JSON
+                        JSON.parse(json);
+                        if (confirm('Importing will overwrite the current timeline and decks. Continue?')) {
+                            nodecg.sendMessage('importTimeline', json);
+                        }
+                    } catch (err) {
+                        alert('Invalid JSON file.');
+                    }
+                };
+                reader.readAsText(file);
+                // Reset value so same file can be selected again
+                importFile.value = '';
+            });
+        });
+    </script>
+</body>
+
+</html>
