@@ -30,6 +30,13 @@
             background: #2e3e2e;
         }
 
+        .timeline-item.turn-l {
+            background-color: rgba(69, 90, 100, 0.2); /* Light Blueish */
+        }
+        .timeline-item.turn-r {
+            background-color: rgba(100, 69, 69, 0.2); /* Light Reddish */
+        }
+
         .timeline-header {
             display: flex;
             justify-content: space-between;
@@ -89,15 +96,13 @@
         NodeCG.waitForReplicants(
             nodecg.Replicant('timeline'),
             nodecg.Replicant('cardDatabase'),
-            nodecg.Replicant('deckL'),
-            nodecg.Replicant('deckR'),
+            nodecg.Replicant('firstMove'),
             nodecg.Replicant('ptcg-settings'),
             nodecg.Replicant('playbackStatus')
         ).then(() => {
             const timeline = nodecg.Replicant('timeline');
             const cardDatabase = nodecg.Replicant('cardDatabase');
-            const deckL = nodecg.Replicant('deckL');
-            const deckR = nodecg.Replicant('deckR');
+            const firstMove = nodecg.Replicant('firstMove');
             const settingsRep = nodecg.Replicant('ptcg-settings');
             const playbackStatus = nodecg.Replicant('playbackStatus');
             const timelineList = document.getElementById('timeline-list');
@@ -105,7 +110,8 @@
             const pauseBtn = document.getElementById('pause-btn');
             const resumeBtn = document.getElementById('resume-btn');
             const exportBtn = document.getElementById('export-btn');
-            const importBtn = document.getElementById('import-file'); // Fixed ID reference
+            const importBtn = document.getElementById('import-btn');
+            const importFile = document.getElementById('import-file');
 
             // Add Playback Timer Display
             const header = document.querySelector('h3');
@@ -143,19 +149,23 @@
                     return;
                 }
 
+                const firstMover = firstMove.value || 'L';
+
                 timeline.value.forEach((pack, index) => {
                     const item = document.createElement('div');
                     item.classList.add('timeline-item');
                     item.dataset.index = index;
 
+                    // Determine turn player and add class
+                    const round = pack.round || 1;
+                    const isOdd = round % 2 !== 0;
+                    const isPlayerL = (firstMover === 'L' && isOdd) || (firstMover === 'R' && !isOdd);
+                    item.classList.add(isPlayerL ? 'turn-l' : 'turn-r');
+
                     // Highlight active item
                     if (playbackStatus.value && playbackStatus.value.currentIndex === index) {
-                        item.style.border = '2px solid #4CAF50';
-                        item.style.backgroundColor = '#e8f5e9';
+                        item.classList.add('active');
                         item.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    } else {
-                        item.style.border = '1px solid #ddd';
-                        item.style.backgroundColor = '#fff';
                     }
 
                     const opCount = pack.ops.length;
@@ -163,9 +173,8 @@
 
                     item.innerHTML = `
                         <div class="timeline-header">
-                            <span>[${pack.timestamp}] ${opCount} Ops</span>
+                            <span>[${pack.timestamp}] (R${pack.round || 1}) ${opCount} Ops</span>
                             <div>
-                                <span class="badge" style="background: ${pack.status === 'done' ? '#4CAF50' : '#888'}">${pack.status}</span>
                                 <button class="btn btn-sm btn-primary seek-btn" data-index="${index}" style="margin-left: 10px;">Seek</button>
                             </div>
                         </div>
@@ -234,19 +243,17 @@
             });
 
             exportBtn.addEventListener('click', () => {
-                const exportData = {
-                    language: (settingsRep.value && settingsRep.value.language) || 'jp',
-                    deckL: deckL.value,
-                    deckR: deckR.value,
-                    timeline: timeline.value
-                };
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-                const downloadAnchorNode = document.createElement('a');
-                downloadAnchorNode.setAttribute("href", dataStr);
-                downloadAnchorNode.setAttribute("download", `match_data_${Date.now()}.json`);
-                document.body.appendChild(downloadAnchorNode);
-                downloadAnchorNode.click();
-                downloadAnchorNode.remove();
+                nodecg.sendMessage('exportTimeline').then(jsonString => {
+                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonString);
+                    const downloadAnchorNode = document.createElement('a');
+                    downloadAnchorNode.setAttribute("href", dataStr);
+                    downloadAnchorNode.setAttribute("download", `match_data_${Date.now()}.json`);
+                    document.body.appendChild(downloadAnchorNode);
+                    downloadAnchorNode.click();
+                    downloadAnchorNode.remove();
+                }).catch(err => {
+                    alert('Failed to export timeline: ' + err.message);
+                });
             });
 
             importBtn.addEventListener('click', () => {
@@ -264,7 +271,9 @@
                         // Validate JSON
                         JSON.parse(json);
                         if (confirm('Importing will overwrite the current timeline and decks. Continue?')) {
-                            nodecg.sendMessage('importTimeline', json);
+                            nodecg.sendMessage('importTimeline', json)
+                                .then(() => alert('Import successful!'))
+                                .catch(err => alert('Import failed: ' + err));
                         }
                     } catch (err) {
                         alert('Invalid JSON file.');

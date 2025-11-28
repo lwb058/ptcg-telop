@@ -72,6 +72,7 @@ module.exports = function (nodecg) {
 	const cardToShowL = nodecg.Replicant('cardToShowL', { defaultValue: '' });
 	const cardToShowR = nodecg.Replicant('cardToShowR', { defaultValue: '' });
 	const i18nStrings = nodecg.Replicant('i18nStrings', { defaultValue: {} });
+	const turnCount = nodecg.Replicant('turnCount', { defaultValue: 1 });
 
 	const themeList = nodecg.Replicant('themeList', { defaultValue: ['Default'] });
 	const themeAssets = nodecg.Replicant('themeAssets', { defaultValue: {} });
@@ -863,6 +864,11 @@ module.exports = function (nodecg) {
 				const turnRep = nodecg.Replicant(`${prefix}currentTurn`);
 				turnRep.value = payload.side;
 
+				// Increment turn count only when applying to live to avoid double counting
+				if (mode === 'live') {
+					turnCount.value += 1;
+				}
+
 				// Clear all selections when the turn changes.
 				selections.value = [];
 
@@ -1351,6 +1357,9 @@ module.exports = function (nodecg) {
 			live_currentTurn.value = initialTurn;
 			draft_currentTurn.value = initialTurn;
 
+			// Reset Turn Count
+			turnCount.value = 1;
+
 			// Reset Operation Queue
 			operationQueue.value = [];
 
@@ -1679,7 +1688,7 @@ module.exports = function (nodecg) {
 		const opsPack = {
 			id: `pack-${Date.now()}`,
 			timestamp: getCurrentMatchTime(),
-			status: 'done',
+			round: turnCount.value,
 			ops: JSON.parse(JSON.stringify(operationQueue.value)) // Deep copy
 		};
 
@@ -1851,10 +1860,8 @@ module.exports = function (nodecg) {
 				const packTimeMs = parseTime(pack.timestamp);
 
 				if (packTimeMs <= playbackStatus.value.playbackTimeMs) {
-					if (pack.status !== 'skipped') {
-						playbackQueue.push(pack);
-						foundNewPacks = true;
-					}
+					playbackQueue.push(pack);
+					foundNewPacks = true;
 					playbackStatus.value.currentIndex = i;
 				} else {
 					break; // Packs are sorted by time
@@ -1919,7 +1926,6 @@ module.exports = function (nodecg) {
 			// 3. Apply OpsPacks up to index
 			const packsToApply = timeline.value.slice(0, index + 1);
 			for (const pack of packsToApply) {
-				if (pack.status === 'skipped') continue;
 				pack.ops.forEach(op => {
 					if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
 						applyOperationLogic(nodecg.Replicant(`live_${op.payload.target}`), op, 'live');
@@ -1998,12 +2004,37 @@ module.exports = function (nodecg) {
 
 				Promise.all(promises).then(() => {
 					timeline.value = data.timeline;
+					if (data.firstMove) {
+						firstMove.value = data.firstMove;
+					}
 					if (callback) callback(null, 'Timeline and Decks imported.');
 				});
 
 			} else {
 				throw new Error('Invalid JSON format');
 			}
+		} catch (e) {
+			if (callback) callback(e.message);
+		}
+	});
+
+	nodecg.listenFor('exportTimeline', (data, callback) => {
+		try {
+			const exportData = {
+				version: pjson.version,
+				language: (ptcgSettings.value && ptcgSettings.value.language) || 'jp',
+				timestamp: new Date().toISOString(),
+				firstMove: firstMove.value,
+				deckL: {
+					name: deckL.value.name,
+				},
+				deckR: {
+					name: deckR.value.name,
+				},
+				timeline: timeline.value
+			};
+			const jsonString = JSON.stringify(exportData, null, 2);
+			if (callback) callback(null, jsonString);
 		} catch (e) {
 			if (callback) callback(e.message);
 		}

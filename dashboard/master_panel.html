@@ -13,6 +13,7 @@
             <h3>Info Module</h3>
             <div class="flex-container" style="align-items: flex-start;">
                 <div>
+                    <p>Turn: <span id="turn-count">1</span></p>
                     <p>Total Pokemons: <span id="total-pokemons">0</span></p>
                     <p>Battle Energy: <span id="battle-energy-l">L: 0</span> | <span id="battle-energy-r">R: 0</span>
                     </p>
@@ -195,7 +196,7 @@
         // --- Global Replicant Declarations ---
         var playerL_name, playerR_name, cardDatabase, selections, draft_currentTurn,
             deckL, deckR, draft_stadium, settingsRep, assetPaths, i18nStrings,
-            language, cardToShowL, cardToShowR, operationQueue, slots = [];
+            language, cardToShowL, cardToShowR, operationQueue, turnCount, slots = [];
 
         NodeCG.waitForReplicants(
             nodecg.Replicant('playerL_name'),
@@ -212,6 +213,7 @@
             nodecg.Replicant('cardToShowL'),
             nodecg.Replicant('cardToShowR'),
             nodecg.Replicant('operationQueue'),
+            nodecg.Replicant('turnCount'),
             ...Array(18).fill(0).map((_, i) => { // Changed from 12 to 18
                 const side = i < 9 ? 'L' : 'R';
                 const index = i % 9;
@@ -241,6 +243,7 @@
             cardToShowL = nodecg.Replicant('cardToShowL');
             cardToShowR = nodecg.Replicant('cardToShowR');
             operationQueue = nodecg.Replicant('operationQueue');
+            turnCount = nodecg.Replicant('turnCount');
             for (let i = 0; i < 9; i++) { // Changed from 6 to 9
                 slots.push(nodecg.Replicant(`draft_slotL${i}`));
                 slots.push(nodecg.Replicant(`draft_slotR${i}`));
@@ -250,6 +253,7 @@
             const totalPokemonsEl = document.getElementById('total-pokemons');
             const battleEnergyLEl = document.getElementById('battle-energy-l');
             const battleEnergyREl = document.getElementById('battle-energy-r');
+            const turnCountEl = document.getElementById('turn-count');
             const showOpponentCheckbox = document.getElementById('show-opponent-field-checkbox');
             const fieldWrapper = document.getElementById('field-wrapper');
             const fieldContainerL = document.getElementById('field-container-L');
@@ -705,8 +709,16 @@
                     battleEnergyREl.textContent = `R: ${energyCountR}`;
                 }
             };
+            const updateTurnCount = () => {
+                if (turnCountEl && turnCount.value) {
+                    turnCountEl.textContent = turnCount.value;
+                }
+            }
 
             // --- Event Listeners for UI Updates ---
+            turnCount.on('change', () => {
+                updateTurnCount();
+            });
             showOpponentCheckbox.addEventListener('change', () => {
                 updateDevelopModuleState();
             });
@@ -2194,6 +2206,7 @@
             updateUIStrings();
             updateTotalPokemons(); // Keep this
             updateBattleEnergyCounts(); // New
+            updateTurnCount();
             updateAttackerDropdown();
             renderTargetingField();
             updateEnergyAndToolButtons();
