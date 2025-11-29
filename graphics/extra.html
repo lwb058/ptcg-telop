@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Extra Bench Graphic</title>
     <link rel="stylesheet" href="css/fonts.css">
     <script>
         // Dynamically preload fonts based on fonts.css
-        (function() {
+        (function () {
             fetch('css/fonts.css')
                 .then(response => response.text())
                 .then(text => {
@@ -28,14 +29,19 @@
     <link rel="stylesheet" href="css/common.css">
     <link id="theme-css-link" rel="stylesheet" href="" disabled>
     <style>
-        .player-area { 
-            height: 560px; 
+        .player-area {
+            height: 560px;
             transform: translateY(475px);
-            flex-direction: column; 
-            background-color: var(--color-bg-panel); 
+            flex-direction: column;
+            background-color: var(--color-bg-panel);
             background-image: var(--asset-extra-bg);
         }
-        .bench-slots { gap: 24px; } /* Override default gap */
+
+        .bench-slots {
+            gap: 24px;
+        }
+
+        /* Override default gap */
         .extra-bench-title {
             height: 64px;
             display: flex;
@@ -54,24 +60,24 @@
             box-sizing: border-box;
             visibility: hidden;
         }
-
     </style>
 </head>
+
 <body>
     <!-- SVG Filter Definitions for Text Effects -->
     <svg width="0" height="0" style="position:absolute;z-index:-1;">
         <defs>
-        <filter id="text-stroke-shadow-bench" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="4" dy="4" stdDeviation="2" flood-color="#00000099" result="shadow"/>
-            <feMorphology in="SourceAlpha" result="stroke" operator="dilate" radius="3"></feMorphology>
-            <feFlood flood-color="#000b1a" result="stroke-color"/>
-            <feComposite in="stroke-color" in2="stroke" operator="in" result="stroke-shape"/>
-            <feMerge>
-                <feMergeNode in="shadow"/>
-                <feMergeNode in="stroke-shape"/>
-                <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-        </filter>
+            <filter id="text-stroke-shadow-bench" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow dx="4" dy="4" stdDeviation="2" flood-color="#00000099" result="shadow" />
+                <feMorphology in="SourceAlpha" result="stroke" operator="dilate" radius="3"></feMorphology>
+                <feFlood flood-color="#000b1a" result="stroke-color" />
+                <feComposite in="stroke-color" in2="stroke" operator="in" result="stroke-shape" />
+                <feMerge>
+                    <feMergeNode in="shadow" />
+                    <feMergeNode in="stroke-shape" />
+                    <feMergeNode in="SourceGraphic" />
+                </feMerge>
+            </filter>
         </defs>
     </svg>
     <div class="overlay-frame">
@@ -96,7 +102,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Preloader Container for FX Videos (Hidden) -->
     <div id="video-preloader"></div>
 
@@ -222,14 +228,14 @@
                     });
                     return; // End execution here
                 }
- 
+
                 const toolsToRemove = [];
                 const toolsToAdd = [];
- 
+
                 // New diffing logic to prioritize removing newest items (at the end of the array)
                 const oldWithKept = oldToolIds.map(id => ({ id, kept: false }));
                 const tempNewIdsForConsumption = [...newToolIds];
- 
+
                 // First pass: find all items that are kept by consuming from tempNewIds
                 oldWithKept.forEach(item => {
                     const idxInNew = tempNewIdsForConsumption.indexOf(item.id);
@@ -238,10 +244,10 @@
                         tempNewIdsForConsumption.splice(idxInNew, 1); // Consume it
                     }
                 });
- 
+
                 // The remaining items in tempNewIds are the ones to add.
                 toolsToAdd.push(...tempNewIdsForConsumption);
- 
+
                 // Find the indices of the items to remove, prioritizing the newest ones (end of the array).
                 for (let i = oldWithKept.length - 1; i >= 0; i--) {
                     if (!oldWithKept[i].kept) {
@@ -409,7 +415,7 @@
                 const totalEnergyCount = energies.length;
                 const maxSingleEnergyCount = Object.values(energyCounts).reduce((max, count) => Math.max(max, count), 0);
                 const useTypeB = (maxSingleEnergyCount > 1 && totalEnergyCount >= 7) || maxSingleEnergyCount >= 5;
-                
+
                 let html = '';
                 if (useTypeB) {
                     for (const energy in energyCounts) {
@@ -455,7 +461,7 @@
 
                 const oldToolIds = oldSlotData ? (oldSlotData.attachedToolIds || []) : [];
                 const newToolIds = slotData ? slotData.attachedToolIds || [] : [];
-                
+
                 const sanitizeDamage = (damage) => {
                     if (typeof damage !== 'string') return damage || '';
                     return damage.replace(/＋/g, '+').replace(/－/g, '-').replace(/×/g, '×');
@@ -472,7 +478,7 @@
                     };
 
                     if (isSlidingOut) {
-                        setTimeout(clearSlot, 500); 
+                        setTimeout(clearSlot, 500);
                     } else {
                         clearSlot();
                     }
@@ -506,7 +512,7 @@
                 else if (hpPercent <= 50) hpColor = 'var(--hp-medium)';
 
                 const getEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/icons/${ENERGY_MAP[type] || 'エネなし'}.png">`;
-                
+
                 let wrapper = slotEl.querySelector('.bench-pokemon-wrapper');
 
                 const playAnimationIfNeeded = () => {
@@ -545,9 +551,23 @@
                     slotEl.dataset.cardId = slotData.cardId;
 
                     const mainImg = wrapper.querySelector('.bench-pokemon-image');
+
+                    // Pre-position the slot off-screen to prevent visual glitch during image loading
+                    if (isNewCard || forceSlideIn) {
+                        const side = slotEl.id.includes('-L') ? 'L' : 'R';
+                        const offScreenTransform = side === 'L' ? 'translateX(-120%)' : 'translateX(120%)';
+                        slotEl.style.transform = offScreenTransform;
+                        slotEl.style.opacity = '0';
+                    }
+
                     mainImg.style.visibility = 'hidden';
                     mainImg.onload = () => {
                         mainImg.style.visibility = 'visible';
+                        // Reset transform before triggering slide-in animation
+                        if (isNewCard || forceSlideIn) {
+                            slotEl.style.transform = '';
+                            slotEl.style.opacity = '';
+                        }
                         playAnimationIfNeeded();
                         mainImg.onload = null; // Clean up handler
                     };
@@ -609,7 +629,7 @@
                     delete slotData.forceSlideIn;
                 }
             }
-            
+
             // Preload all FX videos and images on page load
             const videosToPreload = [
                 '/assets/ptcg-telop/fx/bench_ko.webm',
@@ -697,7 +717,7 @@
                     const langAssetName = `${baseName}_${lang}.png`;
                     return `${basePath}element/${langAssetName}`;
                 }
-                
+
                 return `${basePath}element/${assetName}`;
             }
 
@@ -705,10 +725,10 @@
                 const root = document.documentElement;
                 root.style.setProperty('--asset-extra-bg', `url(${resolveAssetPath('extra-bg.png')})`);
                 root.style.setProperty('--asset-bench-bg', `url(${resolveAssetPath('bench-bg.png')})`);
-                
+
                 const abilityIconSrc = resolveAssetPath('ability_jp.png', true);
                 document.querySelectorAll('.bench-skill-ability-tag').forEach(img => {
-                    if(img.src !== abilityIconSrc) img.src = abilityIconSrc;
+                    if (img.src !== abilityIconSrc) img.src = abilityIconSrc;
                 });
             }
 
@@ -735,7 +755,7 @@
                     replicantList.push(nodecg.Replicant(`live_slot${side}${i}`));
                 });
             }
-            
+
             function getHitVideoSrc(attackerType) {
                 const basePath = '/assets/ptcg-telop/fx/';
                 const typeMap = {
@@ -852,7 +872,7 @@
                             if (cardImageEl) {
                                 cardImageEl.classList.add('anim-shake', 'anim-flash-white');
                                 setTimeout(() => cardImageEl.classList.remove('anim-shake', 'anim-flash-white'), 400);
-                                
+
                                 const imageRect = cardImageEl.getBoundingClientRect();
                                 const videoSize = 200;
                                 const hitVideo = document.createElement('video');
@@ -865,7 +885,7 @@
                                 hitVideo.style.left = `${imageRect.left + (imageRect.width / 2) - (videoSize / 2)}px`;
                                 hitVideo.style.top = `${imageRect.top + (imageRect.height / 2) - (videoSize / 2)}px`;
                                 document.body.appendChild(hitVideo);
-                                
+
                                 hitVideo.addEventListener('ended', () => {
                                     hitVideo.remove();
                                     onHitAnimationEnd();
@@ -948,7 +968,7 @@
                         koVideo.style.position = 'absolute';
                         koVideo.style.width = '100%';
                         koVideo.style.height = '100%';
-                        koVideo.style.left ='-4px';
+                        koVideo.style.left = '-4px';
                         koVideo.style.top = '0';
                         koVideo.style.zIndex = '200';
                         targetEl.appendChild(koVideo);
@@ -991,8 +1011,9 @@
                     activeAnimations.clear();
                     g_attackAnimationTargets.clear();
                 });
-                });
             });
+        });
     </script>
 </body>
+
 </html>
