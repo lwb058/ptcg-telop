@@ -113,6 +113,12 @@
     "cht": "自動計算弱點和抵抗力傷害",
     "en": "Auto Caculate Weakness & Resistance"
   },
+  "setting_countdown_time": {
+    "jp": "試合時限タイマー（0で無効）",
+    "chs": "设置比赛倒计时（设 0 关闭）",
+    "cht": "設定比賽倒數計時器（設 0 關閉）",
+    "en": "Countdown Timer (0 to Disable)"
+  },
   "settings_regulation": {
     "jp": "レギュレーション",
     "chs": "赛制规则",

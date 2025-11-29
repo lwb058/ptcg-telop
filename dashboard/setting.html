@@ -46,6 +46,13 @@
 						<input type="checkbox" id="weakness-damage-toggle"
 							style="width: auto; height: auto; justify-self: end;">
 					</div>
+					<div class="form-group-hotkey">
+						<label for="time-limit-input" id="label-time-limit">Time Limit (min, 0 to disable)</label>
+						<div style=" justify-self: end;">
+							<input type="number" id="time-limit-input" min="0" max="60" step="1" style="width: 60px;">
+							min
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -53,16 +60,6 @@
 			<h3 id="label-regulation">Regulation</h3>
 			<div class="collapsible-content">
 				<div class="setting-grid">
-					<div class="form-group-hotkey">
-						<label for="time-limit-input" id="label-time-limit">Time Limit (min)</label>
-						<input type="number" id="time-limit-input" min="1" max="60" step="1"
-							style="width: 60px; justify-self: end;">
-					</div>
-					<div class="form-group-hotkey">
-						<label for="use-countdown-toggle" id="label-use-countdown">Use Countdown</label>
-						<input type="checkbox" id="use-countdown-toggle"
-							style="width: auto; height: auto; justify-self: end;">
-					</div>
 					<div class="form-group-hotkey">
 						<label for="lost-zone-toggle" id="label-enable-lost-zone">Enable Lost Zone</label>
 						<input type="checkbox" id="lost-zone-toggle"
@@ -244,7 +241,6 @@
 			const autoTrashTmToggle = document.getElementById('auto-trash-tm-toggle');
 			const weaknessDamageToggle = document.getElementById('weakness-damage-toggle');
 			const timeLimitInput = document.getElementById('time-limit-input');
-			const useCountdownToggle = document.getElementById('use-countdown-toggle');
 
 			// Hotkey Elements
 			const hotkeyIds = ['discard', 'apply', 'clear-card', 'clear-selection', 'peek-opponent'];
@@ -281,10 +277,8 @@
 				document.getElementById('label-weakness-damage').textContent = getI18nText('settings_auto_double_weakness_damage');
 				document.getElementById('label-regulation').textContent = getI18nText('settings_regulation');
 				document.getElementById('label-enable-lost-zone').textContent = getI18nText('settings_enable_lost_zone');
-				document.getElementById('label-enable-lost-zone').textContent = getI18nText('settings_enable_lost_zone');
 				document.getElementById('label-enable-vstar').textContent = getI18nText('settings_enable_vstar');
-				document.getElementById('label-time-limit').textContent = getI18nText('settings_time_limit');
-				document.getElementById('label-use-countdown').textContent = getI18nText('settings_use_countdown');
+				document.getElementById('label-time-limit').textContent = getI18nText('setting_countdown_time');
 				document.getElementById('label-hotkey').textContent = getI18nText('settings_hotkey');
 				document.getElementById('label-system').textContent = getI18nText('settings_system');
 				document.getElementById('label-reverse-card-display').textContent = getI18nText('settings_reverse_card_display');
@@ -395,13 +389,15 @@
 				forceRefetchDeckToggle.checked = !!(settings && settings.forceRefetchDeck);
 				weaknessDamageToggle.checked = !!(settings && settings.weaknessDamage);
 				toolLimitInput.value = (settings && settings.toolLimit) ? settings.toolLimit : 4;
-				toolLimitInput.value = (settings && settings.toolLimit) ? settings.toolLimit : 4;
 				languageSelect.value = (settings && settings.language) ? settings.language : "jp";
 
 				// Render Game Time Settings
 				if (gameTimeSettings.value) {
-					timeLimitInput.value = Math.floor(gameTimeSettings.value.limit / 60);
-					useCountdownToggle.checked = gameTimeSettings.value.useCountdown;
+					if (gameTimeSettings.value.useCountdown) {
+						timeLimitInput.value = Math.floor(gameTimeSettings.value.limit / 60);
+					} else {
+						timeLimitInput.value = 0;
+					}
 				}
 
 				// Update theme dropdown
@@ -499,6 +495,10 @@
 				updateAllLabels();
 			});
 
+			gameTimeSettings.on('change', () => {
+				renderAll(settingsRep.value);
+			});
+
 			themeList.on('change', (newThemeList) => {
 				updateThemeDropdown(newThemeList || ['Default'], settingsRep.value ? settingsRep.value.activeTheme : 'Default');
 			});
@@ -590,8 +590,15 @@
 				};
 
 				// Save Game Time Settings
-				const newTimeLimit = parseInt(timeLimitInput.value, 10) * 60; // Convert min to sec
-				const newUseCountdown = useCountdownToggle.checked;
+				const timeLimitValue = parseInt(timeLimitInput.value, 10);
+				let newTimeLimit = 0;
+				let newUseCountdown = false;
+
+				if (timeLimitValue > 0) {
+					newTimeLimit = timeLimitValue * 60; // Convert min to sec
+					newUseCountdown = true;
+				}
+
 				gameTimeSettings.value = {
 					limit: newTimeLimit,
 					useCountdown: newUseCountdown
@@ -625,7 +632,8 @@
 						message = `🎉 发现新版本: <strong>${newVal.latest}</strong>。 下载链接: <a href="https://pan.baidu.com/s/1TX3Z2CWegzJKBi-jeJ4NKg?pwd=mn49" target="_blank" rel="noopener noreferrer">百度网盘</a> <a href="https://pan.quark.cn/s/80c16eaef331" target="_blank" rel="noopener noreferrer">夸克网盘</a>`;
 					} else if (lang === 'cht') {
 						message = `🎉 發現新版本: <strong>${newVal.latest}</strong>。 <a href="${newVal.url}" target="_blank" rel="noopener noreferrer">點擊此處下載</a>`;
-					} notificationDiv.innerHTML = message;
+					}
+					notificationDiv.innerHTML = message;
 					notificationDiv.style.display = 'block';
 				} else {
 					notificationDiv.style.display = 'none';
