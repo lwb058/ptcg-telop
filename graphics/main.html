@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Main Graphic</title>
@@ -7,7 +8,7 @@
     <link rel="stylesheet" href="css/fonts.css">
     <script>
         // Dynamically preload fonts based on fonts.css
-        (function() {
+        (function () {
             fetch('css/fonts.css')
                 .then(response => response.text())
                 .then(text => {
@@ -32,34 +33,35 @@
         /* All styles have been moved to graphics/css/common.css */
     </style>
 </head>
+
 <body>
     <!-- SVG Filter Definitions for Text Effects -->
     <svg width="0" height="0" style="position:absolute;z-index:-1;">
         <defs>
-        <!-- 战斗区数字滤镜 -->
-        <filter id="text-stroke-shadow-battle" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="-4" dy="6" stdDeviation="2" flood-color="#00000099" result="shadow"/>
-            <feMorphology in="SourceAlpha" result="stroke" operator="dilate" radius="4"></feMorphology>
-            <feFlood flood-color="#000b1a" result="stroke-color"/>
-            <feComposite in="stroke-color" in2="stroke" operator="in" result="stroke-shape"/>
-            <feMerge>
-                <feMergeNode in="shadow"/>
-                <feMergeNode in="stroke-shape"/>
-                <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-        </filter>
-        <!-- 后备区数字滤镜 -->
-        <filter id="text-stroke-shadow-bench" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="4" dy="4" stdDeviation="2" flood-color="#00000099" result="shadow"/>
-            <feMorphology in="SourceAlpha" result="stroke" operator="dilate" radius="3"></feMorphology>
-            <feFlood flood-color="#000b1a" result="stroke-color"/>
-            <feComposite in="stroke-color" in2="stroke" operator="in" result="stroke-shape"/>
-            <feMerge>
-                <feMergeNode in="shadow"/>
-                <feMergeNode in="stroke-shape"/>
-                <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-        </filter>
+            <!-- 战斗区数字滤镜 -->
+            <filter id="text-stroke-shadow-battle" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow dx="-4" dy="6" stdDeviation="2" flood-color="#00000099" result="shadow" />
+                <feMorphology in="SourceAlpha" result="stroke" operator="dilate" radius="4"></feMorphology>
+                <feFlood flood-color="#000b1a" result="stroke-color" />
+                <feComposite in="stroke-color" in2="stroke" operator="in" result="stroke-shape" />
+                <feMerge>
+                    <feMergeNode in="shadow" />
+                    <feMergeNode in="stroke-shape" />
+                    <feMergeNode in="SourceGraphic" />
+                </feMerge>
+            </filter>
+            <!-- 后备区数字滤镜 -->
+            <filter id="text-stroke-shadow-bench" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow dx="4" dy="4" stdDeviation="2" flood-color="#00000099" result="shadow" />
+                <feMorphology in="SourceAlpha" result="stroke" operator="dilate" radius="3"></feMorphology>
+                <feFlood flood-color="#000b1a" result="stroke-color" />
+                <feComposite in="stroke-color" in2="stroke" operator="in" result="stroke-shape" />
+                <feMerge>
+                    <feMergeNode in="shadow" />
+                    <feMergeNode in="stroke-shape" />
+                    <feMergeNode in="SourceGraphic" />
+                </feMerge>
+            </filter>
         </defs>
     </svg>
     <div class="overlay-frame">
@@ -70,7 +72,8 @@
         <!-- Player L Area -->
         <div class="player-area" id="player-L-area">
             <div class="player-info" id="player-L-info">
-                <img class="first-move-icon hidden" id="first-move-L" src="/assets/ptcg-telop/element/first_move_jp.png">
+                <img class="first-move-icon hidden" id="first-move-L"
+                    src="/assets/ptcg-telop/element/first_move_jp.png">
                 <span class="player-name" id="player-L-name"></span>
                 <img src="/assets/ptcg-telop/element/VSTAR.webp" class="vstar-icon" id="vstar-L-icon">
             </div>
@@ -91,7 +94,7 @@
                     </div>
                     <div class="battle-skills-container"></div>
                 </div>
-                    </div>
+            </div>
             <div class="bench-slots">
                 <div class="bench-slot" id="slot-L1"></div>
                 <div class="bench-slot" id="slot-L2"></div>
@@ -100,15 +103,19 @@
                 <div class="bench-slot" id="slot-L5"></div>
             </div>
             <div class="player-action">
-                <img class="action-icon" id="action-L-energy" src="/assets/ptcg-telop/element/action-energy.png" title="Energy Action">
-                <img class="action-icon" id="action-L-supporter" src="/assets/ptcg-telop/element/action-supporter.png" title="Supporter Action">
-                <img class="action-icon" id="action-L-retreat" src="/assets/ptcg-telop/element/action-retreat.png" title="Retreat Action">
+                <img class="action-icon" id="action-L-energy" src="/assets/ptcg-telop/element/action-energy.png"
+                    title="Energy Action">
+                <img class="action-icon" id="action-L-supporter" src="/assets/ptcg-telop/element/action-supporter.png"
+                    title="Supporter Action">
+                <img class="action-icon" id="action-L-retreat" src="/assets/ptcg-telop/element/action-retreat.png"
+                    title="Retreat Action">
             </div>
         </div>
         <!-- Player R Area -->
         <div class="player-area" id="player-R-area">
             <div class="player-info" id="player-R-info">
-                <img class="first-move-icon hidden" id="first-move-R" src="/assets/ptcg-telop/element/first_move_jp.png">
+                <img class="first-move-icon hidden" id="first-move-R"
+                    src="/assets/ptcg-telop/element/first_move_jp.png">
                 <span class="player-name" id="player-R-name"></span>
                 <img src="/assets/ptcg-telop/element/VSTAR.webp" class="vstar-icon" id="vstar-R-icon">
             </div>
@@ -138,9 +145,12 @@
                 <div class="bench-slot" id="slot-R5"></div>
             </div>
             <div class="player-action">
-                <img class="action-icon" id="action-R-energy" src="/assets/ptcg-telop/element/action-energy.png" title="Energy Action">
-                <img class="action-icon" id="action-R-supporter" src="/assets/ptcg-telop/element/action-supporter.png" title="Supporter Action">
-                <img class="action-icon" id="action-R-retreat" src="/assets/ptcg-telop/element/action-retreat.png" title="Retreat Action">
+                <img class="action-icon" id="action-R-energy" src="/assets/ptcg-telop/element/action-energy.png"
+                    title="Energy Action">
+                <img class="action-icon" id="action-R-supporter" src="/assets/ptcg-telop/element/action-supporter.png"
+                    title="Supporter Action">
+                <img class="action-icon" id="action-R-retreat" src="/assets/ptcg-telop/element/action-retreat.png"
+                    title="Retreat Action">
             </div>
         </div>
 
@@ -187,763 +197,772 @@
     <div id="video-preloader"></div>
 
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const getCardImageUrl = (cardId, isBgImage = false) => {
-            if (!cardId || !assetPaths.value.cardImgPath) {
-                return isBgImage ? 'none' : '';
-            }
-            const db = cardDatabase.value;
-            const cardData = db ? db[cardId] : null;
-            const imageUrl = cardData ? cardData.image_url : null;
-            const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg';
-            const path = `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
-            return isBgImage ? `url(${path})` : path;
-        };
-
-        const ENERGY_MAP = {
-            "草": "草", "炎": "炎", "水": "水", "雷": "雷", "超": "超", "闘": "闘", "悪": "悪", "鋼": "鋼",
-            "無": "無", "全": "全", "竜": "竜", "妖": "妖"
-        };
-
-        const REPLACE_ANIMATION_HIDE_MS = 550;
-        const REPLACE_ANIMATION_SHOW_MS = 700;
-
-        const activeAnimations = new Map();
-        const g_attackAnimationTargets = new Set();
-        const evolvingSlots = new Set();
-        const koSlots = new Set();
-        const removingSlots = new Set();
-
-        function hexToRgba(hex, alpha = 1.0) {
-            if (!/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
-                return '';
-            }
-            let c = hex.substring(1).split('');
-            if (c.length === 3) {
-                c = [c[0], c[0], c[1], c[1], c[2], c[2]];
-            }
-            c = '0x' + c.join('');
-            const r = (c >> 16) & 255;
-            const g = (c >> 8) & 255;
-            const b = c & 255;
-            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-        }
-
-        function animateHp(element, startHp, endHp, startMaxHp, endMaxHp, duration) {
-            return new Promise(resolve => {
-                if (!element) return resolve();
-                if (startHp === endHp && startMaxHp === endMaxHp) {
-                    element.textContent = `${endHp}/${endMaxHp}`;
-                    return resolve();
+        document.addEventListener('DOMContentLoaded', () => {
+            const getCardImageUrl = (cardId, isBgImage = false) => {
+                if (!cardId || !assetPaths.value.cardImgPath) {
+                    return isBgImage ? 'none' : '';
                 }
-                let startTimestamp = null;
-                const step = (timestamp) => {
-                    if (!startTimestamp) startTimestamp = timestamp;
-                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                    const rawCurrentHp = progress * (endHp - startHp) + startHp;
-                    const rawCurrentMaxHp = progress * (endMaxHp - startMaxHp) + startMaxHp;
-                    let displayHp, displayMaxHp;
-                    if (progress < 1) {
-                        displayHp = Math.round(rawCurrentHp / 10) * 10;
-                        displayMaxHp = Math.round(rawCurrentMaxHp / 10) * 10;
-                    } else {
-                        displayHp = endHp;
-                        displayMaxHp = endMaxHp;
+                const db = cardDatabase.value;
+                const cardData = db ? db[cardId] : null;
+                const imageUrl = cardData ? cardData.image_url : null;
+                const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg';
+                const path = `/${assetPaths.value.cardImgPath}${cardId}${extension}`;
+                return isBgImage ? `url(${path})` : path;
+            };
+
+            const ENERGY_MAP = {
+                "草": "草", "炎": "炎", "水": "水", "雷": "雷", "超": "超", "闘": "闘", "悪": "悪", "鋼": "鋼",
+                "無": "無", "全": "全", "竜": "竜", "妖": "妖"
+            };
+
+            const REPLACE_ANIMATION_HIDE_MS = 550;
+            const REPLACE_ANIMATION_SHOW_MS = 700;
+
+            const activeAnimations = new Map();
+            const g_attackAnimationTargets = new Set();
+            const evolvingSlots = new Set();
+            const koSlots = new Set();
+            const removingSlots = new Set();
+
+            function hexToRgba(hex, alpha = 1.0) {
+                if (!/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+                    return '';
+                }
+                let c = hex.substring(1).split('');
+                if (c.length === 3) {
+                    c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+                }
+                c = '0x' + c.join('');
+                const r = (c >> 16) & 255;
+                const g = (c >> 8) & 255;
+                const b = c & 255;
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            }
+
+            function animateHp(element, startHp, endHp, startMaxHp, endMaxHp, duration) {
+                return new Promise(resolve => {
+                    if (!element) return resolve();
+                    if (startHp === endHp && startMaxHp === endMaxHp) {
+                        element.textContent = `${endHp}/${endMaxHp}`;
+                        return resolve();
                     }
-                    element.textContent = `${displayHp}/${displayMaxHp}`;
-                    if (progress < 1) {
-                        window.requestAnimationFrame(step);
+                    let startTimestamp = null;
+                    const step = (timestamp) => {
+                        if (!startTimestamp) startTimestamp = timestamp;
+                        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                        const rawCurrentHp = progress * (endHp - startHp) + startHp;
+                        const rawCurrentMaxHp = progress * (endMaxHp - startMaxHp) + startMaxHp;
+                        let displayHp, displayMaxHp;
+                        if (progress < 1) {
+                            displayHp = Math.round(rawCurrentHp / 10) * 10;
+                            displayMaxHp = Math.round(rawCurrentMaxHp / 10) * 10;
+                        } else {
+                            displayHp = endHp;
+                            displayMaxHp = endMaxHp;
+                        }
+                        element.textContent = `${displayHp}/${displayMaxHp}`;
+                        if (progress < 1) {
+                            window.requestAnimationFrame(step);
+                        } else {
+                            resolve();
+                        }
+                    };
+                    window.requestAnimationFrame(step);
+                });
+            }
+
+            function displayHpChangeNumber(targetSlotEl, hpChange) {
+                return new Promise(resolve => {
+                    if (hpChange === 0) return resolve();
+                    const isHeal = hpChange > 0;
+                    const number = Math.abs(hpChange);
+                    const text = isHeal ? `+${number}` : `${-number}`;
+                    const isBattleSlot = targetSlotEl.classList.contains('active-slot');
+                    const numberTypeClass = isHeal ? 'heal-number' : 'damage-number';
+                    const numberSizeClass = isBattleSlot
+                        ? (isHeal ? 'heal-number-battle' : 'damage-number-battle')
+                        : (isHeal ? 'heal-number-bench' : 'damage-number-bench');
+                    const cardImageSelector = isBattleSlot ? '.battle-card-image-area' : '.bench-card-image-area';
+                    const cardImageEl = targetSlotEl.querySelector(cardImageSelector);
+                    if (!cardImageEl) return resolve();
+
+                    requestAnimationFrame(() => {
+                        const imageRect = cardImageEl.getBoundingClientRect();
+                        if (imageRect.width === 0) return resolve();
+                        const numberEl = document.createElement('div');
+                        numberEl.className = `${numberTypeClass} ${numberSizeClass}`;
+                        numberEl.textContent = text;
+                        numberEl.style.left = `${imageRect.left + imageRect.width / 2}px`;
+                        numberEl.style.top = `${imageRect.top + imageRect.height / 2}px`;
+                        document.body.appendChild(numberEl);
+
+                        if (isBattleSlot && activeAnimations.has(targetSlotEl.id)) {
+                            const animationData = activeAnimations.get(targetSlotEl.id);
+                            if (animationData.isWeakness) {
+                                const style = getComputedStyle(document.documentElement);
+                                const weaknessFile = style.getPropertyValue('--asset-weakness').trim().replace(/['\"]/g, '');
+                                const weaknessIconSrc = resolveAssetPath(weaknessFile);
+
+                                const weaknessIcon = new Image();
+                                weaknessIcon.src = weaknessIconSrc;
+                                weaknessIcon.className = 'weakness-icon-fx';
+
+                                const appendAndAnimate = () => {
+                                    weaknessIcon.style.left = `${imageRect.left + imageRect.width / 2}px`;
+                                    weaknessIcon.style.top = `${imageRect.top + imageRect.height / 2}px`;
+                                    document.body.appendChild(weaknessIcon);
+                                    setTimeout(() => weaknessIcon.remove(), 1500);
+                                };
+
+                                if (weaknessIcon.complete) {
+                                    appendAndAnimate();
+                                } else {
+                                    weaknessIcon.onload = appendAndAnimate;
+                                }
+                            }
+                            activeAnimations.delete(targetSlotEl.id);
+                        }
+
+                        setTimeout(() => {
+                            numberEl.remove();
+                            resolve();
+                        }, 1500);
+                    });
+                });
+            }
+
+            function getHitVideoSrc(attackerType) {
+                const basePath = '/assets/ptcg-telop/fx/';
+                const typeMap = {
+                    "草": "grass", "炎": "fire", "水": "water", "雷": "lightning", "超": "psychic",
+                    "闘": "fighting", "悪": "darkness", "鋼": "metal", "竜": "dragon", "妖": "fairy", "無": "colorless"
+                };
+                const typeString = typeMap[attackerType] || 'colorless';
+                return `${basePath}hit-${typeString}.webm`;
+            }
+
+            function renderStadium(newData, oldData) {
+                const db = cardDatabase.value;
+                const stadiumCardEl = document.getElementById('stadium-card');
+                const stadiumNameEl = document.getElementById('stadium-name');
+
+                const newCardId = newData ? newData.cardId : null;
+                const oldCardId = oldData ? oldData.cardId : null;
+                const newUsed = newData ? newData.used : false;
+                const oldUsed = oldData ? oldData.used : false;
+
+                if (newCardId === oldCardId && newUsed === oldUsed) return;
+
+                const newCard = newCardId ? db[newCardId] : null;
+
+                const updateContent = (card, isUsed) => {
+                    if (card) {
+                        stadiumNameEl.textContent = isUsed ? getI18nText('used') : card.name;
+                        stadiumCardEl.style.backgroundImage = getCardImageUrl(newCardId, true);
+                        stadiumCardEl.style.filter = isUsed ? 'grayscale(1)' : 'none';
                     } else {
-                        resolve();
+                        stadiumNameEl.textContent = '';
+                        stadiumCardEl.style.backgroundImage = 'none';
+                        stadiumCardEl.style.filter = 'none';
                     }
                 };
-                window.requestAnimationFrame(step);
-            });
-        }
 
-        function displayHpChangeNumber(targetSlotEl, hpChange) {
-            return new Promise(resolve => {
-                if (hpChange === 0) return resolve();
-                const isHeal = hpChange > 0;
-                const number = Math.abs(hpChange);
-                const text = isHeal ? `+${number}` : `${-number}`;
-                const isBattleSlot = targetSlotEl.classList.contains('active-slot');
-                const numberTypeClass = isHeal ? 'heal-number' : 'damage-number';
-                const numberSizeClass = isBattleSlot 
-                    ? (isHeal ? 'heal-number-battle' : 'damage-number-battle')
-                    : (isHeal ? 'heal-number-bench' : 'damage-number-bench');
-                const cardImageSelector = isBattleSlot ? '.battle-card-image-area' : '.bench-card-image-area';
-                const cardImageEl = targetSlotEl.querySelector(cardImageSelector);
-                if (!cardImageEl) return resolve();
-
-                requestAnimationFrame(() => {
-                    const imageRect = cardImageEl.getBoundingClientRect();
-                    if (imageRect.width === 0) return resolve();
-                    const numberEl = document.createElement('div');
-                    numberEl.className = `${numberTypeClass} ${numberSizeClass}`;
-                    numberEl.textContent = text;
-                    numberEl.style.left = `${imageRect.left + imageRect.width / 2}px`;
-                    numberEl.style.top = `${imageRect.top + imageRect.height / 2}px`;
-                    document.body.appendChild(numberEl);
-
-                    if (isBattleSlot && activeAnimations.has(targetSlotEl.id)) {
-                        const animationData = activeAnimations.get(targetSlotEl.id);
-                        if (animationData.isWeakness) {
-                            const style = getComputedStyle(document.documentElement);
-                            const weaknessFile = style.getPropertyValue('--asset-weakness').trim().replace(/['\"]/g, '');
-                            const weaknessIconSrc = resolveAssetPath(weaknessFile);
-
-                            const weaknessIcon = new Image();
-                            weaknessIcon.src = weaknessIconSrc;
-                            weaknessIcon.className = 'weakness-icon-fx';
-
-                            const appendAndAnimate = () => {
-                                weaknessIcon.style.left = `${imageRect.left + imageRect.width / 2}px`;
-                                weaknessIcon.style.top = `${imageRect.top + imageRect.height / 2}px`;
-                                document.body.appendChild(weaknessIcon);
-                                setTimeout(() => weaknessIcon.remove(), 1500);
-                            };
-
-                            if (weaknessIcon.complete) {
-                                appendAndAnimate();
-                            } else {
-                                weaknessIcon.onload = appendAndAnimate;
-                            }
-                        }
-                        activeAnimations.delete(targetSlotEl.id);
-                    }
-
-                    setTimeout(() => {
-                        numberEl.remove();
-                        resolve();
-                    }, 1500);
-                });
-            });
-        }
-
-        function getHitVideoSrc(attackerType) {
-            const basePath = '/assets/ptcg-telop/fx/';
-            const typeMap = {
-                "草": "grass", "炎": "fire", "水": "water", "雷": "lightning", "超": "psychic",
-                "闘": "fighting", "悪": "darkness", "鋼": "metal", "竜": "dragon", "妖": "fairy", "無": "colorless"
-            };
-            const typeString = typeMap[attackerType] || 'colorless';
-            return `${basePath}hit-${typeString}.webm`;
-        }
-
-        function renderStadium(newData, oldData) {
-            const db = cardDatabase.value;
-            const stadiumCardEl = document.getElementById('stadium-card');
-            const stadiumNameEl = document.getElementById('stadium-name');
-            
-            const newCardId = newData ? newData.cardId : null;
-            const oldCardId = oldData ? oldData.cardId : null;
-            const newUsed = newData ? newData.used : false;
-            const oldUsed = oldData ? oldData.used : false;
-
-            if (newCardId === oldCardId && newUsed === oldUsed) return;
-
-            const newCard = newCardId ? db[newCardId] : null;
-
-            const updateContent = (card, isUsed) => {
-                if (card) {
-                    stadiumNameEl.textContent = isUsed ? getI18nText('used') : card.name;
-                    stadiumCardEl.style.backgroundImage = getCardImageUrl(newCardId, true);
-                    stadiumCardEl.style.filter = isUsed ? 'grayscale(1)' : 'none';
-                } else {
-                    stadiumNameEl.textContent = '';
-                    stadiumCardEl.style.backgroundImage = 'none';
-                    stadiumCardEl.style.filter = 'none';
-                }
-            };
-
-            if (newCardId !== oldCardId) {
-                if (oldCardId && newCardId) {
-                    stadiumCardEl.classList.add('anim-slide-out-top');
-                    setTimeout(() => {
+                if (newCardId !== oldCardId) {
+                    if (oldCardId && newCardId) {
+                        stadiumCardEl.classList.add('anim-slide-out-top');
+                        setTimeout(() => {
+                            updateContent(newCard, newUsed);
+                            stadiumCardEl.classList.remove('anim-slide-out-top');
+                            stadiumCardEl.classList.add('anim-slide-in-top');
+                            setTimeout(() => stadiumCardEl.classList.remove('anim-slide-in-top'), 500);
+                        }, 500);
+                    } else if (!oldCardId && newCardId) {
                         updateContent(newCard, newUsed);
-                        stadiumCardEl.classList.remove('anim-slide-out-top');
+                        stadiumCardEl.classList.remove('hidden');
                         stadiumCardEl.classList.add('anim-slide-in-top');
                         setTimeout(() => stadiumCardEl.classList.remove('anim-slide-in-top'), 500);
-                    }, 500);
-                } else if (!oldCardId && newCardId) {
-                    updateContent(newCard, newUsed);
-                    stadiumCardEl.classList.remove('hidden');
-                    stadiumCardEl.classList.add('anim-slide-in-top');
-                    setTimeout(() => stadiumCardEl.classList.remove('anim-slide-in-top'), 500);
-                } else if (oldCardId && !newCardId) {
-                    stadiumCardEl.classList.add('anim-slide-out-top');
-                    setTimeout(() => {
-                        stadiumCardEl.classList.add('hidden');
-                        stadiumCardEl.classList.remove('anim-slide-out-top');
-                        updateContent(null, false);
-                    }, 500);
-                }
-            } else {
-                updateContent(newCard, newUsed);
-            }
-        }
-
-        function updatePlayerInfo(side, name) {
-            const el = document.getElementById(`player-${side}-name`);
-            if (el) el.textContent = name || `Player ${side}`;
-        }
-
-        function updateVstarIcon(side, isUsed) {
-            const el = document.getElementById(`vstar-${side}-icon`);
-            if (el) {
-                el.classList.toggle('used', isUsed);
-                el.classList.toggle('available', !isUsed);
-            }
-        }
-
-        function updateSideArea(side, remaining) {
-            const area = document.getElementById(`side-${side}-area`);
-            if (!area) return;
-
-            const style = getComputedStyle(document.documentElement);
-            const takenFile = style.getPropertyValue('--asset-side-taken').trim().replace(/['\"]/g, '');
-            const remainFile = style.getPropertyValue('--asset-side-remain').trim().replace(/['\"]/g, '');
-
-            const takenIcon = resolveAssetPath(takenFile);
-            const remainingIcon = resolveAssetPath(remainFile);
-
-            const icons = area.querySelectorAll('.side-icon');
-            const taken = 6 - remaining;
-            icons.forEach((icon, index) => {
-                icon.src = index < taken ? takenIcon : remainingIcon;
-            });
-        }
-
-        function updateActionIcon(side, action, isUsed) {
-            const el = document.getElementById(`action-${side}-${action}`);
-            if (el) {
-                el.classList.toggle('used', isUsed);
-            }
-        }
-
-        function updateFirstMoveIcon(firstMoveValue) {
-            const iconL = document.getElementById('first-move-L');
-            const iconR = document.getElementById('first-move-R');
-
-            const style = getComputedStyle(document.documentElement);
-            const firstMoveFile = style.getPropertyValue('--asset-first-move').trim().replace(/['\"]/g, '');
-            const secondMoveFile = style.getPropertyValue('--asset-second-move').trim().replace(/['\"]/g, '');
-
-            const firstMoveIconSrc = resolveAssetPath(firstMoveFile, true);
-            const secondMoveIconSrc = resolveAssetPath(secondMoveFile, true);
-
-            if (firstMoveValue === 'L') {
-                iconL.src = firstMoveIconSrc;
-                iconR.src = secondMoveIconSrc;
-                iconL.classList.remove('hidden');
-                iconR.classList.remove('hidden');
-            } else if (firstMoveValue === 'R') {
-                iconL.src = secondMoveIconSrc;
-                iconR.src = firstMoveIconSrc;
-                iconL.classList.remove('hidden');
-                iconR.classList.remove('hidden');
-            } else {
-                iconL.classList.add('hidden');
-                iconR.classList.add('hidden');
-            }
-        }
-
-        function updateLostZoneCounter(side, count) {
-            const el = document.getElementById(`lost-zone-${side}-area`);
-            if (!el) return;
-
-            const style = getComputedStyle(document.documentElement);
-            const lostZoneFile = style.getPropertyValue('--asset-lost-zone').trim().replace(/['\"]/g, '');
-            const lostZoneIconSrc = resolveAssetPath(lostZoneFile, true);
-            el.querySelector('img').src = lostZoneIconSrc;
-
-            if (count > 0) {
-                el.querySelector('.count').textContent = count;
-                el.classList.add('visible');
-            } else {
-                el.classList.remove('visible');
-            }
-        }
-
-        function renderAttachedEnergies(container, energies, getIconHtml) {
-            if (!container || !energies) return;
-
-            const getSpecialIconHtml = (cardId) => {
-                const cardData = cardDatabase.value[cardId];
-                const title = cardData ? cardData.name : 'Special Energy';
-                const bgImage = getCardImageUrl(cardId, true);
-                return `<div class="attached-special-energy-icon" style="background-image: ${bgImage}" title="${title}"></div>`;
-            };
-
-            const energyCounts = energies.reduce((acc, energy) => {
-                acc[energy] = (acc[energy] || 0) + 1;
-                return acc;
-            }, {});
-
-            const totalEnergyCount = energies.length;
-            const maxSingleEnergyCount = Object.values(energyCounts).reduce((max, count) => Math.max(max, count), 0);
-            const useTypeB = (maxSingleEnergyCount > 1 && totalEnergyCount >= 7) || maxSingleEnergyCount >= 5;
-            
-            let html = '';
-            if (useTypeB) {
-                for (const energy in energyCounts) {
-                    const count = energyCounts[energy];
-                    let iconHtml;
-                    if (energy.startsWith('special:')) {
-                        const cardId = energy.substring(8);
-                        iconHtml = getSpecialIconHtml(cardId);
-                    } else {
-                        iconHtml = getIconHtml(energy);
+                    } else if (oldCardId && !newCardId) {
+                        stadiumCardEl.classList.add('anim-slide-out-top');
+                        setTimeout(() => {
+                            stadiumCardEl.classList.add('hidden');
+                            stadiumCardEl.classList.remove('anim-slide-out-top');
+                            updateContent(null, false);
+                        }, 500);
                     }
-                    html += `
+                } else {
+                    updateContent(newCard, newUsed);
+                }
+            }
+
+            function updatePlayerInfo(side, name) {
+                const el = document.getElementById(`player-${side}-name`);
+                if (el) el.textContent = name || `Player ${side}`;
+            }
+
+            function updateVstarIcon(side, isUsed) {
+                const el = document.getElementById(`vstar-${side}-icon`);
+                if (el) {
+                    el.classList.toggle('used', isUsed);
+                    el.classList.toggle('available', !isUsed);
+                }
+            }
+
+            function updateSideArea(side, remaining) {
+                const area = document.getElementById(`side-${side}-area`);
+                if (!area) return;
+
+                const style = getComputedStyle(document.documentElement);
+                const takenFile = style.getPropertyValue('--asset-side-taken').trim().replace(/['\"]/g, '');
+                const remainFile = style.getPropertyValue('--asset-side-remain').trim().replace(/['\"]/g, '');
+
+                const takenIcon = resolveAssetPath(takenFile);
+                const remainingIcon = resolveAssetPath(remainFile);
+
+                const icons = area.querySelectorAll('.side-icon');
+                const taken = 6 - remaining;
+                icons.forEach((icon, index) => {
+                    icon.src = index < taken ? takenIcon : remainingIcon;
+                });
+            }
+
+            function updateActionIcon(side, action, isUsed) {
+                const el = document.getElementById(`action-${side}-${action}`);
+                if (el) {
+                    el.classList.toggle('used', isUsed);
+                }
+            }
+
+            function updateFirstMoveIcon(firstMoveValue) {
+                const iconL = document.getElementById('first-move-L');
+                const iconR = document.getElementById('first-move-R');
+
+                const style = getComputedStyle(document.documentElement);
+                const firstMoveFile = style.getPropertyValue('--asset-first-move').trim().replace(/['\"]/g, '');
+                const secondMoveFile = style.getPropertyValue('--asset-second-move').trim().replace(/['\"]/g, '');
+
+                const firstMoveIconSrc = resolveAssetPath(firstMoveFile, true);
+                const secondMoveIconSrc = resolveAssetPath(secondMoveFile, true);
+
+                if (firstMoveValue === 'L') {
+                    iconL.src = firstMoveIconSrc;
+                    iconR.src = secondMoveIconSrc;
+                    iconL.classList.remove('hidden');
+                    iconR.classList.remove('hidden');
+                } else if (firstMoveValue === 'R') {
+                    iconL.src = secondMoveIconSrc;
+                    iconR.src = firstMoveIconSrc;
+                    iconL.classList.remove('hidden');
+                    iconR.classList.remove('hidden');
+                } else {
+                    iconL.classList.add('hidden');
+                    iconR.classList.add('hidden');
+                }
+            }
+
+            function updateLostZoneCounter(side, count) {
+                const el = document.getElementById(`lost-zone-${side}-area`);
+                if (!el) return;
+
+                const style = getComputedStyle(document.documentElement);
+                const lostZoneFile = style.getPropertyValue('--asset-lost-zone').trim().replace(/['\"]/g, '');
+                const lostZoneIconSrc = resolveAssetPath(lostZoneFile, true);
+                el.querySelector('img').src = lostZoneIconSrc;
+
+                if (count > 0) {
+                    el.querySelector('.count').textContent = count;
+                    el.classList.add('visible');
+                } else {
+                    el.classList.remove('visible');
+                }
+            }
+
+            function renderAttachedEnergies(container, energies, getIconHtml) {
+                if (!container || !energies) return;
+
+                const getSpecialIconHtml = (cardId) => {
+                    const cardData = cardDatabase.value[cardId];
+                    const title = cardData ? cardData.name : 'Special Energy';
+                    const bgImage = getCardImageUrl(cardId, true);
+                    return `<div class="attached-special-energy-icon" style="background-image: ${bgImage}" title="${title}"></div>`;
+                };
+
+                const energyCounts = energies.reduce((acc, energy) => {
+                    acc[energy] = (acc[energy] || 0) + 1;
+                    return acc;
+                }, {});
+
+                const totalEnergyCount = energies.length;
+                const maxSingleEnergyCount = Object.values(energyCounts).reduce((max, count) => Math.max(max, count), 0);
+                const useTypeB = (maxSingleEnergyCount > 1 && totalEnergyCount >= 7) || maxSingleEnergyCount >= 5;
+
+                let html = '';
+                if (useTypeB) {
+                    for (const energy in energyCounts) {
+                        const count = energyCounts[energy];
+                        let iconHtml;
+                        if (energy.startsWith('special:')) {
+                            const cardId = energy.substring(8);
+                            iconHtml = getSpecialIconHtml(cardId);
+                        } else {
+                            iconHtml = getIconHtml(energy);
+                        }
+                        html += `
                         <div class="energy-count-group">
                             ${iconHtml}
                             <span class="energy-count-number">${count}</span>
                         </div>
                     `;
-                }
-            } else {
-                html = energies.map(energy => {
-                    if (energy.startsWith('special:')) {
-                        const cardId = energy.substring(8);
-                        return getSpecialIconHtml(cardId);
-                    } else {
-                        return getIconHtml(energy);
                     }
-                }).join('');
-            }
-            container.innerHTML = html;
-        }
-
-        function updateCurrentTurnBorder(currentTurn) {
-            const lBorder = document.getElementById('current-L-border');
-            const rBorder = document.getElementById('current-R-border');
-            if (currentTurn === 'L') {
-                lBorder.classList.add('active');
-                rBorder.classList.remove('active');
-            } else if (currentTurn === 'R') {
-                rBorder.classList.add('active');
-                lBorder.classList.remove('active');
-            } else {
-                lBorder.classList.remove('active');
-                rBorder.classList.remove('active');
-            }
-        }
-
-        function playToolAnimation(targetEl, isBattleSlot, isAttach) {
-            if (!targetEl) return;
- 
-            const videoSrc = isAttach ? '/assets/ptcg-telop/fx/tool-attach.webm' : '/assets/ptcg-telop/fx/tool-remove.webm';
-            
-            const targetRect = targetEl.getBoundingClientRect();
-            if (targetRect.width === 0 && targetRect.height === 0) return;
-
-            const video = document.createElement('video');
-            video.src = videoSrc;
-            video.muted = true;
-            video.autoplay = true;
-            video.style.position = 'absolute';
-            video.style.zIndex = '400';
-            video.style.pointerEvents = 'none';
-
-            const videoWidth = isBattleSlot ? 150 : 70;
-            const videoHeight = isBattleSlot ? 120 : 56;
-            video.style.width = `${videoWidth}px`;
-            video.style.height = `${videoHeight}px`;
-
-            const targetCenterX = targetRect.left + targetRect.width / 2;
-            const targetCenterY = targetRect.top + targetRect.height / 2;
-            video.style.left = `${targetCenterX - videoWidth / 2}px`;
-            video.style.top = `${targetCenterY - videoHeight / 2}px`;
-
-            document.body.appendChild(video);
-            video.addEventListener('ended', () => video.remove());
-        }
-
-        function updateAttachedTools(slotEl, newToolIds, oldToolIds, isBattleSlot, forceRedraw = false) {
-            return new Promise(resolve => {
-                const db = cardDatabase.value;
-                const wrapperSelector = isBattleSlot ? '.battle-attached-tools-wrapper' : '.bench-attached-tools-wrapper';
-                const itemClass = isBattleSlot ? 'battle-attached-tool-item' : 'bench-attached-tool-item';
-                const wrapperEl = slotEl.querySelector(wrapperSelector);
-                if (!wrapperEl) return resolve();
-
-                if (forceRedraw) {
-                    let html = '';
-                    newToolIds.forEach(id => {
-                        if (db[id]) {
-                            html += `<div class="${itemClass}" data-tool-id="${id}"><img src="${getCardImageUrl(id)}"></div>`;
+                } else {
+                    html = energies.map(energy => {
+                        if (energy.startsWith('special:')) {
+                            const cardId = energy.substring(8);
+                            return getSpecialIconHtml(cardId);
+                        } else {
+                            return getIconHtml(energy);
                         }
-                    });
-                    wrapperEl.innerHTML = html;
-                    resolve();
-                    return;
+                    }).join('');
                 }
+                container.innerHTML = html;
+            }
 
-                const animationPromises = [];
-
-                const toolsToRemove = [];
-                const toolsToAdd = [];
-                const oldWithKept = oldToolIds.map(id => ({ id, kept: false }));
-                const tempNewIdsForConsumption = [...newToolIds];
-
-                oldWithKept.forEach(item => {
-                    const idxInNew = tempNewIdsForConsumption.indexOf(item.id);
-                    if (idxInNew > -1) {
-                        item.kept = true;
-                        tempNewIdsForConsumption.splice(idxInNew, 1);
-                    }
-                });
-
-                toolsToAdd.push(...tempNewIdsForConsumption);
-
-                for (let i = oldWithKept.length - 1; i >= 0; i--) {
-                    if (!oldWithKept[i].kept) {
-                        toolsToRemove.push({ id: oldWithKept[i].id, index: i });
-                    }
+            function updateCurrentTurnBorder(currentTurn) {
+                const lBorder = document.getElementById('current-L-border');
+                const rBorder = document.getElementById('current-R-border');
+                if (currentTurn === 'L') {
+                    lBorder.classList.add('active');
+                    rBorder.classList.remove('active');
+                } else if (currentTurn === 'R') {
+                    rBorder.classList.add('active');
+                    lBorder.classList.remove('active');
+                } else {
+                    lBorder.classList.remove('active');
+                    rBorder.classList.remove('active');
                 }
+            }
 
-                const hasRemovals = toolsToRemove.length > 0;
-                const hasAdditions = toolsToAdd.length > 0;
+            function playToolAnimation(targetEl, isBattleSlot, isAttach) {
+                if (!targetEl) return;
 
-                let reorderNeeded = false;
-                if (hasRemovals) {
-                    let isPrefix = newToolIds.length <= oldToolIds.length;
-                    if (isPrefix) {
-                        for (let i = 0; i < newToolIds.length; i++) {
-                            if (newToolIds[i] !== oldToolIds[i]) {
-                                isPrefix = false;
-                                break;
-                            }
-                        }
-                    }
-                    if (!isPrefix) reorderNeeded = true;
-                }
+                const videoSrc = isAttach ? '/assets/ptcg-telop/fx/tool-attach.webm' : '/assets/ptcg-telop/fx/tool-remove.webm';
 
-                if (hasRemovals) {
-                    if (reorderNeeded) {
-                        const allElements = [...wrapperEl.querySelectorAll(`.${itemClass}`)];
-                        toolsToRemove.forEach(item => {
-                            const el = allElements[item.index];
-                            if (el && !el.classList.contains('anim-tool-disappear')) {
-                                const p = new Promise(res => el.addEventListener('animationend', res, { once: true }));
-                                animationPromises.push(p);
-                                el.classList.add('anim-tool-disappear');
-                                playToolAnimation(el, isBattleSlot, false);
+                const targetRect = targetEl.getBoundingClientRect();
+                if (targetRect.width === 0 && targetRect.height === 0) return;
+
+                const video = document.createElement('video');
+                video.src = videoSrc;
+                video.muted = true;
+                video.autoplay = true;
+                video.style.position = 'absolute';
+                video.style.zIndex = '400';
+                video.style.pointerEvents = 'none';
+
+                const videoWidth = isBattleSlot ? 150 : 70;
+                const videoHeight = isBattleSlot ? 120 : 56;
+                video.style.width = `${videoWidth}px`;
+                video.style.height = `${videoHeight}px`;
+
+                const targetCenterX = targetRect.left + targetRect.width / 2;
+                const targetCenterY = targetRect.top + targetRect.height / 2;
+                video.style.left = `${targetCenterX - videoWidth / 2}px`;
+                video.style.top = `${targetCenterY - videoHeight / 2}px`;
+
+                document.body.appendChild(video);
+                video.addEventListener('ended', () => video.remove());
+            }
+
+            function updateAttachedTools(slotEl, newToolIds, oldToolIds, isBattleSlot, forceRedraw = false) {
+                return new Promise(resolve => {
+                    const db = cardDatabase.value;
+                    const wrapperSelector = isBattleSlot ? '.battle-attached-tools-wrapper' : '.bench-attached-tools-wrapper';
+                    const itemClass = isBattleSlot ? 'battle-attached-tool-item' : 'bench-attached-tool-item';
+                    const wrapperEl = slotEl.querySelector(wrapperSelector);
+                    if (!wrapperEl) return resolve();
+
+                    if (forceRedraw) {
+                        let html = '';
+                        newToolIds.forEach(id => {
+                            if (db[id]) {
+                                html += `<div class="${itemClass}" data-tool-id="${id}"><img src="${getCardImageUrl(id)}"></div>`;
                             }
                         });
+                        wrapperEl.innerHTML = html;
+                        resolve();
+                        return;
+                    }
 
-                        setTimeout(() => {
-                            wrapperEl.innerHTML = '';
-                            newToolIds.forEach(toolId => {
-                                if (db[toolId]) {
-                                    const toolItem = document.createElement('div');
-                                    toolItem.className = itemClass;
-                                    toolItem.dataset.toolId = toolId;
-                                    const toolImg = document.createElement('img');
-                                    toolImg.src = getCardImageUrl(toolId);
-                                    toolItem.appendChild(toolImg);
-                                    wrapperEl.appendChild(toolItem);
+                    const animationPromises = [];
+
+                    const toolsToRemove = [];
+                    const toolsToAdd = [];
+                    const oldWithKept = oldToolIds.map(id => ({ id, kept: false }));
+                    const tempNewIdsForConsumption = [...newToolIds];
+
+                    oldWithKept.forEach(item => {
+                        const idxInNew = tempNewIdsForConsumption.indexOf(item.id);
+                        if (idxInNew > -1) {
+                            item.kept = true;
+                            tempNewIdsForConsumption.splice(idxInNew, 1);
+                        }
+                    });
+
+                    toolsToAdd.push(...tempNewIdsForConsumption);
+
+                    for (let i = oldWithKept.length - 1; i >= 0; i--) {
+                        if (!oldWithKept[i].kept) {
+                            toolsToRemove.push({ id: oldWithKept[i].id, index: i });
+                        }
+                    }
+
+                    const hasRemovals = toolsToRemove.length > 0;
+                    const hasAdditions = toolsToAdd.length > 0;
+
+                    let reorderNeeded = false;
+                    if (hasRemovals) {
+                        let isPrefix = newToolIds.length <= oldToolIds.length;
+                        if (isPrefix) {
+                            for (let i = 0; i < newToolIds.length; i++) {
+                                if (newToolIds[i] !== oldToolIds[i]) {
+                                    isPrefix = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!isPrefix) reorderNeeded = true;
+                    }
+
+                    if (hasRemovals) {
+                        if (reorderNeeded) {
+                            const allElements = [...wrapperEl.querySelectorAll(`.${itemClass}`)];
+                            toolsToRemove.forEach(item => {
+                                const el = allElements[item.index];
+                                if (el && !el.classList.contains('anim-tool-disappear')) {
+                                    const p = new Promise(res => el.addEventListener('animationend', res, { once: true }));
+                                    animationPromises.push(p);
+                                    el.classList.add('anim-tool-disappear');
+                                    playToolAnimation(el, isBattleSlot, false);
                                 }
                             });
-                            const p = new Promise(res => wrapperEl.addEventListener('animationend', res, { once: true }));
-                            animationPromises.push(p);
-                            wrapperEl.classList.add('tools-fade-in');
-                            wrapperEl.addEventListener('animationend', () => wrapperEl.classList.remove('tools-fade-in'), { once: true });
-                            Promise.all(animationPromises).then(() => resolve());
-                        }, 300);
-                    } else {
-                        const allElements = [...wrapperEl.querySelectorAll(`.${itemClass}`)];
-                        toolsToRemove.forEach(item => {
-                            const el = allElements[item.index];
-                            if (el) {
-                                const p = new Promise(res => el.addEventListener('animationend', res, { once: true }));
+
+                            setTimeout(() => {
+                                wrapperEl.innerHTML = '';
+                                newToolIds.forEach(toolId => {
+                                    if (db[toolId]) {
+                                        const toolItem = document.createElement('div');
+                                        toolItem.className = itemClass;
+                                        toolItem.dataset.toolId = toolId;
+                                        const toolImg = document.createElement('img');
+                                        toolImg.src = getCardImageUrl(toolId);
+                                        toolItem.appendChild(toolImg);
+                                        wrapperEl.appendChild(toolItem);
+                                    }
+                                });
+                                const p = new Promise(res => wrapperEl.addEventListener('animationend', res, { once: true }));
                                 animationPromises.push(p);
-                                el.classList.add('anim-tool-disappear');
-                                playToolAnimation(el, isBattleSlot, false);
-                                el.addEventListener('animationend', () => el.remove(), { once: true });
+                                wrapperEl.classList.add('tools-fade-in');
+                                wrapperEl.addEventListener('animationend', () => wrapperEl.classList.remove('tools-fade-in'), { once: true });
+                                Promise.all(animationPromises).then(() => resolve());
+                            }, 300);
+                        } else {
+                            const allElements = [...wrapperEl.querySelectorAll(`.${itemClass}`)];
+                            toolsToRemove.forEach(item => {
+                                const el = allElements[item.index];
+                                if (el) {
+                                    const p = new Promise(res => el.addEventListener('animationend', res, { once: true }));
+                                    animationPromises.push(p);
+                                    el.classList.add('anim-tool-disappear');
+                                    playToolAnimation(el, isBattleSlot, false);
+                                    el.addEventListener('animationend', () => el.remove(), { once: true });
+                                }
+                            });
+                        }
+                    } else if (hasAdditions) {
+                        toolsToAdd.forEach(id => {
+                            if (db[id]) {
+                                const toolItem = document.createElement('div');
+                                const p = new Promise(res => toolItem.addEventListener('animationend', res, { once: true }));
+                                animationPromises.push(p);
+                                toolItem.className = `${itemClass} anim-tool-appear`;
+                                toolItem.dataset.toolId = id;
+                                const toolImg = document.createElement('img');
+                                toolImg.src = getCardImageUrl(id);
+                                toolItem.appendChild(toolImg);
+                                wrapperEl.appendChild(toolItem);
+                                toolItem.addEventListener('animationstart', () => playToolAnimation(toolItem, isBattleSlot, true), { once: true });
+                                toolItem.addEventListener('animationend', () => toolItem.classList.remove('anim-tool-appear'), { once: true });
                             }
                         });
                     }
-                } else if (hasAdditions) {
-                    toolsToAdd.forEach(id => {
-                        if (db[id]) {
-                            const toolItem = document.createElement('div');
-                            const p = new Promise(res => toolItem.addEventListener('animationend', res, { once: true }));
-                            animationPromises.push(p);
-                            toolItem.className = `${itemClass} anim-tool-appear`;
-                            toolItem.dataset.toolId = id;
-                            const toolImg = document.createElement('img');
-                            toolImg.src = getCardImageUrl(id);
-                            toolItem.appendChild(toolImg);
-                            wrapperEl.appendChild(toolItem);
-                            toolItem.addEventListener('animationstart', () => playToolAnimation(toolItem, isBattleSlot, true), { once: true });
-                            toolItem.addEventListener('animationend', () => toolItem.classList.remove('anim-tool-appear'), { once: true });
+
+                    if (animationPromises.length > 0) {
+                        if (!reorderNeeded) { // Reorder has its own resolver inside setTimeout
+                            Promise.all(animationPromises).then(() => resolve());
                         }
-                    });
-                }
-
-                if (animationPromises.length > 0) {
-                    if (!reorderNeeded) { // Reorder has its own resolver inside setTimeout
-                        Promise.all(animationPromises).then(() => resolve());
-                    }
-                } else {
-                    resolve();
-                }
-            });
-        }
-
-        function updateStatusAilments(containerEl, newAilments, oldAilments) {
-            return new Promise(resolve => {
-                if (!containerEl) return resolve();
-
-                const currentIcons = new Set(Array.from(containerEl.children).map(el => el.dataset.ailment));
-                const newIcons = new Set(newAilments);
-                const oldIcons = new Set(oldAilments);
-                const animationPromises = [];
-
-                // Icons to remove
-                oldIcons.forEach(ailment => {
-                    if (!newIcons.has(ailment)) {
-                        const iconEl = containerEl.querySelector(`[data-ailment="${ailment}"]`);
-                        if (iconEl) {
-                            const p = new Promise(res => iconEl.addEventListener('animationend', res, { once: true }));
-                            animationPromises.push(p);
-                            iconEl.classList.add('anim-status-disappear');
-                            iconEl.addEventListener('animationend', () => iconEl.remove(), { once: true });
-                        }
+                    } else {
+                        resolve();
                     }
                 });
+            }
 
-                // Icons to add
-                newIcons.forEach(ailment => {
-                    if (!currentIcons.has(ailment)) {
-                        const iconWrapper = document.createElement('div');
-                        iconWrapper.className = 'status-icon-wrapper anim-status-appear';
-                        iconWrapper.dataset.ailment = ailment;
-                        const iconImg = document.createElement('img');
-                        iconImg.src = `/assets/ptcg-telop/icons/${ailment}.png`;
-                        iconImg.className = 'status-icon';
-                        iconWrapper.appendChild(iconImg);
-                        containerEl.appendChild(iconWrapper);
-                        
-                        const p = new Promise(res => iconWrapper.addEventListener('animationend', res, { once: true }));
-                        animationPromises.push(p);
-                        iconWrapper.addEventListener('animationend', () => iconWrapper.classList.remove('anim-status-appear'), { once: true });
-                    }
-                });
+            function updateStatusAilments(containerEl, newAilments, oldAilments) {
+                return new Promise(resolve => {
+                    if (!containerEl) return resolve();
 
-                if (animationPromises.length > 0) {
-                    Promise.all(animationPromises).then(() => resolve());
-                } else {
-                    resolve();
-                }
-            });
-        }
+                    const currentIcons = new Set(Array.from(containerEl.children).map(el => el.dataset.ailment));
+                    const newIcons = new Set(newAilments);
+                    const oldIcons = new Set(oldAilments);
+                    const animationPromises = [];
 
-        function handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn) {
-            return new Promise(resolve => {
-                if ((isNewCard || forceSlideIn) && !skipSlideIn) {
-                    const needsToWaitForSlideOut = slotEl.classList.contains('anim-slide-out-L') || slotEl.classList.contains('anim-slide-out-R');
-                    const delay = needsToWaitForSlideOut ? 500 : 0;
-
-                    setTimeout(() => {
-                        const side = slotEl.id.includes('-L') ? 'L' : 'R';
-                        slotEl.classList.add(`anim-slide-in-${side}`);
-                        
-                        const animationEndHandler = () => {
-                            slotEl.classList.remove(`anim-slide-out-${side}`, `anim-slide-in-${side}`);
-                            slotEl.removeEventListener('animationend', animationEndHandler);
-                            resolve();
-                        };
-                        slotEl.addEventListener('animationend', animationEndHandler, { once: true });
-
-                    }, delay);
-                } else {
-                    resolve(); // No animation, resolve immediately
-                }
-            });
-        }
-
-        function renderSlot(side, index, slotData, oldSlotData) {
-            const slotEl = document.getElementById(`slot-${side}${index}`);
-
-            const doRender = () => {
-                const promises = [];
-                const db = cardDatabase.value;
-                const settings = settingsRep.value || {};
-
-                if (slotData && slotData.cardId) {
-                    slotEl.classList.remove('anim-slide-out-L', 'anim-slide-out-R');
-                }
-
-                const hasCard = slotData && slotData.cardId;
-                const forceSlideIn = slotData && slotData.forceSlideIn;
-                const skipSlideIn = slotData && slotData.evolutionSelect;
-                const isNewCard = hasCard && (!oldSlotData || slotData.cardId !== oldSlotData.cardId);
-                const isCardChanged = !oldSlotData || (slotData && oldSlotData.cardId !== slotData.cardId);
-
-                const sanitizeDamage = (damage) => {
-                    if (typeof damage !== 'string') return damage || '';
-                    return damage.replace(/＋/g, '+').replace(/－/g, '-').replace(/×/g, '×');
-                };
-
-                                        if (!slotEl || !slotData || !slotData.cardId || !db || !db[slotData.cardId]) {
-                                            // If a KO or REMOVE animation is in progress for this slot, abort rendering to let the animation finish.
-                                            if (koSlots.has(slotEl.id) || removingSlots.has(slotEl.id)) {
-                                                return Promise.resolve();
-                                            }
-                            
-                                            const isSlidingOut = slotEl.classList.contains('anim-slide-out-L') || slotEl.classList.contains('anim-slide-out-R');                    const clearSlot = () => {
-                        const activeWrapper = slotEl.querySelector('.active-pokemon-wrapper');
-                        const benchWrapper = slotEl.querySelector('.bench-pokemon-wrapper');
-            
-                        if (activeWrapper) { 
-                            activeWrapper.classList.add('hidden');
-                            const toolsWrapper = activeWrapper.querySelector('.battle-attached-tools-wrapper');
-                            if (toolsWrapper) toolsWrapper.innerHTML = '';
-                            const energyWrapper = activeWrapper.querySelector('.battle-attached-energies');
-                            if (energyWrapper) energyWrapper.innerHTML = '';
-                            const ailmentsWrapper = activeWrapper.querySelector('.battle-status-ailment');
-                            if (ailmentsWrapper) ailmentsWrapper.innerHTML = '';
-                        }
-                        if (benchWrapper) { 
-                            slotEl.innerHTML = '';
-                        }
-            
-                        slotEl.dataset.cardId = '';
-                        slotEl.classList.add('is-empty');
-                    };
-                    if (isSlidingOut) {
-                        setTimeout(clearSlot, 500);
-                    } else {
-                        clearSlot();
-                    }
-                    return Promise.resolve();
-                }
-                slotEl.classList.remove('is-empty');
-
-                const isUnderAttack = g_attackAnimationTargets.has(slotEl.id);
-
-                const imageArea = slotEl.querySelector('.battle-card-image-area, .bench-card-image-area');
-                const cardData = db[slotData.cardId];
-
-                slotEl.style.borderColor = 'var(--module-color-border)';
-                if (imageArea) imageArea.style.borderColor = 'var(--module-color-border)';
-
-                slotEl.style.backgroundColor = 'var(--color-bg-module)';
-
-                const oldToolIds = oldSlotData ? (oldSlotData.attachedToolIds || []) : [];
-                const newToolIds = slotData ? (slotData.attachedToolIds || []) : [];
-                const ailmentsBeforeChange = oldSlotData ? (oldSlotData.ailments || []) : [];
-                const newAilments = slotData ? (slotData.ailments || []) : [];
-
-                const isNoLongerActive = index !== 0 && oldSlotData && oldSlotData.active;
-                
-                if (isCardChanged || isNoLongerActive) {
-                    oldSlotData = null;
-                }
-
-                if (!cardData || !cardData.pokemon) return Promise.resolve();
-                const baseHp = parseInt(cardData.pokemon.hp || 0, 10);
-                const extraHp = parseInt(slotData.extraHp || 0, 10);
-                const damage = parseInt(slotData.damage || 0, 10);
-                const maxHp = baseHp + extraHp;
-                const currentHp = Math.max(0, maxHp - damage);
-
-                let hpChangeToShow = 0;
-                if (oldSlotData) {
-                    const oldDamage = parseInt(oldSlotData.damage || 0, 10);
-                    const oldExtraHp = parseInt(oldSlotData.extraHp || 0, 10);
-                    const oldMaxHp = baseHp + oldExtraHp;
-                    const oldHp = Math.max(0, oldMaxHp - oldDamage);
-                    const damageDiff = damage - oldDamage;
-                    if (damageDiff > 0) { hpChangeToShow = -damageDiff; }
-                    else if (damageDiff < 0) { hpChangeToShow = -damageDiff; }
-                    else if (extraHp !== oldExtraHp) { hpChangeToShow = currentHp - oldHp; }
-                }
-                
-                let startHp = currentHp, startMaxHp = maxHp;
-                if (oldSlotData) {
-                    const oldExtraHp = parseInt(oldSlotData.extraHp || 0, 10);
-                    const oldDamage = parseInt(oldSlotData.damage || 0, 10);
-                    startMaxHp = baseHp + oldExtraHp;
-                    startHp = Math.max(0, startMaxHp - oldDamage);
-                }
-                
-                const hpPercent = maxHp > 0 ? (currentHp / maxHp) * 100 : 0;
-                let hpColor = 'var(--hp-high)';
-                if (hpPercent <= 25) hpColor = 'var(--hp-low)';
-                else if (hpPercent <= 50) hpColor = 'var(--hp-medium)';
-                const getEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/icons/${ENERGY_MAP[type] || 'エネなし'}.png">`;
-
-                if (index === 0) {
-                    const wrapper = slotEl.querySelector('.active-pokemon-wrapper');
-                    wrapper.classList.remove('hidden');
-                    wrapper.querySelector('.battle-pokemon-name').textContent = cardData.name;
-                    const img = wrapper.querySelector('.battle-pokemon-image');
-                    
-                    if (isNewCard || forceSlideIn) {
-                        img.style.visibility = 'hidden';
-                        img.onload = () => {
-                            img.style.visibility = 'visible';
-                            promises.push(handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn));
-                            img.onload = null;
-                        };
-                    } else {
-                        promises.push(handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn));
-                    }
-                    img.src = getCardImageUrl(slotData.cardId);
-                    img.classList.toggle('is-v', cardData.pokemon && cardData.subtype === 'V');
-
-                    const hpUpdatePromise = new Promise(resolve => {
-                        const hpUpdate = () => {
-                            const hpPromises = [];
-                            const hpTextEl = wrapper.querySelector('.battle-hp-text');
-                            hpPromises.push(animateHp(hpTextEl, startHp, currentHp, startMaxHp, maxHp, 500));
-                            const hpBar = wrapper.querySelector('.battle-hp-bar');
-                            hpBar.style.width = `${hpPercent}%`;
-                            hpBar.style.backgroundColor = hpColor;
-                            if (hpChangeToShow !== 0) {
-                                hpPromises.push(displayHpChangeNumber(slotEl, hpChangeToShow));
+                    // Icons to remove
+                    oldIcons.forEach(ailment => {
+                        if (!newIcons.has(ailment)) {
+                            const iconEl = containerEl.querySelector(`[data-ailment="${ailment}"]`);
+                            if (iconEl) {
+                                const p = new Promise(res => iconEl.addEventListener('animationend', res, { once: true }));
+                                animationPromises.push(p);
+                                iconEl.classList.add('anim-status-disappear');
+                                iconEl.addEventListener('animationend', () => iconEl.remove(), { once: true });
                             }
-                            Promise.all(hpPromises).then(resolve);
-                        };
-
-                        if (isUnderAttack) {
-                            setTimeout(hpUpdate, 1100);
-                        } else {
-                            hpUpdate();
                         }
                     });
-                    promises.push(hpUpdatePromise);
 
-                    promises.push(updateAttachedTools(slotEl, newToolIds, oldToolIds, true, isCardChanged));
+                    // Icons to add
+                    newIcons.forEach(ailment => {
+                        if (!currentIcons.has(ailment)) {
+                            const iconWrapper = document.createElement('div');
+                            iconWrapper.className = 'status-icon-wrapper anim-status-appear';
+                            iconWrapper.dataset.ailment = ailment;
+                            const iconImg = document.createElement('img');
+                            iconImg.src = `/assets/ptcg-telop/icons/${ailment}.png`;
+                            iconImg.className = 'status-icon';
+                            iconWrapper.appendChild(iconImg);
+                            containerEl.appendChild(iconWrapper);
 
-                    const energyContainer = wrapper.querySelector('.battle-attached-energies');
-                    renderAttachedEnergies(energyContainer, slotData.attachedEnergy, getEnergyIcon);
-
-                    promises.push(updateStatusAilments(wrapper.querySelector('.battle-status-ailment'), newAilments, ailmentsBeforeChange));
-                    const skillsContainer = wrapper.querySelector('.battle-skills-container');
-                    skillsContainer.innerHTML = '';
-                    const allSkills = [...(cardData.pokemon.abilities || []), ...(cardData.pokemon.attacks || [])];
-                    allSkills.slice(0, 2).forEach(skill => {
-                        const isAbility = !!skill.text && !skill.cost;
-                        const abilityUsedClass = (isAbility && slotData.abilityUsed) ? 'used' : '';
-                        let tagHtml = '';
-                        if (isAbility) {
-                            const style = getComputedStyle(document.documentElement);
-                            const abilityFile = style.getPropertyValue('--asset-ability').trim().replace(/['\"]/g, '');
-                            const abilityIconSrc = resolveAssetPath(abilityFile, true);
-                            tagHtml = `<img src="${abilityIconSrc}" class="battle-skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
-                        } else {
-                            const cost = skill.cost || [];
-                            const iconsToRender = cost.length > 0 ? cost : [null];
-                            const iconsHtml = iconsToRender.map(getEnergyIcon).join('');
-                            tagHtml = `<div class="energy-cost-container">${iconsHtml}</div>`;
+                            const p = new Promise(res => iconWrapper.addEventListener('animationend', res, { once: true }));
+                            animationPromises.push(p);
+                            iconWrapper.addEventListener('animationend', () => iconWrapper.classList.remove('anim-status-appear'), { once: true });
                         }
-                        skillsContainer.innerHTML += `
+                    });
+
+                    if (animationPromises.length > 0) {
+                        Promise.all(animationPromises).then(() => resolve());
+                    } else {
+                        resolve();
+                    }
+                });
+            }
+
+            function handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn) {
+                return new Promise(resolve => {
+                    if ((isNewCard || forceSlideIn) && !skipSlideIn) {
+                        const needsToWaitForSlideOut = slotEl.classList.contains('anim-slide-out-L') || slotEl.classList.contains('anim-slide-out-R');
+                        const delay = needsToWaitForSlideOut ? 500 : 0;
+
+                        setTimeout(() => {
+                            const side = slotEl.id.includes('-L') ? 'L' : 'R';
+                            slotEl.classList.add(`anim-slide-in-${side}`);
+
+                            const animationEndHandler = () => {
+                                slotEl.classList.remove(`anim-slide-out-${side}`, `anim-slide-in-${side}`);
+                                slotEl.removeEventListener('animationend', animationEndHandler);
+                                resolve();
+                            };
+                            slotEl.addEventListener('animationend', animationEndHandler, { once: true });
+
+                        }, delay);
+                    } else {
+                        resolve(); // No animation, resolve immediately
+                    }
+                });
+            }
+
+            function renderSlot(side, index, slotData, oldSlotData) {
+                const slotEl = document.getElementById(`slot-${side}${index}`);
+
+                const doRender = () => {
+                    const promises = [];
+                    const db = cardDatabase.value;
+                    const settings = settingsRep.value || {};
+
+                    if (slotData && slotData.cardId) {
+                        slotEl.classList.remove('anim-slide-out-L', 'anim-slide-out-R');
+                    }
+
+                    const hasCard = slotData && slotData.cardId;
+                    const forceSlideIn = slotData && slotData.forceSlideIn;
+                    const skipSlideIn = slotData && slotData.evolutionSelect;
+                    const isNewCard = hasCard && (!oldSlotData || slotData.cardId !== oldSlotData.cardId);
+                    const isCardChanged = !oldSlotData || (slotData && oldSlotData.cardId !== slotData.cardId);
+
+                    const sanitizeDamage = (damage) => {
+                        if (typeof damage !== 'string') return damage || '';
+                        return damage.replace(/＋/g, '+').replace(/－/g, '-').replace(/×/g, '×');
+                    };
+
+                    if (!slotEl || !slotData || !slotData.cardId || !db || !db[slotData.cardId]) {
+                        // If a KO or REMOVE animation is in progress for this slot, abort rendering to let the animation finish.
+                        if (koSlots.has(slotEl.id) || removingSlots.has(slotEl.id)) {
+                            return Promise.resolve();
+                        }
+
+                        const isSlidingOut = slotEl.classList.contains('anim-slide-out-L') || slotEl.classList.contains('anim-slide-out-R'); const clearSlot = () => {
+                            const activeWrapper = slotEl.querySelector('.active-pokemon-wrapper');
+                            const benchWrapper = slotEl.querySelector('.bench-pokemon-wrapper');
+
+                            if (activeWrapper) {
+                                activeWrapper.classList.add('hidden');
+                                const toolsWrapper = activeWrapper.querySelector('.battle-attached-tools-wrapper');
+                                if (toolsWrapper) toolsWrapper.innerHTML = '';
+                                const energyWrapper = activeWrapper.querySelector('.battle-attached-energies');
+                                if (energyWrapper) energyWrapper.innerHTML = '';
+                                const ailmentsWrapper = activeWrapper.querySelector('.battle-status-ailment');
+                                if (ailmentsWrapper) ailmentsWrapper.innerHTML = '';
+                            }
+                            if (benchWrapper) {
+                                slotEl.innerHTML = '';
+                            }
+
+                            slotEl.dataset.cardId = '';
+                            slotEl.classList.add('is-empty');
+                        };
+                        if (isSlidingOut) {
+                            setTimeout(clearSlot, 500);
+                        } else {
+                            clearSlot();
+                        }
+                        return Promise.resolve();
+                    }
+                    slotEl.classList.remove('is-empty');
+
+                    const isUnderAttack = g_attackAnimationTargets.has(slotEl.id);
+
+                    const imageArea = slotEl.querySelector('.battle-card-image-area, .bench-card-image-area');
+                    const cardData = db[slotData.cardId];
+
+                    slotEl.style.borderColor = 'var(--module-color-border)';
+                    if (imageArea) imageArea.style.borderColor = 'var(--module-color-border)';
+
+                    slotEl.style.backgroundColor = 'var(--color-bg-module)';
+
+                    const oldToolIds = oldSlotData ? (oldSlotData.attachedToolIds || []) : [];
+                    const newToolIds = slotData ? (slotData.attachedToolIds || []) : [];
+                    const ailmentsBeforeChange = oldSlotData ? (oldSlotData.ailments || []) : [];
+                    const newAilments = slotData ? (slotData.ailments || []) : [];
+
+                    const isNoLongerActive = index !== 0 && oldSlotData && oldSlotData.active;
+
+                    if (isCardChanged || isNoLongerActive) {
+                        oldSlotData = null;
+                    }
+
+                    if (!cardData || !cardData.pokemon) return Promise.resolve();
+                    const baseHp = parseInt(cardData.pokemon.hp || 0, 10);
+                    const extraHp = parseInt(slotData.extraHp || 0, 10);
+                    const damage = parseInt(slotData.damage || 0, 10);
+                    const maxHp = baseHp + extraHp;
+                    const currentHp = Math.max(0, maxHp - damage);
+
+                    let hpChangeToShow = 0;
+                    if (oldSlotData) {
+                        const oldDamage = parseInt(oldSlotData.damage || 0, 10);
+                        const oldExtraHp = parseInt(oldSlotData.extraHp || 0, 10);
+                        const oldMaxHp = baseHp + oldExtraHp;
+                        const oldHp = Math.max(0, oldMaxHp - oldDamage);
+                        const damageDiff = damage - oldDamage;
+                        if (damageDiff > 0) { hpChangeToShow = -damageDiff; }
+                        else if (damageDiff < 0) { hpChangeToShow = -damageDiff; }
+                        else if (extraHp !== oldExtraHp) { hpChangeToShow = currentHp - oldHp; }
+                    }
+
+                    let startHp = currentHp, startMaxHp = maxHp;
+                    if (oldSlotData) {
+                        const oldExtraHp = parseInt(oldSlotData.extraHp || 0, 10);
+                        const oldDamage = parseInt(oldSlotData.damage || 0, 10);
+                        startMaxHp = baseHp + oldExtraHp;
+                        startHp = Math.max(0, startMaxHp - oldDamage);
+                    }
+
+                    const hpPercent = maxHp > 0 ? (currentHp / maxHp) * 100 : 0;
+                    let hpColor = 'var(--hp-high)';
+                    if (hpPercent <= 25) hpColor = 'var(--hp-low)';
+                    else if (hpPercent <= 50) hpColor = 'var(--hp-medium)';
+                    const getEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/icons/${ENERGY_MAP[type] || 'エネなし'}.png">`;
+
+                    if (index === 0) {
+                        const wrapper = slotEl.querySelector('.active-pokemon-wrapper');
+                        wrapper.classList.remove('hidden');
+                        wrapper.querySelector('.battle-pokemon-name').textContent = cardData.name;
+                        const img = wrapper.querySelector('.battle-pokemon-image');
+
+                        if (isNewCard || forceSlideIn) {
+                            // Pre-position the slot off-screen to prevent visual glitch during image loading
+                            const side = slotEl.id.includes('-L') ? 'L' : 'R';
+                            const offScreenTransform = side === 'L' ? 'translateX(-120%)' : 'translateX(120%)';
+                            slotEl.style.transform = offScreenTransform;
+                            slotEl.style.opacity = '0';
+
+                            img.style.visibility = 'hidden';
+                            img.onload = () => {
+                                img.style.visibility = 'visible';
+                                // Reset transform before triggering slide-in animation
+                                slotEl.style.transform = '';
+                                slotEl.style.opacity = '';
+                                promises.push(handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn));
+                                img.onload = null;
+                            };
+                        } else {
+                            promises.push(handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn));
+                        }
+                        img.src = getCardImageUrl(slotData.cardId);
+                        img.classList.toggle('is-v', cardData.pokemon && cardData.subtype === 'V');
+
+                        const hpUpdatePromise = new Promise(resolve => {
+                            const hpUpdate = () => {
+                                const hpPromises = [];
+                                const hpTextEl = wrapper.querySelector('.battle-hp-text');
+                                hpPromises.push(animateHp(hpTextEl, startHp, currentHp, startMaxHp, maxHp, 500));
+                                const hpBar = wrapper.querySelector('.battle-hp-bar');
+                                hpBar.style.width = `${hpPercent}%`;
+                                hpBar.style.backgroundColor = hpColor;
+                                if (hpChangeToShow !== 0) {
+                                    hpPromises.push(displayHpChangeNumber(slotEl, hpChangeToShow));
+                                }
+                                Promise.all(hpPromises).then(resolve);
+                            };
+
+                            if (isUnderAttack) {
+                                setTimeout(hpUpdate, 1100);
+                            } else {
+                                hpUpdate();
+                            }
+                        });
+                        promises.push(hpUpdatePromise);
+
+                        promises.push(updateAttachedTools(slotEl, newToolIds, oldToolIds, true, isCardChanged));
+
+                        const energyContainer = wrapper.querySelector('.battle-attached-energies');
+                        renderAttachedEnergies(energyContainer, slotData.attachedEnergy, getEnergyIcon);
+
+                        promises.push(updateStatusAilments(wrapper.querySelector('.battle-status-ailment'), newAilments, ailmentsBeforeChange));
+                        const skillsContainer = wrapper.querySelector('.battle-skills-container');
+                        skillsContainer.innerHTML = '';
+                        const allSkills = [...(cardData.pokemon.abilities || []), ...(cardData.pokemon.attacks || [])];
+                        allSkills.slice(0, 2).forEach(skill => {
+                            const isAbility = !!skill.text && !skill.cost;
+                            const abilityUsedClass = (isAbility && slotData.abilityUsed) ? 'used' : '';
+                            let tagHtml = '';
+                            if (isAbility) {
+                                const style = getComputedStyle(document.documentElement);
+                                const abilityFile = style.getPropertyValue('--asset-ability').trim().replace(/['\"]/g, '');
+                                const abilityIconSrc = resolveAssetPath(abilityFile, true);
+                                tagHtml = `<img src="${abilityIconSrc}" class="battle-skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
+                            } else {
+                                const cost = skill.cost || [];
+                                const iconsToRender = cost.length > 0 ? cost : [null];
+                                const iconsHtml = iconsToRender.map(getEnergyIcon).join('');
+                                tagHtml = `<div class="energy-cost-container">${iconsHtml}</div>`;
+                            }
+                            skillsContainer.innerHTML += `
                             <div class="skill-row-wrapper">
                                 ${tagHtml}
                                 <div class="battle-skill">
@@ -954,13 +973,13 @@
                                 </div>
                             </div>
                         `;
-                    });
-                } else {
-                    let wrapper = slotEl.querySelector('.bench-pokemon-wrapper');
-                    const forceRedraw = !oldSlotData || !wrapper || slotEl.dataset.cardId !== slotData.cardId;
+                        });
+                    } else {
+                        let wrapper = slotEl.querySelector('.bench-pokemon-wrapper');
+                        const forceRedraw = !oldSlotData || !wrapper || slotEl.dataset.cardId !== slotData.cardId;
 
-                    if (forceRedraw) {
-                        slotEl.innerHTML = `
+                        if (forceRedraw) {
+                            slotEl.innerHTML = `
                             <div class="bench-pokemon-wrapper">
                                 <div class="bench-card-image-area">
                                     <img class="bench-pokemon-image">
@@ -978,41 +997,55 @@
                                     <div class="bench-skills-container"></div>
                                 </div>
                             </div>`;
-                        wrapper = slotEl.querySelector('.bench-pokemon-wrapper');
-                        slotEl.dataset.cardId = slotData.cardId;
+                            wrapper = slotEl.querySelector('.bench-pokemon-wrapper');
+                            slotEl.dataset.cardId = slotData.cardId;
 
-                        const mainImg = wrapper.querySelector('.bench-pokemon-image');
-                        mainImg.style.visibility = 'hidden';
-                        mainImg.onload = () => {
-                            mainImg.style.visibility = 'visible';
-                            promises.push(handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn));
-                            mainImg.onload = null;
-                        };
-                        mainImg.src = getCardImageUrl(slotData.cardId);
-                        mainImg.classList.toggle('is-v', cardData.pokemon && cardData.subtype === 'V');
-                    } else {
-                        promises.push(handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn));
-                    }
-                    wrapper.classList.remove('hidden');
-                    const skillsContainer = wrapper.querySelector('.bench-skills-container');
-                    const allSkills = [...(cardData.pokemon.abilities || []), ...(cardData.pokemon.attacks || [])];
-                    let skillsHtml = '';
-                    allSkills.slice(0, 2).forEach(skill => {
-                        const isAbility = !!skill.text && !skill.cost;
-                        const abilityUsedClass = (isAbility && slotData.abilityUsed) ? 'used' : '';
-                        let tagHtml = '';
-                        if (isAbility) {
-                            const style = getComputedStyle(document.documentElement);
-                            const abilityFile = style.getPropertyValue('--asset-ability').trim().replace(/['\"]/g, '');
-                            const abilityIconSrc = resolveAssetPath(abilityFile, true);
-                            tagHtml = `<img src="${abilityIconSrc}" class="bench-skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
+                            const mainImg = wrapper.querySelector('.bench-pokemon-image');
+
+                            // Pre-position the slot off-screen to prevent visual glitch during image loading
+                            if (isNewCard || forceSlideIn) {
+                                const side = slotEl.id.includes('-L') ? 'L' : 'R';
+                                const offScreenTransform = side === 'L' ? 'translateX(-120%)' : 'translateX(120%)';
+                                slotEl.style.transform = offScreenTransform;
+                                slotEl.style.opacity = '0';
+                            }
+
+                            mainImg.style.visibility = 'hidden';
+                            mainImg.onload = () => {
+                                mainImg.style.visibility = 'visible';
+                                // Reset transform before triggering slide-in animation
+                                if (isNewCard || forceSlideIn) {
+                                    slotEl.style.transform = '';
+                                    slotEl.style.opacity = '';
+                                }
+                                promises.push(handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn));
+                                mainImg.onload = null;
+                            };
+                            mainImg.src = getCardImageUrl(slotData.cardId);
+                            mainImg.classList.toggle('is-v', cardData.pokemon && cardData.subtype === 'V');
                         } else {
-                            const cost = skill.cost || [];
-                            const iconsToRender = cost.length > 0 ? cost : [null];
-                            const iconsHtml = iconsToRender.map(getEnergyIcon).join('');
-                            tagHtml = `<div class="bench-energy-cost-container">${iconsHtml}</div>`;
+                            promises.push(handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn));
                         }
-                        skillsHtml += `
+                        wrapper.classList.remove('hidden');
+                        const skillsContainer = wrapper.querySelector('.bench-skills-container');
+                        const allSkills = [...(cardData.pokemon.abilities || []), ...(cardData.pokemon.attacks || [])];
+                        let skillsHtml = '';
+                        allSkills.slice(0, 2).forEach(skill => {
+                            const isAbility = !!skill.text && !skill.cost;
+                            const abilityUsedClass = (isAbility && slotData.abilityUsed) ? 'used' : '';
+                            let tagHtml = '';
+                            if (isAbility) {
+                                const style = getComputedStyle(document.documentElement);
+                                const abilityFile = style.getPropertyValue('--asset-ability').trim().replace(/['\"]/g, '');
+                                const abilityIconSrc = resolveAssetPath(abilityFile, true);
+                                tagHtml = `<img src="${abilityIconSrc}" class="bench-skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
+                            } else {
+                                const cost = skill.cost || [];
+                                const iconsToRender = cost.length > 0 ? cost : [null];
+                                const iconsHtml = iconsToRender.map(getEnergyIcon).join('');
+                                tagHtml = `<div class="bench-energy-cost-container">${iconsHtml}</div>`;
+                            }
+                            skillsHtml += `
                             <div class="bench-skill-row-wrapper">
                                 ${tagHtml}
                                 <div class="bench-skill">
@@ -1020,737 +1053,738 @@
                                     <div class="bench-skill-damage">${sanitizeDamage(skill.damage)}</div>
                                 </div>
                             </div>`;
-                    });
-                    skillsContainer.innerHTML = skillsHtml;
+                        });
+                        skillsContainer.innerHTML = skillsHtml;
 
-                    promises.push(updateAttachedTools(slotEl, newToolIds, oldToolIds, false, forceRedraw));
+                        promises.push(updateAttachedTools(slotEl, newToolIds, oldToolIds, false, forceRedraw));
 
-                    const hpUpdatePromise = new Promise(resolve => {
-                        const hpUpdate = () => {
-                            const hpPromises = [];
-                            const hpTextEl = wrapper.querySelector('.bench-hp-text');
-                            const hpBarEl = wrapper.querySelector('.bench-hp-bar');
-                            hpPromises.push(animateHp(hpTextEl, startHp, currentHp, startMaxHp, maxHp, 500));
-                            hpBarEl.style.width = `${hpPercent}%`;
-                            hpBarEl.style.backgroundColor = hpColor;
-                            if (hpChangeToShow !== 0) {
-                                hpPromises.push(displayHpChangeNumber(slotEl, hpChangeToShow));
-                            }
-                            Promise.all(hpPromises).then(resolve);
-                        };
-                        if (isUnderAttack) { setTimeout(hpUpdate, 1100); } else { hpUpdate(); }
-                    });
-                    promises.push(hpUpdatePromise);
+                        const hpUpdatePromise = new Promise(resolve => {
+                            const hpUpdate = () => {
+                                const hpPromises = [];
+                                const hpTextEl = wrapper.querySelector('.bench-hp-text');
+                                const hpBarEl = wrapper.querySelector('.bench-hp-bar');
+                                hpPromises.push(animateHp(hpTextEl, startHp, currentHp, startMaxHp, maxHp, 500));
+                                hpBarEl.style.width = `${hpPercent}%`;
+                                hpBarEl.style.backgroundColor = hpColor;
+                                if (hpChangeToShow !== 0) {
+                                    hpPromises.push(displayHpChangeNumber(slotEl, hpChangeToShow));
+                                }
+                                Promise.all(hpPromises).then(resolve);
+                            };
+                            if (isUnderAttack) { setTimeout(hpUpdate, 1100); } else { hpUpdate(); }
+                        });
+                        promises.push(hpUpdatePromise);
 
-                    const energyContainer = wrapper.querySelector('.bench-attached-energies');
-                    const getBenchEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/icons/${ENERGY_MAP[type] || 'エネなし'}.png">`;
-                    renderAttachedEnergies(energyContainer, slotData.attachedEnergy, getBenchEnergyIcon);
-                }
-                if (slotData && slotData.evolutionSelect) {
-                    delete slotData.evolutionSelect;
-                }
-                if (slotData && slotData.forceSlideIn) {
-                    delete slotData.forceSlideIn;
-                }
-                return Promise.all(promises);
-            };
-
-            const isEvolving = evolvingSlots.has(slotEl.id);
-            if (isEvolving) {
-                evolvingSlots.delete(slotEl.id); // Consume the flag
-                return new Promise(resolve => {
-                    setTimeout(() => {
-                        doRender().then(resolve);
-                    }, 500); // The magic delay for evolution
-                });
-            } else {
-                return doRender();
-            }
-        }
-
-        // After the page loads, start preloading all assets
-        const videosToPreload = [
-            // KO & Evolve FX
-            '/assets/ptcg-telop/fx/active_ko.webm',
-            '/assets/ptcg-telop/fx/active-evolve.webm',
-            '/assets/ptcg-telop/fx/active-mega-evolve.webm',
-            '/assets/ptcg-telop/fx/active-tera-evolve.webm',
-            '/assets/ptcg-telop/fx/active-replace.webm',
-            '/assets/ptcg-telop/fx/active-devolve.webm',
-            '/assets/ptcg-telop/fx/bench_ko.webm',
-            '/assets/ptcg-telop/fx/bench-replace.webm',
-            '/assets/ptcg-telop/fx/bench-devolve.webm',
-            '/assets/ptcg-telop/fx/bench-evolve.webm',
-            '/assets/ptcg-telop/fx/bench-mega-evolve.webm',
-            '/assets/ptcg-telop/fx/bench-tera-evolve.webm',
-            // Hit FX
-            '/assets/ptcg-telop/fx/hit-colorless.webm',
-            '/assets/ptcg-telop/fx/hit-darkness.webm',
-            '/assets/ptcg-telop/fx/hit-dragon.webm',
-            '/assets/ptcg-telop/fx/hit-fighting.webm',
-            '/assets/ptcg-telop/fx/hit-fire.webm',
-            '/assets/ptcg-telop/fx/hit-grass.webm',
-            '/assets/ptcg-telop/fx/hit-lightning.webm',
-            '/assets/ptcg-telop/fx/hit-metal.webm',
-            '/assets/ptcg-telop/fx/hit-psychic.webm',
-            '/assets/ptcg-telop/fx/hit-water.webm',
-            '/assets/ptcg-telop/fx/hit-fairy.webm', 
-            // Misc FX
-            '/assets/ptcg-telop/fx/Speedline.webm',
-            '/assets/ptcg-telop/fx/tool-attach.webm',
-            '/assets/ptcg-telop/fx/tool-remove.webm'
-        ];
-
-        const imagesToPreload = [
-            // Background and UI elements
-            '/assets/ptcg-telop/element/panel-bg.png',
-            '/assets/ptcg-telop/element/active-bg.png',
-            '/assets/ptcg-telop/element/bench-bg.png',
-            '/assets/ptcg-telop/element/current.png',
-            '/assets/ptcg-telop/element/VSTAR.webp',
-            '/assets/ptcg-telop/element/weakness.png',
-            '/assets/ptcg-telop/element/Beginner.png',
-            '/assets/ptcg-telop/element/Poké_Ball.png', 
-            // Player action icons
-            '/assets/ptcg-telop/element/action-energy.png',
-            '/assets/ptcg-telop/element/action-supporter.png',
-            '/assets/ptcg-telop/element/action-retreat.png', 
-            // Status condition icons
-            '/assets/ptcg-telop/icons/Poisoned.png',
-            '/assets/ptcg-telop/icons/Burned.png',
-            '/assets/ptcg-telop/icons/Asleep.png',
-            '/assets/ptcg-telop/icons/Paralyzed.png',
-            '/assets/ptcg-telop/icons/Confused.png', 
-            // Energy icons (dynamically generated)
-            ...Object.values(ENERGY_MAP).map(type => `/assets/ptcg-telop/icons/${type}.png`)
-        ].filter((v, i, a) => a.indexOf(v) === i); // Deduplicate, just in case
-
-        const preloaderContainer = document.getElementById('video-preloader');
-        if (preloaderContainer) {
-            // Preload videos
-            videosToPreload.forEach(src => {
-                const video = document.createElement('video');
-                video.src = src;
-                video.preload = 'auto';
-                video.muted = true;
-                video.playsInline = true;
-                video.load();
-                preloaderContainer.appendChild(video);
-            });
-
-            // Preload images
-            imagesToPreload.forEach(src => {
-                const img = document.createElement('img');
-                img.src = src;
-                preloaderContainer.appendChild(img);
-            });
-        }
-        
-
-        const i18nStrings = nodecg.Replicant('i18nStrings');
-        const language = nodecg.Replicant('language');
-        const themeAssets = nodecg.Replicant('themeAssets');
-
-        // A more descriptive function name for getting translated text
-        const getI18nText = (key) => {
-            if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) {
-                return key; // Fallback to key name if not found
-            }
-            // Return the text for the current language, or fallback to Japanese, then the key itself.
-            return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
-        };
-
-        function resolveAssetPath(assetName, isLangSpecific = false) {
-            const settings = settingsRep.value || {};
-            const assets = themeAssets.value || {};
-            const lang = language.value || 'jp';
-            const basePath = '/assets/ptcg-telop/';
-            const activeTheme = settings.activeTheme || 'Default';
-
-            const potentialPath = assetName.replace(/url\((['\"]?)(.*?)\1\)/, '$2');
-            const cleanAssetName = potentialPath.split('/').pop();
-
-            if (activeTheme !== 'Default' && assets[activeTheme] && assets[activeTheme].includes(cleanAssetName)) {
-                return `${basePath}${activeTheme}/${cleanAssetName}`;
-            }
-
-            if (isLangSpecific) {
-                const baseName = assetName.replace(/_jp\.png$/, '');
-                const langAssetName = `${baseName}_${lang}.png`;
-                return `${basePath}element/${langAssetName}`;
-            }
-            
-            return `${basePath}element/${assetName}`;
-        }
-
-        function updateCustomizableAssets() {
-            const root = document.documentElement;
-            const style = getComputedStyle(root);
-
-            const getFile = (varName) => style.getPropertyValue(varName).trim().replace(/['\"]/g, '');
-
-            root.style.setProperty('--bg-player-area', `url(${resolveAssetPath(getFile('--asset-panel-bg'))})`);
-            root.style.setProperty('--bg-active-slot', `url(${resolveAssetPath(getFile('--asset-active-bg'))})`);
-            root.style.setProperty('--bg-bench-slot', `url(${resolveAssetPath(getFile('--asset-bench-bg'))})`);
-            root.style.setProperty('--bg-current-turn', `url(${resolveAssetPath(getFile('--asset-current-turn'))})`);
-
-            document.getElementById('vstar-L-icon').src = resolveAssetPath(getFile('--asset-vstar'));
-            document.getElementById('vstar-R-icon').src = resolveAssetPath(getFile('--asset-vstar'));
-            document.getElementById('action-L-energy').src = resolveAssetPath(getFile('--asset-action-energy'));
-            document.getElementById('action-L-supporter').src = resolveAssetPath(getFile('--asset-action-supporter'));
-            document.getElementById('action-L-retreat').src = resolveAssetPath(getFile('--asset-action-retreat'));
-            document.getElementById('action-R-energy').src = resolveAssetPath(getFile('--asset-action-energy'));
-            document.getElementById('action-R-supporter').src = resolveAssetPath(getFile('--asset-action-supporter'));
-            document.getElementById('action-R-retreat').src = resolveAssetPath(getFile('--asset-action-retreat'));
-
-            updateFirstMoveIcon(firstMove.value);
-            updateLostZoneCounter('L', live_lostZoneL.value);
-            updateLostZoneCounter('R', live_lostZoneR.value);
-            
-            updateSideArea('L', live_sideL.value);
-            updateSideArea('R', live_sideR.value);
-            sides.forEach(side => {
-                for (let i = 0; i < 6; i++) {
-                    const replicant = live_slotReplicants[`live_slot${side}${i}`];
-                    if (replicant && replicant.value) {
-                        renderSlot(side, i, replicant.value, replicant.value);
+                        const energyContainer = wrapper.querySelector('.bench-attached-energies');
+                        const getBenchEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/icons/${ENERGY_MAP[type] || 'エネなし'}.png">`;
+                        renderAttachedEnergies(energyContainer, slotData.attachedEnergy, getBenchEnergyIcon);
                     }
-                }
-            });
-        }
+                    if (slotData && slotData.evolutionSelect) {
+                        delete slotData.evolutionSelect;
+                    }
+                    if (slotData && slotData.forceSlideIn) {
+                        delete slotData.forceSlideIn;
+                    }
+                    return Promise.all(promises);
+                };
 
-        function setLanguageClass(lang) {
-            const supportedLangs = ['jp', 'chs', 'cht', 'en'];
-            supportedLangs.forEach(l => {
-                document.body.classList.remove(`lang-${l}`);
-            });
-            if (lang && supportedLangs.includes(lang)) {
-                document.body.classList.add(`lang-${lang}`);
-            }
-        }
-
-        const activeThemeCss = nodecg.Replicant('activeThemeCss');
-        activeThemeCss.on('change', (newUrl) => {
-            const themeCssLink = document.getElementById('theme-css-link');
-            if (themeCssLink) {
-                if (newUrl) {
-                    themeCssLink.href = newUrl;
-                    themeCssLink.disabled = false;
-                } else {
-                    themeCssLink.disabled = true;
-                    themeCssLink.href = '';
-                }
-            }
-            // Update assets which might be overridden by the theme
-            updateCustomizableAssets();
-        });
-
-        const cardDatabase = nodecg.Replicant('cardDatabase');
-        const assetPaths = nodecg.Replicant('assetPaths');
-        const playerL_name = nodecg.Replicant('playerL_name');
-        const playerR_name = nodecg.Replicant('playerR_name');
-        const vstarUsedL = nodecg.Replicant('live_vstar_L');
-        const vstarUsedR = nodecg.Replicant('live_vstar_R');
-        const live_sideL = nodecg.Replicant('live_sideL');
-        const live_sideR = nodecg.Replicant('live_sideR');
-        const live_stadium = nodecg.Replicant('live_stadium');
-        const live_currentTurn = nodecg.Replicant('live_currentTurn');
-        const settingsRep = nodecg.Replicant('ptcg-settings');
-        const firstMove = nodecg.Replicant('firstMove');
-        const live_lostZoneL = nodecg.Replicant('live_lostZoneL');
-        const live_lostZoneR = nodecg.Replicant('live_lostZoneR');
-        const deckL = nodecg.Replicant('deckL');
-        const deckR = nodecg.Replicant('deckR');
-        const actionTypes = ['energy', 'supporter', 'retreat'];
-        const sides = ['L', 'R'];
-        const live_slotReplicants = {};
-        const replicantList = [
-            cardDatabase, assetPaths, playerL_name, playerR_name,
-            vstarUsedL, vstarUsedR,
-            live_sideL, live_sideR, live_stadium, live_currentTurn, settingsRep, firstMove,
-            live_lostZoneL, live_lostZoneR,
-            deckL, deckR, language,
-            i18nStrings, themeAssets
-        ];
-        sides.forEach(side => {
-            actionTypes.forEach(action => {
-                replicantList.push(nodecg.Replicant(`live_action_${action}_${side}`));
-            });
-            for (let i = 0; i < 6; i++) {
-                const id = `live_slot${side}${i}`;
-                const replicant = nodecg.Replicant(id);
-                live_slotReplicants[id] = replicant;
-                replicantList.push(replicant);
-            }
-        });
-
-        function playVideoOnSlot(targetId, videoSrc) {
-            return new Promise(resolve => {
-                const targetEl = document.getElementById(targetId);
-                if (!targetEl) return resolve();
-
-                const isBattleSlot = targetEl.id.endsWith('0');
-                const imageSelector = isBattleSlot ? '.battle-pokemon-image' : '.bench-pokemon-image';
-                const cardImage = targetEl.querySelector(imageSelector);
-                const targetRect = targetEl.getBoundingClientRect();
-                const videoContainer = document.createElement('div');
-                videoContainer.style.position = 'absolute';
-                videoContainer.style.left = `${targetRect.left}px`;
-                videoContainer.style.top = `${targetRect.top}px`;
-                videoContainer.style.width = `${targetRect.width}px`;
-                videoContainer.style.height = `${targetRect.height}px`;
-                videoContainer.style.zIndex = '300';
-                videoContainer.style.overflow = 'hidden';
-                const video = document.createElement('video');
-                video.src = videoSrc;
-                video.muted = true;
-                video.style.width = '100%';
-                video.style.height = '100%';
-                videoContainer.appendChild(video);
-                document.body.appendChild(videoContainer);
-                video.play();
-                setTimeout(() => { if (cardImage) cardImage.style.visibility = 'hidden'; }, REPLACE_ANIMATION_HIDE_MS);
-                setTimeout(() => { if (cardImage) cardImage.style.visibility = 'visible'; }, REPLACE_ANIMATION_SHOW_MS);
-                video.addEventListener('ended', () => {
-                    videoContainer.remove();
-                    resolve();
-                });
-            });
-        }
-        
-        NodeCG.waitForReplicants(...replicantList).then(() => {
-            setLanguageClass(language.value || 'jp');
-            
-            updatePlayerInfo('L', playerL_name.value);
-            updatePlayerInfo('R', playerR_name.value);
-            updateVstarIcon('L', vstarUsedL.value);
-            updateVstarIcon('R', vstarUsedR.value);
-            updateSideArea('L', live_sideL.value);
-            updateSideArea('R', live_sideR.value);
-            renderStadium(live_stadium.value, { cardId: null });
-            updateCurrentTurnBorder(live_currentTurn.value);
-            sides.forEach(side => {
-                actionTypes.forEach(action => {
-                    const rep = nodecg.Replicant(`live_action_${action}_${side}`);
-                    updateActionIcon(side, action, rep.value);
-                    rep.on('change', (newVal) => updateActionIcon(side, action, newVal));
-                });
-                for (let i = 0; i < 6; i++) {
-                    const replicant = live_slotReplicants[`live_slot${side}${i}`];
-                    renderSlot(side, i, replicant.value, null);
-                    replicant.on('change', (newVal, oldVal) => {
-                        if (!oldVal) {
-                            return;
-                        }
-                        const promise = renderSlot(side, i, newVal, oldVal);
-                        addAnimationPromise(promise);
-                        debouncedOnBatchFinished();
+                const isEvolving = evolvingSlots.has(slotEl.id);
+                if (isEvolving) {
+                    evolvingSlots.delete(slotEl.id); // Consume the flag
+                    return new Promise(resolve => {
+                        setTimeout(() => {
+                            doRender().then(resolve);
+                        }, 500); // The magic delay for evolution
                     });
+                } else {
+                    return doRender();
                 }
-            });
-            playerL_name.on('change', (val) => updatePlayerInfo('L', val));
-            playerR_name.on('change', (val) => updatePlayerInfo('R', val));
-            vstarUsedL.on('change', (val) => updateVstarIcon('L', val));
-            vstarUsedR.on('change', (val) => updateVstarIcon('R', val));
-            live_sideL.on('change', (val) => updateSideArea('L', val));
-            live_sideR.on('change', (val) => updateSideArea('R', val));
-            live_stadium.on('change', (newVal, oldVal) => renderStadium(newVal, oldVal || { cardId: null }));
-            live_currentTurn.on('change', (val) => updateCurrentTurnBorder(val));
-            updateFirstMoveIcon(firstMove.value);
-            firstMove.on('change', (val) => updateFirstMoveIcon(val));
-            updateLostZoneCounter('L', live_lostZoneL.value);
-            updateLostZoneCounter('R', live_lostZoneR.value);
-            live_lostZoneL.on('change', (val) => updateLostZoneCounter('L', val));
-            live_lostZoneR.on('change', (val) => updateLostZoneCounter('R', val));
+            }
+
+            // After the page loads, start preloading all assets
+            const videosToPreload = [
+                // KO & Evolve FX
+                '/assets/ptcg-telop/fx/active_ko.webm',
+                '/assets/ptcg-telop/fx/active-evolve.webm',
+                '/assets/ptcg-telop/fx/active-mega-evolve.webm',
+                '/assets/ptcg-telop/fx/active-tera-evolve.webm',
+                '/assets/ptcg-telop/fx/active-replace.webm',
+                '/assets/ptcg-telop/fx/active-devolve.webm',
+                '/assets/ptcg-telop/fx/bench_ko.webm',
+                '/assets/ptcg-telop/fx/bench-replace.webm',
+                '/assets/ptcg-telop/fx/bench-devolve.webm',
+                '/assets/ptcg-telop/fx/bench-evolve.webm',
+                '/assets/ptcg-telop/fx/bench-mega-evolve.webm',
+                '/assets/ptcg-telop/fx/bench-tera-evolve.webm',
+                // Hit FX
+                '/assets/ptcg-telop/fx/hit-colorless.webm',
+                '/assets/ptcg-telop/fx/hit-darkness.webm',
+                '/assets/ptcg-telop/fx/hit-dragon.webm',
+                '/assets/ptcg-telop/fx/hit-fighting.webm',
+                '/assets/ptcg-telop/fx/hit-fire.webm',
+                '/assets/ptcg-telop/fx/hit-grass.webm',
+                '/assets/ptcg-telop/fx/hit-lightning.webm',
+                '/assets/ptcg-telop/fx/hit-metal.webm',
+                '/assets/ptcg-telop/fx/hit-psychic.webm',
+                '/assets/ptcg-telop/fx/hit-water.webm',
+                '/assets/ptcg-telop/fx/hit-fairy.webm',
+                // Misc FX
+                '/assets/ptcg-telop/fx/Speedline.webm',
+                '/assets/ptcg-telop/fx/tool-attach.webm',
+                '/assets/ptcg-telop/fx/tool-remove.webm'
+            ];
+
+            const imagesToPreload = [
+                // Background and UI elements
+                '/assets/ptcg-telop/element/panel-bg.png',
+                '/assets/ptcg-telop/element/active-bg.png',
+                '/assets/ptcg-telop/element/bench-bg.png',
+                '/assets/ptcg-telop/element/current.png',
+                '/assets/ptcg-telop/element/VSTAR.webp',
+                '/assets/ptcg-telop/element/weakness.png',
+                '/assets/ptcg-telop/element/Beginner.png',
+                '/assets/ptcg-telop/element/Poké_Ball.png',
+                // Player action icons
+                '/assets/ptcg-telop/element/action-energy.png',
+                '/assets/ptcg-telop/element/action-supporter.png',
+                '/assets/ptcg-telop/element/action-retreat.png',
+                // Status condition icons
+                '/assets/ptcg-telop/icons/Poisoned.png',
+                '/assets/ptcg-telop/icons/Burned.png',
+                '/assets/ptcg-telop/icons/Asleep.png',
+                '/assets/ptcg-telop/icons/Paralyzed.png',
+                '/assets/ptcg-telop/icons/Confused.png',
+                // Energy icons (dynamically generated)
+                ...Object.values(ENERGY_MAP).map(type => `/assets/ptcg-telop/icons/${type}.png`)
+            ].filter((v, i, a) => a.indexOf(v) === i); // Deduplicate, just in case
 
             const preloaderContainer = document.getElementById('video-preloader');
-            function preloadDeckImages(deck) {
-                if (!deck || !deck.cards || !assetPaths.value.cardImgPath || !preloaderContainer) return;
-                
-                const cardImgPath = `/${assetPaths.value.cardImgPath}`;
+            if (preloaderContainer) {
+                // Preload videos
+                videosToPreload.forEach(src => {
+                    const video = document.createElement('video');
+                    video.src = src;
+                    video.preload = 'auto';
+                    video.muted = true;
+                    video.playsInline = true;
+                    video.load();
+                    preloaderContainer.appendChild(video);
+                });
 
-                deck.cards.forEach(cardId => {
-                    if (!preloaderContainer.querySelector(`img[src="${cardImgPath}${cardId}.jpg"]`)) {
-                        const img = document.createElement('img');
-                        img.src = `${cardImgPath}${cardId}.jpg`;
-                        preloaderContainer.appendChild(img);
-                    }
+                // Preload images
+                imagesToPreload.forEach(src => {
+                    const img = document.createElement('img');
+                    img.src = src;
+                    preloaderContainer.appendChild(img);
                 });
             }
 
-            preloadDeckImages(deckL.value);
-            preloadDeckImages(deckR.value);
-            deckL.on('change', (newVal) => preloadDeckImages(newVal));
-            deckR.on('change', (newVal) => preloadDeckImages(newVal));
 
-            const handleVstarVisibility = (settings) => {
-                const vstarL_icon = document.getElementById('vstar-L-icon');
-                const vstarR_icon = document.getElementById('vstar-R-icon');
-                const enabled = settings && settings.vstarEnabled;
-                if (vstarL_icon) vstarL_icon.classList.toggle('hidden', !enabled);
-                if (vstarR_icon) vstarR_icon.classList.toggle('hidden', !enabled);
+            const i18nStrings = nodecg.Replicant('i18nStrings');
+            const language = nodecg.Replicant('language');
+            const themeAssets = nodecg.Replicant('themeAssets');
+
+            // A more descriptive function name for getting translated text
+            const getI18nText = (key) => {
+                if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) {
+                    return key; // Fallback to key name if not found
+                }
+                // Return the text for the current language, or fallback to Japanese, then the key itself.
+                return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
             };
 
-            settingsRep.on('change', (newValue, oldValue) => {
-                const oldSettings = oldValue || {};
-                const newSettings = newValue || {};
+            function resolveAssetPath(assetName, isLangSpecific = false) {
+                const settings = settingsRep.value || {};
+                const assets = themeAssets.value || {};
+                const lang = language.value || 'jp';
+                const basePath = '/assets/ptcg-telop/';
+                const activeTheme = settings.activeTheme || 'Default';
 
-                if (oldSettings.vstarEnabled !== newSettings.vstarEnabled) {
-                    handleVstarVisibility(newSettings);
+                const potentialPath = assetName.replace(/url\((['\"]?)(.*?)\1\)/, '$2');
+                const cleanAssetName = potentialPath.split('/').pop();
+
+                if (activeTheme !== 'Default' && assets[activeTheme] && assets[activeTheme].includes(cleanAssetName)) {
+                    return `${basePath}${activeTheme}/${cleanAssetName}`;
                 }
 
-                // The activeTheme change is now handled by the activeThemeCss listener
-
-                if (oldSettings.language !== newSettings.language) {
-                    setLanguageClass(newSettings.language);
-                    updateCustomizableAssets();
+                if (isLangSpecific) {
+                    const baseName = assetName.replace(/_jp\.png$/, '');
+                    const langAssetName = `${baseName}_${lang}.png`;
+                    return `${basePath}element/${langAssetName}`;
                 }
-            });
-            
-            handleVstarVisibility(settingsRep.value);
-            // The initial handleThemeChange call is now handled by the replicant's initial value
 
-            function handleSwitchAnimation(animation) {
-                return new Promise(resolve => {
-                    if (!animation.source || !animation.target) {
-                        console.error('Invalid SWITCH_POKEMON animation data:', animation);
-                        return resolve();
-                    }
-                    const sourceEl = document.getElementById(animation.source);
-                    const targetEl = document.getElementById(animation.target);
-                    const promises = [];
+                return `${basePath}element/${assetName}`;
+            }
 
-                    if (sourceEl && !sourceEl.classList.contains('is-empty')) {
-                        const side = animation.source.includes('-L') ? 'L' : 'R';
-                        const p = new Promise(res => sourceEl.addEventListener('animationend', res, { once: true }));
-                        promises.push(p);
-                        sourceEl.classList.add(`anim-slide-out-${side}`);
-                    }
-                    if (targetEl && !targetEl.classList.contains('is-empty')) {
-                        const side = animation.target.includes('-L') ? 'L' : 'R';
-                        const p = new Promise(res => targetEl.addEventListener('animationend', res, { once: true }));
-                        promises.push(p);
-                        targetEl.classList.add(`anim-slide-out-${side}`);
-                    }
+            function updateCustomizableAssets() {
+                const root = document.documentElement;
+                const style = getComputedStyle(root);
 
-                    if (promises.length > 0) {
-                        Promise.all(promises).then(resolve);
-                    } else {
-                        resolve();
+                const getFile = (varName) => style.getPropertyValue(varName).trim().replace(/['\"]/g, '');
+
+                root.style.setProperty('--bg-player-area', `url(${resolveAssetPath(getFile('--asset-panel-bg'))})`);
+                root.style.setProperty('--bg-active-slot', `url(${resolveAssetPath(getFile('--asset-active-bg'))})`);
+                root.style.setProperty('--bg-bench-slot', `url(${resolveAssetPath(getFile('--asset-bench-bg'))})`);
+                root.style.setProperty('--bg-current-turn', `url(${resolveAssetPath(getFile('--asset-current-turn'))})`);
+
+                document.getElementById('vstar-L-icon').src = resolveAssetPath(getFile('--asset-vstar'));
+                document.getElementById('vstar-R-icon').src = resolveAssetPath(getFile('--asset-vstar'));
+                document.getElementById('action-L-energy').src = resolveAssetPath(getFile('--asset-action-energy'));
+                document.getElementById('action-L-supporter').src = resolveAssetPath(getFile('--asset-action-supporter'));
+                document.getElementById('action-L-retreat').src = resolveAssetPath(getFile('--asset-action-retreat'));
+                document.getElementById('action-R-energy').src = resolveAssetPath(getFile('--asset-action-energy'));
+                document.getElementById('action-R-supporter').src = resolveAssetPath(getFile('--asset-action-supporter'));
+                document.getElementById('action-R-retreat').src = resolveAssetPath(getFile('--asset-action-retreat'));
+
+                updateFirstMoveIcon(firstMove.value);
+                updateLostZoneCounter('L', live_lostZoneL.value);
+                updateLostZoneCounter('R', live_lostZoneR.value);
+
+                updateSideArea('L', live_sideL.value);
+                updateSideArea('R', live_sideR.value);
+                sides.forEach(side => {
+                    for (let i = 0; i < 6; i++) {
+                        const replicant = live_slotReplicants[`live_slot${side}${i}`];
+                        if (replicant && replicant.value) {
+                            renderSlot(side, i, replicant.value, replicant.value);
+                        }
                     }
                 });
             }
 
-            function handleEvolveAnimation(animation) {
-                evolvingSlots.add(animation.target); // Flag the slot as evolving
-                const db = cardDatabase.value;
-                const isBattleSlot = animation.target.endsWith('0');
-                let videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active-evolve.webm' : '/assets/ptcg-telop/fx/bench-evolve.webm';
-
-                if (animation.cardId && db && db[animation.cardId]) {
-                    const cardData = db[animation.cardId];
-                    if (cardData.pokemon && cardData.pokemon.option) {
-                        const option = cardData.pokemon.option.toLowerCase();
-                        if (option === 'mega') {
-                            videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active-mega-evolve.webm' : '/assets/ptcg-telop/fx/bench-mega-evolve.webm';
-                        } else if (option === 'terastal') {
-                            videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active-tera-evolve.webm' : '/assets/ptcg-telop/fx/bench-tera-evolve.webm';
-                        }
-                    }
+            function setLanguageClass(lang) {
+                const supportedLangs = ['jp', 'chs', 'cht', 'en'];
+                supportedLangs.forEach(l => {
+                    document.body.classList.remove(`lang-${l}`);
+                });
+                if (lang && supportedLangs.includes(lang)) {
+                    document.body.classList.add(`lang-${lang}`);
                 }
-                return playVideoOnSlot(animation.target, videoSrc);
             }
 
-            function handleKoAnimation(animation) {
+            const activeThemeCss = nodecg.Replicant('activeThemeCss');
+            activeThemeCss.on('change', (newUrl) => {
+                const themeCssLink = document.getElementById('theme-css-link');
+                if (themeCssLink) {
+                    if (newUrl) {
+                        themeCssLink.href = newUrl;
+                        themeCssLink.disabled = false;
+                    } else {
+                        themeCssLink.disabled = true;
+                        themeCssLink.href = '';
+                    }
+                }
+                // Update assets which might be overridden by the theme
+                updateCustomizableAssets();
+            });
+
+            const cardDatabase = nodecg.Replicant('cardDatabase');
+            const assetPaths = nodecg.Replicant('assetPaths');
+            const playerL_name = nodecg.Replicant('playerL_name');
+            const playerR_name = nodecg.Replicant('playerR_name');
+            const vstarUsedL = nodecg.Replicant('live_vstar_L');
+            const vstarUsedR = nodecg.Replicant('live_vstar_R');
+            const live_sideL = nodecg.Replicant('live_sideL');
+            const live_sideR = nodecg.Replicant('live_sideR');
+            const live_stadium = nodecg.Replicant('live_stadium');
+            const live_currentTurn = nodecg.Replicant('live_currentTurn');
+            const settingsRep = nodecg.Replicant('ptcg-settings');
+            const firstMove = nodecg.Replicant('firstMove');
+            const live_lostZoneL = nodecg.Replicant('live_lostZoneL');
+            const live_lostZoneR = nodecg.Replicant('live_lostZoneR');
+            const deckL = nodecg.Replicant('deckL');
+            const deckR = nodecg.Replicant('deckR');
+            const actionTypes = ['energy', 'supporter', 'retreat'];
+            const sides = ['L', 'R'];
+            const live_slotReplicants = {};
+            const replicantList = [
+                cardDatabase, assetPaths, playerL_name, playerR_name,
+                vstarUsedL, vstarUsedR,
+                live_sideL, live_sideR, live_stadium, live_currentTurn, settingsRep, firstMove,
+                live_lostZoneL, live_lostZoneR,
+                deckL, deckR, language,
+                i18nStrings, themeAssets
+            ];
+            sides.forEach(side => {
+                actionTypes.forEach(action => {
+                    replicantList.push(nodecg.Replicant(`live_action_${action}_${side}`));
+                });
+                for (let i = 0; i < 6; i++) {
+                    const id = `live_slot${side}${i}`;
+                    const replicant = nodecg.Replicant(id);
+                    live_slotReplicants[id] = replicant;
+                    replicantList.push(replicant);
+                }
+            });
+
+            function playVideoOnSlot(targetId, videoSrc) {
                 return new Promise(resolve => {
-                    const targetEl = document.getElementById(animation.target);
+                    const targetEl = document.getElementById(targetId);
                     if (!targetEl) return resolve();
 
-                    koSlots.add(animation.target); // Flag the slot as being KO'd
-
-                    const side = animation.target.includes('-L') ? 'L' : 'R';
-                    const isBattleSlot = animation.target.endsWith('0');
-                    const videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active_ko.webm' : '/assets/ptcg-telop/fx/bench_ko.webm';
+                    const isBattleSlot = targetEl.id.endsWith('0');
                     const imageSelector = isBattleSlot ? '.battle-pokemon-image' : '.bench-pokemon-image';
-                    
-                    const koVideo = document.createElement('video');
-                    koVideo.src = videoSrc;
-                    koVideo.muted = true;
-                    koVideo.style.position = 'absolute';
-                    koVideo.style.width = '100%';
-                    koVideo.style.height = '100%';
-                    koVideo.style.left = isBattleSlot ? '0' : '-4px';
-                    koVideo.style.top = '0';
-                    koVideo.style.zIndex = '200';
-                    targetEl.appendChild(koVideo);
-                    koVideo.play();
+                    const cardImage = targetEl.querySelector(imageSelector);
+                    const targetRect = targetEl.getBoundingClientRect();
+                    const videoContainer = document.createElement('div');
+                    videoContainer.style.position = 'absolute';
+                    videoContainer.style.left = `${targetRect.left}px`;
+                    videoContainer.style.top = `${targetRect.top}px`;
+                    videoContainer.style.width = `${targetRect.width}px`;
+                    videoContainer.style.height = `${targetRect.height}px`;
+                    videoContainer.style.zIndex = '300';
+                    videoContainer.style.overflow = 'hidden';
+                    const video = document.createElement('video');
+                    video.src = videoSrc;
+                    video.muted = true;
+                    video.style.width = '100%';
+                    video.style.height = '100%';
+                    videoContainer.appendChild(video);
+                    document.body.appendChild(videoContainer);
+                    video.play();
+                    setTimeout(() => { if (cardImage) cardImage.style.visibility = 'hidden'; }, REPLACE_ANIMATION_HIDE_MS);
+                    setTimeout(() => { if (cardImage) cardImage.style.visibility = 'visible'; }, REPLACE_ANIMATION_SHOW_MS);
+                    video.addEventListener('ended', () => {
+                        videoContainer.remove();
+                        resolve();
+                    });
+                });
+            }
 
-                    setTimeout(() => {
-                        const cardImage = targetEl.querySelector(imageSelector);
-                        if (cardImage) cardImage.style.visibility = 'hidden';
-                    }, 85);
+            NodeCG.waitForReplicants(...replicantList).then(() => {
+                setLanguageClass(language.value || 'jp');
 
-                    koVideo.addEventListener('ended', () => {
-                        koVideo.remove();
+                updatePlayerInfo('L', playerL_name.value);
+                updatePlayerInfo('R', playerR_name.value);
+                updateVstarIcon('L', vstarUsedL.value);
+                updateVstarIcon('R', vstarUsedR.value);
+                updateSideArea('L', live_sideL.value);
+                updateSideArea('R', live_sideR.value);
+                renderStadium(live_stadium.value, { cardId: null });
+                updateCurrentTurnBorder(live_currentTurn.value);
+                sides.forEach(side => {
+                    actionTypes.forEach(action => {
+                        const rep = nodecg.Replicant(`live_action_${action}_${side}`);
+                        updateActionIcon(side, action, rep.value);
+                        rep.on('change', (newVal) => updateActionIcon(side, action, newVal));
+                    });
+                    for (let i = 0; i < 6; i++) {
+                        const replicant = live_slotReplicants[`live_slot${side}${i}`];
+                        renderSlot(side, i, replicant.value, null);
+                        replicant.on('change', (newVal, oldVal) => {
+                            if (!oldVal) {
+                                return;
+                            }
+                            const promise = renderSlot(side, i, newVal, oldVal);
+                            addAnimationPromise(promise);
+                            debouncedOnBatchFinished();
+                        });
+                    }
+                });
+                playerL_name.on('change', (val) => updatePlayerInfo('L', val));
+                playerR_name.on('change', (val) => updatePlayerInfo('R', val));
+                vstarUsedL.on('change', (val) => updateVstarIcon('L', val));
+                vstarUsedR.on('change', (val) => updateVstarIcon('R', val));
+                live_sideL.on('change', (val) => updateSideArea('L', val));
+                live_sideR.on('change', (val) => updateSideArea('R', val));
+                live_stadium.on('change', (newVal, oldVal) => renderStadium(newVal, oldVal || { cardId: null }));
+                live_currentTurn.on('change', (val) => updateCurrentTurnBorder(val));
+                updateFirstMoveIcon(firstMove.value);
+                firstMove.on('change', (val) => updateFirstMoveIcon(val));
+                updateLostZoneCounter('L', live_lostZoneL.value);
+                updateLostZoneCounter('R', live_lostZoneR.value);
+                live_lostZoneL.on('change', (val) => updateLostZoneCounter('L', val));
+                live_lostZoneR.on('change', (val) => updateLostZoneCounter('R', val));
+
+                const preloaderContainer = document.getElementById('video-preloader');
+                function preloadDeckImages(deck) {
+                    if (!deck || !deck.cards || !assetPaths.value.cardImgPath || !preloaderContainer) return;
+
+                    const cardImgPath = `/${assetPaths.value.cardImgPath}`;
+
+                    deck.cards.forEach(cardId => {
+                        if (!preloaderContainer.querySelector(`img[src="${cardImgPath}${cardId}.jpg"]`)) {
+                            const img = document.createElement('img');
+                            img.src = `${cardImgPath}${cardId}.jpg`;
+                            preloaderContainer.appendChild(img);
+                        }
+                    });
+                }
+
+                preloadDeckImages(deckL.value);
+                preloadDeckImages(deckR.value);
+                deckL.on('change', (newVal) => preloadDeckImages(newVal));
+                deckR.on('change', (newVal) => preloadDeckImages(newVal));
+
+                const handleVstarVisibility = (settings) => {
+                    const vstarL_icon = document.getElementById('vstar-L-icon');
+                    const vstarR_icon = document.getElementById('vstar-R-icon');
+                    const enabled = settings && settings.vstarEnabled;
+                    if (vstarL_icon) vstarL_icon.classList.toggle('hidden', !enabled);
+                    if (vstarR_icon) vstarR_icon.classList.toggle('hidden', !enabled);
+                };
+
+                settingsRep.on('change', (newValue, oldValue) => {
+                    const oldSettings = oldValue || {};
+                    const newSettings = newValue || {};
+
+                    if (oldSettings.vstarEnabled !== newSettings.vstarEnabled) {
+                        handleVstarVisibility(newSettings);
+                    }
+
+                    // The activeTheme change is now handled by the activeThemeCss listener
+
+                    if (oldSettings.language !== newSettings.language) {
+                        setLanguageClass(newSettings.language);
+                        updateCustomizableAssets();
+                    }
+                });
+
+                handleVstarVisibility(settingsRep.value);
+                // The initial handleThemeChange call is now handled by the replicant's initial value
+
+                function handleSwitchAnimation(animation) {
+                    return new Promise(resolve => {
+                        if (!animation.source || !animation.target) {
+                            console.error('Invalid SWITCH_POKEMON animation data:', animation);
+                            return resolve();
+                        }
+                        const sourceEl = document.getElementById(animation.source);
+                        const targetEl = document.getElementById(animation.target);
+                        const promises = [];
+
+                        if (sourceEl && !sourceEl.classList.contains('is-empty')) {
+                            const side = animation.source.includes('-L') ? 'L' : 'R';
+                            const p = new Promise(res => sourceEl.addEventListener('animationend', res, { once: true }));
+                            promises.push(p);
+                            sourceEl.classList.add(`anim-slide-out-${side}`);
+                        }
+                        if (targetEl && !targetEl.classList.contains('is-empty')) {
+                            const side = animation.target.includes('-L') ? 'L' : 'R';
+                            const p = new Promise(res => targetEl.addEventListener('animationend', res, { once: true }));
+                            promises.push(p);
+                            targetEl.classList.add(`anim-slide-out-${side}`);
+                        }
+
+                        if (promises.length > 0) {
+                            Promise.all(promises).then(resolve);
+                        } else {
+                            resolve();
+                        }
+                    });
+                }
+
+                function handleEvolveAnimation(animation) {
+                    evolvingSlots.add(animation.target); // Flag the slot as evolving
+                    const db = cardDatabase.value;
+                    const isBattleSlot = animation.target.endsWith('0');
+                    let videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active-evolve.webm' : '/assets/ptcg-telop/fx/bench-evolve.webm';
+
+                    if (animation.cardId && db && db[animation.cardId]) {
+                        const cardData = db[animation.cardId];
+                        if (cardData.pokemon && cardData.pokemon.option) {
+                            const option = cardData.pokemon.option.toLowerCase();
+                            if (option === 'mega') {
+                                videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active-mega-evolve.webm' : '/assets/ptcg-telop/fx/bench-mega-evolve.webm';
+                            } else if (option === 'terastal') {
+                                videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active-tera-evolve.webm' : '/assets/ptcg-telop/fx/bench-tera-evolve.webm';
+                            }
+                        }
+                    }
+                    return playVideoOnSlot(animation.target, videoSrc);
+                }
+
+                function handleKoAnimation(animation) {
+                    return new Promise(resolve => {
+                        const targetEl = document.getElementById(animation.target);
+                        if (!targetEl) return resolve();
+
+                        koSlots.add(animation.target); // Flag the slot as being KO'd
+
+                        const side = animation.target.includes('-L') ? 'L' : 'R';
+                        const isBattleSlot = animation.target.endsWith('0');
+                        const videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active_ko.webm' : '/assets/ptcg-telop/fx/bench_ko.webm';
+                        const imageSelector = isBattleSlot ? '.battle-pokemon-image' : '.bench-pokemon-image';
+
+                        const koVideo = document.createElement('video');
+                        koVideo.src = videoSrc;
+                        koVideo.muted = true;
+                        koVideo.style.position = 'absolute';
+                        koVideo.style.width = '100%';
+                        koVideo.style.height = '100%';
+                        koVideo.style.left = isBattleSlot ? '0' : '-4px';
+                        koVideo.style.top = '0';
+                        koVideo.style.zIndex = '200';
+                        targetEl.appendChild(koVideo);
+                        koVideo.play();
+
+                        setTimeout(() => {
+                            const cardImage = targetEl.querySelector(imageSelector);
+                            if (cardImage) cardImage.style.visibility = 'hidden';
+                        }, 85);
+
+                        koVideo.addEventListener('ended', () => {
+                            koVideo.remove();
+                            targetEl.classList.add(`anim-slide-out-${side}`);
+                            targetEl.addEventListener('animationend', () => {
+                                koSlots.delete(animation.target); // Clean up the flag
+                                resolve();
+                            }, { once: true });
+                        });
+                    });
+                }
+
+                function handleExitAnimation(animation) {
+                    return new Promise(resolve => {
+                        const targetEl = document.getElementById(animation.target);
+                        if (!targetEl) return resolve();
+
+                        removingSlots.add(animation.target); // Flag the slot for removal
+
+                        const side = animation.target.includes('-L') ? 'L' : 'R';
                         targetEl.classList.add(`anim-slide-out-${side}`);
+
                         targetEl.addEventListener('animationend', () => {
-                            koSlots.delete(animation.target); // Clean up the flag
+                            // Perform the cleanup that renderSlot would have done
+                            const activeWrapper = targetEl.querySelector('.active-pokemon-wrapper');
+                            const benchWrapper = targetEl.querySelector('.bench-pokemon-wrapper');
+                            if (activeWrapper) { activeWrapper.classList.add('hidden'); }
+                            if (benchWrapper) { targetEl.innerHTML = ''; }
+                            targetEl.dataset.cardId = '';
+                            targetEl.classList.add('is-empty');
+
+                            removingSlots.delete(animation.target); // Clean up the flag
                             resolve();
                         }, { once: true });
                     });
-                });
-            }
-
-            function handleExitAnimation(animation) {
-                return new Promise(resolve => {
-                    const targetEl = document.getElementById(animation.target);
-                    if (!targetEl) return resolve();
-
-                    removingSlots.add(animation.target); // Flag the slot for removal
-
-                    const side = animation.target.includes('-L') ? 'L' : 'R';
-                    targetEl.classList.add(`anim-slide-out-${side}`);
-                    
-                    targetEl.addEventListener('animationend', () => {
-                        // Perform the cleanup that renderSlot would have done
-                        const activeWrapper = targetEl.querySelector('.active-pokemon-wrapper');
-                        const benchWrapper = targetEl.querySelector('.bench-pokemon-wrapper');
-                        if (activeWrapper) { activeWrapper.classList.add('hidden'); }
-                        if (benchWrapper) { targetEl.innerHTML = ''; }
-                        targetEl.dataset.cardId = '';
-                        targetEl.classList.add('is-empty');
-
-                        removingSlots.delete(animation.target); // Clean up the flag
-                        resolve();
-                    }, { once: true });
-                });
-            }
-
-            function handleEnterAnimation(animation) {
-                return new Promise(resolve => {
-                    const targetEl = document.getElementById(animation.target);
-                    if (!targetEl) return resolve();
-                    targetEl.classList.remove('anim-slide-out-L', 'anim-slide-out-R');
-                    const side = animation.target.includes('-L') ? 'L' : 'R';
-                    const animationClass = `anim-slide-in-${side}`;
-                    targetEl.classList.add(animationClass);
-                    targetEl.addEventListener('animationend', () => {
-                        targetEl.classList.remove(animationClass);
-                        resolve();
-                    }, { once: true });
-                });
-            }
-
-            nodecg.listenFor('playAnimation', (animation) => {
-                if (!animation || !animation.type) {
-                    console.error('Invalid animation data received:', animation);
-                    return;
                 }
 
-                let promise;
-                switch (animation.type) {
-                    case 'SWITCH_POKEMON':
-                        promise = handleSwitchAnimation(animation);
-                        break;
-                    case 'EVOLVE_POKEMON':
-                        promise = handleEvolveAnimation(animation);
-                        break;
-                    case 'DEVOLVE_POKEMON':
-                        evolvingSlots.add(animation.target);
-                        const isBattleSlot = animation.target.endsWith('0');
-                        const videoSrc_devolve = isBattleSlot ? '/assets/ptcg-telop/fx/active-devolve.webm' : '/assets/ptcg-telop/fx/bench-devolve.webm';
-                        promise = playVideoOnSlot(animation.target, videoSrc_devolve);
-                        break;
-                    case 'REPLACE_POKEMON':
-                        evolvingSlots.add(animation.target);
-                        const isBattleSlot_replace = animation.target.endsWith('0');
-                        const videoSrc_replace = isBattleSlot_replace ? '/assets/ptcg-telop/fx/active-replace.webm' : '/assets/ptcg-telop/fx/bench-replace.webm';
-                        promise = playVideoOnSlot(animation.target, videoSrc_replace);
-                        break;
-                    case 'KO_POKEMON':
-                        promise = handleKoAnimation(animation);
-                        break;
-                    case 'EXIT_POKEMON':
-                        promise = handleExitAnimation(animation);
-                        break;
-                    case 'ENTER_POKEMON':
-                        promise = handleEnterAnimation(animation);
-                        break;
-                    default:
-                        console.warn('Unknown animation type:', animation.type);
-                        promise = Promise.resolve();
-                        break;
-                }
-                
-                addAnimationPromise(promise);
-                debouncedOnBatchFinished();
-            });
-
-            nodecg.listenFor('attack-fx', (data) => {
-                const promise = new Promise(resolve => {
-                    console.log('Received attack-fx:', data);
-
-                    data.targets.forEach(targetInfo => {
-                        g_attackAnimationTargets.add(targetInfo.targetId.replace('slot', 'slot-'));
+                function handleEnterAnimation(animation) {
+                    return new Promise(resolve => {
+                        const targetEl = document.getElementById(animation.target);
+                        if (!targetEl) return resolve();
+                        targetEl.classList.remove('anim-slide-out-L', 'anim-slide-out-R');
+                        const side = animation.target.includes('-L') ? 'L' : 'R';
+                        const animationClass = `anim-slide-in-${side}`;
+                        targetEl.classList.add(animationClass);
+                        targetEl.addEventListener('animationend', () => {
+                            targetEl.classList.remove(animationClass);
+                            resolve();
+                        }, { once: true });
                     });
+                }
 
-                    const fxContainer = document.getElementById('attack-fx-container');
-                    const videoEl = fxContainer.querySelector('.attack-fx-video');
-                    const moveNameEl = fxContainer.querySelector('.attack-fx-move-name');
-                    const attackerNameEl = fxContainer.querySelector('.attack-fx-attacker-name');
-                    
-                    moveNameEl.textContent = data.moveName;
-                    attackerNameEl.textContent = data.attackerName;
+                nodecg.listenFor('playAnimation', (animation) => {
+                    if (!animation || !animation.type) {
+                        console.error('Invalid animation data received:', animation);
+                        return;
+                    }
 
-                    const typeClass = `type-${(data.attackerType || '無').toLowerCase()}`;
-                    fxContainer.className = ''; 
-                    void fxContainer.offsetWidth; 
-                    fxContainer.classList.add('active', typeClass);
+                    let promise;
+                    switch (animation.type) {
+                        case 'SWITCH_POKEMON':
+                            promise = handleSwitchAnimation(animation);
+                            break;
+                        case 'EVOLVE_POKEMON':
+                            promise = handleEvolveAnimation(animation);
+                            break;
+                        case 'DEVOLVE_POKEMON':
+                            evolvingSlots.add(animation.target);
+                            const isBattleSlot = animation.target.endsWith('0');
+                            const videoSrc_devolve = isBattleSlot ? '/assets/ptcg-telop/fx/active-devolve.webm' : '/assets/ptcg-telop/fx/bench-devolve.webm';
+                            promise = playVideoOnSlot(animation.target, videoSrc_devolve);
+                            break;
+                        case 'REPLACE_POKEMON':
+                            evolvingSlots.add(animation.target);
+                            const isBattleSlot_replace = animation.target.endsWith('0');
+                            const videoSrc_replace = isBattleSlot_replace ? '/assets/ptcg-telop/fx/active-replace.webm' : '/assets/ptcg-telop/fx/bench-replace.webm';
+                            promise = playVideoOnSlot(animation.target, videoSrc_replace);
+                            break;
+                        case 'KO_POKEMON':
+                            promise = handleKoAnimation(animation);
+                            break;
+                        case 'EXIT_POKEMON':
+                            promise = handleExitAnimation(animation);
+                            break;
+                        case 'ENTER_POKEMON':
+                            promise = handleEnterAnimation(animation);
+                            break;
+                        default:
+                            console.warn('Unknown animation type:', animation.type);
+                            promise = Promise.resolve();
+                            break;
+                    }
 
-                    const animationClass = `animate-${data.attackerSide}`;
-                    fxContainer.classList.add(animationClass);
+                    addAnimationPromise(promise);
+                    debouncedOnBatchFinished();
+                });
 
-                    videoEl.currentTime = 0;
-                    videoEl.play();
+                nodecg.listenFor('attack-fx', (data) => {
+                    const promise = new Promise(resolve => {
+                        console.log('Received attack-fx:', data);
 
-                    let hasAnimationEnded = false;
-                    const onAnimationEnd = () => {
-                        if (hasAnimationEnded) return;
-                        hasAnimationEnded = true;
+                        data.targets.forEach(targetInfo => {
+                            g_attackAnimationTargets.add(targetInfo.targetId.replace('slot', 'slot-'));
+                        });
 
-                        const hitPromises = [];
+                        const fxContainer = document.getElementById('attack-fx-container');
+                        const videoEl = fxContainer.querySelector('.attack-fx-video');
+                        const moveNameEl = fxContainer.querySelector('.attack-fx-move-name');
+                        const attackerNameEl = fxContainer.querySelector('.attack-fx-attacker-name');
+
+                        moveNameEl.textContent = data.moveName;
+                        attackerNameEl.textContent = data.attackerName;
+
+                        const typeClass = `type-${(data.attackerType || '無').toLowerCase()}`;
+                        fxContainer.className = '';
+                        void fxContainer.offsetWidth;
+                        fxContainer.classList.add('active', typeClass);
+
+                        const animationClass = `animate-${data.attackerSide}`;
+                        fxContainer.classList.add(animationClass);
+
+                        videoEl.currentTime = 0;
+                        videoEl.play();
+
+                        let hasAnimationEnded = false;
+                        const onAnimationEnd = () => {
+                            if (hasAnimationEnded) return;
+                            hasAnimationEnded = true;
+
+                            const hitPromises = [];
+
+                            data.targets.forEach(targetInfo => {
+                                const targetEl = document.getElementById(targetInfo.targetId.replace('slot', 'slot-'));
+                                if (!targetEl) return;
+
+                                const isBattleSlot = targetInfo.targetId.endsWith('0');
+                                const cardImageSelector = isBattleSlot ? '.battle-card-image-area' : '.bench-card-image-area';
+                                const cardImageEl = targetEl.querySelector(cardImageSelector);
+                                if (!cardImageEl) return;
+
+                                const imageRect = cardImageEl.getBoundingClientRect();
+                                const causedDamage = targetInfo.damage > 0;
+                                const isOpponent = data.attackerSide !== targetInfo.targetSide;
+
+                                if (causedDamage) {
+                                    const p = new Promise(res => {
+                                        setTimeout(() => {
+                                            cardImageEl.classList.add('anim-shake', 'anim-flash-white');
+                                            setTimeout(() => {
+                                                cardImageEl.classList.remove('anim-shake', 'anim-flash-white');
+                                                res();
+                                            }, 400);
+                                        }, 50);
+                                    });
+                                    hitPromises.push(p);
+                                }
+
+                                if (isOpponent || causedDamage) {
+                                    const p = new Promise(res => {
+                                        const videoSize = isBattleSlot ? 350 : 200;
+                                        const hitVideo = document.createElement('video');
+                                        hitVideo.className = 'hit-effect';
+                                        hitVideo.src = getHitVideoSrc(data.attackerType);
+                                        hitVideo.muted = true;
+                                        hitVideo.autoplay = true;
+                                        hitVideo.style.width = `${videoSize}px`;
+                                        hitVideo.style.height = `${videoSize}px`;
+                                        hitVideo.style.left = `${imageRect.left + (imageRect.width / 2) - (videoSize / 2)}px`;
+                                        hitVideo.style.top = `${imageRect.top + (imageRect.height / 2) - (videoSize / 2)}px`;
+                                        document.body.appendChild(hitVideo);
+                                        hitVideo.addEventListener('ended', () => {
+                                            hitVideo.remove();
+                                            res();
+                                        });
+                                    });
+                                    hitPromises.push(p);
+                                }
+                            });
+
+                            fxContainer.classList.remove('active', animationClass, typeClass);
+                            videoEl.removeEventListener('ended', onAnimationEnd);
+                            fxContainer.removeEventListener('animationend', onAnimationEnd);
+                            g_attackAnimationTargets.clear();
+
+                            // Resolve the main promise only after all hit effects are done
+                            Promise.all(hitPromises).then(resolve);
+                        };
+
+                        videoEl.addEventListener('ended', onAnimationEnd);
+                        fxContainer.addEventListener('animationend', (e) => {
+                            if (e.target === fxContainer) onAnimationEnd();
+                        });
+
+                        setTimeout(onAnimationEnd, 2000); // Safety timeout
 
                         data.targets.forEach(targetInfo => {
                             const targetEl = document.getElementById(targetInfo.targetId.replace('slot', 'slot-'));
-                            if (!targetEl) return;
-
-                            const isBattleSlot = targetInfo.targetId.endsWith('0');
-                            const cardImageSelector = isBattleSlot ? '.battle-card-image-area' : '.bench-card-image-area';
-                            const cardImageEl = targetEl.querySelector(cardImageSelector);
-                            if (!cardImageEl) return;
-
-                            const imageRect = cardImageEl.getBoundingClientRect();
                             const causedDamage = targetInfo.damage > 0;
-                            const isOpponent = data.attackerSide !== targetInfo.targetSide;
-
-                            if (causedDamage) {
-                                const p = new Promise(res => {
-                                    setTimeout(() => {
-                                        cardImageEl.classList.add('anim-shake', 'anim-flash-white');
-                                        setTimeout(() => {
-                                            cardImageEl.classList.remove('anim-shake', 'anim-flash-white');
-                                            res();
-                                        }, 400);
-                                    }, 50);
-                                });
-                                hitPromises.push(p);
-                            }
-
-                            if (isOpponent || causedDamage) {
-                                const p = new Promise(res => {
-                                    const videoSize = isBattleSlot ? 350 : 200;
-                                    const hitVideo = document.createElement('video');
-                                    hitVideo.className = 'hit-effect';
-                                    hitVideo.src = getHitVideoSrc(data.attackerType);
-                                    hitVideo.muted = true;
-                                    hitVideo.autoplay = true;
-                                    hitVideo.style.width = `${videoSize}px`;
-                                    hitVideo.style.height = `${videoSize}px`;
-                                    hitVideo.style.left = `${imageRect.left + (imageRect.width / 2) - (videoSize / 2)}px`;
-                                    hitVideo.style.top = `${imageRect.top + (imageRect.height / 2) - (videoSize / 2)}px`;
-                                    document.body.appendChild(hitVideo);
-                                    hitVideo.addEventListener('ended', () => {
-                                        hitVideo.remove();
-                                        res();
-                                    });
-                                });
-                                hitPromises.push(p);
+                            const isBattleSlot = targetInfo.targetId.endsWith('0');
+                            if (causedDamage && targetInfo.isWeakness && isBattleSlot) {
+                                activeAnimations.set(targetEl.id, { isWeakness: true });
                             }
                         });
-
-                        fxContainer.classList.remove('active', animationClass, typeClass);
-                        videoEl.removeEventListener('ended', onAnimationEnd);
-                        fxContainer.removeEventListener('animationend', onAnimationEnd);
-                        g_attackAnimationTargets.clear();
-
-                        // Resolve the main promise only after all hit effects are done
-                        Promise.all(hitPromises).then(resolve);
-                    };
-                    
-                    videoEl.addEventListener('ended', onAnimationEnd);
-                    fxContainer.addEventListener('animationend', (e) => {
-                        if (e.target === fxContainer) onAnimationEnd();
                     });
 
-                    setTimeout(onAnimationEnd, 2000); // Safety timeout
-
-                    data.targets.forEach(targetInfo => {
-                        const targetEl = document.getElementById(targetInfo.targetId.replace('slot', 'slot-'));
-                        const causedDamage = targetInfo.damage > 0;
-                        const isBattleSlot = targetInfo.targetId.endsWith('0');
-                        if (causedDamage && targetInfo.isWeakness && isBattleSlot) {
-                            activeAnimations.set(targetEl.id, { isWeakness: true });
-                        }
-                    });
+                    addAnimationPromise(promise);
+                    debouncedOnBatchFinished();
                 });
-
-                addAnimationPromise(promise);
-                debouncedOnBatchFinished();
-            });
-        }).catch(err => console.error("Replicants failed to load:", err));
-    });
+            }).catch(err => console.error("Replicants failed to load:", err));
+        });
     </script>
     <script>
-    // --- New Animation Promise Manager ---
-    let animationPromises = [];
+        // --- New Animation Promise Manager ---
+        let animationPromises = [];
 
-    // Debounce function to prevent rapid firing
-    function debounce(func, wait) {
-        let timeout;
-        return function(...args) {
-            const context = this;
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(context, args), wait);
+        // Debounce function to prevent rapid firing
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
+
+        // This function will be called after a batch of replicant changes
+        const onBatchFinished = () => {
+            if (animationPromises.length === 0) {
+                // If there were no animations triggered in this batch, we can send the ACK immediately.
+                // This is important for data-only changes.
+                console.log('Animation batch empty. Sending ACK immediately.');
+                nodecg.sendMessage('animationBatchComplete');
+                return;
+            }
+
+            console.log(`Waiting for ${animationPromises.length} animation(s) to complete...`);
+
+            Promise.all(animationPromises)
+                .then(() => {
+                    console.log('All animations in batch complete. Sending ACK.');
+                    nodecg.sendMessage('animationBatchComplete');
+                })
+                .catch(err => {
+                    console.error('An error occurred in an animation promise:', err);
+                    // Still send the ACK to prevent the backend from getting stuck
+                    nodecg.sendMessage('animationBatchComplete');
+                })
+                .finally(() => {
+                    // Clear the array for the next batch
+                    animationPromises = [];
+                });
         };
-    }
 
-    // This function will be called after a batch of replicant changes
-    const onBatchFinished = () => {
-        if (animationPromises.length === 0) {
-            // If there were no animations triggered in this batch, we can send the ACK immediately.
-            // This is important for data-only changes.
-            console.log('Animation batch empty. Sending ACK immediately.');
-            nodecg.sendMessage('animationBatchComplete');
-            return;
+        // Create a debounced version of the function. The 150ms window should be enough to capture all replicant changes in a single backend batch.
+        const debouncedOnBatchFinished = debounce(onBatchFinished, 150);
+
+        // Helper to add promises to the queue
+        function addAnimationPromise(promise) {
+            if (promise && typeof promise.then === 'function') {
+                animationPromises.push(promise);
+            }
         }
-
-        console.log(`Waiting for ${animationPromises.length} animation(s) to complete...`);
-        
-        Promise.all(animationPromises)
-            .then(() => {
-                console.log('All animations in batch complete. Sending ACK.');
-                nodecg.sendMessage('animationBatchComplete');
-            })
-            .catch(err => {
-                console.error('An error occurred in an animation promise:', err);
-                // Still send the ACK to prevent the backend from getting stuck
-                nodecg.sendMessage('animationBatchComplete');
-            })
-            .finally(() => {
-                // Clear the array for the next batch
-                animationPromises = [];
-            });
-    };
-
-    // Create a debounced version of the function. The 150ms window should be enough to capture all replicant changes in a single backend batch.
-    const debouncedOnBatchFinished = debounce(onBatchFinished, 150);
-
-    // Helper to add promises to the queue
-    function addAnimationPromise(promise) {
-        if (promise && typeof promise.then === 'function') {
-            animationPromises.push(promise);
-        }
-    }
     </script>
 </body>
+
 </html>
