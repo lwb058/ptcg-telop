@@ -108,9 +108,9 @@
         "fullbleed": true
       },
       {
-        "name": "history-panel",
-        "title": "History & Timeline",
-        "file": "history.html",
+        "name": "record-panel",
+        "title": "Records",
+        "file": "record.html",
         "headerColor": "#4CAF50",
         "fullbleed": true
       }
