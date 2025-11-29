@@ -288,6 +288,7 @@
             }
 
             timeline.on('change', renderTimeline);
+            nodecg.listenFor('timelineRefreshed', renderTimeline);
 
             playbackStatus.on('change', (newVal) => {
                 if (newVal) {

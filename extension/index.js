@@ -1699,8 +1699,10 @@ module.exports = function (nodecg) {
 
 		if (insertMode) {
 			// Insert Mode: Add and sort into correct position
-			timeline.value.push(opsPack);
-			timeline.value.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
+			const newTimeline = [...timeline.value, opsPack];
+			newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
+			timeline.value = newTimeline;
+
 			nodecg.log.info(`OpsPack ${opsPack.id} inserted at ${opsPack.timestamp} (Insert Mode).`);
 		} else {
 			// Overwrite Mode: Delete all future OpsPacks, then add
@@ -1721,6 +1723,8 @@ module.exports = function (nodecg) {
 				nodecg.log.info('Switched to live recording mode (Overwrite Mode).');
 			}
 		}
+
+		nodecg.sendMessage('timelineRefreshed');
 
 		// Trigger existing apply logic
 		processQueue((err) => {
@@ -2034,13 +2038,18 @@ module.exports = function (nodecg) {
 			}
 
 			// Update the timestamp
-			timeline.value[index].timestamp = newTimestamp;
+			const newTimeline = [...timeline.value];
+			newTimeline[index].timestamp = newTimestamp;
 
 			// Re-sort timeline by timestamp to maintain order
-			timeline.value.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
+			newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
+
+			// Update replicant
+			timeline.value = newTimeline;
 
 			nodecg.log.info(`OpsPack at index ${index} updated to timestamp ${newTimestamp}`);
 
+			nodecg.sendMessage('timelineRefreshed');
 			if (callback) callback(null, 'OpsPack updated successfully.');
 		} catch (e) {
 			nodecg.log.error('editOpsPack error:', e);
