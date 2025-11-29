@@ -2057,6 +2057,27 @@ module.exports = function (nodecg) {
 		}
 	});
 
+	nodecg.listenFor('deleteOpsPack', (index, callback) => {
+		try {
+			if (index < 0 || index >= timeline.value.length) {
+				throw new Error('Invalid index');
+			}
+
+			// Create a copy, remove the item, and reassign
+			const newTimeline = [...timeline.value];
+			newTimeline.splice(index, 1);
+			timeline.value = newTimeline;
+
+			nodecg.log.info(`OpsPack at index ${index} deleted.`);
+
+			nodecg.sendMessage('timelineRefreshed');
+			if (callback) callback(null, 'OpsPack deleted successfully.');
+		} catch (e) {
+			nodecg.log.error('deleteOpsPack error:', e);
+			if (callback) callback(e.message);
+		}
+	});
+
 	nodecg.listenFor('importTimeline', (jsonString, callback) => {
 		try {
 			const data = JSON.parse(jsonString);

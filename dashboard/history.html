@@ -248,6 +248,7 @@
                             <span>[${pack.timestamp}] (R${pack.round || 1}) ${opCount} Ops</span>
                             <div>
                                 <button class="btn btn-sm btn-secondary edit-btn" data-index="${index}" style="margin-left: 10px;">Edit</button>
+                                <button class="btn btn-sm btn-danger delete-btn" data-index="${index}" style="margin-left: 10px;">Delete</button>
                                 <button class="btn btn-sm btn-primary seek-btn" data-index="${index}" style="margin-left: 10px;">Seek</button>
                             </div>
                         </div>
@@ -257,7 +258,7 @@
                     `;
 
                     item.addEventListener('click', (e) => {
-                        if (e.target.classList.contains('seek-btn') || e.target.classList.contains('edit-btn')) return; // Don't toggle if clicking seek/edit
+                        if (e.target.classList.contains('seek-btn') || e.target.classList.contains('edit-btn') || e.target.classList.contains('delete-btn')) return; // Don't toggle if clicking buttons
                         item.classList.toggle('expanded');
                     });
 
@@ -273,6 +274,14 @@
                             } else {
                                 alert('Invalid format. Please use MM:SS format.');
                             }
+                        }
+                    });
+
+                    const deleteBtn = item.querySelector('.delete-btn');
+                    deleteBtn.addEventListener('click', () => {
+                        if (confirm('Are you sure you want to delete this OpsPack? This cannot be undone.')) {
+                            nodecg.sendMessage('deleteOpsPack', index)
+                                .catch(err => alert('Failed to delete: ' + err));
                         }
                     });
 
