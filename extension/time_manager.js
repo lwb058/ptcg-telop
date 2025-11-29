@@ -6,7 +6,8 @@ module.exports = function (nodecg) {
             startTime: null,
             pausedTime: 0,
             isRunning: false,
-            offset: 0
+            offset: 0,
+            mode: 'live' // 'live' or 'playback'
         }
     });
 
@@ -20,37 +21,21 @@ module.exports = function (nodecg) {
     function startTimer() {
         if (matchTimer.value.isRunning) return;
 
+        // Force mode to live when starting manually
+        matchTimer.value.mode = 'live';
+
         // If starting from a fresh state or reset state
         if (!matchTimer.value.startTime) {
             matchTimer.value.startTime = Date.now();
             matchTimer.value.pausedTime = 0;
         } else {
             // Resuming from pause
-            // Calculate how long we were paused and adjust startTime effectively
-            // Current Time = Date.now() - startTime - pausedTime
-            // To resume, we just need to update the state. The pausedTime accumulation happens on stop.
-            // Wait, actually:
-            // When running: Elapsed = Date.now() - startTime - totalPausedDuration
-            // When paused: Elapsed = pauseStart - startTime - totalPausedDuration
-
-            // Simpler model:
-            // startTime: The timestamp when the timer was *first* started.
-            // offset: The total duration (in ms) to SUBTRACT from the elapsed time (accumulated pause time).
-
-            // When resuming, we need to adjust the offset so that the elapsed time remains continuous.
-            // Let's stick to the structure: { startTime, pausedTime, isRunning, offset }
-            // But let's refine the logic.
-
-            // Alternative Logic (Standard):
-            // Elapsed = (Date.now() - startTime)
-            // When pausing, we save the current Elapsed.
             // When resuming, we set startTime = Date.now() - SavedElapsed.
-
-            // Let's use the "offset" field as "accumulated elapsed time before current run".
+            // SavedElapsed is stored in 'offset' when paused.
+            // Wait, the previous logic was:
             // When stopped: offset = current elapsed time. startTime = null.
             // When started: startTime = Date.now().
             // Current Elapsed = offset + (Date.now() - startTime).
-
             matchTimer.value.startTime = Date.now();
         }
 
@@ -60,10 +45,14 @@ module.exports = function (nodecg) {
     function stopTimer() {
         if (!matchTimer.value.isRunning) return;
 
-        const now = Date.now();
-        const currentRunDuration = now - matchTimer.value.startTime;
-        matchTimer.value.offset += currentRunDuration;
-        matchTimer.value.startTime = null;
+        if (matchTimer.value.mode === 'live') {
+            const now = Date.now();
+            const currentRunDuration = now - matchTimer.value.startTime;
+            matchTimer.value.offset += currentRunDuration;
+            matchTimer.value.startTime = null;
+        }
+        // For playback mode, the offset is updated by the playback loop, so we just stop.
+
         matchTimer.value.isRunning = false;
     }
 
@@ -71,13 +60,14 @@ module.exports = function (nodecg) {
         matchTimer.value.startTime = null;
         matchTimer.value.offset = 0;
         matchTimer.value.isRunning = false;
+        matchTimer.value.mode = 'live'; // Reset to live mode
     }
 
     function editTimer(newSeconds) {
         // Set the timer to a specific duration (in seconds)
         const newOffset = newSeconds * 1000;
         matchTimer.value.offset = newOffset;
-        if (matchTimer.value.isRunning) {
+        if (matchTimer.value.isRunning && matchTimer.value.mode === 'live') {
             matchTimer.value.startTime = Date.now();
         } else {
             matchTimer.value.startTime = null;

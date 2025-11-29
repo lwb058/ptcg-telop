@@ -1847,30 +1847,46 @@ module.exports = function (nodecg) {
 	function startPlaybackInterval() {
 		if (playbackInterval) return; // Already running
 
+		// Set Timer mode to playback
+		matchTimer.value.mode = 'playback';
+		matchTimer.value.isRunning = true;
+		matchTimer.value.startTime = Date.now();
+		// offset is already set by seekTimeline or playTimeline
+
 		playbackInterval = setInterval(() => {
-			if (!playbackStatus.value.isPlaying) return;
+			// Update simulated time
+			// In playback mode, we manually increment the offset to simulate time passing
+			// Actually, let's use the standard timer logic:
+			// offset += tick_rate
+			matchTimer.value.offset += PLAYBACK_TICK_RATE;
 
-			let foundNewPacks = false;
-			playbackStatus.value.playbackTimeMs += PLAYBACK_TICK_RATE;
-			playbackStatus.value.currentTime = formatTimeMs(playbackStatus.value.playbackTimeMs);
+			const currentTimeMs = matchTimer.value.offset;
+			playbackStatus.value.currentTime = formatTimeMs(currentTimeMs);
+			playbackStatus.value.playbackTimeMs = currentTimeMs; // Keep for compatibility if needed, but we should use matchTimer
 
-			// Check for OpsPacks to apply
-			for (let i = playbackStatus.value.currentIndex + 1; i < timeline.value.length; i++) {
-				const pack = timeline.value[i];
-				const packTimeMs = parseTime(pack.timestamp);
+			// Find OpsPacks that should be executed at this time
+			// We look for packs with timestamp <= currentTimeMs that haven't been processed yet
+			// Since we process sequentially, we just check the next expected pack
+			// But wait, we need to handle seeking.
+			// Let's assume we are at 'currentIndex' in the timeline.
 
-				if (packTimeMs <= playbackStatus.value.playbackTimeMs) {
-					playbackQueue.push(pack);
-					foundNewPacks = true;
-					playbackStatus.value.currentIndex = i;
-				} else {
-					break; // Packs are sorted by time
-				}
+			let nextPack = timeline.value[playbackStatus.value.currentIndex];
+
+			// Process all packs that are due
+			while (nextPack && parseTime(nextPack.timestamp) <= currentTimeMs) {
+				playbackQueue.push(nextPack);
+				playbackStatus.value.currentIndex++;
+				nextPack = timeline.value[playbackStatus.value.currentIndex];
 			}
 
-			// 4. Trigger Processing if needed
-			if (foundNewPacks) {
-				processPlaybackQueue();
+			// Trigger the async processor
+			processPlaybackQueue();
+
+			// Stop if we reached the end
+			if (playbackStatus.value.currentIndex >= timeline.value.length) {
+				stopPlaybackInterval();
+				playbackStatus.value.isPlaying = false;
+				matchTimer.value.isRunning = false;
 			}
 
 		}, PLAYBACK_TICK_RATE);
@@ -1885,9 +1901,15 @@ module.exports = function (nodecg) {
 			playbackStatus.value = {
 				isPlaying: true,
 				playbackTimeMs: 0,
-				currentIndex: -1,
+				currentIndex: 0,
 				currentTime: "00:00"
 			};
+
+			// Reset Timer for Playback
+			matchTimer.value.mode = 'playback';
+			matchTimer.value.isRunning = true;
+			matchTimer.value.startTime = Date.now();
+			matchTimer.value.offset = 0;
 
 			// 3. Start Interval
 			startPlaybackInterval();
@@ -1942,14 +1964,18 @@ module.exports = function (nodecg) {
 
 			// 4. Update Status
 			const targetPack = timeline.value[index];
-			const targetTimeMs = parseTime(targetPack.timestamp);
+			const targetTime = targetPack ? parseTime(targetPack.timestamp) : 0;
 
-			playbackStatus.value = {
-				isPlaying: false,
-				playbackTimeMs: targetTimeMs,
-				currentIndex: index,
-				currentTime: targetPack.timestamp
-			};
+			playbackStatus.value.isPlaying = false;
+			playbackStatus.value.currentIndex = index + 1; // Start from next OpsPack when resuming
+			playbackStatus.value.playbackTimeMs = targetTime;
+			playbackStatus.value.currentTime = formatTimeMs(targetTime);
+
+			// Set Timer for Seek
+			matchTimer.value.mode = 'playback';
+			matchTimer.value.isRunning = false; // Paused after seek
+			matchTimer.value.startTime = null;
+			matchTimer.value.offset = targetTime;
 
 			if (callback) callback(null, `Seeked to index ${index}.`);
 		} catch (e) {
@@ -1957,12 +1983,37 @@ module.exports = function (nodecg) {
 		}
 	});
 
-	nodecg.listenFor('editTimeline', ({ index, newOpsPack }, callback) => {
-		if (timeline.value[index]) {
-			timeline.value[index] = newOpsPack;
-			if (callback) callback(null, 'Timeline updated.');
-		} else {
-			if (callback) callback(new Error('Invalid timeline index.'));
+	nodecg.listenFor('editOpsPack', (data, callback) => {
+		try {
+			const { index, newTimestamp } = data;
+
+			if (index < 0 || index >= timeline.value.length) {
+				throw new Error('Invalid index');
+			}
+
+			// Validate: new timestamp must not be earlier than previous OpsPack
+			if (index > 0) {
+				const prevPack = timeline.value[index - 1];
+				const prevTime = parseTime(prevPack.timestamp);
+				const newTime = parseTime(newTimestamp);
+
+				if (newTime < prevTime) {
+					throw new Error(`New timestamp (${newTimestamp}) cannot be earlier than previous OpsPack (${prevPack.timestamp})`);
+				}
+			}
+
+			// Update the timestamp
+			timeline.value[index].timestamp = newTimestamp;
+
+			// Re-sort timeline by timestamp to maintain order
+			timeline.value.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
+
+			nodecg.log.info(`OpsPack at index ${index} updated to timestamp ${newTimestamp}`);
+
+			if (callback) callback(null, 'OpsPack updated successfully.');
+		} catch (e) {
+			nodecg.log.error('editOpsPack error:', e);
+			if (callback) callback(e);
 		}
 	});
 

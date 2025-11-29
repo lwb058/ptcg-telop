@@ -54,6 +54,16 @@
 			<div class="collapsible-content">
 				<div class="setting-grid">
 					<div class="form-group-hotkey">
+						<label for="time-limit-input" id="label-time-limit">Time Limit (min)</label>
+						<input type="number" id="time-limit-input" min="1" max="60" step="1"
+							style="width: 60px; justify-self: end;">
+					</div>
+					<div class="form-group-hotkey">
+						<label for="use-countdown-toggle" id="label-use-countdown">Use Countdown</label>
+						<input type="checkbox" id="use-countdown-toggle"
+							style="width: auto; height: auto; justify-self: end;">
+					</div>
+					<div class="form-group-hotkey">
 						<label for="lost-zone-toggle" id="label-enable-lost-zone">Enable Lost Zone</label>
 						<input type="checkbox" id="lost-zone-toggle"
 							style="width: auto; height: auto; justify-self: end;">
@@ -214,11 +224,13 @@
 			nodecg.Replicant('language'),
 			nodecg.Replicant('themeList'),
 			nodecg.Replicant('bundleVersion'), // Added replicant
-			nodecg.Replicant('updateInfo')
+			nodecg.Replicant('updateInfo'),
+			nodecg.Replicant('gameTimeSettings')
 		).then(() => {
 			const settingsRep = nodecg.Replicant('ptcg-settings');
 			const i18nStrings = nodecg.Replicant('i18nStrings');
 			const themeList = nodecg.Replicant('themeList');
+			const gameTimeSettings = nodecg.Replicant('gameTimeSettings');
 
 			// --- Element References ---
 			const colorContainer = document.getElementById('color-settings-container');
@@ -231,6 +243,8 @@
 			const autoCheckSupporterToggle = document.getElementById('auto-check-supporter-toggle');
 			const autoTrashTmToggle = document.getElementById('auto-trash-tm-toggle');
 			const weaknessDamageToggle = document.getElementById('weakness-damage-toggle');
+			const timeLimitInput = document.getElementById('time-limit-input');
+			const useCountdownToggle = document.getElementById('use-countdown-toggle');
 
 			// Hotkey Elements
 			const hotkeyIds = ['discard', 'apply', 'clear-card', 'clear-selection', 'peek-opponent'];
@@ -267,7 +281,10 @@
 				document.getElementById('label-weakness-damage').textContent = getI18nText('settings_auto_double_weakness_damage');
 				document.getElementById('label-regulation').textContent = getI18nText('settings_regulation');
 				document.getElementById('label-enable-lost-zone').textContent = getI18nText('settings_enable_lost_zone');
+				document.getElementById('label-enable-lost-zone').textContent = getI18nText('settings_enable_lost_zone');
 				document.getElementById('label-enable-vstar').textContent = getI18nText('settings_enable_vstar');
+				document.getElementById('label-time-limit').textContent = getI18nText('settings_time_limit');
+				document.getElementById('label-use-countdown').textContent = getI18nText('settings_use_countdown');
 				document.getElementById('label-hotkey').textContent = getI18nText('settings_hotkey');
 				document.getElementById('label-system').textContent = getI18nText('settings_system');
 				document.getElementById('label-reverse-card-display').textContent = getI18nText('settings_reverse_card_display');
@@ -378,7 +395,14 @@
 				forceRefetchDeckToggle.checked = !!(settings && settings.forceRefetchDeck);
 				weaknessDamageToggle.checked = !!(settings && settings.weaknessDamage);
 				toolLimitInput.value = (settings && settings.toolLimit) ? settings.toolLimit : 4;
+				toolLimitInput.value = (settings && settings.toolLimit) ? settings.toolLimit : 4;
 				languageSelect.value = (settings && settings.language) ? settings.language : "jp";
+
+				// Render Game Time Settings
+				if (gameTimeSettings.value) {
+					timeLimitInput.value = Math.floor(gameTimeSettings.value.limit / 60);
+					useCountdownToggle.checked = gameTimeSettings.value.useCountdown;
+				}
 
 				// Update theme dropdown
 				updateThemeDropdown(themeList.value || ['Default'], settings ? settings.activeTheme : 'Default');
@@ -564,6 +588,15 @@
 					language: newLanguage,
 					forceRefetchDeck: newForceRefetchDeck
 				};
+
+				// Save Game Time Settings
+				const newTimeLimit = parseInt(timeLimitInput.value, 10) * 60; // Convert min to sec
+				const newUseCountdown = useCountdownToggle.checked;
+				gameTimeSettings.value = {
+					limit: newTimeLimit,
+					useCountdown: newUseCountdown
+				};
+
 				saveBtn.textContent = 'Saved!';
 				updateAllLabels();
 				setTimeout(() => {

@@ -42,7 +42,7 @@
         <div id="queue-manual-controls">
             <div id="op-buttons-container" class="flex-container" style="margin-bottom: 10px;">
                 <button id="discard-op-btn" class="btn btn-danger">Discard (Esc)</button>
-                <button id="apply-op-btn" class="btn btn-success">Apply & Record (Shift+S)</button>
+                <button id="apply-op-btn" class="btn btn-primary">Apply (Shift+S)</button>
             </div>
             <div class="operation-queue" id="operation-queue">
                 <!-- Operations will be listed here -->
@@ -210,9 +210,10 @@
                 if (!matchTimer.value) return;
 
                 let elapsed = matchTimer.value.offset;
-                if (matchTimer.value.isRunning && matchTimer.value.startTime) {
+                if (matchTimer.value.isRunning && matchTimer.value.startTime && matchTimer.value.mode === 'live') {
                     elapsed += (Date.now() - matchTimer.value.startTime);
                 }
+                // In playback mode, offset is the current time, and startTime is used by playback loop but not for display calculation here
 
                 // Handle Countdown vs Countup
                 let displayTime = elapsed;
@@ -226,14 +227,23 @@
                 const seconds = totalSeconds % 60;
                 timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-                if (matchTimer.value.isRunning) {
-                    timerToggleBtn.textContent = 'Stop';
-                    timerToggleBtn.classList.remove('btn-primary');
-                    timerToggleBtn.classList.add('btn-warning');
+                // Update button state based on mode
+                if (matchTimer.value.mode === 'playback') {
+                    timerToggleBtn.textContent = 'Playback';
+                    timerToggleBtn.disabled = true;
+                    timerToggleBtn.classList.remove('btn-primary', 'btn-warning');
+                    timerToggleBtn.classList.add('btn-secondary');
                 } else {
-                    timerToggleBtn.textContent = 'Start';
-                    timerToggleBtn.classList.remove('btn-warning');
-                    timerToggleBtn.classList.add('btn-primary');
+                    timerToggleBtn.disabled = false;
+                    if (matchTimer.value.isRunning) {
+                        timerToggleBtn.textContent = 'Stop';
+                        timerToggleBtn.classList.remove('btn-primary');
+                        timerToggleBtn.classList.add('btn-warning');
+                    } else {
+                        timerToggleBtn.textContent = 'Start';
+                        timerToggleBtn.classList.remove('btn-warning');
+                        timerToggleBtn.classList.add('btn-primary');
+                    }
                 }
             }
 
@@ -255,7 +265,7 @@
                 setTimeout(() => {
                     applyOpBtn.disabled = false;
                     const currentHotkeys = hotkeyManager.hotkeys;
-                    applyOpBtn.textContent = `Apply & Record (${currentHotkeys.apply})`;
+                    applyOpBtn.textContent = `Apply (${currentHotkeys.apply})`;
                 }, 2000);
             });
 
@@ -317,7 +327,7 @@
                 // Update button labels with hotkeys
                 const currentHotkeys = hotkeyManager.hotkeys;
                 discardOpBtn.textContent = `Discard (${currentHotkeys.discard})`;
-                applyOpBtn.textContent = `Apply & Record (${currentHotkeys.apply})`;
+                applyOpBtn.textContent = `Apply (${currentHotkeys.apply})`;
             });
 
             playerL_name.on('change', (newName) => {
@@ -354,13 +364,13 @@
 
             hotkeyManager.on('hotkeysChanged', (newHotkeys) => {
                 discardOpBtn.textContent = `Discard (${newHotkeys.discard})`;
-                applyOpBtn.textContent = `Apply & Record (${newHotkeys.apply})`;
+                applyOpBtn.textContent = `Apply (${newHotkeys.apply})`;
             });
 
             // Initial label update
             const initialHotkeys = hotkeyManager.hotkeys;
             discardOpBtn.textContent = `Discard (${initialHotkeys.discard})`;
-            applyOpBtn.textContent = `Apply & Record (${initialHotkeys.apply})`;
+            applyOpBtn.textContent = `Apply (${initialHotkeys.apply})`;
         });
     </script>
 </body>
