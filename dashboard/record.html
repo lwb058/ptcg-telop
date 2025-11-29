@@ -178,16 +178,16 @@
             matchTimer.on('change', (newValue) => {
                 updateTimerDisplay();
                 // We don't need a high-frequency interval here unless we want smooth live updates
-                // But for history panel, maybe 1s update is fine? Or 100ms if we want to see playback smoothly.
+                // But for Record panel, maybe 1s update is fine? Or 100ms if we want to see playback smoothly.
                 // Let's use 100ms for consistency.
                 if (newValue.isRunning) {
-                    if (!window.historyTimerInterval) {
-                        window.historyTimerInterval = setInterval(updateTimerDisplay, 100);
+                    if (!window.recordTimerInterval) {
+                        window.recordTimerInterval = setInterval(updateTimerDisplay, 100);
                     }
                 } else {
-                    if (window.historyTimerInterval) {
-                        clearInterval(window.historyTimerInterval);
-                        window.historyTimerInterval = null;
+                    if (window.recordTimerInterval) {
+                        clearInterval(window.recordTimerInterval);
+                        window.recordTimerInterval = null;
                     }
                 }
             });
