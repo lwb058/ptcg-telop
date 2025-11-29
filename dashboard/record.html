@@ -79,18 +79,18 @@
             <button id="pause-btn" class="btn btn-warning" style="display: none;">Pause</button>
             <button id="resume-btn" class="btn btn-primary">Resume</button>
         </div>
-        <div class="btn-group">
-            <button id="export-btn" class="btn btn-secondary">Export JSON</button>
-            <button id="import-btn" class="btn btn-secondary">Import JSON</button>
+        <div id="timer-display" style="font-family: monospace; font-size: 1.2em; color: #ddd; align-self: center;">
+            Timer:00:00
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
             <input type="checkbox" id="insert-mode-toggle" checked style="width: auto; height: auto;">
             <label for="insert-mode-toggle" id="insert-mode-label" style="margin: 0; cursor: pointer;">Insert
                 Mode</label>
         </div>
-        <div id="timer-display"
-            style="margin-left: auto; font-family: monospace; font-size: 1.2em; color: #ddd; align-self: center;">Timer:
-            00:00</div>
+        <div class="btn-group" style="margin-left: auto;">
+            <button id="export-btn" class="btn btn-secondary">Export JSON</button>
+            <button id="import-btn" class="btn btn-secondary">Import JSON</button>
+        </div>
         <input type="file" id="import-file" style="display: none;" accept=".json">
     </div>
 
@@ -172,7 +172,7 @@
                 const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
                 const modeStr = matchTimer.value.mode === 'playback' ? 'Playback' : 'Live';
-                timerDisplay.innerText = `${modeStr}: ${timeStr}`;
+                timerDisplay.innerText = `${modeStr} - ${timeStr}`;
             }
 
             matchTimer.on('change', (newValue) => {
