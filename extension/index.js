@@ -1692,8 +1692,35 @@ module.exports = function (nodecg) {
 			ops: JSON.parse(JSON.stringify(operationQueue.value)) // Deep copy
 		};
 
-		timeline.value.push(opsPack);
-		nodecg.log.info(`OpsPack ${opsPack.id} recorded at ${opsPack.timestamp}.`);
+		// Check Insert Mode setting (default to true if not set)
+		const insertMode = ptcgSettings.value && typeof ptcgSettings.value.insertMode === 'boolean'
+			? ptcgSettings.value.insertMode
+			: true;
+
+		if (insertMode) {
+			// Insert Mode: Add and sort into correct position
+			timeline.value.push(opsPack);
+			timeline.value.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
+			nodecg.log.info(`OpsPack ${opsPack.id} inserted at ${opsPack.timestamp} (Insert Mode).`);
+		} else {
+			// Overwrite Mode: Delete all future OpsPacks, then add
+			const currentTime = parseTime(opsPack.timestamp);
+			const beforeCount = timeline.value.length;
+			timeline.value = timeline.value.filter(pack => parseTime(pack.timestamp) < currentTime);
+			const deletedCount = beforeCount - timeline.value.length;
+
+			timeline.value.push(opsPack);
+			nodecg.log.warn(`OpsPack ${opsPack.id} recorded at ${opsPack.timestamp}. Overwrite Mode: deleted ${deletedCount} future OpsPacks.`);
+
+			// In Overwrite Mode, treat this as a new timeline branch - switch back to live recording
+			if (matchTimer.value.mode === 'playback') {
+				matchTimer.value.mode = 'live';
+				matchTimer.value.isRunning = true;
+				matchTimer.value.startTime = Date.now();
+				// offset stays at current time
+				nodecg.log.info('Switched to live recording mode (Overwrite Mode).');
+			}
+		}
 
 		// Trigger existing apply logic
 		processQueue((err) => {
@@ -1882,8 +1909,12 @@ module.exports = function (nodecg) {
 			// Trigger the async processor
 			processPlaybackQueue();
 
-			// Stop if we reached the end
-			if (playbackStatus.value.currentIndex >= timeline.value.length) {
+			// Calculate end time: last OpsPack timestamp + 3 seconds
+			const lastPack = timeline.value[timeline.value.length - 1];
+			const endTime = lastPack ? parseTime(lastPack.timestamp) + 3000 : 0;
+
+			// Stop if we've processed all packs AND waited 3 seconds after the last one
+			if (playbackStatus.value.currentIndex >= timeline.value.length && currentTimeMs >= endTime) {
 				stopPlaybackInterval();
 				playbackStatus.value.isPlaying = false;
 				matchTimer.value.isRunning = false;

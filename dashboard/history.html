@@ -83,6 +83,11 @@
             <button id="export-btn" class="btn btn-secondary">Export JSON</button>
             <button id="import-btn" class="btn btn-secondary">Import JSON</button>
         </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="insert-mode-toggle" checked style="width: auto; height: auto;">
+            <label for="insert-mode-toggle" id="insert-mode-label" style="margin: 0; cursor: pointer;">Insert
+                Mode</label>
+        </div>
         <div id="timer-display"
             style="margin-left: auto; font-family: monospace; font-size: 1.2em; color: #ddd; align-self: center;">Timer:
             00:00</div>
@@ -120,6 +125,31 @@
             const importBtn = document.getElementById('import-btn');
             const importFile = document.getElementById('import-file');
             const timerDisplay = document.getElementById('timer-display');
+            const insertModeToggle = document.getElementById('insert-mode-toggle');
+            const insertModeLabel = document.getElementById('insert-mode-label');
+
+            // Insert Mode toggle logic
+            function updateInsertModeUI() {
+                const isInsertMode = insertModeToggle.checked;
+                insertModeLabel.textContent = isInsertMode ? 'Insert Mode' : 'Overwrite Mode';
+                insertModeLabel.style.color = isInsertMode ? '#ddd' : '#ff6b6b'; // Red for destructive mode
+            }
+
+            insertModeToggle.addEventListener('change', () => {
+                settingsRep.value = {
+                    ...settingsRep.value,
+                    insertMode: insertModeToggle.checked
+                };
+                updateInsertModeUI();
+            });
+
+            // Initialize from settings
+            if (settingsRep.value && typeof settingsRep.value.insertMode === 'boolean') {
+                insertModeToggle.checked = settingsRep.value.insertMode;
+            } else {
+                insertModeToggle.checked = true; // Default to Insert Mode
+            }
+            updateInsertModeUI();
 
             function updateTimerDisplay() {
                 if (!matchTimer.value) return;
