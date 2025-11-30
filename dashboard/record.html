@@ -6,6 +6,20 @@
     <title>Records</title>
     <link rel="stylesheet" href="css/dashboard.css">
     <style>
+        .timeline-wrapper {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .timeline-wrapper .panel-section {
+            flex: 1;
+            min-width: 0;
+            margin-top: 0 !important;
+            border-top: none !important;
+            padding-top: 0 !important;
+        }
+
         .timeline-container {
             display: flex;
             flex-direction: column;
@@ -26,17 +40,16 @@
         }
 
         .timeline-item.active {
-            border-color: #299400;
+            border-color: #d30000;
             border-width: 3px;
-            background: #2e3e2e;
         }
 
         .timeline-item.turn-l {
-            background-color: rgba(35, 124, 165, 0.6);
+            background-color: rgb(143, 181, 198);
         }
 
         .timeline-item.turn-r {
-            background-color: rgba(176, 58, 58, 0.6);
+            background-color: rgb(226, 169, 153);
         }
 
         .timeline-header {
@@ -102,19 +115,20 @@
         <input type="file" id="import-file" style="display: none;" accept=".json">
     </div>
 
-    <div class="panel-section">
-        <h3>Timeline - GamePlay</h3>
-        <div id="timeline-list" class="timeline-container">
-            <!-- Timeline items will be injected here -->
+    <div class="timeline-wrapper">
+        <div class="panel-section">
+            <h3 style="margin-top: 10px;">Timeline - GamePlay</h3>
+            <div id="timeline-list" class="timeline-container">
+                <!-- Timeline items will be injected here -->
+            </div>
         </div>
-    </div>
 
-    <div class="panel-section" style="margin-top: 20px; border-top: 1px solid #444; padding-top: 10px;">
-        <h3>Timeline - Display</h3>
-        <div id="timeline-display-list" class="timeline-container">
-            <!-- Display Timeline items will be injected here -->
+        <div class="panel-section">
+            <h3 style="margin-top: 10px;">Timeline - Display</h3>
+            <div id="timeline-display-list" class="timeline-container">
+                <!-- Display Timeline items will be injected here -->
+            </div>
         </div>
-    </div>
     </div>
 
     <script src="js/dashboard.js"></script>
