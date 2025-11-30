@@ -292,7 +292,7 @@
 
                     item.innerHTML = `
                         <div class="timeline-header">
-                            <button class="btn btn-sm btn-primary restore-btn" data-index="${index}" style="margin-left: 10px;">Restore</button>
+                            <button class="btn btn-sm btn-primary seek-btn" data-index="${index}" style="margin-left: 10px;">Restore</button>
                             <span>[${pack.timestamp}] Round ${pack.round || 1} - ${opCount} Ops</span>
                             <div>
                                 <button class="btn btn-sm btn-secondary edit-btn" data-index="${index}" style="margin-left: 10px;">Edit</button>
@@ -305,7 +305,7 @@
                     `;
 
                     item.addEventListener('click', (e) => {
-                        if (e.target.classList.contains('restore-btn') || e.target.classList.contains('edit-btn') || e.target.classList.contains('delete-btn')) return; // Don't toggle if clicking buttons
+                        if (e.target.classList.contains('seek-btn') || e.target.classList.contains('edit-btn') || e.target.classList.contains('delete-btn')) return; // Don't toggle if clicking buttons
                         item.classList.toggle('expanded');
                     });
 
@@ -332,7 +332,7 @@
                         }
                     });
 
-                    const seekBtn = item.querySelector('.restore-btn');
+                    const seekBtn = item.querySelector('.seek-btn');
                     seekBtn.addEventListener('click', () => {
                         if (confirm(`Restore to timestamp ${pack.timestamp}? This will reset the board and fast-forward.`)) {
                             nodecg.sendMessage('seekTimeline', index);
@@ -394,7 +394,7 @@
 
                     item.innerHTML = `
                         <div class="timeline-header">
-                            <button class="btn btn-sm btn-primary restore-btn" data-index="${index}" style="margin-left: 10px;">Restore</button>
+                            <button class="btn btn-sm btn-primary seek-btn" data-index="${index}" style="margin-left: 10px;">Restore</button>
                             <span>[${op.timestamp}] ${summary}</span>
                             <div>
                                 <button class="btn btn-sm btn-secondary edit-btn" data-index="${index}" style="margin-left: 10px;">Edit</button>
@@ -426,7 +426,7 @@
                         }
                     });
 
-                    const restoreBtn = item.querySelector('.restore-btn');
+                    const restoreBtn = item.querySelector('.seek-btn');
                     restoreBtn.addEventListener('click', () => {
                         const targetTime = op.timestamp;
                         if (confirm(`Restore to timestamp ${targetTime}? This will reset the board and fast-forward.`)) {
