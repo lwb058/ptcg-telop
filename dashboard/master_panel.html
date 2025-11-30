@@ -2070,7 +2070,7 @@
             }
 
             function handleApply() {
-                nodecg.sendMessage('applyOpsPack').catch(e => console.error("Failed to apply queue", e));
+                nodecg.sendMessage('triggerApplyButton').catch(e => console.error("Failed to trigger apply button", e));
             }
 
             // --- Unified Hotkey Handling ---

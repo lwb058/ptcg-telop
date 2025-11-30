@@ -369,6 +369,11 @@
             hotkeyManager.on('discard', () => discardOpBtn.click());
             hotkeyManager.on('apply', () => applyOpBtn.click());
 
+            // Listen for the trigger from master_panel
+            nodecg.listenFor('triggerApplyButton', () => {
+                applyOpBtn.click();
+            });
+
             hotkeyManager.on('hotkeysChanged', (newHotkeys) => {
                 discardOpBtn.textContent = `Discard (${newHotkeys.discard})`;
                 applyOpBtn.textContent = `Apply (${newHotkeys.apply})`;
