@@ -84,6 +84,7 @@ function checkHotkey(e, hotkeyString) {
     const configCtrl = parts.includes('ctrl');
     const configAlt = parts.includes('alt');
     const configMeta = parts.includes('meta') || parts.includes('win');
+    const configShift = parts.includes('shift'); // Added
 
     if (isMac) {
         // Mac Mappings:
@@ -94,6 +95,7 @@ function checkHotkey(e, hotkeyString) {
         if (configCtrl !== e.metaKey) return false;
         if (configAlt !== e.altKey) return false;
         if (configMeta !== e.ctrlKey) return false;
+        if (configShift !== e.shiftKey) return false; // Added
     } else {
         // Windows/Linux Mappings (Standard):
         // Config Ctrl -> Ctrl
@@ -103,6 +105,7 @@ function checkHotkey(e, hotkeyString) {
         if (configCtrl !== e.ctrlKey) return false;
         if (configAlt !== e.altKey) return false;
         if (configMeta !== e.metaKey) return false;
+        if (configShift !== e.shiftKey) return false; // Added
     }
 
     return true;
