@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Card Display</title>
     <link rel="stylesheet" href="css/fonts.css">
     <script>
         // Dynamically preload fonts based on fonts.css
-        (function() {
+        (function () {
             fetch('css/fonts.css')
                 .then(response => response.text())
                 .then(text => {
@@ -31,16 +32,18 @@
         /* Styles specific to the card display graphic */
         /* Common styles like body, overlay-frame, and animations are now in common.css */
 
-        .player-area { 
-            height: 560px; 
+        .player-area {
+            height: 560px;
             transform: translateY(475px);
             justify-content: center;
             align-items: center;
             background-image: var(--asset-card-bg);
         }
+
         .card-container {
-            width: 95%; 
+            width: 95%;
         }
+
         .card-image {
             width: 100%;
             height: 100%;
@@ -60,19 +63,22 @@
             background-position: center;
             background-repeat: no-repeat;
             display: flex;
-            flex-direction: column; /* Arrange children vertically */
-            justify-content: flex-start; /* Align to the top */
+            flex-direction: column;
+            /* Arrange children vertically */
+            justify-content: flex-start;
+            /* Align to the top */
             align-items: center;
-            padding-top: 25px; /* Space for the title */
+            padding-top: 25px;
+            /* Space for the title */
             box-sizing: border-box;
         }
 
         .prize-title {
-            font-family: var(--font-main-lang, sans-serif); 
+            font-family: var(--font-main-lang, sans-serif);
             font-weight: 900;
             font-size: 28px;
             color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
             margin: 18px 0 18px 0;
             text-align: center;
             background-color: var(--third-color);
@@ -119,36 +125,41 @@
         }
     </style>
 </head>
+
 <body>
     <div class="overlay-frame">
         <div id="animation-wrapper-L" class="animation-wrapper">
             <div class="player-area" id="player-L-area">
                 <div id="card-container-L" class="card-container">
-                    <img id="card-image-L" class="card-image" src="/assets/ptcg-telop/element/default.jpg" alt="Left Card Image">
+                    <img id="card-image-L" class="card-image" src="/assets/ptcg-telop/element/default.jpg"
+                        alt="Left Card Image">
                 </div>
             </div>
             <div id="prize-background-container-L" class="prize-background-container" style="display: none;">
                 <h2 class="prize-title" data-i18n="prize_cards">Prize Card</h2>
                 <div id="prize-cards-container-L" class="prize-cards-container">
-                <!-- Prize card slots for Player L will be generated here -->
+                    <!-- Prize card slots for Player L will be generated here -->
                 </div>
             </div>
         </div>
         <div id="animation-wrapper-R" class="animation-wrapper">
             <div class="player-area" id="player-R-area">
                 <div id="card-container-R" class="card-container">
-                    <img id="card-image-R" class="card-image" src="/assets/ptcg-telop/element/default.jpg" alt="Right Card Image">
+                    <img id="card-image-R" class="card-image" src="/assets/ptcg-telop/element/default.jpg"
+                        alt="Right Card Image">
                 </div>
             </div>
             <div id="prize-background-container-R" class="prize-background-container" style="display: none;">
                 <h2 class="prize-title" data-i18n="prize_cards">Prize Card</h2>
                 <div id="prize-cards-container-R" class="prize-cards-container">
-                <!-- Prize card slots for Player R will be generated here -->
+                    <!-- Prize card slots for Player R will be generated here -->
                 </div>
             </div>
         </div>
     </div>
-    <div id="video-preloader" style="position: absolute; width: 1px; height: 1px; overflow: hidden; left: -9999px; top: -9999px; visibility: hidden; pointer-events: none;"></div>
+    <div id="video-preloader"
+        style="position: absolute; width: 1px; height: 1px; overflow: hidden; left: -9999px; top: -9999px; visibility: hidden; pointer-events: none;">
+    </div>
     <script>
         // --- DOM Elements ---
         const animationWrapperL = document.getElementById('animation-wrapper-L');
@@ -284,22 +295,26 @@
                 playerArea.style.display = 'flex';
             } else if (newMode === 'prizeCard') {
                 prizeContainer.innerHTML = '';
-                newData.forEach(card => { // newData is the cards array
-                    const slot = document.createElement('div');
-                    slot.className = 'prize-card-slot';
-                    if (card.cardId) {
-                        const img = document.createElement('img');
-                        img.className = 'prize-card-image';
-                        img.src = getCardImageUrl(card.cardId);
-                        slot.appendChild(img);
-                        if (card.isTaken) {
-                            const overlay = document.createElement('div');
-                            overlay.className = 'taken-overlay';
-                            slot.appendChild(overlay);
+                if (Array.isArray(newData)) {
+                    newData.forEach(card => { // newData is the cards array
+                        const slot = document.createElement('div');
+                        slot.className = 'prize-card-slot';
+                        if (card.cardId) {
+                            const img = document.createElement('img');
+                            img.className = 'prize-card-image';
+                            img.src = getCardImageUrl(card.cardId);
+                            slot.appendChild(img);
+                            if (card.isTaken) {
+                                const overlay = document.createElement('div');
+                                overlay.className = 'taken-overlay';
+                                slot.appendChild(overlay);
+                            }
                         }
-                    }
-                    prizeContainer.appendChild(slot);
-                });
+                        prizeContainer.appendChild(slot);
+                    });
+                } else {
+                    console.warn('prizeCard mode requested but newData is not an array:', newData);
+                }
                 prizeBackground.style.display = 'flex';
             }
 
@@ -308,7 +323,7 @@
                 wrapper.classList.remove(`anim-slide-out-${side}`);
                 wrapper.classList.add(`anim-slide-in-${side}`);
             }
-            
+
             state.isAnimating = false;
         }
 
@@ -423,4 +438,5 @@
         });
     </script>
 </body>
+
 </html>

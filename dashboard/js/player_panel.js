@@ -110,10 +110,15 @@ function setupPlayerPanel(side) {
         toggleExtraBenchBtn.addEventListener('click', (e) => {
             e.preventDefault();
             const currentVisibility = extraBenchVisible.value || { left: false, right: false };
+            const newVisibility = !currentVisibility[visibilityKey];
             extraBenchVisible.value = {
                 ...currentVisibility,
-                [visibilityKey]: !currentVisibility[visibilityKey]
+                [visibilityKey]: newVisibility
             };
+            nodecg.sendMessage('recordDisplayOp', {
+                type: 'TOGGLE_EXTRA_BENCH',
+                payload: { side: upperCaseSide, visible: newVisibility }
+            });
         });
 
 

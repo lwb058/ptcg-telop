@@ -87,6 +87,14 @@
             <label for="insert-mode-toggle" id="insert-mode-label" style="margin: 0; cursor: pointer;">Insert
                 Mode</label>
         </div>
+        <div
+            style="display: flex; align-items: center; gap: 8px; margin-left: 10px; border-left: 1px solid #444; padding-left: 10px;">
+            <span style="color: #aaa; font-size: 0.9em;">Tracks:</span>
+            <input type="checkbox" id="track-gameplay-toggle" checked style="width: auto; height: auto;">
+            <label for="track-gameplay-toggle" style="margin: 0; cursor: pointer; color: #ddd;">Gameplay</label>
+            <input type="checkbox" id="track-display-toggle" checked style="width: auto; height: auto;">
+            <label for="track-display-toggle" style="margin: 0; cursor: pointer; color: #ddd;">Display</label>
+        </div>
         <div class="btn-group" style="margin-left: auto;">
             <button id="export-btn" class="btn btn-secondary">Export JSON</button>
             <button id="import-btn" class="btn btn-secondary">Import JSON</button>
@@ -95,22 +103,34 @@
     </div>
 
     <div class="panel-section">
-        <h3>Timeline</h3>
+        <h3>Timeline - GamePlay</h3>
         <div id="timeline-list" class="timeline-container">
             <!-- Timeline items will be injected here -->
         </div>
     </div>
 
+    <div class="panel-section" style="margin-top: 20px; border-top: 1px solid #444; padding-top: 10px;">
+        <h3>Timeline - Display</h3>
+        <div id="timeline-display-list" class="timeline-container">
+            <!-- Display Timeline items will be injected here -->
+        </div>
+    </div>
+    </div>
+
     <script src="js/dashboard.js"></script>
     <script>
         NodeCG.waitForReplicants(
-            nodecg.Replicant('timeline'),
+            nodecg.Replicant('timelineGameplay'),
+            nodecg.Replicant('timelineDisplay'),
+            nodecg.Replicant('playbackConfig'),
             nodecg.Replicant('cardDatabase'),
             nodecg.Replicant('firstMove'),
             nodecg.Replicant('ptcg-settings'),
             nodecg.Replicant('playbackStatus')
         ).then(() => {
-            const timeline = nodecg.Replicant('timeline');
+            const timelineGameplay = nodecg.Replicant('timelineGameplay');
+            const timelineDisplay = nodecg.Replicant('timelineDisplay');
+            const playbackConfig = nodecg.Replicant('playbackConfig');
             const cardDatabase = nodecg.Replicant('cardDatabase');
             const firstMove = nodecg.Replicant('firstMove');
             const settingsRep = nodecg.Replicant('ptcg-settings');
@@ -118,6 +138,7 @@
             const matchTimer = nodecg.Replicant('matchTimer');
             const gameTimeSettings = nodecg.Replicant('gameTimeSettings');
             const timelineList = document.getElementById('timeline-list');
+            const timelineDisplayList = document.getElementById('timeline-display-list');
             const playBtn = document.getElementById('play-btn');
             const pauseBtn = document.getElementById('pause-btn');
             const resumeBtn = document.getElementById('resume-btn');
@@ -127,6 +148,26 @@
             const timerDisplay = document.getElementById('timer-display');
             const insertModeToggle = document.getElementById('insert-mode-toggle');
             const insertModeLabel = document.getElementById('insert-mode-label');
+            const trackGameplayToggle = document.getElementById('track-gameplay-toggle');
+            const trackDisplayToggle = document.getElementById('track-display-toggle');
+
+            // Playback Config Logic
+            function updatePlaybackConfigUI() {
+                if (playbackConfig.value) {
+                    trackGameplayToggle.checked = playbackConfig.value.gameplay;
+                    trackDisplayToggle.checked = playbackConfig.value.display;
+                }
+            }
+
+            trackGameplayToggle.addEventListener('change', () => {
+                playbackConfig.value = { ...playbackConfig.value, gameplay: trackGameplayToggle.checked };
+            });
+
+            trackDisplayToggle.addEventListener('change', () => {
+                playbackConfig.value = { ...playbackConfig.value, display: trackDisplayToggle.checked };
+            });
+
+            playbackConfig.on('change', updatePlaybackConfigUI);
 
             // Insert Mode toggle logic
             function updateInsertModeUI() {
@@ -216,14 +257,14 @@
 
             function renderTimeline() {
                 timelineList.innerHTML = '';
-                if (!timeline.value || timeline.value.length === 0) {
+                if (!timelineGameplay.value || timelineGameplay.value.length === 0) {
                     timelineList.innerHTML = '<div style="color: #666; padding: 10px;">No history recorded.</div>';
                     return;
                 }
 
                 const firstMover = firstMove.value || 'L';
 
-                timeline.value.forEach((pack, index) => {
+                timelineGameplay.value.forEach((pack, index) => {
                     const item = document.createElement('div');
                     item.classList.add('timeline-item');
                     item.dataset.index = index;
@@ -235,7 +276,7 @@
                     item.classList.add(isPlayerL ? 'turn-l' : 'turn-r');
 
                     // Highlight active item
-                    if (playbackStatus.value && playbackStatus.value.currentIndex === index) {
+                    if (playbackStatus.value && playbackStatus.value.currentIndexGameplay === index) {
                         item.classList.add('active');
                         item.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
@@ -245,11 +286,11 @@
 
                     item.innerHTML = `
                         <div class="timeline-header">
+                            <button class="btn btn-sm btn-primary restore-btn" data-index="${index}" style="margin-left: 10px;">Restore</button>
                             <span>[${pack.timestamp}] Round ${pack.round || 1} - ${opCount} Ops</span>
                             <div>
                                 <button class="btn btn-sm btn-secondary edit-btn" data-index="${index}" style="margin-left: 10px;">Edit</button>
                                 <button class="btn btn-sm btn-danger delete-btn" data-index="${index}" style="margin-left: 10px;">Delete</button>
-                                <button class="btn btn-sm btn-primary seek-btn" data-index="${index}" style="margin-left: 10px;">Seek</button>
                             </div>
                         </div>
                         <div class="timeline-details">
@@ -258,7 +299,7 @@
                     `;
 
                     item.addEventListener('click', (e) => {
-                        if (e.target.classList.contains('seek-btn') || e.target.classList.contains('edit-btn') || e.target.classList.contains('delete-btn')) return; // Don't toggle if clicking buttons
+                        if (e.target.classList.contains('restore-btn') || e.target.classList.contains('edit-btn') || e.target.classList.contains('delete-btn')) return; // Don't toggle if clicking buttons
                         item.classList.toggle('expanded');
                     });
 
@@ -285,9 +326,9 @@
                         }
                     });
 
-                    const seekBtn = item.querySelector('.seek-btn');
+                    const seekBtn = item.querySelector('.restore-btn');
                     seekBtn.addEventListener('click', () => {
-                        if (confirm(`Seek to timestamp ${pack.timestamp}? This will reset the board and fast-forward.`)) {
+                        if (confirm(`Restore to timestamp ${pack.timestamp}? This will reset the board and fast-forward.`)) {
                             nodecg.sendMessage('seekTimeline', index);
                         }
                     });
@@ -296,13 +337,109 @@
                 });
             }
 
-            timeline.on('change', renderTimeline);
-            nodecg.listenFor('timelineRefreshed', renderTimeline);
+            function renderDisplayTimeline() {
+                timelineDisplayList.innerHTML = '';
+                if (!timelineDisplay.value || timelineDisplay.value.length === 0) {
+                    timelineDisplayList.innerHTML = '<div style="color: #666; padding: 10px;">No display history recorded.</div>';
+                    return;
+                }
+
+                timelineDisplay.value.forEach((op, index) => {
+                    const item = document.createElement('div');
+                    item.classList.add('timeline-item');
+                    item.dataset.index = index;
+
+                    // Determine side and add class
+                    let side = null;
+                    if (op.payload && op.payload.side) {
+                        side = op.payload.side;
+                    } else if (op.type.endsWith('_L')) {
+                        side = 'L';
+                    } else if (op.type.endsWith('_R')) {
+                        side = 'R';
+                    }
+
+                    if (side === 'L') item.classList.add('turn-l');
+                    if (side === 'R') item.classList.add('turn-r');
+
+                    // Highlight active item
+                    if (playbackStatus.value && playbackStatus.value.currentIndexDisplay === index) {
+                        item.classList.add('active');
+                    }
+
+                    let summary = '';
+                    if (op.type === 'SHOW_CARD_L' || op.type === 'SHOW_CARD_R') {
+                        summary = `Show Card (${op.payload.side}): ${getCardName(op.payload.cardId)}`;
+                    } else if (op.type === 'SHOW_PRIZE_L' || op.type === 'SHOW_PRIZE_R') {
+                        summary = `Show Prize (${op.payload.side})`;
+                    } else if (op.type === 'HIDE_DISPLAY') {
+                        summary = `Hide Display`;
+                    } else if (op.type === 'TOGGLE_EXTRA_BENCH') {
+                        summary = `Extra Bench (${op.payload.side}): ${op.payload.visible ? 'Show' : 'Hide'}`;
+                    } else if (op.type === 'TOGGLE_PRIZE_TAKEN') {
+                        summary = `Prize (${op.payload.side}) #${op.payload.index + 1}: ${op.payload.isTaken ? 'Taken' : 'Untaken'}`;
+                    } else {
+                        summary = op.type;
+                    }
+
+                    item.innerHTML = `
+                        <div class="timeline-header">
+                            <button class="btn btn-sm btn-primary restore-btn" data-index="${index}" style="margin-left: 10px;">Restore</button>
+                            <span>[${op.timestamp}] ${summary}</span>
+                            <div>
+                                <button class="btn btn-sm btn-secondary edit-btn" data-index="${index}" style="margin-left: 10px;">Edit</button>
+                                <button class="btn btn-sm btn-danger delete-btn" data-index="${index}" style="margin-left: 10px;">Delete</button>
+                            </div>
+                        </div>
+                    `;
+
+                    // Add Event Listeners
+                    const editBtn = item.querySelector('.edit-btn');
+                    editBtn.addEventListener('click', () => {
+                        const currentTimestamp = op.timestamp;
+                        const newTimestamp = prompt(`Edit timestamp (format MM:SS):`, currentTimestamp);
+                        if (newTimestamp !== null && newTimestamp !== currentTimestamp) {
+                            if (/^\d{2}:\d{2}$/.test(newTimestamp)) {
+                                nodecg.sendMessage('editDisplayOp', { index, newTimestamp })
+                                    .catch(err => alert('Failed to update: ' + err));
+                            } else {
+                                alert('Invalid format. Please use MM:SS format.');
+                            }
+                        }
+                    });
+
+                    const deleteBtn = item.querySelector('.delete-btn');
+                    deleteBtn.addEventListener('click', () => {
+                        if (confirm('Are you sure you want to delete this Display Op?')) {
+                            nodecg.sendMessage('deleteDisplayOp', index)
+                                .catch(err => alert('Failed to delete: ' + err));
+                        }
+                    });
+
+                    const restoreBtn = item.querySelector('.restore-btn');
+                    restoreBtn.addEventListener('click', () => {
+                        const targetTime = op.timestamp;
+                        if (confirm(`Restore to timestamp ${targetTime}? This will reset the board and fast-forward.`)) {
+                            nodecg.sendMessage('seekToTimestamp', targetTime);
+                        }
+                    });
+
+                    timelineDisplayList.appendChild(item);
+                });
+            }
+
+            timelineGameplay.on('change', renderTimeline);
+            timelineDisplay.on('change', renderDisplayTimeline);
+            nodecg.listenFor('timelineRefreshed', () => {
+                renderTimeline();
+                renderDisplayTimeline();
+            });
 
             playbackStatus.on('change', (newVal) => {
                 if (newVal) {
                     // timerDisplay.innerText = `Playback: ${newVal.currentTime}`; // Removed, using matchTimer
                     renderTimeline(); // Re-render to update highlights
+                    renderDisplayTimeline(); // Re-render display timeline highlights
 
                     // Update Button States
                     // Replay button is always visible

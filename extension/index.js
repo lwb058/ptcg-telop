@@ -1427,15 +1427,39 @@ module.exports = function (nodecg) {
 	nodecg.listenFor('reStart', (data, callback) => {
 		nodecg.log.warn('!!! Executing Game Restart !!!');
 		executeRestart(callback);
-		timeline.value = []; // Clear timeline on restart
+		timelineGameplay.value = []; // Clear timeline on restart
+		timelineDisplay.value = []; // Clear display timeline on restart
 		nodecg.log.info('Game state has been completely restart.');
 	});
 
 	// Route messages from dashboard to graphics
+	// Route messages from dashboard to graphics
 	nodecg.listenFor('_showPrizeCards', (data) => {
 		nodecg.log.info(`Broadcasting showPrizeCards for side: ${data.side}`);
 		nodecg.sendMessage('showPrizeCards', data);
+
+		// Check if Display Timeline is enabled before recording
+		const playbackConfig = nodecg.Replicant('playbackConfig');
+		if (playbackConfig.value && !playbackConfig.value.display) {
+			nodecg.log.info('Display Op recording skipped (Display Timeline disabled): SHOW_PRIZE');
+			return;
+		}
+
+		// Record operation
+		const timestamp = getCurrentMatchTime();
+		const op = {
+			type: `SHOW_PRIZE_${data.side}`,
+			payload: { side: data.side },
+			timestamp,
+			id: `disp-${Date.now()}`
+		};
+		// Insert Mode logic for display ops (simplified: always append and sort)
+		const newTimeline = [...timelineDisplay.value, op];
+		newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
+		timelineDisplay.value = newTimeline;
+		nodecg.sendMessage('timelineRefreshed');
 	});
+
 	nodecg.listenFor('_clearCard', () => {
 		nodecg.log.info('Broadcasting clearCard and clearing cardToShow replicants');
 		// Clear the source of truth replicants
@@ -1443,6 +1467,26 @@ module.exports = function (nodecg) {
 		nodecg.Replicant('cardToShowR').value = '';
 		// Broadcast to graphics to trigger hide animations
 		nodecg.sendMessage('clearCard');
+
+		// Check if Display Timeline is enabled before recording
+		const playbackConfig = nodecg.Replicant('playbackConfig');
+		if (playbackConfig.value && !playbackConfig.value.display) {
+			nodecg.log.info('Display Op recording skipped (Display Timeline disabled): HIDE_DISPLAY');
+			return;
+		}
+
+		// Record operation
+		const timestamp = getCurrentMatchTime();
+		const op = {
+			type: 'HIDE_DISPLAY',
+			payload: {},
+			timestamp,
+			id: `disp-${Date.now()}`
+		};
+		const newTimeline = [...timelineDisplay.value, op];
+		newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
+		timelineDisplay.value = newTimeline;
+		nodecg.sendMessage('timelineRefreshed');
 	});
 
 	// Helper function to handle the logic for auto-checking supporter action
@@ -1647,7 +1691,9 @@ module.exports = function (nodecg) {
 	require('./time_manager')(nodecg);
 
 	// --- Timeline Logic ---
-	const timeline = nodecg.Replicant('timeline', { defaultValue: [] });
+	const timelineGameplay = nodecg.Replicant('timelineGameplay', { defaultValue: [] });
+	const timelineDisplay = nodecg.Replicant('timelineDisplay', { defaultValue: [] });
+	const playbackConfig = nodecg.Replicant('playbackConfig', { defaultValue: { gameplay: true, display: true } });
 	const matchTimer = nodecg.Replicant('matchTimer'); // Already initialized in time_manager
 
 	// Helper to get current match time string (mm:ss)
@@ -1669,11 +1715,29 @@ module.exports = function (nodecg) {
 		return (mm * 60 + ss) * 1000;
 	}
 
+	// Helper to construct card image URL (server-side version of getCardImageUrl)
+	function getCardImageUrl(cardId) {
+		if (!cardId) return '';
+		const settings = ptcgSettings.value || {};
+		const lang = settings.language || 'jp';
+		// Hardcode the base path to ensure it's absolute and correct
+		const basePath = `/assets/ptcg-telop/card_img_${lang}/`;
+
+		// If cardId is already a path (contains /), return it as is (legacy support)
+		if (cardId.includes('/')) return cardId;
+
+		// Check if it's a special energy (starts with special:) - though usually handled before calling this
+		if (cardId.startsWith('special:')) return '';
+
+		return `${basePath}${cardId}.jpg`;
+	}
+
 	const playbackStatus = nodecg.Replicant('playbackStatus', {
 		defaultValue: {
 			isPlaying: false,
 			playbackTimeMs: 0,
-			currentIndex: -1,
+			currentIndexGameplay: 0,
+			currentIndexDisplay: 0,
 			currentTime: "00:00"
 		}
 	});
@@ -1699,19 +1763,19 @@ module.exports = function (nodecg) {
 
 		if (insertMode) {
 			// Insert Mode: Add and sort into correct position
-			const newTimeline = [...timeline.value, opsPack];
+			const newTimeline = [...timelineGameplay.value, opsPack];
 			newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
-			timeline.value = newTimeline;
+			timelineGameplay.value = newTimeline;
 
 			nodecg.log.info(`OpsPack ${opsPack.id} inserted at ${opsPack.timestamp} (Insert Mode).`);
 		} else {
 			// Overwrite Mode: Delete all future OpsPacks, then add
 			const currentTime = parseTime(opsPack.timestamp);
-			const beforeCount = timeline.value.length;
-			timeline.value = timeline.value.filter(pack => parseTime(pack.timestamp) < currentTime);
-			const deletedCount = beforeCount - timeline.value.length;
+			const beforeCount = timelineGameplay.value.length;
+			timelineGameplay.value = timelineGameplay.value.filter(pack => parseTime(pack.timestamp) < currentTime);
+			const deletedCount = beforeCount - timelineGameplay.value.length;
 
-			timeline.value.push(opsPack);
+			timelineGameplay.value.push(opsPack);
 			nodecg.log.warn(`OpsPack ${opsPack.id} recorded at ${opsPack.timestamp}. Overwrite Mode: deleted ${deletedCount} future OpsPacks.`);
 
 			// In Overwrite Mode, treat this as a new timeline branch - switch back to live recording
@@ -1734,6 +1798,44 @@ module.exports = function (nodecg) {
 				if (callback) callback(null, 'OpsPack applied and recorded.');
 			}
 		});
+	});
+
+	nodecg.listenFor('recordDisplayOp', (data, callback) => {
+		try {
+			const { type, payload } = data;
+			const timestamp = getCurrentMatchTime();
+
+			const op = {
+				type,
+				payload,
+				timestamp,
+				id: `disp-${Date.now()}`
+			};
+
+			// Always Insert Mode for Display Ops (for now, or logic similar to gameplay?)
+			// Let's assume Insert Mode for simplicity, or follow the setting.
+			// Actually, display ops are usually discrete events.
+
+			// Check if Display Timeline is enabled
+			const playbackConfig = nodecg.Replicant('playbackConfig');
+			if (playbackConfig.value && !playbackConfig.value.display) {
+				nodecg.log.info(`Display Op recording skipped (Display Timeline disabled): ${type}`);
+				if (callback) callback(null, 'Display Op skipped (timeline disabled).');
+				return;
+			}
+
+			const newTimeline = [...timelineDisplay.value, op];
+			newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
+			timelineDisplay.value = newTimeline;
+
+			nodecg.log.info(`Recorded Display Op: ${type} at ${timestamp}`);
+			nodecg.sendMessage('timelineRefreshed');
+
+			if (callback) callback(null, 'Display Op recorded.');
+		} catch (e) {
+			nodecg.log.error('recordDisplayOp error:', e);
+			if (callback) callback(e);
+		}
 	});
 
 	// --- Timer-Driven Playback Logic ---
@@ -1818,6 +1920,80 @@ module.exports = function (nodecg) {
 	}
 
 
+
+	// Helper function to clear all display elements
+	function clearDisplay() {
+		cardToShowL.value = '';
+		cardToShowR.value = '';
+		nodecg.sendMessage('clearCard');
+		nodecg.log.info('Display cleared');
+	}
+
+	// Helper to apply a single display operation
+	function applyDisplayOp(op) {
+		const { type, payload } = op;
+		if (type === 'SHOW_CARD_L') nodecg.Replicant('cardToShowL').value = getCardImageUrl(payload.cardId);
+		else if (type === 'SHOW_CARD_R') nodecg.Replicant('cardToShowR').value = getCardImageUrl(payload.cardId);
+		else if (type === 'SHOW_PRIZE_L') {
+			const cards = prizeCardsL.value;
+			nodecg.sendMessage('showPrizeCards', { side: 'L', cards });
+		}
+		else if (type === 'SHOW_PRIZE_R') {
+			const cards = prizeCardsR.value;
+			nodecg.sendMessage('showPrizeCards', { side: 'R', cards });
+		}
+		else if (type === 'HIDE_DISPLAY') {
+			clearDisplay();
+		} else if (type === 'TOGGLE_EXTRA_BENCH') {
+			const extraBenchVisible = nodecg.Replicant('extraBenchVisible');
+			const currentVisibility = extraBenchVisible.value || { left: false, right: false };
+			const visibilityKey = payload.side.toLowerCase() === 'l' ? 'left' : 'right';
+			extraBenchVisible.value = {
+				...currentVisibility,
+				[visibilityKey]: payload.visible
+			};
+		} else if (type === 'TOGGLE_PRIZE_TAKEN') {
+			const prizeRep = payload.side === 'L' ? prizeCardsL : prizeCardsR;
+			const newPrizes = JSON.parse(JSON.stringify(prizeRep.value));
+			if (newPrizes[payload.index]) {
+				newPrizes[payload.index].isTaken = payload.isTaken;
+				prizeRep.value = newPrizes;
+			}
+		}
+	}
+
+	// Helper to reconstruct display state up to a target time
+	function reconstructDisplayState(targetTime) {
+		// 1. Clear Display first
+		clearDisplay();
+
+		// 2. Find the last HIDE_DISPLAY index
+		let lastHideIndex = -1;
+		let displayIndex = 0;
+		while (displayIndex < timelineDisplay.value.length) {
+			const op = timelineDisplay.value[displayIndex];
+			if (parseTime(op.timestamp) > targetTime) break;
+			if (op.type === 'HIDE_DISPLAY') {
+				lastHideIndex = displayIndex;
+			}
+			displayIndex++;
+		}
+
+		// 3. Replay operations with filtering
+		// Persistent Ops (TOGGLE_...) are always replayed
+		// Transient Ops (SHOW_...) are only replayed if they are after the last HIDE_DISPLAY
+		for (let i = 0; i < displayIndex; i++) {
+			const op = timelineDisplay.value[i];
+			const isPersistent = op.type === 'TOGGLE_PRIZE_TAKEN' || op.type === 'TOGGLE_EXTRA_BENCH';
+
+			if (isPersistent || i > lastHideIndex) {
+				applyDisplayOp(op);
+			}
+		}
+
+		return displayIndex; // Return the next index to play
+	}
+
 	// Async function to process the playback queue with delays
 	async function processPlaybackQueue() {
 		if (isPlaybackProcessing) return;
@@ -1886,39 +2062,50 @@ module.exports = function (nodecg) {
 
 		playbackInterval = setInterval(() => {
 			// Update simulated time
-			// In playback mode, we manually increment the offset to simulate time passing
-			// Actually, let's use the standard timer logic:
-			// offset += tick_rate
 			matchTimer.value.offset += PLAYBACK_TICK_RATE;
 
 			const currentTimeMs = matchTimer.value.offset;
 			playbackStatus.value.currentTime = formatTimeMs(currentTimeMs);
-			playbackStatus.value.playbackTimeMs = currentTimeMs; // Keep for compatibility if needed, but we should use matchTimer
+			playbackStatus.value.playbackTimeMs = currentTimeMs;
 
-			// Find OpsPacks that should be executed at this time
-			// We look for packs with timestamp <= currentTimeMs that haven't been processed yet
-			// Since we process sequentially, we just check the next expected pack
-			// But wait, we need to handle seeking.
-			// Let's assume we are at 'currentIndex' in the timeline.
-
-			let nextPack = timeline.value[playbackStatus.value.currentIndex];
-
-			// Process all packs that are due
-			while (nextPack && parseTime(nextPack.timestamp) <= currentTimeMs) {
-				playbackQueue.push(nextPack);
-				playbackStatus.value.currentIndex++;
-				nextPack = timeline.value[playbackStatus.value.currentIndex];
+			// --- Gameplay Track ---
+			if (playbackConfig.value.gameplay) {
+				let nextPack = timelineGameplay.value[playbackStatus.value.currentIndexGameplay];
+				while (nextPack && parseTime(nextPack.timestamp) <= currentTimeMs) {
+					playbackQueue.push(nextPack);
+					playbackStatus.value.currentIndexGameplay++;
+					nextPack = timelineGameplay.value[playbackStatus.value.currentIndexGameplay];
+				}
+				// Trigger the async processor for gameplay ops
+				processPlaybackQueue();
 			}
 
-			// Trigger the async processor
-			processPlaybackQueue();
+			// --- Display Track ---
+			if (playbackConfig.value.display) {
+				let nextDisplayOp = timelineDisplay.value[playbackStatus.value.currentIndexDisplay];
+				while (nextDisplayOp && parseTime(nextDisplayOp.timestamp) <= currentTimeMs) {
+					// Apply display op immediately
+					nodecg.log.info(`Playback: Applying Display Op ${nextDisplayOp.type}`);
+					applyDisplayOp(nextDisplayOp);
 
-			// Calculate end time: last OpsPack timestamp + 3 seconds
-			const lastPack = timeline.value[timeline.value.length - 1];
-			const endTime = lastPack ? parseTime(lastPack.timestamp) + 3000 : 0;
+					playbackStatus.value.currentIndexDisplay++;
+					nextDisplayOp = timelineDisplay.value[playbackStatus.value.currentIndexDisplay];
+				}
+			}
 
-			// Stop if we've processed all packs AND waited 3 seconds after the last one
-			if (playbackStatus.value.currentIndex >= timeline.value.length && currentTimeMs >= endTime) {
+			// Calculate end time: max of last OpsPack or last DisplayOp + 3 seconds
+			const lastPack = timelineGameplay.value[timelineGameplay.value.length - 1];
+			const lastDisplayOp = timelineDisplay.value[timelineDisplay.value.length - 1];
+
+			const lastPackTime = lastPack ? parseTime(lastPack.timestamp) : 0;
+			const lastDisplayTime = lastDisplayOp ? parseTime(lastDisplayOp.timestamp) : 0;
+			const endTime = Math.max(lastPackTime, lastDisplayTime) + 3000;
+
+			// Stop condition
+			const gameplayDone = playbackStatus.value.currentIndexGameplay >= timelineGameplay.value.length;
+			const displayDone = playbackStatus.value.currentIndexDisplay >= timelineDisplay.value.length;
+
+			if (gameplayDone && displayDone && currentTimeMs >= endTime) {
 				stopPlaybackInterval();
 				playbackStatus.value.isPlaying = false;
 				matchTimer.value.isRunning = false;
@@ -1929,14 +2116,36 @@ module.exports = function (nodecg) {
 
 	nodecg.listenFor('playTimeline', async (data, callback) => {
 		try {
-			// 1. Reset Board
+			// 1. Preserve Prize Cards
+			const savedPrizeL = JSON.parse(JSON.stringify(prizeCardsL.value));
+			const savedPrizeR = JSON.parse(JSON.stringify(prizeCardsR.value));
+
+			// 2. Reset Board
 			await new Promise((resolve) => executeRestart((err) => resolve()));
 
-			// 2. Reset Playback Status
+			// 3. Restore Prize Cards
+			nodecg.Replicant('prizeCardsL').value = savedPrizeL;
+			nodecg.Replicant('prizeCardsR').value = savedPrizeR;
+
+			// 4. Reset Prize Cards to Initial State (Untaken) for Playback
+			// We assume playback starts with fresh prizes. If we had "Set Prize" ops, we'd replay them.
+			// Since we only record "Toggle Taken", we should reset to all untaken.
+			// However, we must preserve the card IDs.
+			const resetPrizes = (prizes) => prizes.map(p => ({ ...p, isTaken: false }));
+			prizeCardsL.value = resetPrizes(prizeCardsL.value);
+			prizeCardsR.value = resetPrizes(prizeCardsR.value);
+
+			// 4.5. Clear Display (always clear before reconstruction)
+			clearDisplay();
+			// If Display Timeline is disabled, keep it cleared
+			// Otherwise, it will be reconstructed during playback
+
+			// 5. Reset Playback Status
 			playbackStatus.value = {
 				isPlaying: true,
 				playbackTimeMs: 0,
-				currentIndex: 0,
+				currentIndexGameplay: 0,
+				currentIndexDisplay: 0,
 				currentTime: "00:00"
 			};
 
@@ -1946,7 +2155,7 @@ module.exports = function (nodecg) {
 			matchTimer.value.startTime = Date.now();
 			matchTimer.value.offset = 0;
 
-			// 3. Start Interval
+			// 5. Start Interval
 			startPlaybackInterval();
 
 			if (callback) callback(null, 'Playback started.');
@@ -1977,11 +2186,24 @@ module.exports = function (nodecg) {
 			playbackStatus.value.isPlaying = false;
 			stopPlaybackInterval();
 
-			// 2. Reset Board
+			// 2. Clear Display (always clear before reconstruction)
+			// 2. Clear Display (handled by reconstructDisplayState later)
+			// clearDisplay();
+
+			// 3. Preserve Prize Cards
+			const savedPrizeL = JSON.parse(JSON.stringify(prizeCardsL.value));
+			const savedPrizeR = JSON.parse(JSON.stringify(prizeCardsR.value));
+
+			// 4. Reset Board
 			await new Promise((resolve) => executeRestart((err) => resolve()));
 
-			// 3. Apply OpsPacks up to index
-			const packsToApply = timeline.value.slice(0, index + 1);
+			// 5. Restore Prize Cards (Reset to untaken first, then replay ops)
+			const resetPrizes = (prizes) => prizes.map(p => ({ ...p, isTaken: false }));
+			prizeCardsL.value = resetPrizes(savedPrizeL);
+			prizeCardsR.value = resetPrizes(savedPrizeR);
+
+			// 6. Apply OpsPacks up to index (Gameplay Track)
+			const packsToApply = timelineGameplay.value.slice(0, index + 1);
 			for (const pack of packsToApply) {
 				pack.ops.forEach(op => {
 					if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
@@ -1997,12 +2219,15 @@ module.exports = function (nodecg) {
 			}
 			syncLiveToDraft();
 
-			// 4. Update Status
-			const targetPack = timeline.value[index];
+			// 6. Reconstruct Display State (Display Track)
+			const targetPack = timelineGameplay.value[index];
 			const targetTime = targetPack ? parseTime(targetPack.timestamp) : 0;
+			const displayIndex = reconstructDisplayState(targetTime);
 
+			// 7. Update Status
 			playbackStatus.value.isPlaying = false;
-			playbackStatus.value.currentIndex = index + 1; // Start from next OpsPack when resuming
+			playbackStatus.value.currentIndexGameplay = index + 1; // Start from next OpsPack when resuming
+			playbackStatus.value.currentIndexDisplay = displayIndex; // Start from next DisplayOp
 			playbackStatus.value.playbackTimeMs = targetTime;
 			playbackStatus.value.currentTime = formatTimeMs(targetTime);
 
@@ -2018,17 +2243,87 @@ module.exports = function (nodecg) {
 		}
 	});
 
+	nodecg.listenFor('seekToTimestamp', async (timestamp, callback) => {
+		try {
+			// 1. Pause Playback
+			playbackStatus.value.isPlaying = false;
+			stopPlaybackInterval();
+
+			// 2. Clear Display (always clear before reconstruction)
+			clearDisplay();
+
+			// 3. Preserve Prize Cards
+			const savedPrizeL = JSON.parse(JSON.stringify(prizeCardsL.value));
+			const savedPrizeR = JSON.parse(JSON.stringify(prizeCardsR.value));
+
+			// 3. Reset Board
+			await new Promise((resolve) => executeRestart((err) => resolve()));
+
+			// 4. Restore Prize Cards (Reset to untaken first, then replay ops)
+			const resetPrizes = (prizes) => prizes.map(p => ({ ...p, isTaken: false }));
+			prizeCardsL.value = resetPrizes(savedPrizeL);
+			prizeCardsR.value = resetPrizes(savedPrizeR);
+
+			// 5. Parse target timestamp
+			const targetTime = parseTime(timestamp);
+
+			// 6. Apply all Gameplay OpsPacks up to target time
+			let lastGameplayIndex = -1;
+			for (let i = 0; i < timelineGameplay.value.length; i++) {
+				const pack = timelineGameplay.value[i];
+				if (parseTime(pack.timestamp) <= targetTime) {
+					pack.ops.forEach(op => {
+						if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
+							applyOperationLogic(nodecg.Replicant(`live_${op.payload.target}`), op, 'live');
+						} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
+							applyOperationLogic(live_stadium, op, 'live');
+						} else if (op.payload.target && op.payload.target.startsWith('slot')) {
+							applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live');
+						} else {
+							applyOperationLogic(null, op, 'live');
+						}
+					});
+					lastGameplayIndex = i;
+				} else {
+					break;
+				}
+			}
+			syncLiveToDraft();
+
+			// 7. Reconstruct Display State
+			// This helper clears display, filters ops, and replays them
+			const displayIndex = reconstructDisplayState(targetTime);
+
+			// 8. Update Status
+			playbackStatus.value.isPlaying = false;
+			playbackStatus.value.currentIndexGameplay = lastGameplayIndex + 1;
+			playbackStatus.value.currentIndexDisplay = displayIndex;
+			playbackStatus.value.playbackTimeMs = targetTime;
+			playbackStatus.value.currentTime = formatTimeMs(targetTime);
+
+			// Set Timer for Seek
+			matchTimer.value.mode = 'playback';
+			matchTimer.value.isRunning = false;
+			matchTimer.value.startTime = null;
+			matchTimer.value.offset = targetTime;
+
+			if (callback) callback(null, `Seeked to timestamp ${timestamp}.`);
+		} catch (e) {
+			if (callback) callback(e);
+		}
+	});
+
 	nodecg.listenFor('editOpsPack', (data, callback) => {
 		try {
 			const { index, newTimestamp } = data;
 
-			if (index < 0 || index >= timeline.value.length) {
+			if (index < 0 || index >= timelineGameplay.value.length) {
 				throw new Error('Invalid index');
 			}
 
 			// Validate: new timestamp must not be earlier than previous OpsPack
 			if (index > 0) {
-				const prevPack = timeline.value[index - 1];
+				const prevPack = timelineGameplay.value[index - 1];
 				const prevTime = parseTime(prevPack.timestamp);
 				const newTime = parseTime(newTimestamp);
 
@@ -2038,14 +2333,14 @@ module.exports = function (nodecg) {
 			}
 
 			// Update the timestamp
-			const newTimeline = [...timeline.value];
+			const newTimeline = [...timelineGameplay.value];
 			newTimeline[index].timestamp = newTimestamp;
 
 			// Re-sort timeline by timestamp to maintain order
 			newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
 
 			// Update replicant
-			timeline.value = newTimeline;
+			timelineGameplay.value = newTimeline;
 
 			nodecg.log.info(`OpsPack at index ${index} updated to timestamp ${newTimestamp}`);
 
@@ -2059,14 +2354,14 @@ module.exports = function (nodecg) {
 
 	nodecg.listenFor('deleteOpsPack', (index, callback) => {
 		try {
-			if (index < 0 || index >= timeline.value.length) {
+			if (index < 0 || index >= timelineGameplay.value.length) {
 				throw new Error('Invalid index');
 			}
 
 			// Create a copy, remove the item, and reassign
-			const newTimeline = [...timeline.value];
+			const newTimeline = [...timelineGameplay.value];
 			newTimeline.splice(index, 1);
-			timeline.value = newTimeline;
+			timelineGameplay.value = newTimeline;
 
 			nodecg.log.info(`OpsPack at index ${index} deleted.`);
 
@@ -2074,6 +2369,44 @@ module.exports = function (nodecg) {
 			if (callback) callback(null, 'OpsPack deleted successfully.');
 		} catch (e) {
 			nodecg.log.error('deleteOpsPack error:', e);
+			if (callback) callback(e.message);
+		}
+	});
+
+	nodecg.listenFor('deleteDisplayOp', (index, callback) => {
+		try {
+			if (index < 0 || index >= timelineDisplay.value.length) {
+				throw new Error('Invalid index');
+			}
+			const newTimeline = [...timelineDisplay.value];
+			newTimeline.splice(index, 1);
+			timelineDisplay.value = newTimeline;
+			nodecg.log.info(`Display Op at index ${index} deleted.`);
+			nodecg.sendMessage('timelineRefreshed');
+			if (callback) callback(null, 'Display Op deleted.');
+		} catch (e) {
+			nodecg.log.error('deleteDisplayOp error:', e);
+			if (callback) callback(e.message);
+		}
+	});
+
+	nodecg.listenFor('editDisplayOp', (data, callback) => {
+		try {
+			const { index, newTimestamp } = data;
+			if (index < 0 || index >= timelineDisplay.value.length) {
+				throw new Error('Invalid index');
+			}
+			// Update timestamp
+			const newTimeline = [...timelineDisplay.value];
+			newTimeline[index].timestamp = newTimestamp;
+			// Re-sort
+			newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
+			timelineDisplay.value = newTimeline;
+			nodecg.log.info(`Display Op at index ${index} updated to ${newTimestamp}`);
+			nodecg.sendMessage('timelineRefreshed');
+			if (callback) callback(null, 'Display Op updated.');
+		} catch (e) {
+			nodecg.log.error('editDisplayOp error:', e);
 			if (callback) callback(e.message);
 		}
 	});
@@ -2090,10 +2423,10 @@ module.exports = function (nodecg) {
 
 			if (Array.isArray(data)) {
 				// Legacy format (just timeline)
-				timeline.value = data;
+				timelineGameplay.value = data;
 				if (callback) callback(null, 'Timeline imported.');
 			} else if (data.timeline && Array.isArray(data.timeline)) {
-				// New format (timeline + decks)
+				// New format (timeline + decks + display + prizes)
 				const promises = [];
 
 				if (data.deckL && data.deckL.name) {
@@ -2115,11 +2448,26 @@ module.exports = function (nodecg) {
 				}
 
 				Promise.all(promises).then(() => {
-					timeline.value = data.timeline;
+					timelineGameplay.value = data.timeline;
+
+					if (data.timelineDisplay) {
+						timelineDisplay.value = data.timelineDisplay;
+					} else {
+						timelineDisplay.value = [];
+					}
+
 					if (data.firstMove) {
 						firstMove.value = data.firstMove;
 					}
-					if (callback) callback(null, 'Timeline and Decks imported.');
+
+					if (data.prizeCardsL) {
+						nodecg.Replicant('prizeCardsL').value = data.prizeCardsL;
+					}
+					if (data.prizeCardsR) {
+						nodecg.Replicant('prizeCardsR').value = data.prizeCardsR;
+					}
+
+					if (callback) callback(null, 'Timeline, Decks, and Display imported.');
 				});
 
 			} else {
@@ -2143,7 +2491,10 @@ module.exports = function (nodecg) {
 				deckR: {
 					name: deckR.value.name,
 				},
-				timeline: timeline.value
+				timeline: timelineGameplay.value,
+				timelineDisplay: timelineDisplay.value,
+				prizeCardsL: nodecg.Replicant('prizeCardsL').value,
+				prizeCardsR: nodecg.Replicant('prizeCardsR').value
 			};
 			const jsonString = JSON.stringify(exportData, null, 2);
 			if (callback) callback(null, jsonString);

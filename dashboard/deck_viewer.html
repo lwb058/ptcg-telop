@@ -275,8 +275,13 @@
                     slot.addEventListener('click', () => {
                         const prizeRep = side === 'L' ? prizeCardsL : prizeCardsR;
                         const newPrizes = JSON.parse(JSON.stringify(prizeRep.value));
-                        newPrizes[i].isTaken = !newPrizes[i].isTaken;
+                        const newIsTaken = !newPrizes[i].isTaken;
+                        newPrizes[i].isTaken = newIsTaken;
                         prizeRep.value = newPrizes;
+                        nodecg.sendMessage('recordDisplayOp', {
+                            type: 'TOGGLE_PRIZE_TAKEN',
+                            payload: { side: side, index: i, isTaken: newIsTaken }
+                        });
                     });
                 }
 
@@ -324,6 +329,7 @@
                 img.onclick = () => {
                     const targetReplicant = (side === 'L') ? cardToShowL : cardToShowR;
                     targetReplicant.value = getCardImageUrl(card.id);
+                    nodecg.sendMessage('recordDisplayOp', { type: 'SHOW_CARD_' + side, payload: { side: side, cardId: card.id } });
                 };
                 img.draggable = true;
                 img.dataset.cardId = card.id;
@@ -420,6 +426,7 @@
                     img.onclick = () => {
                         const targetReplicant = (side === 'L') ? cardToShowL : cardToShowR;
                         targetReplicant.value = getCardImageUrl(card.id);
+                        nodecg.sendMessage('recordDisplayOp', { type: 'SHOW_CARD_' + side, payload: { side: side, cardId: card.id } });
                     };
                     img.draggable = true;
                     img.dataset.cardId = card.id;
@@ -471,8 +478,12 @@
             });
         });
 
-        prizeShowL.addEventListener('click', () => nodecg.sendMessageToBundle('_showPrizeCards', 'ptcg-telop', { side: 'L', cards: prizeCardsL.value }));
-        prizeShowR.addEventListener('click', () => nodecg.sendMessageToBundle('_showPrizeCards', 'ptcg-telop', { side: 'R', cards: prizeCardsR.value }));
+        prizeShowL.addEventListener('click', () => {
+            nodecg.sendMessageToBundle('_showPrizeCards', 'ptcg-telop', { side: 'L', cards: prizeCardsL.value });
+        });
+        prizeShowR.addEventListener('click', () => {
+            nodecg.sendMessageToBundle('_showPrizeCards', 'ptcg-telop', { side: 'R', cards: prizeCardsR.value });
+        });
         prizeClearL.addEventListener('click', () => {
             if (confirm('Clear Player L prize cards?')) {
                 prizeCardsL.value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
