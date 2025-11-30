@@ -212,8 +212,14 @@
                 const seconds = totalSeconds % 60;
                 const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-                const modeStr = matchTimer.value.mode === 'playback' ? 'Playback' : 'Live';
-                timerDisplay.innerText = `${modeStr} - ${timeStr}`;
+                if (matchTimer.value.mode === 'standby') {
+                    timerDisplay.innerText = "Standby";
+                    timerDisplay.style.color = "#ffcc00";
+                } else {
+                    const modeStr = matchTimer.value.mode === 'playback' ? 'Playback' : 'Live';
+                    timerDisplay.innerText = `${modeStr} - ${timeStr}`;
+                    timerDisplay.style.color = "#ddd";
+                }
             }
 
             matchTimer.on('change', (newValue) => {
@@ -378,6 +384,10 @@
                         summary = `Extra Bench (${op.payload.side}): ${op.payload.visible ? 'Show' : 'Hide'}`;
                     } else if (op.type === 'TOGGLE_PRIZE_TAKEN') {
                         summary = `Prize (${op.payload.side}) #${op.payload.index + 1}: ${op.payload.isTaken ? 'Taken' : 'Untaken'}`;
+                    } else if (op.type === 'SET_PRIZE_CARD') {
+                        summary = `Set Prize (${op.payload.side}) #${op.payload.index + 1}: ${op.payload.cardId}`;
+                    } else if (op.type === 'CLEAR_PRIZE_CARDS') {
+                        summary = `Clear Prizes (${op.payload.side})`;
                     } else {
                         summary = op.type;
                     }

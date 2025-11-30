@@ -231,6 +231,16 @@
                 newPrizes[fromIndex] = temp;
 
                 prizeRep.value = newPrizes;
+
+                // Record swap as two SET operations
+                nodecg.sendMessage('recordDisplayOp', {
+                    type: 'SET_PRIZE_CARD',
+                    payload: { side: toSide, index: toIndex, cardId: newPrizes[toIndex].cardId, isTaken: newPrizes[toIndex].isTaken }
+                });
+                nodecg.sendMessage('recordDisplayOp', {
+                    type: 'SET_PRIZE_CARD',
+                    payload: { side: toSide, index: fromIndex, cardId: newPrizes[fromIndex].cardId, isTaken: newPrizes[fromIndex].isTaken }
+                });
                 return;
             }
 
@@ -239,6 +249,12 @@
             if (cardId) {
                 newPrizes[toIndex] = { cardId: cardId, isTaken: false };
                 prizeRep.value = newPrizes;
+
+                // Record SET operation
+                nodecg.sendMessage('recordDisplayOp', {
+                    type: 'SET_PRIZE_CARD',
+                    payload: { side: toSide, index: toIndex, cardId: cardId, isTaken: false }
+                });
             }
         }
 
@@ -487,11 +503,13 @@
         prizeClearL.addEventListener('click', () => {
             if (confirm('Clear Player L prize cards?')) {
                 prizeCardsL.value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
+                nodecg.sendMessage('recordDisplayOp', { type: 'CLEAR_PRIZE_CARDS', payload: { side: 'L' } });
             }
         });
         prizeClearR.addEventListener('click', () => {
             if (confirm('Clear Player R prize cards?')) {
                 prizeCardsR.value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
+                nodecg.sendMessage('recordDisplayOp', { type: 'CLEAR_PRIZE_CARDS', payload: { side: 'R' } });
             }
         });
 

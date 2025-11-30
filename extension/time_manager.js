@@ -7,7 +7,7 @@ module.exports = function (nodecg) {
             pausedTime: 0,
             isRunning: false,
             offset: 0,
-            mode: 'live' // 'live' or 'playback'
+            mode: 'standby' // 'standby', 'live', or 'playback'
         }
     });
 
@@ -21,8 +21,11 @@ module.exports = function (nodecg) {
     function startTimer() {
         if (matchTimer.value.isRunning) return;
 
-        // Force mode to live when starting manually
-        matchTimer.value.mode = 'live';
+        // If in standby, switch to live (this is the Game Start moment)
+        if (matchTimer.value.mode === 'standby') {
+            matchTimer.value.mode = 'live';
+            matchTimer.value.offset = 0; // Ensure offset is 0 on fresh start
+        }
 
         // If starting from a fresh state or reset state
         if (!matchTimer.value.startTime) {
@@ -30,12 +33,6 @@ module.exports = function (nodecg) {
             matchTimer.value.pausedTime = 0;
         } else {
             // Resuming from pause
-            // When resuming, we set startTime = Date.now() - SavedElapsed.
-            // SavedElapsed is stored in 'offset' when paused.
-            // Wait, the previous logic was:
-            // When stopped: offset = current elapsed time. startTime = null.
-            // When started: startTime = Date.now().
-            // Current Elapsed = offset + (Date.now() - startTime).
             matchTimer.value.startTime = Date.now();
         }
 
@@ -60,7 +57,7 @@ module.exports = function (nodecg) {
         matchTimer.value.startTime = null;
         matchTimer.value.offset = 0;
         matchTimer.value.isRunning = false;
-        matchTimer.value.mode = 'live'; // Reset to live mode
+        matchTimer.value.mode = 'standby'; // Reset to standby mode
     }
 
     function editTimer(newSeconds) {

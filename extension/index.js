@@ -1353,6 +1353,17 @@ module.exports = function (nodecg) {
 
 		try {
 			// Reset Current Turn based on firstMove
+			// If Game Setup exists, restore firstMove from it?
+			// User requirement: "restore to opening state".
+			// However, user might want to change first move in standby.
+			// Let's stick to current firstMove replicant value as the source of truth for the *next* game,
+			// unless we explicitly want to revert to the *previous* game's setup.
+			// Given the flow "Restart -> Standby -> Modify -> Start", keeping current value allows modification.
+			// But if we want to "restore", maybe we should set firstMove.value = gameSetup.value.firstMove?
+			// Let's restore it to be safe, user can change it in standby.
+			if (gameSetup.value && gameSetup.value.firstMove) {
+				firstMove.value = gameSetup.value.firstMove;
+			}
 			const initialTurn = firstMove.value || 'L';
 			live_currentTurn.value = initialTurn;
 			draft_currentTurn.value = initialTurn;
@@ -1407,8 +1418,16 @@ module.exports = function (nodecg) {
 			draft_stadium.value = { cardId: null };
 
 			// Reset Prize Cards
-			nodecg.Replicant('prizeCardsL').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
-			nodecg.Replicant('prizeCardsR').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
+			if (gameSetup.value) {
+				// Restore from Game Setup if available
+				nodecg.Replicant('prizeCardsL').value = JSON.parse(JSON.stringify(gameSetup.value.prizeCardsL));
+				nodecg.Replicant('prizeCardsR').value = JSON.parse(JSON.stringify(gameSetup.value.prizeCardsR));
+				nodecg.log.info('Restored Prize Cards from Game Setup.');
+			} else {
+				// Default reset
+				nodecg.Replicant('prizeCardsL').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
+				nodecg.Replicant('prizeCardsR').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
+			}
 
 			if (callback) callback(null, 'Game Restart successfully.');
 
@@ -1433,7 +1452,6 @@ module.exports = function (nodecg) {
 	});
 
 	// Route messages from dashboard to graphics
-	// Route messages from dashboard to graphics
 	nodecg.listenFor('_showPrizeCards', (data) => {
 		nodecg.log.info(`Broadcasting showPrizeCards for side: ${data.side}`);
 		nodecg.sendMessage('showPrizeCards', data);
@@ -1446,6 +1464,10 @@ module.exports = function (nodecg) {
 		}
 
 		// Record operation
+		if (matchTimer.value.mode === 'standby') {
+			nodecg.log.info('Display Op recording skipped (Standby Mode): SHOW_PRIZE');
+			return;
+		}
 		const timestamp = getCurrentMatchTime();
 		const op = {
 			type: `SHOW_PRIZE_${data.side}`,
@@ -1476,6 +1498,10 @@ module.exports = function (nodecg) {
 		}
 
 		// Record operation
+		if (matchTimer.value.mode === 'standby') {
+			nodecg.log.info('Display Op recording skipped (Standby Mode): HIDE_DISPLAY');
+			return;
+		}
 		const timestamp = getCurrentMatchTime();
 		const op = {
 			type: 'HIDE_DISPLAY',
@@ -1695,6 +1721,19 @@ module.exports = function (nodecg) {
 	const timelineDisplay = nodecg.Replicant('timelineDisplay', { defaultValue: [] });
 	const playbackConfig = nodecg.Replicant('playbackConfig', { defaultValue: { gameplay: true, display: true } });
 	const matchTimer = nodecg.Replicant('matchTimer'); // Already initialized in time_manager
+	const gameSetup = nodecg.Replicant('gameSetup', { defaultValue: null }); // Stores initial state
+
+	// Listen for Timer Start to save Game Setup
+	matchTimer.on('change', (newVal, oldVal) => {
+		if (oldVal && oldVal.mode === 'standby' && newVal.mode === 'live') {
+			nodecg.log.info('Game Started from Standby. Saving Game Setup...');
+			gameSetup.value = {
+				prizeCardsL: JSON.parse(JSON.stringify(nodecg.Replicant('prizeCardsL').value)),
+				prizeCardsR: JSON.parse(JSON.stringify(nodecg.Replicant('prizeCardsR').value)),
+				firstMove: firstMove.value
+			};
+		}
+	});
 
 	// Helper to get current match time string (mm:ss)
 	function getCurrentMatchTime() {
@@ -1763,11 +1802,15 @@ module.exports = function (nodecg) {
 
 		if (insertMode) {
 			// Insert Mode: Add and sort into correct position
-			const newTimeline = [...timelineGameplay.value, opsPack];
-			newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
-			timelineGameplay.value = newTimeline;
-
-			nodecg.log.info(`OpsPack ${opsPack.id} inserted at ${opsPack.timestamp} (Insert Mode).`);
+			// Check if we are in Standby mode
+			if (matchTimer.value.mode === 'standby') {
+				nodecg.log.info(`OpsPack ${opsPack.id} NOT recorded (Standby Mode).`);
+			} else {
+				const newTimeline = [...timelineGameplay.value, opsPack];
+				newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
+				timelineGameplay.value = newTimeline;
+				nodecg.log.info(`OpsPack ${opsPack.id} inserted at ${opsPack.timestamp} (Insert Mode).`);
+			}
 		} else {
 			// Overwrite Mode: Delete all future OpsPacks, then add
 			const currentTime = parseTime(opsPack.timestamp);
@@ -1812,9 +1855,12 @@ module.exports = function (nodecg) {
 				id: `disp-${Date.now()}`
 			};
 
-			// Always Insert Mode for Display Ops (for now, or logic similar to gameplay?)
-			// Let's assume Insert Mode for simplicity, or follow the setting.
-			// Actually, display ops are usually discrete events.
+			// Check if we are in Standby mode
+			if (matchTimer.value.mode === 'standby') {
+				nodecg.log.info(`Display Op recording skipped (Standby Mode): ${type}`);
+				if (callback) callback(null, 'Display Op skipped (Standby Mode).');
+				return;
+			}
 
 			// Check if Display Timeline is enabled
 			const playbackConfig = nodecg.Replicant('playbackConfig');
@@ -1824,11 +1870,37 @@ module.exports = function (nodecg) {
 				return;
 			}
 
-			const newTimeline = [...timelineDisplay.value, op];
-			newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
-			timelineDisplay.value = newTimeline;
+			// Check Insert Mode setting (default to true if not set)
+			const insertMode = ptcgSettings.value && typeof ptcgSettings.value.insertMode === 'boolean'
+				? ptcgSettings.value.insertMode
+				: true;
 
-			nodecg.log.info(`Recorded Display Op: ${type} at ${timestamp}`);
+			if (insertMode) {
+				// Insert Mode: Add and sort into correct position
+				const newTimeline = [...timelineDisplay.value, op];
+				newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
+				timelineDisplay.value = newTimeline;
+				nodecg.log.info(`Recorded Display Op: ${type} at ${timestamp} (Insert Mode)`);
+			} else {
+				// Overwrite Mode: Delete all future Display Ops, then add
+				const currentTime = parseTime(timestamp);
+				const beforeCount = timelineDisplay.value.length;
+				timelineDisplay.value = timelineDisplay.value.filter(displayOp => parseTime(displayOp.timestamp) < currentTime);
+				const deletedCount = beforeCount - timelineDisplay.value.length;
+
+				timelineDisplay.value.push(op);
+				nodecg.log.warn(`Recorded Display Op: ${type} at ${timestamp}. Overwrite Mode: deleted ${deletedCount} future Display Ops.`);
+
+				// In Overwrite Mode, treat this as a new timeline branch - switch back to live recording
+				if (matchTimer.value.mode === 'playback') {
+					matchTimer.value.mode = 'live';
+					matchTimer.value.isRunning = true;
+					matchTimer.value.startTime = Date.now();
+					// offset stays at current time
+					nodecg.log.info('Switched to live recording mode (Overwrite Mode - Display Op).');
+				}
+			}
+
 			nodecg.sendMessage('timelineRefreshed');
 
 			if (callback) callback(null, 'Display Op recorded.');
@@ -1959,6 +2031,17 @@ module.exports = function (nodecg) {
 				newPrizes[payload.index].isTaken = payload.isTaken;
 				prizeRep.value = newPrizes;
 			}
+		} else if (type === 'SET_PRIZE_CARD') {
+			const prizeRep = payload.side === 'L' ? prizeCardsL : prizeCardsR;
+			const newPrizes = JSON.parse(JSON.stringify(prizeRep.value));
+			if (newPrizes[payload.index]) {
+				newPrizes[payload.index].cardId = payload.cardId;
+				newPrizes[payload.index].isTaken = payload.isTaken;
+				prizeRep.value = newPrizes;
+			}
+		} else if (type === 'CLEAR_PRIZE_CARDS') {
+			const prizeRep = payload.side === 'L' ? prizeCardsL : prizeCardsR;
+			prizeRep.value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
 		}
 	}
 
@@ -1980,11 +2063,14 @@ module.exports = function (nodecg) {
 		}
 
 		// 3. Replay operations with filtering
-		// Persistent Ops (TOGGLE_...) are always replayed
+		// Persistent Ops (TOGGLE_..., SET_PRIZE_CARD, CLEAR_PRIZE_CARDS) are always replayed
 		// Transient Ops (SHOW_...) are only replayed if they are after the last HIDE_DISPLAY
 		for (let i = 0; i < displayIndex; i++) {
 			const op = timelineDisplay.value[i];
-			const isPersistent = op.type === 'TOGGLE_PRIZE_TAKEN' || op.type === 'TOGGLE_EXTRA_BENCH';
+			const isPersistent = op.type === 'TOGGLE_PRIZE_TAKEN' ||
+				op.type === 'TOGGLE_EXTRA_BENCH' ||
+				op.type === 'SET_PRIZE_CARD' ||
+				op.type === 'CLEAR_PRIZE_CARDS';
 
 			if (isPersistent || i > lastHideIndex) {
 				applyDisplayOp(op);
@@ -2186,7 +2272,6 @@ module.exports = function (nodecg) {
 			playbackStatus.value.isPlaying = false;
 			stopPlaybackInterval();
 
-			// 2. Clear Display (always clear before reconstruction)
 			// 2. Clear Display (handled by reconstructDisplayState later)
 			// clearDisplay();
 
@@ -2466,6 +2551,13 @@ module.exports = function (nodecg) {
 					if (data.prizeCardsR) {
 						nodecg.Replicant('prizeCardsR').value = data.prizeCardsR;
 					}
+					if (data.gameSetup) {
+						gameSetup.value = data.gameSetup;
+						// Also apply the setup to the board immediately?
+						// The user might expect the imported state to be reflected.
+						// If we imported prizeCardsL/R above, that sets the current state.
+						// gameSetup sets the "restore point".
+					}
 
 					if (callback) callback(null, 'Timeline, Decks, and Display imported.');
 				});
@@ -2493,8 +2585,10 @@ module.exports = function (nodecg) {
 				},
 				timeline: timelineGameplay.value,
 				timelineDisplay: timelineDisplay.value,
+				timelineDisplay: timelineDisplay.value,
 				prizeCardsL: nodecg.Replicant('prizeCardsL').value,
-				prizeCardsR: nodecg.Replicant('prizeCardsR').value
+				prizeCardsR: nodecg.Replicant('prizeCardsR').value,
+				gameSetup: gameSetup.value
 			};
 			const jsonString = JSON.stringify(exportData, null, 2);
 			if (callback) callback(null, jsonString);

@@ -225,7 +225,14 @@
                 const totalSeconds = Math.floor(displayTime / 1000);
                 const minutes = Math.floor(totalSeconds / 60);
                 const seconds = totalSeconds % 60;
-                timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                if (matchTimer.value.mode === 'standby') {
+                    timerDisplay.textContent = "Standby";
+                    timerDisplay.style.color = "#ffcc00"; // Yellow for standby
+                } else {
+                    timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    timerDisplay.style.color = "#fff";
+                }
 
                 // Update button state based on mode
                 if (matchTimer.value.mode === 'playback') {
