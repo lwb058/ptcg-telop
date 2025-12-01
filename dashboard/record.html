@@ -82,6 +82,187 @@
             top: 0;
             z-index: 100;
         }
+
+/* 任务1: 时间输入框样式 */
+.timestamp-input-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: monospace;
+}
+
+.timestamp-input {
+    width: 35px;
+    padding: 2px 4px;
+    border: 1px solid #555;
+    background: #333;
+    color: #ddd;
+    border-radius: 3px;
+    font-size: 0.9em;
+    text-align: center;
+    font-family: monospace;
+}
+
+.timestamp-input:focus {
+    outline: none;
+    border-color: #d30000;
+    background: #3a3a3a;
+}
+
+.timestamp-input.invalid {
+    border-color: #ff6b6b;
+    background: #4a2828;
+}
+
+.timestamp-separator {
+    color: #999;
+    font-weight: bold;
+}
+
+/* 任务2: 垂直操作列表样式 */
+.operations-list {
+    max-height: 250px;
+    overflow-y: auto;
+    margin-top: 8px;
+}
+
+.operation-item {
+    padding: 4px 8px;
+    margin: 2px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 2px solid #555;
+    font-size: 0.85em;
+    line-height: 1.4;
+}
+
+.operation-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-left-color: #d30000;
+}
+
+.operation-number {
+    display: inline-block;
+    min-width: 20px;
+    color: #999;
+    font-weight: bold;
+}
+
+/* 滚动条样式 */
+.operations-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.operations-list::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 3px;
+}
+
+.operations-list::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+}
+
+.operations-list::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+/* Task 3: Modified OpsPack indicator */
+.timeline-item.modified {
+    background: rgba(255, 165, 0, 0.08);  /* 淡橙色背景 */
+    border-left: 3px solid #ffa500;
+}
+
+.modified-badge {
+    display: inline-block;
+    background: #ffa500;
+    color: #000;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.7em;
+    margin-left: 6px;
+    font-weight: bold;
+}
+
+/* Operation source indicators */
+.operation-item.native {
+    /* 默认样式 - 原生录制 */
+}
+
+.operation-item.inserted {
+    background: rgba(100, 149, 237, 0.15);  /* 淡蓝色背景 */
+    border-left-color: #6495ed;  /* 蓝色左边框 */
+}
+
+.operation-item.deleted {
+    opacity: 0.4;
+    text-decoration: line-through;
+    background: rgba(255, 0, 0, 0.05);
+}
+
+.operation-source-badge {
+    display: inline-block;
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-size: 0.65em;
+    margin-left: 4px;
+    font-weight: bold;
+}
+
+.operation-source-badge.inserted {
+    background: #6495ed;
+    color: white;
+}
+
+.operation-source-badge.deleted {
+    background: #ff6b6b;
+    color: white;
+}
+/* Task 4: Operation item with delete button */
+.operation-item {
+    padding: 4px 8px;
+    margin: 2px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 2px solid #555;
+    font-size: 0.85em;
+    line-height: 1.4;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.operation-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-left-color: #d30000;
+}
+
+.operation-content {
+    flex: 1;
+}
+
+.operation-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.operation-item:hover .operation-actions {
+    opacity: 1;
+}
+
+.btn-delete-op {
+    padding: 2px 6px;
+    font-size: 0.7em;
+    background: #d30000;
+    border: none;
+    color: white;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-delete-op:hover {
+    background: #ff0000;
+}
     </style>
 </head>
 
@@ -302,41 +483,183 @@
                     }
 
                     const opCount = pack.ops.length;
-                    const summary = pack.ops.slice(0, 3).map(formatOpSummary).join(', ') + (opCount > 3 ? '...' : '');
+                    
+					// 在renderTimeline函数中，创建item后动态计算modified状态
+					const hasInserted = pack.ops.some(op => op.source === 'inserted');
+					const hasDeleted = pack.ops.some(op => op.deleted);
+					const isModified = hasInserted || hasDeleted;
 
-                    item.innerHTML = `
-                        <div class="timeline-header">
-                            <button class="btn btn-sm btn-primary seek-btn" data-index="${index}" style="margin-left: 10px;">Restore</button>
-                            <span>[${pack.timestamp}] Round ${pack.round || 1} - ${opCount} Ops</span>
-                            <div>
-                                <button class="btn btn-sm btn-secondary edit-btn" data-index="${index}" style="margin-left: 10px;">Edit</button>
-                                <button class="btn btn-sm btn-danger delete-btn" data-index="${index}" style="margin-left: 10px;">Delete</button>
-                            </div>
-                        </div>
-                        <div class="timeline-details">
-                            ${summary}
-                        </div>
-                    `;
+					if (isModified) {
+						item.classList.add('modified');
+					}
+
+					// 计算各类操作的数量
+					const nativeCount = pack.ops.filter(op => !op.source && !op.deleted).length;
+					const insertedCount = pack.ops.filter(op => op.source === 'inserted' && !op.deleted).length;
+					const deletedCount = pack.ops.filter(op => op.deleted).length;
+
+					// 修改HTML模板，在Round信息后添加修改badge（仅在modified时显示）
+					const modifiedBadge = isModified
+						? `<span class="modified-badge" title="此OpsPack已被修改\n原生: ${nativeCount}, 追加: ${insertedCount}, 已删: ${deletedCount}">已修改</span>` 
+						: '';
+					
+					// 解析当前timestamp
+					const [minutes, seconds] = pack.timestamp.split(':').map(Number);
+
+					// 修改timeline-header内的timestamp显示
+					item.innerHTML = `
+						<div class="timeline-header">
+							<button class="btn btn-sm btn-primary seek-btn" data-index="${index}" style="margin-left: 10px;">Restore</button>
+							<span>
+								<span class="timestamp-input-group">
+									<input type="number" 
+										   class="timestamp-input timestamp-minutes" 
+										   min="0" 
+										   max="99" 
+										   value="${minutes}" 
+										   data-index="${index}">
+									<span class="timestamp-separator">:</span>
+									<input type="number" 
+										   class="timestamp-input timestamp-seconds" 
+										   min="0" 
+										   max="59" 
+										   value="${seconds}" 
+										   data-index="${index}">
+								</span>
+								| Round ${pack.round || 1}${modifiedBadge} - ${pack.ops.filter(op => !op.deleted).length}/${opCount} Ops</span>
+							</span>
+							<div>
+								<button class="btn btn-sm btn-danger delete-btn" data-index="${index}" style="margin-left: 10px;">Delete</button>
+							</div>
+						</div>
+						<div class="timeline-details">
+							<div class="operations-list">
+								${pack.ops.map((op, idx) => {
+									// 默认无source标记即为native
+									const source = op.source || 'native';
+									const isDeleted = op.deleted;
+									const sourceBadge = op.source === 'inserted' 
+										? `<span class="operation-source-badge inserted">追加</span>` 
+										: '';
+									const deletedBadge = isDeleted 
+										? `<span class="operation-source-badge deleted">已删</span>` 
+										: '';
+									
+									return `
+										<div class="operation-item ${source} ${isDeleted ? 'deleted' : ''}" data-op-index="${idx}">
+											<div class="operation-content">
+												<span class="operation-number">${idx + 1}.</span> ${formatOpSummary(op)}${sourceBadge}${deletedBadge}
+											</div>
+											<div class="operation-actions">
+												<button class="btn-delete-op" data-op-index="${idx}" title="Delete this operation">×</button>
+											</div>
+										</div>
+									`;
+								}).join('')}
+							</div>
+						</div>
+					`;
 
                     item.addEventListener('click', (e) => {
-                        if (e.target.classList.contains('seek-btn') || e.target.classList.contains('edit-btn') || e.target.classList.contains('delete-btn')) return; // Don't toggle if clicking buttons
+                        if (e.target.closest('.seek-btn') || e.target.closest('.delete-btn') || e.target.closest('.btn-delete-op')) return;
                         item.classList.toggle('expanded');
                     });
+					
+					// Add event listeners for the operation delete buttons
+					item.querySelectorAll('.btn-delete-op').forEach(btn => {
+						btn.addEventListener('click', (e) => {
+							e.stopPropagation(); // Prevent the timeline item from toggling
+							const opIndex = parseInt(btn.dataset.opIndex, 10);
+							const opToDelete = pack.ops[opIndex];
+							const isNative = !opToDelete.source || opToDelete.source === 'native';
+							
+							let confirmMessage = `Are you sure you want to delete operation #${opIndex + 1} (${formatOpSummary(opToDelete)})?`;
+							if (!isNative) {
+								confirmMessage += "\n\nThis is an INSERTED operation and will be permanently removed.";
+							} else {
+								confirmMessage += "\n\nThis is a NATIVE operation and will be marked as deleted (can be restored later).";
+							}
 
-                    const editBtn = item.querySelector('.edit-btn');
-                    editBtn.addEventListener('click', () => {
-                        const currentTimestamp = pack.timestamp;
-                        const newTimestamp = prompt(`Edit timestamp (format MM:SS):`, currentTimestamp);
-                        if (newTimestamp !== null && newTimestamp !== currentTimestamp) {
-                            // Validate format (MM:SS)
-                            if (/^\d{2}:\d{2}$/.test(newTimestamp)) {
-                                nodecg.sendMessage('editOpsPack', { index, newTimestamp })
-                                    .catch(err => alert('Failed to update: ' + err));
-                            } else {
-                                alert('Invalid format. Please use MM:SS format.');
-                            }
-                        }
-                    });
+							if (confirm(confirmMessage)) {
+								nodecg.sendMessage('deleteOperation', { opsPackIndex: index, operationIndex: opIndex })
+									.catch(err => alert('Failed to delete operation: ' + err.message));
+							}
+						});
+					});
+
+					// 新增：时间输入框事件处理
+					const minutesInput = item.querySelector('.timestamp-minutes');
+					const secondsInput = item.querySelector('.timestamp-seconds');
+
+					function validateAndUpdateTimestamp(inputElement) {
+						const minutes = parseInt(minutesInput.value) || 0;
+						let seconds = parseInt(secondsInput.value) || 0;
+						
+						// 验证秒数范围
+						if (seconds < 0) seconds = 0;
+						if (seconds > 59) seconds = 59;
+						
+						// 验证分钟范围
+						const validMinutes = Math.max(0, Math.min(99, minutes));
+						
+						// 更新显示值（处理非法输入）
+						minutesInput.value = validMinutes;
+						secondsInput.value = seconds;
+						
+						// 检查输入有效性
+						const isValid = seconds >= 0 && seconds <= 59 && validMinutes >= 0;
+						
+						if (!isValid) {
+							inputElement.classList.add('invalid');
+							return;
+						}
+						
+						inputElement.classList.remove('invalid');
+						
+						// 构建新timestamp
+						const newTimestamp = `${validMinutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+						
+						// 只有当timestamp真正改变时才发送更新
+						if (newTimestamp !== pack.timestamp) {
+							nodecg.sendMessage('editOpsPack', { index, newTimestamp })
+								.catch(err => {
+									alert('Failed to update timestamp: ' + err);
+									// 恢复原值
+									const [origMin, origSec] = pack.timestamp.split(':').map(Number);
+									minutesInput.value = origMin;
+									secondsInput.value = origSec;
+								});
+						}
+					}
+
+					// 使用blur事件（失去焦点时触发）以避免频繁更新
+					minutesInput.addEventListener('blur', (e) => validateAndUpdateTimestamp(e.target));
+					secondsInput.addEventListener('blur', (e) => validateAndUpdateTimestamp(e.target));
+
+					// 支持Enter键快速确认
+					minutesInput.addEventListener('keypress', (e) => {
+						if (e.key === 'Enter') {
+							e.target.blur();
+						}
+					});
+					secondsInput.addEventListener('keypress', (e) => {
+						if (e.key === 'Enter') {
+							e.target.blur();
+						}
+					});
+
+					// 秒数输入框：自动处理超过59的情况
+					secondsInput.addEventListener('input', (e) => {
+						let value = parseInt(e.target.value);
+						if (value > 59) {
+							const extraMinutes = Math.floor(value / 60);
+							const newSeconds = value % 60;
+							const currentMinutes = parseInt(minutesInput.value) || 0;
+							
+							minutesInput.value = currentMinutes + extraMinutes;
+							secondsInput.value = newSeconds;
+						}
+					});
 
                     const deleteBtn = item.querySelector('.delete-btn');
                     deleteBtn.addEventListener('click', () => {
@@ -357,107 +680,168 @@
                 });
             }
 
-            function renderDisplayTimeline() {
-                timelineDisplayList.innerHTML = '';
-                if (!timelineDisplay.value || timelineDisplay.value.length === 0) {
-                    timelineDisplayList.innerHTML = '<div style="color: #666; padding: 10px;">No display history recorded.</div>';
-                    return;
-                }
-
-                timelineDisplay.value.forEach((op, index) => {
-                    const item = document.createElement('div');
-                    item.classList.add('timeline-item');
-                    item.dataset.index = index;
-
-                    // Determine side and add class
-                    let side = null;
-                    if (op.payload && op.payload.side) {
-                        side = op.payload.side;
-                    } else if (op.type.endsWith('_L')) {
-                        side = 'L';
-                    } else if (op.type.endsWith('_R')) {
-                        side = 'R';
-                    }
-
-                    if (side === 'L') item.classList.add('turn-l');
-                    if (side === 'R') item.classList.add('turn-r');
-
-                    // Highlight active item
-                    if (playbackStatus.value && playbackStatus.value.currentIndexDisplay === index) {
-                        item.classList.add('active');
-                    }
-
-                    let summary = '';
-                    if (op.type === 'SHOW_CARD_L' || op.type === 'SHOW_CARD_R') {
-                        summary = `Show Card (${op.payload.side}): ${getCardName(op.payload.cardId)}`;
-                    } else if (op.type === 'SHOW_PRIZE_L' || op.type === 'SHOW_PRIZE_R') {
-                        summary = `Show Prize (${op.payload.side})`;
-                    } else if (op.type === 'HIDE_DISPLAY') {
-                        summary = `Hide Display`;
-                    } else if (op.type === 'TOGGLE_EXTRA_BENCH') {
-                        summary = `Extra Bench (${op.payload.side}): ${op.payload.visible ? 'Show' : 'Hide'}`;
-                    } else if (op.type === 'TOGGLE_PRIZE_TAKEN') {
-                        summary = `Prize (${op.payload.side}) #${op.payload.index + 1}: ${op.payload.isTaken ? 'Taken' : 'Untaken'}`;
-                    } else if (op.type === 'SET_PRIZE_CARD') {
-                        summary = `Set Prize (${op.payload.side}) #${op.payload.index + 1}: ${op.payload.cardId}`;
-                    } else if (op.type === 'CLEAR_PRIZE_CARDS') {
-                        summary = `Clear Prizes (${op.payload.side})`;
-                    } else {
-                        summary = op.type;
-                    }
-
-                    item.innerHTML = `
-                        <div class="timeline-header">
-                            <button class="btn btn-sm btn-primary seek-btn" data-index="${index}" style="margin-left: 10px;">Restore</button>
-                            <span>[${op.timestamp}] ${summary}</span>
-                            <div>
-                                <button class="btn btn-sm btn-secondary edit-btn" data-index="${index}" style="margin-left: 10px;">Edit</button>
-                                <button class="btn btn-sm btn-danger delete-btn" data-index="${index}" style="margin-left: 10px;">Delete</button>
-                            </div>
-                        </div>
-                    `;
-
-                    // Add Event Listeners
-                    const editBtn = item.querySelector('.edit-btn');
-                    editBtn.addEventListener('click', () => {
-                        const currentTimestamp = op.timestamp;
-                        const newTimestamp = prompt(`Edit timestamp (format MM:SS):`, currentTimestamp);
-                        if (newTimestamp !== null && newTimestamp !== currentTimestamp) {
-                            if (/^\d{2}:\d{2}$/.test(newTimestamp)) {
-                                nodecg.sendMessage('editDisplayOp', { index, newTimestamp })
-                                    .catch(err => alert('Failed to update: ' + err));
-                            } else {
-                                alert('Invalid format. Please use MM:SS format.');
+                        function renderDisplayTimeline() {
+                            timelineDisplayList.innerHTML = '';
+                            if (!timelineDisplay.value || timelineDisplay.value.length === 0) {
+                                timelineDisplayList.innerHTML = '<div style="color: #666; padding: 10px;">No display history recorded.</div>';
+                                return;
                             }
+            
+                            timelineDisplay.value.forEach((op, index) => {
+                                const item = document.createElement('div');
+                                item.classList.add('timeline-item');
+                                item.dataset.index = index;
+            
+                                // Determine side and add class
+                                let side = null;
+                                if (op.payload && op.payload.side) {
+                                    side = op.payload.side;
+                                } else if (op.type.endsWith('_L')) {
+                                    side = 'L';
+                                } else if (op.type.endsWith('_R')) {
+                                    side = 'R';
+                                }
+            
+                                if (side === 'L') item.classList.add('turn-l');
+                                if (side === 'R') item.classList.add('turn-r');
+            
+                                // Highlight active item
+                                if (playbackStatus.value && playbackStatus.value.currentIndexDisplay === index) {
+                                    item.classList.add('active');
+                                }
+            
+                                let summary = '';
+                                if (op.type === 'SHOW_CARD_L' || op.type === 'SHOW_CARD_R') {
+                                    summary = `Show Card (${op.payload.side}): ${getCardName(op.payload.cardId)}`;
+                                } else if (op.type === 'SHOW_PRIZE_L' || op.type === 'SHOW_PRIZE_R') {
+                                    summary = `Show Prize (${op.payload.side})`;
+                                } else if (op.type === 'HIDE_DISPLAY') {
+                                    summary = `Hide Display`;
+                                } else if (op.type === 'TOGGLE_EXTRA_BENCH') {
+                                    summary = `Extra Bench (${op.payload.side}): ${op.payload.visible ? 'Show' : 'Hide'}`;
+                                } else if (op.type === 'TOGGLE_PRIZE_TAKEN') {
+                                    summary = `Prize (${op.payload.side}) #${op.payload.index + 1}: ${op.payload.isTaken ? 'Taken' : 'Untaken'}`;
+                                } else if (op.type === 'SET_PRIZE_CARD') {
+                                    summary = `Set Prize (${op.payload.side}) #${op.payload.index + 1}: ${op.payload.cardId}`;
+                                } else if (op.type === 'CLEAR_PRIZE_CARDS') {
+                                    summary = `Clear Prizes (${op.payload.side})`;
+                                } else {
+                                    summary = op.type;
+                                }
+            
+            					// 在renderDisplayTimeline函数中应用类似的修改
+            					const [minutes, seconds] = op.timestamp.split(':').map(Number);
+            
+            					item.innerHTML = `
+            						<div class="timeline-header">
+            							<button class="btn btn-sm btn-primary seek-btn" data-index="${index}" style="margin-left: 10px;">Restore</button>
+            							<span>
+            								<span class="timestamp-input-group">
+            									<input type="number" 
+            										   class="timestamp-input timestamp-minutes" 
+            										   min="0" 
+            										   max="99" 
+            										   value="${minutes}" 
+            										   data-index="${index}">
+            									<span class="timestamp-separator">:</span>
+            									<input type="number" 
+            										   class="timestamp-input timestamp-seconds" 
+            										   min="0" 
+            										   max="59" 
+            										   value="${seconds}" 
+            										   data-index="${index}">
+            								</span>
+            								| ${summary}
+            							</span>
+            							<div>
+            								<button class="btn btn-sm btn-danger delete-btn" data-index="${index}" style="margin-left: 10px;">Delete</button>
+            							</div>
+            						</div>
+            					`;
+            
+            					// 添加相同的输入验证逻辑，但使用editDisplayOp消息
+            					const minutesInput = item.querySelector('.timestamp-minutes');
+            					const secondsInput = item.querySelector('.timestamp-seconds');
+            
+            					function validateAndUpdateTimestamp(inputElement) {
+            						const minutes = parseInt(minutesInput.value) || 0;
+            						let seconds = parseInt(secondsInput.value) || 0;
+            						
+            						if (seconds < 0) seconds = 0;
+            						if (seconds > 59) seconds = 59;
+            						const validMinutes = Math.max(0, Math.min(99, minutes));
+            						
+            						minutesInput.value = validMinutes;
+            						secondsInput.value = seconds;
+            						
+            						const isValid = seconds >= 0 && seconds <= 59 && validMinutes >= 0;
+            						
+            						if (!isValid) {
+            							inputElement.classList.add('invalid');
+            							return;
+            						}
+            						
+            						inputElement.classList.remove('invalid');
+            						
+            						const newTimestamp = `${validMinutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            						
+            						if (newTimestamp !== op.timestamp) {
+            							nodecg.sendMessage('editDisplayOp', { index, newTimestamp })
+            								.catch(err => {
+            									alert('Failed to update timestamp: ' + err);
+            									const [origMin, origSec] = op.timestamp.split(':').map(Number);
+            									minutesInput.value = origMin;
+            									secondsInput.value = origSec;
+            								});
+            						}
+            					}
+            
+            					minutesInput.addEventListener('blur', (e) => validateAndUpdateTimestamp(e.target));
+            					secondsInput.addEventListener('blur', (e) => validateAndUpdateTimestamp(e.target));
+            					minutesInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') e.target.blur(); });
+            					secondsInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') e.target.blur(); });
+            
+            					secondsInput.addEventListener('input', (e) => {
+            						let value = parseInt(e.target.value);
+            						if (value > 59) {
+            							const extraMinutes = Math.floor(value / 60);
+            							const newSeconds = value % 60;
+            							const currentMinutes = parseInt(minutesInput.value) || 0;
+            							minutesInput.value = currentMinutes + extraMinutes;
+            							secondsInput.value = newSeconds;
+            						}
+            					});
+            
+                                const deleteBtn = item.querySelector('.delete-btn');
+                                deleteBtn.addEventListener('click', () => {
+                                    if (confirm('Are you sure you want to delete this Display Op?')) {
+                                        nodecg.sendMessage('deleteDisplayOp', index)
+                                            .catch(err => alert('Failed to delete: ' + err));
+                                    }
+                                });
+            
+                                const restoreBtn = item.querySelector('.seek-btn');
+                                restoreBtn.addEventListener('click', () => {
+                                    const targetTime = op.timestamp;
+                                    if (confirm(`Restore to timestamp ${targetTime}? This will reset the board and fast-forward.`)) {
+                                        nodecg.sendMessage('seekToTimestamp', targetTime);
+                                    }
+                                });
+            
+                                timelineDisplayList.appendChild(item);
+                            });
                         }
-                    });
-
-                    const deleteBtn = item.querySelector('.delete-btn');
-                    deleteBtn.addEventListener('click', () => {
-                        if (confirm('Are you sure you want to delete this Display Op?')) {
-                            nodecg.sendMessage('deleteDisplayOp', index)
-                                .catch(err => alert('Failed to delete: ' + err));
-                        }
-                    });
-
-                    const restoreBtn = item.querySelector('.seek-btn');
-                    restoreBtn.addEventListener('click', () => {
-                        const targetTime = op.timestamp;
-                        if (confirm(`Restore to timestamp ${targetTime}? This will reset the board and fast-forward.`)) {
-                            nodecg.sendMessage('seekToTimestamp', targetTime);
-                        }
-                    });
-
-                    timelineDisplayList.appendChild(item);
-                });
-            }
-
             timelineGameplay.on('change', renderTimeline);
             timelineDisplay.on('change', renderDisplayTimeline);
             nodecg.listenFor('timelineRefreshed', () => {
                 renderTimeline();
                 renderDisplayTimeline();
             });
+
+			nodecg.listenFor('opsPackMerged', (data) => {
+				console.log(`OpsPack modified at ${data.timestamp}: ${data.newOpsCount} new ops appended, total ${data.totalOps} ops`);
+				// UI会通过timelineGameplay的change事件自动刷新
+			});
 
             playbackStatus.on('change', (newVal) => {
                 if (newVal) {
