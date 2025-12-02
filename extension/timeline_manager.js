@@ -231,11 +231,27 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 					});
 				} else {
 					// 不存在，创建新OpsPack
-					// 新创建的OpsPack中的操作默认为native（不添加source标记）
-					const newTimeline = [...timelineGameplay.value, opsPack];
+					// 在Insert模式且处于playback/live模式时，标记所有操作为inserted
+					const shouldMarkInserted = matchTimer.value.mode !== 'standby';
+
+					const newOpsPack = shouldMarkInserted ? {
+						...opsPack,
+						ops: opsPack.ops.map(op => ({
+							...op,
+							source: 'inserted',
+							insertedAt: Date.now()
+						}))
+					} : opsPack;
+
+					const newTimeline = [...timelineGameplay.value, newOpsPack];
 					newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
 					timelineGameplay.value = newTimeline;
-					nodecg.log.info(`OpsPack ${opsPack.id} inserted at ${opsPack.timestamp} (Insert Mode).`);
+
+					if (shouldMarkInserted) {
+						nodecg.log.info(`OpsPack ${opsPack.id} created at ${opsPack.timestamp} with ${opsPack.ops.length} inserted operations (Insert Mode).`);
+					} else {
+						nodecg.log.info(`OpsPack ${opsPack.id} inserted at ${opsPack.timestamp} (Insert Mode - Standby).`);
+					}
 				}
 			}
 		} else {
