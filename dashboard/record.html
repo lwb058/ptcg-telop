@@ -27,7 +27,7 @@
         }
 
         .timeline-item {
-            background: #2a2a2a;
+            background: #adadad;
             border: 1px solid #444;
             border-radius: 4px;
             padding: 8px;
@@ -57,7 +57,13 @@
             justify-content: space-between;
             align-items: center;
             font-weight: bold;
-            color: #ddd;
+            color: rgb(50, 50, 50);
+        }
+
+        .timeline-header>span {
+            flex: 1;
+            text-align: left;
+            margin-left: 10px;
         }
 
         .timeline-details {
@@ -119,7 +125,7 @@
             font-weight: bold;
         }
 
-        /* 任务2: 垂直操作列表样式 */
+        /* Task 2: Vertical operations list style */
         .operations-list {
             max-height: 250px;
             overflow-y: auto;
@@ -345,7 +351,9 @@
             nodecg.Replicant('cardDatabase'),
             nodecg.Replicant('firstMove'),
             nodecg.Replicant('ptcg-settings'),
-            nodecg.Replicant('playbackStatus')
+            nodecg.Replicant('playbackStatus'),
+            nodecg.Replicant('i18nStrings'),
+            nodecg.Replicant('language')
         ).then(() => {
             const timelineGameplay = nodecg.Replicant('timelineGameplay');
             const timelineDisplay = nodecg.Replicant('timelineDisplay');
@@ -356,6 +364,8 @@
             const playbackStatus = nodecg.Replicant('playbackStatus');
             const matchTimer = nodecg.Replicant('matchTimer');
             const gameTimeSettings = nodecg.Replicant('gameTimeSettings');
+            const i18nStrings = nodecg.Replicant('i18nStrings');
+            const language = nodecg.Replicant('language');
             const timelineList = document.getElementById('timeline-list');
             const timelineDisplayList = document.getElementById('timeline-display-list');
             const playBtn = document.getElementById('play-btn');
@@ -369,6 +379,29 @@
             const insertModeLabel = document.getElementById('insert-mode-label');
             const trackGameplayToggle = document.getElementById('track-gameplay-toggle');
             const trackDisplayToggle = document.getElementById('track-display-toggle');
+
+            // Local i18n helper function
+            function getI18nText(key) {
+                if (!i18nStrings.value || !i18nStrings.value[key] || !language.value) {
+                    return key; // Fallback to key name if not found
+                }
+                return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
+            }
+
+            // Update all static UI text with i18n
+            function updateStaticUI() {
+                // Update control panel buttons
+                playBtn.textContent = getI18nText('record_replay');
+                pauseBtn.textContent = getI18nText('record_pause');
+                resumeBtn.textContent = getI18nText('record_resume');
+                exportBtn.textContent = getI18nText('record_export_json');
+                importBtn.textContent = getI18nText('record_import_json');
+
+                // Update track labels
+                document.querySelector('span[style*="color: #aaa"]').textContent = getI18nText('record_tracks');
+                document.querySelector('label[for="track-gameplay-toggle"]').textContent = getI18nText('record_gameplay');
+                document.querySelector('label[for="track-display-toggle"]').textContent = getI18nText('record_display');
+            }
 
             // Playback Config Logic
             function updatePlaybackConfigUI() {
@@ -391,7 +424,7 @@
             // Insert Mode toggle logic
             function updateInsertModeUI() {
                 const isInsertMode = insertModeToggle.checked;
-                insertModeLabel.textContent = isInsertMode ? 'Insert Mode' : 'Overwrite Mode';
+                insertModeLabel.textContent = isInsertMode ? getI18nText('record_insert_mode') : getI18nText('record_overwrite_mode');
                 insertModeLabel.style.color = isInsertMode ? '#ddd' : '#ff6b6b'; // Red for destructive mode
             }
 
@@ -409,7 +442,18 @@
             } else {
                 insertModeToggle.checked = true; // Default to Insert Mode
             }
+
+            // Initialize static UI text
+            updateStaticUI();
             updateInsertModeUI();
+
+            // Update UI when language changes
+            language.on('change', () => {
+                updateStaticUI();
+                updateInsertModeUI();
+                renderTimeline();
+                renderDisplayTimeline();
+            });
 
             function updateTimerDisplay() {
                 if (!matchTimer.value) return;
@@ -481,6 +525,16 @@
             }
 
             function renderTimeline() {
+                // Save expanded state before re-rendering
+                const expandedIndices = new Set();
+                const existingItems = timelineList.querySelectorAll('.timeline-item.expanded');
+                existingItems.forEach(item => {
+                    const index = parseInt(item.dataset.index, 10);
+                    if (!isNaN(index)) {
+                        expandedIndices.add(index);
+                    }
+                });
+
                 timelineList.innerHTML = '';
                 if (!timelineGameplay.value || timelineGameplay.value.length === 0) {
                     timelineList.innerHTML = '<div style="color: #666; padding: 10px;">No history recorded.</div>';
@@ -493,6 +547,11 @@
                     const item = document.createElement('div');
                     item.classList.add('timeline-item');
                     item.dataset.index = index;
+
+                    // Restore expanded state if it was previously expanded
+                    if (expandedIndices.has(index)) {
+                        item.classList.add('expanded');
+                    }
 
                     // Determine turn player and add class
                     const round = pack.round || 1;
@@ -508,7 +567,7 @@
 
                     const opCount = pack.ops.length;
 
-                    // 在renderTimeline函数中，创建item后动态计算modified状态
+                    // In renderTimeline function, dynamically calculate modified status after creating item
                     const hasInserted = pack.ops.some(op => op.source === 'inserted');
                     const hasDeleted = pack.ops.some(op => op.deleted);
                     const isModified = hasInserted || hasDeleted;
@@ -517,25 +576,25 @@
                         item.classList.add('modified');
                     }
 
-                    // 计算各类操作的数量
+                    // Calculate the count of each type of operation
                     const nativeCount = pack.ops.filter(op => !op.source && !op.deleted).length;
                     const insertedCount = pack.ops.filter(op => op.source === 'inserted' && !op.deleted).length;
                     const deletedCount = pack.ops.filter(op => op.deleted).length;
 
-                    // 修改HTML模板，在Round信息后添加修改badge（仅在modified时显示）
+                    // Modify HTML template, add modified badge after Round info (only shown when modified)
                     const modifiedBadge = isModified
-                        ? `<span class="modified-badge" title="此OpsPack已被修改\n原生: ${nativeCount}, 追加: ${insertedCount}, 已删: ${deletedCount}">已修改</span>`
+                        ? `<span class="modified-badge" title="${getI18nText('record_opspack_modified_tooltip')}\n${getI18nText('record_native')}: ${nativeCount}, ${getI18nText('record_inserted')}: ${insertedCount}, ${getI18nText('record_deleted')}: ${deletedCount}">${getI18nText('record_modified')}</span>`
                         : '';
 
-                    // 解析当前timestamp
+                    // Parse current timestamp
                     const [minutes, seconds] = pack.timestamp.split(':').map(Number);
 
                     // Create the operations list HTML
                     const operationsHTML = pack.ops.map((op, idx) => {
                         const source = op.source || 'native';
                         const isDeleted = op.deleted;
-                        const sourceBadge = op.source === 'inserted' ? `<span class="operation-source-badge inserted">追加</span>` : '';
-                        const deletedBadge = isDeleted ? `<span class="operation-source-badge deleted">已删</span>` : '';
+                        const sourceBadge = op.source === 'inserted' ? `<span class="operation-source-badge inserted">${getI18nText('record_inserted')}</span>` : '';
+                        const deletedBadge = isDeleted ? `<span class="operation-source-badge deleted">${getI18nText('record_deleted')}</span>` : '';
                         const actionButton = isDeleted
                             ? `<button class="btn-restore-op" data-op-index="${idx}" title="Restore this operation">↩</button>`
                             : `<button class="btn-delete-op" data-op-index="${idx}" title="Delete this operation">×</button>`;
@@ -551,10 +610,10 @@
                         `;
                     }).join('');
 
-                    // 修改timeline-header内的timestamp显示
+                    // Modify timestamp display in timeline-header
                     item.innerHTML = `
 						<div class="timeline-header">
-							<button class="btn btn-sm btn-primary seek-btn" data-index="${index}" style="margin-left: 10px;">Restore</button>
+							<button class="btn btn-sm btn-primary seek-btn" data-index="${index}" style="margin-left: 10px;">${getI18nText('record_seek')}</button>
 							<span>
 								<span class="timestamp-input-group">
 									<input type="number" 
@@ -571,10 +630,10 @@
 										   value="${seconds}" 
 										   data-index="${index}">
 								</span>
-								| Round ${pack.round || 1}${modifiedBadge} - ${pack.ops.filter(op => !op.deleted).length}/${opCount} Ops</span>
+								| ${getI18nText('record_round')} ${pack.round || 1}${modifiedBadge} - ${pack.ops.filter(op => !op.deleted).length}/${opCount} ${getI18nText('record_ops')}</span>
 							</span>
 							<div>
-								<button class="btn btn-sm btn-danger delete-btn" data-index="${index}" style="margin-left: 10px;">Delete</button>
+								<button class="btn btn-sm btn-danger delete-btn" data-index="${index}" style="margin-left: 10px;">${getI18nText('delete')}</button>
 							</div>
 						</div>
 						<div class="timeline-details">
@@ -599,15 +658,20 @@
                             e.stopPropagation();
                             const opToDelete = pack.ops[opIndex];
                             const isNative = !opToDelete.source || opToDelete.source === 'native';
-                            let confirmMessage = `Are you sure you want to delete operation #${opIndex + 1} (${formatOpSummary(opToDelete)})?`;
-                            if (!isNative) {
-                                confirmMessage += "\n\nThis is an INSERTED operation and will be permanently removed.";
-                            } else {
-                                confirmMessage += "\n\nThis is a NATIVE operation and will be marked as deleted (can be restored).";
-                            }
-                            if (confirm(confirmMessage)) {
+
+                            // Native operations can be restored, so delete directly without confirmation
+                            // Inserted operations are permanently removed, so require confirmation
+                            if (isNative) {
+                                // Direct delete for native operations (can be restored)
                                 nodecg.sendMessage('deleteOperation', { opsPackIndex: index, operationIndex: opIndex })
                                     .catch(err => alert('Failed to delete operation: ' + err.message));
+                            } else {
+                                // Confirm before deleting inserted operations (permanent)
+                                const confirmMessage = `Are you sure you want to delete operation #${opIndex + 1} (${formatOpSummary(opToDelete)})?\n\nThis is an INSERTED operation and will be permanently removed.`;
+                                if (confirm(confirmMessage)) {
+                                    nodecg.sendMessage('deleteOperation', { opsPackIndex: index, operationIndex: opIndex })
+                                        .catch(err => alert('Failed to delete operation: ' + err.message));
+                                }
                             }
                         } else if (target.classList.contains('btn-restore-op')) {
                             e.stopPropagation();
@@ -616,7 +680,7 @@
                         }
                     });
 
-                    // 新增：时间输入框事件处理
+                    // New: Time input field event handling
                     const minutesInput = item.querySelector('.timestamp-minutes');
                     const secondsInput = item.querySelector('.timestamp-seconds');
 
@@ -624,18 +688,18 @@
                         const minutes = parseInt(minutesInput.value) || 0;
                         let seconds = parseInt(secondsInput.value) || 0;
 
-                        // 验证秒数范围
+                        // Validate seconds range
                         if (seconds < 0) seconds = 0;
                         if (seconds > 59) seconds = 59;
 
-                        // 验证分钟范围
+                        // Validate minutes range
                         const validMinutes = Math.max(0, Math.min(99, minutes));
 
-                        // 更新显示值（处理非法输入）
+                        // Update display values (handle invalid input)
                         minutesInput.value = validMinutes;
                         secondsInput.value = seconds;
 
-                        // 检查输入有效性
+                        // Check input validity
                         const isValid = seconds >= 0 && seconds <= 59 && validMinutes >= 0;
 
                         if (!isValid) {
@@ -645,15 +709,15 @@
 
                         inputElement.classList.remove('invalid');
 
-                        // 构建新timestamp
+                        // Build new timestamp
                         const newTimestamp = `${validMinutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-                        // 只有当timestamp真正改变时才发送更新
+                        // Only send update when timestamp actually changes
                         if (newTimestamp !== pack.timestamp) {
                             nodecg.sendMessage('editOpsPack', { index, newTimestamp })
                                 .catch(err => {
                                     alert('Failed to update timestamp: ' + err);
-                                    // 恢复原值
+                                    // Restore original value
                                     const [origMin, origSec] = pack.timestamp.split(':').map(Number);
                                     minutesInput.value = origMin;
                                     secondsInput.value = origSec;
@@ -661,11 +725,11 @@
                         }
                     }
 
-                    // 使用blur事件（失去焦点时触发）以避免频繁更新
+                    // Use blur event (triggered on focus loss) to avoid frequent updates
                     minutesInput.addEventListener('blur', (e) => validateAndUpdateTimestamp(e.target));
                     secondsInput.addEventListener('blur', (e) => validateAndUpdateTimestamp(e.target));
 
-                    // 支持Enter键快速确认
+                    // Support Enter key for quick confirmation
                     minutesInput.addEventListener('keypress', (e) => {
                         if (e.key === 'Enter') {
                             e.target.blur();
@@ -677,7 +741,7 @@
                         }
                     });
 
-                    // 秒数输入框：自动处理超过59的情况
+                    // Seconds input field: automatically handle values over 59
                     secondsInput.addEventListener('input', (e) => {
                         let value = parseInt(e.target.value);
                         if (value > 59) {
@@ -710,6 +774,16 @@
             }
 
             function renderDisplayTimeline() {
+                // Save expanded state before re-rendering
+                const expandedIndices = new Set();
+                const existingItems = timelineDisplayList.querySelectorAll('.timeline-item.expanded');
+                existingItems.forEach(item => {
+                    const index = parseInt(item.dataset.index, 10);
+                    if (!isNaN(index)) {
+                        expandedIndices.add(index);
+                    }
+                });
+
                 timelineDisplayList.innerHTML = '';
                 if (!timelineDisplay.value || timelineDisplay.value.length === 0) {
                     timelineDisplayList.innerHTML = '<div style="color: #666; padding: 10px;">No display history recorded.</div>';
@@ -720,6 +794,11 @@
                     const item = document.createElement('div');
                     item.classList.add('timeline-item');
                     item.dataset.index = index;
+
+                    // Restore expanded state if it was previously expanded
+                    if (expandedIndices.has(index)) {
+                        item.classList.add('expanded');
+                    }
 
                     // Determine side and add class
                     let side = null;
@@ -758,12 +837,12 @@
                         summary = op.type;
                     }
 
-                    // 在renderDisplayTimeline函数中应用类似的修改
+                    // Apply similar modifications in renderDisplayTimeline function
                     const [minutes, seconds] = op.timestamp.split(':').map(Number);
-            
+
                     item.innerHTML = `
             						<div class="timeline-header">
-            							<button class="btn btn-sm btn-primary seek-btn" data-index="${index}" style="margin-left: 10px;">Restore</button>
+            							<button class="btn btn-sm btn-primary seek-btn" data-index="${index}" style="margin-left: 10px;">${getI18nText('record_seek')}</button>
             							<span>
             								<span class="timestamp-input-group">
             									<input type="number" 
@@ -783,37 +862,37 @@
             								| ${summary}
             							</span>
             							<div>
-            								<button class="btn btn-sm btn-danger delete-btn" data-index="${index}" style="margin-left: 10px;">Delete</button>
+            								<button class="btn btn-sm btn-danger delete-btn" data-index="${index}" style="margin-left: 10px;">${getI18nText('delete')}</button>
             							</div>
             						</div>
             					`;
 
-                    // 添加相同的输入验证逻辑，但使用editDisplayOp消息
+                    // Add same input validation logic, but use editDisplayOp message
                     const minutesInput = item.querySelector('.timestamp-minutes');
                     const secondsInput = item.querySelector('.timestamp-seconds');
 
                     function validateAndUpdateTimestamp(inputElement) {
                         const minutes = parseInt(minutesInput.value) || 0;
                         let seconds = parseInt(secondsInput.value) || 0;
-            						
+
                         if (seconds < 0) seconds = 0;
                         if (seconds > 59) seconds = 59;
                         const validMinutes = Math.max(0, Math.min(99, minutes));
-            						
+
                         minutesInput.value = validMinutes;
                         secondsInput.value = seconds;
-            						
+
                         const isValid = seconds >= 0 && seconds <= 59 && validMinutes >= 0;
-            						
+
                         if (!isValid) {
                             inputElement.classList.add('invalid');
                             return;
                         }
-            						
+
                         inputElement.classList.remove('invalid');
-            						
+
                         const newTimestamp = `${validMinutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            						
+
                         if (newTimestamp !== op.timestamp) {
                             nodecg.sendMessage('editDisplayOp', { index, newTimestamp })
                                 .catch(err => {
@@ -824,12 +903,12 @@
                                 });
                         }
                     }
-            
+
                     minutesInput.addEventListener('blur', (e) => validateAndUpdateTimestamp(e.target));
                     secondsInput.addEventListener('blur', (e) => validateAndUpdateTimestamp(e.target));
                     minutesInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') e.target.blur(); });
                     secondsInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') e.target.blur(); });
-            
+
                     secondsInput.addEventListener('input', (e) => {
                         let value = parseInt(e.target.value);
                         if (value > 59) {
@@ -840,7 +919,7 @@
                             secondsInput.value = newSeconds;
                         }
                     });
-            
+
                     const deleteBtn = item.querySelector('.delete-btn');
                     deleteBtn.addEventListener('click', () => {
                         if (confirm('Are you sure you want to delete this Display Op?')) {
@@ -869,7 +948,7 @@
 
             nodecg.listenFor('opsPackMerged', (data) => {
                 console.log(`OpsPack modified at ${data.timestamp}: ${data.newOpsCount} new ops appended, total ${data.totalOps} ops`);
-                // UI会通过timelineGameplay的change事件自动刷新
+                // UI will automatically refresh through timelineGameplay's change event
             });
 
             playbackStatus.on('change', (newVal) => {

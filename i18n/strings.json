@@ -352,5 +352,113 @@
     "chs": "撤退",
     "cht": "撤退",
     "en": "Retreat"
+  },
+  "record_modified": {
+    "jp": "変更済み",
+    "chs": "已修改",
+    "cht": "已修改",
+    "en": "Modified"
+  },
+  "record_inserted": {
+    "jp": "追加",
+    "chs": "追加",
+    "cht": "追加",
+    "en": "Inserted"
+  },
+  "record_deleted": {
+    "jp": "削除済み",
+    "chs": "已删",
+    "cht": "已刪",
+    "en": "Deleted"
+  },
+  "record_native": {
+    "jp": "ネイティブ",
+    "chs": "原生",
+    "cht": "原生",
+    "en": "Native"
+  },
+  "record_opspack_modified_tooltip": {
+    "jp": "このOpsPackは変更されました",
+    "chs": "此OpsPack已被修改",
+    "cht": "此OpsPack已被修改",
+    "en": "This OpsPack has been modified"
+  },
+  "record_replay": {
+    "jp": "再生",
+    "chs": "重播",
+    "cht": "重播",
+    "en": "Replay"
+  },
+  "record_pause": {
+    "jp": "一時停止",
+    "chs": "暂停",
+    "cht": "暫停",
+    "en": "Pause"
+  },
+  "record_resume": {
+    "jp": "再開",
+    "chs": "继续",
+    "cht": "繼續",
+    "en": "Resume"
+  },
+  "record_export_json": {
+    "jp": "JSONエクスポート",
+    "chs": "导出JSON",
+    "cht": "匯出JSON",
+    "en": "Export JSON"
+  },
+  "record_import_json": {
+    "jp": "JSONインポート",
+    "chs": "导入JSON",
+    "cht": "匯入JSON",
+    "en": "Import JSON"
+  },
+  "record_insert_mode": {
+    "jp": "挿入モード",
+    "chs": "插入模式",
+    "cht": "插入模式",
+    "en": "Insert Mode"
+  },
+  "record_overwrite_mode": {
+    "jp": "上書きモード",
+    "chs": "覆盖模式",
+    "cht": "覆寫模式",
+    "en": "Overwrite Mode"
+  },
+  "record_tracks": {
+    "jp": "トラック:",
+    "chs": "轨道:",
+    "cht": "軌道:",
+    "en": "Tracks:"
+  },
+  "record_gameplay": {
+    "jp": "ゲームプレイ",
+    "chs": "游戏操作",
+    "cht": "遊戲操作",
+    "en": "Gameplay"
+  },
+  "record_display": {
+    "jp": "ディスプレイ",
+    "chs": "显示",
+    "cht": "顯示",
+    "en": "Display"
+  },
+  "record_seek": {
+    "jp": "シーク",
+    "chs": "跳转",
+    "cht": "跳轉",
+    "en": "Seek"
+  },
+  "record_round": {
+    "jp": "ラウンド",
+    "chs": "回合",
+    "cht": "回合",
+    "en": "Round"
+  },
+  "record_ops": {
+    "jp": "操作",
+    "chs": "操作",
+    "cht": "操作",
+    "en": "Ops"
   }
 }
