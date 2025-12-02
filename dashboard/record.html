@@ -174,8 +174,6 @@
 
         /* Task 3: Modified OpsPack indicator */
         .timeline-item.modified {
-            background: rgba(255, 165, 0, 0.08);
-            /* Light orange background */
             border-left: 3px solid #ffa500;
         }
 
@@ -778,7 +776,7 @@
                     const operationsHTML = pack.ops.map((op, idx) => {
                         const source = op.source || 'native';
                         const isDeleted = op.deleted;
-                        const sourceBadge = op.source === 'inserted' ? `<span class="operation-source-badge inserted">${getI18nText('record_inserted')}</span>` : '';
+                        const sourceBadge = op.source === 'inserted' ? `${getI18nText('record_inserted')}<span class="operation-source-badge inserted"></span>` : '';
                         const deletedBadge = isDeleted ? `<span class="operation-source-badge deleted">${getI18nText('record_deleted')}</span>` : '';
                         const actionButton = isDeleted
                             ? `<button class="btn-restore-op" data-op-index="${idx}" title="Restore this operation">↩</button>`
@@ -815,7 +813,7 @@
 										   value="${seconds}" 
 										   data-index="${index}">
 								</span>
-								| ${getI18nText('record_round')} ${pack.round || 1}${modifiedBadge} - ${pack.ops.filter(op => !op.deleted).length}/${opCount} ${getI18nText('record_ops')}</span>
+								| ${getI18nText('record_round')} ${pack.round || 1} - ${pack.ops.filter(op => !op.deleted).length}/${opCount} ${getI18nText('record_ops')}${modifiedBadge}</span>
 							</span>
 							<div>
 								<button class="btn btn-sm btn-danger delete-btn" data-index="${index}" style="margin-left: 10px;">${getI18nText('delete')}</button>
