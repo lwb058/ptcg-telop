@@ -5,6 +5,75 @@
     <meta charset="UTF-8">
     <title>Director Panel</title>
     <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        /* Timer Edit Popup Styles */
+        .timer-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+            /* justify-content: center;  Removed for manual positioning */
+            /* align-items: center;      Removed for manual positioning */
+        }
+
+        .timer-popup-content {
+            position: absolute;
+            /* Added for manual positioning */
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            min-width: 250px;
+        }
+
+        .timer-popup-display {
+            font-family: monospace;
+            font-size: 2em;
+            margin-bottom: 15px;
+            color: #fff;
+            background: #000;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+
+        .timer-popup-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .timer-popup-btn {
+            padding: 8px;
+            font-size: 0.9em;
+            cursor: pointer;
+            background: #333;
+            color: #ddd;
+            border: 1px solid #555;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .timer-popup-btn:hover {
+            background: #444;
+            border-color: #777;
+        }
+
+        .timer-popup-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+        }
+    </style>
 </head>
 
 <body>
@@ -26,6 +95,24 @@
                     style="font-family: monospace; font-size: 1.5em; font-weight: bold; color: #fff;">00:00</div>
                 <button id="timer-toggle-btn" class="btn btn-primary" style="padding: 2px 8px;">Start</button>
                 <button id="timer-edit-btn" class="btn btn-secondary" style="padding: 2px 8px;">Edit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timer Edit Popup -->
+    <div id="timer-popup" class="timer-popup-overlay">
+        <div class="timer-popup-content">
+            <div id="popup-timer-display" class="timer-popup-display">00:00</div>
+            <div class="timer-popup-controls">
+                <button class="timer-popup-btn" data-adjust="30">+30s</button>
+                <button class="timer-popup-btn" data-adjust="5">+5s</button>
+                <button class="timer-popup-btn" data-adjust="1">+1s</button>
+                <button class="timer-popup-btn" data-adjust="-30">-30s</button>
+                <button class="timer-popup-btn" data-adjust="-5">-5s</button>
+                <button class="timer-popup-btn" data-adjust="-1">-1s</button>
+            </div>
+            <div class="timer-popup-actions">
+                <button id="timer-popup-cancel" class="btn btn-secondary">Cancel</button>
             </div>
         </div>
     </div>
@@ -108,6 +195,16 @@
             const timerDisplay = document.getElementById('timer-display');
             const timerToggleBtn = document.getElementById('timer-toggle-btn');
             const timerEditBtn = document.getElementById('timer-edit-btn');
+
+            // Popup Elements
+            const timerPopup = document.getElementById('timer-popup');
+            const popupContent = timerPopup.querySelector('.timer-popup-content');
+            const popupDisplay = document.getElementById('popup-timer-display');
+            const popupCancelBtn = document.getElementById('timer-popup-cancel');
+            const popupAdjustBtns = timerPopup.querySelectorAll('.timer-popup-btn');
+
+            let tempSeconds = 0;
+
 
             // --- Core Functions ---
             function getCardName(slotId) {
@@ -298,16 +395,98 @@
                 nodecg.sendMessage('timerControl', { action });
             });
 
-            timerEditBtn.addEventListener('click', () => {
-                const currentSeconds = Math.floor(matchTimer.value.offset / 1000);
-                const newSecondsStr = prompt('Enter elapsed time in seconds:', currentSeconds);
-                if (newSecondsStr !== null) {
-                    const newSeconds = parseInt(newSecondsStr, 10);
-                    if (!isNaN(newSeconds)) {
-                        nodecg.sendMessage('timerControl', { action: 'edit', seconds: newSeconds });
+            // Timer Edit Popup Logic
+            function updatePopupDisplay() {
+                const minutes = Math.floor(tempSeconds / 60);
+                const seconds = tempSeconds % 60;
+                popupDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            function openTimerPopup() {
+                // Initialize with current timer value
+                if (matchTimer.value) {
+                    let elapsed = matchTimer.value.offset;
+                    if (matchTimer.value.isRunning && matchTimer.value.startTime && matchTimer.value.mode === 'live') {
+                        elapsed += (Date.now() - matchTimer.value.startTime);
                     }
+
+                    // If countdown, we might want to edit the remaining time or elapsed time?
+                    // Usually "Edit Timer" implies editing the elapsed time (offset).
+                    // Let's stick to editing the elapsed time (offset) as that's what the system tracks.
+
+                    tempSeconds = Math.floor(elapsed / 1000);
+                    updatePopupDisplay();
+
+                    // Show overlay first to calculate dimensions
+                    timerPopup.style.display = 'block';
+                    timerPopup.style.visibility = 'hidden';
+
+                    // Position popup next to the button
+                    const btnRect = timerEditBtn.getBoundingClientRect();
+                    const popupRect = popupContent.getBoundingClientRect();
+
+                    // Default: Position to the right of the button
+                    let top = btnRect.top;
+                    let left = btnRect.right + 10;
+
+                    // Check if it goes off-screen horizontally
+                    if (left + popupRect.width > window.innerWidth) {
+                        // Try left side
+                        left = btnRect.left - popupRect.width - 10;
+                    }
+
+                    // Check if it goes off-screen vertically
+                    if (top + popupRect.height > window.innerHeight) {
+                        top = window.innerHeight - popupRect.height - 10;
+                    }
+                    if (top < 0) top = 10; // Safety check
+
+                    popupContent.style.top = `${top}px`;
+                    popupContent.style.left = `${left}px`;
+
+                    timerPopup.style.visibility = 'visible';
+                }
+            }
+
+            function closeTimerPopup(save) {
+                if (save) {
+                    nodecg.sendMessage('timerControl', { action: 'edit', seconds: tempSeconds });
+                }
+                timerPopup.style.display = 'none';
+            }
+
+            timerEditBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent immediate closing
+                openTimerPopup();
+            });
+
+            popupAdjustBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const adjust = parseInt(btn.dataset.adjust, 10);
+                    tempSeconds += adjust;
+                    if (tempSeconds < 0) tempSeconds = 0;
+                    updatePopupDisplay();
+                });
+            });
+
+            popupCancelBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeTimerPopup(false);
+            });
+
+            // Click outside to save and close
+            timerPopup.addEventListener('click', (e) => {
+                if (e.target === timerPopup) {
+                    closeTimerPopup(true);
                 }
             });
+
+            // Prevent clicks inside content from closing
+            popupContent.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+
 
             // --- Replicant Listeners ---
             const hotkeyManager = new HotkeyManager(nodecg, settingsRep);
