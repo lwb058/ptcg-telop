@@ -876,15 +876,56 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				throw new Error('Invalid index');
 			}
 
-			// Create a copy, remove the item, and reassign
+			const targetPack = timelineGameplay.value[index];
 			const newTimeline = [...timelineGameplay.value];
-			newTimeline.splice(index, 1);
+			const newOps = [...targetPack.ops];
+
+			// Process each operation: soft delete native, hard delete inserted
+			let hasNativeOps = false;
+			const opsToRemove = [];
+
+			for (let i = newOps.length - 1; i >= 0; i--) {
+				const op = newOps[i];
+				const isNative = !op.source || op.source === 'native';
+
+				if (isNative) {
+					// Soft delete: mark as deleted
+					newOps[i] = {
+						...op,
+						deleted: true,
+						deletedAt: Date.now()
+					};
+					hasNativeOps = true;
+				} else {
+					// Hard delete: mark for removal
+					opsToRemove.push(i);
+				}
+			}
+
+			// Remove inserted operations (iterate backwards to maintain indices)
+			opsToRemove.forEach(i => newOps.splice(i, 1));
+
+			// Check if OpsPack should be deleted
+			const activeOps = newOps.filter(op => !op.deleted);
+
+			if (activeOps.length === 0 && newOps.length === 0) {
+				// All operations were inserted and removed - delete the OpsPack
+				newTimeline.splice(index, 1);
+				nodecg.log.info(`OpsPack at ${targetPack.timestamp} completely deleted (all operations removed).`);
+			} else {
+				// Keep the OpsPack with updated operations
+				newTimeline[index] = {
+					...targetPack,
+					ops: newOps
+				};
+				const nativeCount = newOps.filter(op => !op.source && op.deleted).length;
+				const insertedRemoved = opsToRemove.length;
+				nodecg.log.info(`OpsPack at ${targetPack.timestamp} operations deleted: ${nativeCount} native marked, ${insertedRemoved} inserted removed. Remaining: ${newOps.length} ops (${activeOps.length} active).`);
+			}
+
 			timelineGameplay.value = newTimeline;
-
-			nodecg.log.info(`OpsPack at index ${index} deleted.`);
-
 			nodecg.sendMessage('timelineRefreshed');
-			if (callback) callback(null, 'OpsPack deleted successfully.');
+			if (callback) callback(null, 'OpsPack operations deleted successfully.');
 		} catch (e) {
 			nodecg.log.error('deleteOpsPack error:', e);
 			if (callback) callback(e.message);

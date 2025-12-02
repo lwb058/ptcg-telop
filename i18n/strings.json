@@ -460,5 +460,23 @@
     "chs": "操作",
     "cht": "操作",
     "en": "Ops"
+  },
+  "record_delete_opspack_confirm": {
+    "jp": "このOpsPackのすべての操作を削除しますか？",
+    "chs": "删除此OpsPack中的所有操作？",
+    "cht": "刪除此OpsPack中的所有操作？",
+    "en": "Delete all operations in this OpsPack?"
+  },
+  "record_opspack_will_be_deleted": {
+    "jp": "OpsPack自体も削除されます。",
+    "chs": "OpsPack本身也将被删除。",
+    "cht": "OpsPack本身也將被刪除。",
+    "en": "The OpsPack itself will also be deleted."
+  },
+  "record_opspack_will_be_kept": {
+    "jp": "OpsPack自体は復元可能なため保持されます。",
+    "chs": "OpsPack将被保留以便恢复。",
+    "cht": "OpsPack將被保留以便恢復。",
+    "en": "The OpsPack will be kept for potential restoration."
   }
 }

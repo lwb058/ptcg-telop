@@ -756,7 +756,34 @@
 
                     const deleteBtn = item.querySelector('.delete-btn');
                     deleteBtn.addEventListener('click', () => {
-                        if (confirm('Are you sure you want to delete this OpsPack? This cannot be undone.')) {
+                        // Analyze OpsPack composition
+                        const nativeOps = pack.ops.filter(op => !op.source || op.source === 'native');
+                        const insertedOps = pack.ops.filter(op => op.source === 'inserted');
+                        const nativeCount = nativeOps.length;
+                        const insertedCount = insertedOps.length;
+
+                        // Build detailed confirmation message
+                        let confirmMessage = getI18nText('record_delete_opspack_confirm') || 'Delete all operations in this OpsPack?';
+                        confirmMessage += '\n\n';
+
+                        if (nativeCount > 0) {
+                            confirmMessage += `• ${nativeCount} ${getI18nText('record_native')} ${nativeCount === 1 ? 'operation' : 'operations'} will be marked as deleted (can be restored)\n`;
+                        }
+
+                        if (insertedCount > 0) {
+                            confirmMessage += `• ${insertedCount} ${getI18nText('record_inserted')} ${insertedCount === 1 ? 'operation' : 'operations'} will be permanently removed\n`;
+                        }
+
+                        confirmMessage += '\n';
+
+                        // Determine if OpsPack will be deleted
+                        if (insertedCount > 0 && nativeCount === 0) {
+                            confirmMessage += getI18nText('record_opspack_will_be_deleted') || 'The OpsPack itself will also be deleted.';
+                        } else {
+                            confirmMessage += getI18nText('record_opspack_will_be_kept') || 'The OpsPack will be kept for potential restoration.';
+                        }
+
+                        if (confirm(confirmMessage)) {
                             nodecg.sendMessage('deleteOpsPack', index)
                                 .catch(err => alert('Failed to delete: ' + err));
                         }
