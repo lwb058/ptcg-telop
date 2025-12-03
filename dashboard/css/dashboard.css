@@ -96,10 +96,22 @@ body.is-inactive:hover {
     background-color: #4a69bd;
     color: white;
     border-color: #4a69bd;
+    min-width: 60px;
 }
 
 .btn-primary:hover {
     background-color: #3b5998;
+}
+
+.btn-secondary {
+    background-color: #4abd8d;
+    color: white;
+    border-color: #4abda0;
+    min-width: 80px;
+}
+
+.btn-secondary:hover {
+    background-color: #3b9857;
 }
 
 .btn-danger {
@@ -903,6 +915,7 @@ body.dragging-energy .manual-attach-zone {
     cursor: not-allowed;
     background: Grey;
     pointer-events: none;
+    min-width: 80px;
 }
 
 /* Stadium Selection Styles */

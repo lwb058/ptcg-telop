@@ -386,7 +386,7 @@
             <input type="checkbox" id="track-display-toggle" checked style="width: auto; height: auto;">
             <label for="track-display-toggle" style="margin: 0; cursor: pointer; color: #ddd;">Display</label>
         </div>
-        <div class="btn-group" style="margin-left: auto;">
+        <div class="btn-group" style="display:flex; margin-left: auto; gap:5px;">
             <button id="export-btn" class="btn btn-secondary">Export JSON</button>
             <button id="import-btn" class="btn btn-secondary">Import JSON</button>
         </div>
@@ -438,7 +438,8 @@
             nodecg.Replicant('ptcg-settings'),
             nodecg.Replicant('playbackStatus'),
             nodecg.Replicant('i18nStrings'),
-            nodecg.Replicant('language')
+            nodecg.Replicant('language'),
+            nodecg.Replicant('deckLoadingStatus')
         ).then(() => {
             const timelineGameplay = nodecg.Replicant('timelineGameplay');
             const timelineDisplay = nodecg.Replicant('timelineDisplay');
@@ -451,6 +452,7 @@
             const gameTimeSettings = nodecg.Replicant('gameTimeSettings');
             const i18nStrings = nodecg.Replicant('i18nStrings');
             const language = nodecg.Replicant('language');
+            const deckLoadingStatus = nodecg.Replicant('deckLoadingStatus');
             const timelineList = document.getElementById('timeline-list');
             const timelineDisplayList = document.getElementById('timeline-display-list');
             const playBtn = document.getElementById('play-btn');
@@ -1212,6 +1214,8 @@
                 importFile.click();
             });
 
+            let isImporting = false;
+
             importFile.addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -1223,9 +1227,20 @@
                         // Validate JSON
                         JSON.parse(json);
                         if (confirm('Importing will overwrite the current timeline and decks. Continue?')) {
+                            isImporting = true;
+                            importBtn.disabled = true;
+                            exportBtn.disabled = true;
+                            importBtn.textContent = "Initializing...";
+
                             nodecg.sendMessage('importTimeline', json)
                                 .then(() => alert('Import successful!'))
-                                .catch(err => alert('Import failed: ' + err));
+                                .catch(err => alert('Import failed: ' + err))
+                                .finally(() => {
+                                    isImporting = false;
+                                    importBtn.disabled = false;
+                                    exportBtn.disabled = false;
+                                    importBtn.textContent = getI18nText('record_import_json');
+                                });
                         }
                     } catch (err) {
                         alert('Invalid JSON file.');
@@ -1234,6 +1249,12 @@
                 reader.readAsText(file);
                 // Reset value so same file can be selected again
                 importFile.value = '';
+            });
+
+            deckLoadingStatus.on('change', (newVal) => {
+                if (isImporting && newVal && newVal.loading) {
+                    importBtn.textContent = newVal.text || `Importing... ${newVal.percentage}%`;
+                }
             });
         });
     </script>

@@ -402,16 +402,16 @@
     "en": "Resume"
   },
   "record_export_json": {
-    "jp": "JSONエクスポート",
-    "chs": "导出JSON",
-    "cht": "匯出JSON",
-    "en": "Export JSON"
+    "jp": "データ出力",
+    "chs": "导出数据",
+    "cht": "匯出數據",
+    "en": "Export"
   },
   "record_import_json": {
-    "jp": "JSONインポート",
-    "chs": "导入JSON",
-    "cht": "匯入JSON",
-    "en": "Import JSON"
+    "jp": "データ取込",
+    "chs": "导入数据",
+    "cht": "匯入數據",
+    "en": "Import"
   },
   "record_insert_mode": {
     "jp": "挿入モード",

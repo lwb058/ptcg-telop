@@ -651,7 +651,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			const savedPrizeR = JSON.parse(JSON.stringify(prizeCardsR.value));
 
 			// 2. Reset Board
-			await new Promise((resolve) => gameLogic.executeRestart((err) => resolve()));
+			gameLogic.resetBoardState();
 
 			// 3. Restore Prize Cards
 			nodecg.Replicant('prizeCardsL').value = savedPrizeL;
@@ -724,7 +724,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			const savedPrizeR = JSON.parse(JSON.stringify(prizeCardsR.value));
 
 			// 4. Reset Board
-			await new Promise((resolve) => gameLogic.executeRestart((err) => resolve()));
+			gameLogic.resetBoardState();
 
 			// 5. Restore Prize Cards (Reset to untaken first, then replay ops)
 			const resetPrizes = (prizes) => prizes.map(p => ({ ...p, isTaken: false }));
@@ -789,7 +789,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			const savedPrizeR = JSON.parse(JSON.stringify(prizeCardsR.value));
 
 			// 3. Reset Board
-			await new Promise((resolve) => gameLogic.executeRestart((err) => resolve()));
+			gameLogic.resetBoardState();
 
 			// 4. Restore Prize Cards (Reset to untaken first, then replay ops)
 			const resetPrizes = (prizes) => prizes.map(p => ({ ...p, isTaken: false }));
@@ -1002,27 +1002,37 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				if (callback) callback(null, 'Timeline imported.');
 			} else if (data.timeline && Array.isArray(data.timeline)) {
 				// New format (timeline + decks + display + prizes)
-				const promises = [];
+				// Execute sequentially to allow deckLoadingStatus to update correctly for each deck
+				const processImports = async () => {
+					let totalDecks = 0;
+					if (data.deckL && data.deckL.name) totalDecks++;
+					if (data.deckR && data.deckR.name) totalDecks++;
 
-				if (data.deckL && data.deckL.name) {
-					promises.push(new Promise((resolve) => {
-						gameLogic.processDeckImport('L', data.deckL.name, (err) => {
-							if (err) nodecg.log.warn(`Failed to re-import Deck L: ${err.message}`);
-							resolve(); // Resolve anyway to continue
+					const scale = totalDecks > 0 ? 1 / totalDecks : 1;
+					let currentDeckIndex = 0;
+
+					if (data.deckL && data.deckL.name) {
+						await new Promise((resolve) => {
+							const offset = currentDeckIndex * scale * 100;
+							gameLogic.processDeckImport('L', data.deckL.name, (err) => {
+								if (err) nodecg.log.warn(`Failed to re-import Deck L: ${err.message}`);
+								resolve(); // Resolve anyway to continue
+							}, { scale, offset });
 						});
-					}));
-				}
+						currentDeckIndex++;
+					}
 
-				if (data.deckR && data.deckR.name) {
-					promises.push(new Promise((resolve) => {
-						gameLogic.processDeckImport('R', data.deckR.name, (err) => {
-							if (err) nodecg.log.warn(`Failed to re-import Deck R: ${err.message}`);
-							resolve(); // Resolve anyway to continue
+					if (data.deckR && data.deckR.name) {
+						await new Promise((resolve) => {
+							const offset = currentDeckIndex * scale * 100;
+							gameLogic.processDeckImport('R', data.deckR.name, (err) => {
+								if (err) nodecg.log.warn(`Failed to re-import Deck R: ${err.message}`);
+								resolve(); // Resolve anyway to continue
+							}, { scale, offset });
 						});
-					}));
-				}
+						currentDeckIndex++;
+					}
 
-				Promise.all(promises).then(() => {
 					timelineGameplay.value = data.timeline;
 
 					if (data.timelineDisplay) {
@@ -1046,7 +1056,9 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 					}
 
 					if (callback) callback(null, 'Timeline, Decks, and Display imported.');
-				});
+				};
+
+				processImports();
 
 			} else {
 				throw new Error('Invalid JSON format');

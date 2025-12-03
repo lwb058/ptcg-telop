@@ -324,7 +324,7 @@ module.exports = function (nodecg) {
 
 	// Listen for messages to process deck codes or single card IDs
 	// Helper function to process deck import
-	const processDeckImport = (side, code, callback) => {
+	const processDeckImport = (side, code, callback, progressOptions = { scale: 1, offset: 0 }) => {
 		nodecg.log.info(`[Import Flow] Attempting to import "${code}" as a DECK for Player ${side}.`);
 
 		const pythonDir = path.join(__dirname, '..', 'python');
@@ -363,9 +363,11 @@ module.exports = function (nodecg) {
 			if (match) {
 				const current = parseInt(match[1], 10);
 				const total = parseInt(match[2], 10);
-				const percentage = Math.round((current / total) * 100);
-				const text = `${current}/${total}`;
-				deckLoadingStatus.value = { loading: true, side: side, percentage: percentage, text: text };
+				// Calculate scaled percentage
+				const rawPercentage = (current / total) * 100;
+				const scaledPercentage = Math.round((rawPercentage * progressOptions.scale) + progressOptions.offset);
+				const text = `${scaledPercentage}%`;
+				deckLoadingStatus.value = { loading: true, side: side, percentage: scaledPercentage, text: text };
 			}
 		});
 
@@ -1366,88 +1368,85 @@ module.exports = function (nodecg) {
 		}
 	}
 
+	// Helper function to reset the board state (replicants) without clearing timeline
+	function resetBoardState() {
+		// Reset Current Turn based on firstMove
+		if (gameSetup.value && gameSetup.value.firstMove) {
+			firstMove.value = gameSetup.value.firstMove;
+		}
+		const initialTurn = firstMove.value || 'L';
+		live_currentTurn.value = initialTurn;
+		draft_currentTurn.value = initialTurn;
+
+		// Reset Turn Count
+		turnCount.value = 1;
+
+		// Reset Operation Queue
+		operationQueue.value = [];
+
+		// Reset Selections
+		selections.value = [];
+
+		// Reset all player slots (both LIVE and DRAFT)
+		for (let i = 0; i < 9; i++) {
+			const slotDefault = {
+				cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [], abilityUsed: false,
+			};
+			if (i === 0) {
+				slotDefault.ailments = [];
+			}
+			nodecg.Replicant(`live_slotL${i}`).value = JSON.parse(JSON.stringify(slotDefault));
+			nodecg.Replicant(`draft_slotL${i}`).value = JSON.parse(JSON.stringify(slotDefault));
+			nodecg.Replicant(`live_slotR${i}`).value = JSON.parse(JSON.stringify(slotDefault));
+			nodecg.Replicant(`draft_slotR${i}`).value = JSON.parse(JSON.stringify(slotDefault));
+		}
+
+		['L', 'R'].forEach(side => {
+			actionTypes.forEach(action => {
+				nodecg.Replicant(`live_action_${action}_${side}`).value = false;
+				nodecg.Replicant(`draft_action_${action}_${side}`).value = false;
+			});
+			// Reset VSTAR status
+			nodecg.Replicant(`live_vstar_${side}`).value = false;
+			nodecg.Replicant(`draft_vstar_${side}`).value = false;
+		});
+
+		// Reset Side/Prize Replicants
+		live_sideL.value = 6;
+		draft_sideL.value = 6;
+		live_sideR.value = 6;
+		draft_sideR.value = 6;
+
+		// Reset Lost Zone
+		nodecg.Replicant('live_lostZoneL').value = 0;
+		nodecg.Replicant('draft_lostZoneL').value = 0;
+		nodecg.Replicant('live_lostZoneR').value = 0;
+		nodecg.Replicant('draft_lostZoneR').value = 0;
+
+		// Reset Stadium
+		live_stadium.value = { cardId: null };
+		draft_stadium.value = { cardId: null };
+
+		// Reset Prize Cards
+		if (gameSetup.value) {
+			// Restore from Game Setup if available
+			nodecg.Replicant('prizeCardsL').value = JSON.parse(JSON.stringify(gameSetup.value.prizeCardsL));
+			nodecg.Replicant('prizeCardsR').value = JSON.parse(JSON.stringify(gameSetup.value.prizeCardsR));
+			nodecg.log.info('Restored Prize Cards from Game Setup.');
+		} else {
+			// Default reset
+			nodecg.Replicant('prizeCardsL').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
+			nodecg.Replicant('prizeCardsR').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
+		}
+	}
+
 	// Listen for a message to restart the Game board
 	function executeRestart(callback) {
-
 		try {
-			// Reset Current Turn based on firstMove
-			// If Game Setup exists, restore firstMove from it?
-			// User requirement: "restore to opening state".
-			// However, user might want to change first move in standby.
-			// Let's stick to current firstMove replicant value as the source of truth for the *next* game,
-			// unless we explicitly want to revert to the *previous* game's setup.
-			// Given the flow "Restart -> Standby -> Modify -> Start", keeping current value allows modification.
-			// But if we want to "restore", maybe we should set firstMove.value = gameSetup.value.firstMove?
-			// Let's restore it to be safe, user can change it in standby.
-			if (gameSetup.value && gameSetup.value.firstMove) {
-				firstMove.value = gameSetup.value.firstMove;
-			}
-			const initialTurn = firstMove.value || 'L';
-			live_currentTurn.value = initialTurn;
-			draft_currentTurn.value = initialTurn;
+			// 1. Reset the board state
+			resetBoardState();
 
-			// Reset Turn Count
-			turnCount.value = 1;
-
-			// Reset Operation Queue
-			operationQueue.value = [];
-
-			// Reset Selections
-			selections.value = [];
-
-			// Reset all player slots (both LIVE and DRAFT)
-			for (let i = 0; i < 9; i++) {
-				const slotDefault = {
-					cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [], abilityUsed: false,
-				};
-				if (i === 0) {
-					slotDefault.ailments = [];
-				}
-				nodecg.Replicant(`live_slotL${i}`).value = JSON.parse(JSON.stringify(slotDefault));
-				nodecg.Replicant(`draft_slotL${i}`).value = JSON.parse(JSON.stringify(slotDefault));
-				nodecg.Replicant(`live_slotR${i}`).value = JSON.parse(JSON.stringify(slotDefault));
-				nodecg.Replicant(`draft_slotR${i}`).value = JSON.parse(JSON.stringify(slotDefault));
-			}
-
-			['L', 'R'].forEach(side => {
-				actionTypes.forEach(action => {
-					nodecg.Replicant(`live_action_${action}_${side}`).value = false;
-					nodecg.Replicant(`draft_action_${action}_${side}`).value = false;
-				});
-				// Reset VSTAR status
-				nodecg.Replicant(`live_vstar_${side}`).value = false;
-				nodecg.Replicant(`draft_vstar_${side}`).value = false;
-			});
-
-			// Reset Side/Prize Replicants
-			live_sideL.value = 6;
-			draft_sideL.value = 6;
-			live_sideR.value = 6;
-			draft_sideR.value = 6;
-
-			// Reset Lost Zone
-			nodecg.Replicant('live_lostZoneL').value = 0;
-			nodecg.Replicant('draft_lostZoneL').value = 0;
-			nodecg.Replicant('live_lostZoneR').value = 0;
-			nodecg.Replicant('draft_lostZoneR').value = 0;
-
-			// Reset Stadium
-			live_stadium.value = { cardId: null };
-			draft_stadium.value = { cardId: null };
-
-			// Reset Prize Cards
-			if (gameSetup.value) {
-				// Restore from Game Setup if available
-				nodecg.Replicant('prizeCardsL').value = JSON.parse(JSON.stringify(gameSetup.value.prizeCardsL));
-				nodecg.Replicant('prizeCardsR').value = JSON.parse(JSON.stringify(gameSetup.value.prizeCardsR));
-				nodecg.log.info('Restored Prize Cards from Game Setup.');
-			} else {
-				// Default reset
-				nodecg.Replicant('prizeCardsL').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
-				nodecg.Replicant('prizeCardsR').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
-			}
-
-			// Clear Timelines
+			// 2. Clear Timelines (Restart Game behavior)
 			timelineGameplay.value = [];
 			timelineDisplay.value = [];
 			nodecg.log.info('Timelines cleared during game restart.');
@@ -1762,6 +1761,7 @@ module.exports = function (nodecg) {
 
 	const gameLogic = {
 		executeRestart,
+		resetBoardState,
 		executeResetSystem,
 		applyOperationLogic,
 		processQueue,
