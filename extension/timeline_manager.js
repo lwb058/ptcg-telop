@@ -47,6 +47,8 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 	const turnCount = nodecg.Replicant('turnCount');
 	const cardDatabase = nodecg.Replicant('cardDatabase');
 	const operationQueue = nodecg.Replicant('operationQueue');
+	const bundleVersion = nodecg.Replicant('bundleVersion');
+
 
 	// --- Timer Logic (from original time_manager.js) ---
 	function startTimer() {
@@ -352,6 +354,68 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 		}
 	});
 
+	// Route messages from dashboard to graphics
+	nodecg.listenFor('_showPrizeCards', (data) => {
+		nodecg.log.info(`Broadcasting showPrizeCards for side: ${data.side}`);
+		nodecg.sendMessage('showPrizeCards', data);
+
+		// Check if Display Timeline is enabled before recording
+		if (playbackConfig.value && !playbackConfig.value.display) {
+			nodecg.log.info('Display Op recording skipped (Display Timeline disabled): SHOW_PRIZE');
+			return;
+		}
+
+		// Record operation
+		if (matchTimer.value.mode === 'standby') {
+			nodecg.log.info('Display Op recording skipped (Standby Mode): SHOW_PRIZE');
+			return;
+		}
+		const timestamp = getCurrentMatchTime();
+		const op = {
+			type: `SHOW_PRIZE_${data.side}`,
+			payload: { side: data.side },
+			timestamp,
+			id: `disp-${Date.now()}`
+		};
+		// Insert Mode logic for display ops (simplified: always append and sort)
+		const newTimeline = [...timelineDisplay.value, op];
+		newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
+		timelineDisplay.value = newTimeline;
+		nodecg.sendMessage('timelineRefreshed');
+	});
+
+	nodecg.listenFor('_clearCard', () => {
+		nodecg.log.info('Broadcasting clearCard and clearing cardToShow replicants');
+		// Clear the source of truth replicants
+		cardToShowL.value = '';
+		cardToShowR.value = '';
+		// Broadcast to graphics to trigger hide animations
+		nodecg.sendMessage('clearCard');
+
+		// Check if Display Timeline is enabled before recording
+		if (playbackConfig.value && !playbackConfig.value.display) {
+			nodecg.log.info('Display Op recording skipped (Display Timeline disabled): HIDE_DISPLAY');
+			return;
+		}
+
+		// Record operation
+		if (matchTimer.value.mode === 'standby') {
+			nodecg.log.info('Display Op recording skipped (Standby Mode): HIDE_DISPLAY');
+			return;
+		}
+		const timestamp = getCurrentMatchTime();
+		const op = {
+			type: 'HIDE_DISPLAY',
+			payload: {},
+			timestamp,
+			id: `disp-${Date.now()}`
+		};
+		const newTimeline = [...timelineDisplay.value, op];
+		newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
+		timelineDisplay.value = newTimeline;
+		nodecg.sendMessage('timelineRefreshed');
+	});
+
 	// --- Timer-Driven Playback Logic ---
 
 	let playbackInterval = null;
@@ -505,8 +569,6 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 		}
 
 		// 3. Replay operations with filtering
-		// Persistent Ops (TOGGLE_..., SET_PRIZE_CARD, CLEAR_PRIZE_CARDS) are always replayed
-		// Transient Ops (SHOW_...) are only replayed if they are after the last HIDE_DISPLAY
 		for (let i = 0; i < displayIndex; i++) {
 			const op = timelineDisplay.value[i];
 			const isPersistent = op.type === 'TOGGLE_PRIZE_TAKEN' ||
@@ -518,8 +580,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				applyDisplayOp(op);
 			}
 		}
-
-		return displayIndex; // Return the next index to play
+		return displayIndex;
 	}
 
 	// Async function to process the playback queue with delays
@@ -554,7 +615,6 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				triggerVisualsForOps(batch);
 
 				// 2. Apply Data
-				// 过滤掉已删除的操作
 				const activeOps = batch.filter(op => !op.deleted);
 
 				activeOps.forEach(op => {
@@ -577,18 +637,16 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				}
 			}
 		}
-
 		isPlaybackProcessing = false;
 	}
 
 	function startPlaybackInterval() {
-		if (playbackInterval) return; // Already running
+		if (playbackInterval) return;
 
 		// Set Timer mode to playback
 		matchTimer.value.mode = 'playback';
 		matchTimer.value.isRunning = true;
 		matchTimer.value.startTime = Date.now();
-		// offset is already set by seekTimeline or playTimeline
 
 		playbackInterval = setInterval(() => {
 			// Update simulated time
@@ -606,7 +664,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 					playbackStatus.value.currentIndexGameplay++;
 					nextPack = timelineGameplay.value[playbackStatus.value.currentIndexGameplay];
 				}
-				// Trigger the async processor for gameplay ops
+
 				processPlaybackQueue();
 			}
 
@@ -658,17 +716,10 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			nodecg.Replicant('prizeCardsR').value = savedPrizeR;
 
 			// 4. Reset Prize Cards to Initial State (Untaken) for Playback
-			// We assume playback starts with fresh prizes. If we had "Set Prize" ops, we'd replay them.
-			// Since we only record "Toggle Taken", we should reset to all untaken.
-			// However, we must preserve the card IDs.
 			const resetPrizes = (prizes) => prizes.map(p => ({ ...p, isTaken: false }));
 			prizeCardsL.value = resetPrizes(prizeCardsL.value);
 			prizeCardsR.value = resetPrizes(prizeCardsR.value);
-
-			// 4.5. Clear Display (always clear before reconstruction)
 			clearDisplay();
-			// If Display Timeline is disabled, keep it cleared
-			// Otherwise, it will be reconstructed during playback
 
 			// 5. Reset Playback Status
 			playbackStatus.value = {
@@ -679,13 +730,12 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				currentTime: "00:00"
 			};
 
-			// Reset Timer for Playback
 			matchTimer.value.mode = 'playback';
 			matchTimer.value.isRunning = true;
 			matchTimer.value.startTime = Date.now();
 			matchTimer.value.offset = 0;
 
-			// 5. Start Interval
+			// 6. Start Interval
 			startPlaybackInterval();
 
 			if (callback) callback(null, 'Playback started.');
@@ -716,27 +766,22 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			playbackStatus.value.isPlaying = false;
 			stopPlaybackInterval();
 
-			// 2. Clear Display (handled by reconstructDisplayState later)
-			// clearDisplay();
-
-			// 3. Preserve Prize Cards
+			// 2. Preserve Prize Cards
 			const savedPrizeL = JSON.parse(JSON.stringify(prizeCardsL.value));
 			const savedPrizeR = JSON.parse(JSON.stringify(prizeCardsR.value));
 
-			// 4. Reset Board
+			// 3. Reset Board
 			gameLogic.resetBoardState();
 
-			// 5. Restore Prize Cards (Reset to untaken first, then replay ops)
+			// 4. Restore Prize Cards (Reset to untaken first, then replay ops)
 			const resetPrizes = (prizes) => prizes.map(p => ({ ...p, isTaken: false }));
 			prizeCardsL.value = resetPrizes(savedPrizeL);
 			prizeCardsR.value = resetPrizes(savedPrizeR);
 
-			// 6. Apply OpsPacks up to index (Gameplay Track)
+			// 5. Apply OpsPacks up to index (Gameplay Track)
 			const packsToApply = timelineGameplay.value.slice(0, index + 1);
 			for (const pack of packsToApply) {
-				// 过滤掉已删除的操作
 				const activeOps = pack.ops.filter(op => !op.deleted);
-
 				activeOps.forEach(op => {
 					if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
 						gameLogic.applyOperationLogic(nodecg.Replicant(`live_${op.payload.target}`), op, 'live');
@@ -758,14 +803,14 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 
 			// 7. Update Status
 			playbackStatus.value.isPlaying = false;
-			playbackStatus.value.currentIndexGameplay = index + 1; // Start from next OpsPack when resuming
-			playbackStatus.value.currentIndexDisplay = displayIndex; // Start from next DisplayOp
+			playbackStatus.value.currentIndexGameplay = index + 1;
+			playbackStatus.value.currentIndexDisplay = displayIndex;
 			playbackStatus.value.playbackTimeMs = targetTime;
 			playbackStatus.value.currentTime = formatTimeMs(targetTime);
 
 			// Set Timer for Seek
 			matchTimer.value.mode = 'playback';
-			matchTimer.value.isRunning = false; // Paused after seek
+			matchTimer.value.isRunning = false;
 			matchTimer.value.startTime = null;
 			matchTimer.value.offset = targetTime;
 
@@ -788,23 +833,22 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			const savedPrizeL = JSON.parse(JSON.stringify(prizeCardsL.value));
 			const savedPrizeR = JSON.parse(JSON.stringify(prizeCardsR.value));
 
-			// 3. Reset Board
+			// 4. Reset Board
 			gameLogic.resetBoardState();
 
-			// 4. Restore Prize Cards (Reset to untaken first, then replay ops)
+			// 5. Restore Prize Cards (Reset to untaken first, then replay ops)
 			const resetPrizes = (prizes) => prizes.map(p => ({ ...p, isTaken: false }));
 			prizeCardsL.value = resetPrizes(savedPrizeL);
 			prizeCardsR.value = resetPrizes(savedPrizeR);
 
-			// 5. Parse target timestamp
+			// 6. Parse target timestamp
 			const targetTime = parseTime(timestamp);
 
-			// 6. Apply all Gameplay OpsPacks up to target time
+			// 7. Apply all Gameplay OpsPacks up to target time
 			let lastGameplayIndex = -1;
 			for (let i = 0; i < timelineGameplay.value.length; i++) {
 				const pack = timelineGameplay.value[i];
 				if (parseTime(pack.timestamp) <= targetTime) {
-					// 过滤掉已删除的操作
 					const activeOps = pack.ops.filter(op => !op.deleted);
 
 					activeOps.forEach(op => {
@@ -823,9 +867,6 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				}
 			}
 			gameLogic.syncLiveToDraft();
-
-			// 7. Reconstruct Display State
-			// This helper clears display, filters ops, and replays them
 			const displayIndex = reconstructDisplayState(targetTime);
 
 			// 8. Update Status
@@ -869,8 +910,6 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			// Update the timestamp
 			const newTimeline = [...timelineGameplay.value];
 			newTimeline[index].timestamp = newTimestamp;
-
-			// Re-sort timeline by timestamp to maintain order
 			newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
 
 			// Update replicant
@@ -905,7 +944,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				const isNative = !op.source || op.source === 'native';
 
 				if (isNative) {
-					// Soft delete: mark as deleted
+					// Soft delete
 					newOps[i] = {
 						...op,
 						deleted: true,
@@ -913,7 +952,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 					};
 					hasNativeOps = true;
 				} else {
-					// Hard delete: mark for removal
+					// Hard delete
 					opsToRemove.push(i);
 				}
 			}
@@ -1073,7 +1112,6 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 		try {
 			const { opsPackIndex, operationIndex } = data;
 
-			// 验证索引
 			if (opsPackIndex < 0 || opsPackIndex >= timelineGameplay.value.length) {
 				throw new Error('Invalid OpsPack index');
 			}
@@ -1085,15 +1123,12 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			}
 
 			const targetOp = targetPack.ops[operationIndex];
-			// 默认无source标记即为native
 			const isNative = !targetOp.source || targetOp.source === 'native';
-
-			// 创建副本
 			const newTimeline = [...timelineGameplay.value];
 			const newOps = [...targetPack.ops];
 
 			if (isNative) {
-				// 软删除：标记为deleted
+				// Soft delete
 				newOps[operationIndex] = {
 					...targetOp,
 					deleted: true,
@@ -1107,7 +1142,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 
 				nodecg.log.info(`Operation ${targetOp.type} soft-deleted (marked) from OpsPack at ${targetPack.timestamp}.`);
 			} else {
-				// 硬删除：从数组中移除
+				// Hard Delete
 				newOps.splice(operationIndex, 1);
 
 				const activeOps = newOps.filter(op => !op.deleted);
@@ -1139,7 +1174,6 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 		try {
 			const { opsPackIndex, operationIndex } = data;
 
-			// 验证索引
 			if (opsPackIndex < 0 || opsPackIndex >= timelineGameplay.value.length) {
 				throw new Error('Invalid OpsPack index');
 			}
@@ -1150,12 +1184,11 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				throw new Error('Invalid operation index');
 			}
 
-			// 创建副本
 			const newTimeline = [...timelineGameplay.value];
 			const newOps = [...targetPack.ops];
 			const targetOp = newOps[operationIndex];
 
-			// 恢复操作: 移除deleted和deletedAt字段
+			// Restore Delete
 			const { deleted, deletedAt, ...restoredOp } = targetOp;
 
 			newOps[operationIndex] = restoredOp;
@@ -1179,7 +1212,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 	nodecg.listenFor('exportTimeline', (data, callback) => {
 		try {
 			const exportData = {
-				version: "1.5.0", // This should be dynamic from package.json
+				version: bundleVersion.value || "1919.810",
 				language: (ptcgSettings.value && ptcgSettings.value.language) || 'jp',
 				timestamp: new Date().toISOString(),
 				firstMove: firstMove.value,

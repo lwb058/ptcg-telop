@@ -1465,69 +1465,6 @@ module.exports = function (nodecg) {
 		nodecg.log.info('System state has been completely reset.');
 	});
 
-	// Route messages from dashboard to graphics
-	nodecg.listenFor('_showPrizeCards', (data) => {
-		nodecg.log.info(`Broadcasting showPrizeCards for side: ${data.side}`);
-		nodecg.sendMessage('showPrizeCards', data);
-
-		// Check if Display Timeline is enabled before recording
-		const playbackConfig = nodecg.Replicant('playbackConfig');
-		if (playbackConfig.value && !playbackConfig.value.display) {
-			nodecg.log.info('Display Op recording skipped (Display Timeline disabled): SHOW_PRIZE');
-			return;
-		}
-
-		// Record operation
-		if (matchTimer.value.mode === 'standby') {
-			nodecg.log.info('Display Op recording skipped (Standby Mode): SHOW_PRIZE');
-			return;
-		}
-		const timestamp = getCurrentMatchTime();
-		const op = {
-			type: `SHOW_PRIZE_${data.side}`,
-			payload: { side: data.side },
-			timestamp,
-			id: `disp-${Date.now()}`
-		};
-		// Insert Mode logic for display ops (simplified: always append and sort)
-		const newTimeline = [...timelineDisplay.value, op];
-		newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
-		timelineDisplay.value = newTimeline;
-		nodecg.sendMessage('timelineRefreshed');
-	});
-
-	nodecg.listenFor('_clearCard', () => {
-		nodecg.log.info('Broadcasting clearCard and clearing cardToShow replicants');
-		// Clear the source of truth replicants
-		nodecg.Replicant('cardToShowL').value = '';
-		nodecg.Replicant('cardToShowR').value = '';
-		// Broadcast to graphics to trigger hide animations
-		nodecg.sendMessage('clearCard');
-
-		// Check if Display Timeline is enabled before recording
-		const playbackConfig = nodecg.Replicant('playbackConfig');
-		if (playbackConfig.value && !playbackConfig.value.display) {
-			nodecg.log.info('Display Op recording skipped (Display Timeline disabled): HIDE_DISPLAY');
-			return;
-		}
-
-		// Record operation
-		if (matchTimer.value.mode === 'standby') {
-			nodecg.log.info('Display Op recording skipped (Standby Mode): HIDE_DISPLAY');
-			return;
-		}
-		const timestamp = getCurrentMatchTime();
-		const op = {
-			type: 'HIDE_DISPLAY',
-			payload: {},
-			timestamp,
-			id: `disp-${Date.now()}`
-		};
-		const newTimeline = [...timelineDisplay.value, op];
-		newTimeline.sort((a, b) => parseTime(a.timestamp) - parseTime(b.timestamp));
-		timelineDisplay.value = newTimeline;
-		nodecg.sendMessage('timelineRefreshed');
-	});
 
 	// Helper function to handle the logic for auto-checking supporter action
 	function handleCardToShowChange(cardUrl, side) {
