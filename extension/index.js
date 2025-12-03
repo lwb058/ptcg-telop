@@ -74,6 +74,8 @@ module.exports = function (nodecg) {
 	const cardToShowR = nodecg.Replicant('cardToShowR', { defaultValue: '' });
 	const i18nStrings = nodecg.Replicant('i18nStrings', { defaultValue: {} });
 	const turnCount = nodecg.Replicant('turnCount', { defaultValue: 1 });
+	const timelineGameplay = nodecg.Replicant('timelineGameplay', { defaultValue: [] });
+	const timelineDisplay = nodecg.Replicant('timelineDisplay', { defaultValue: [] });
 
 	const themeList = nodecg.Replicant('themeList', { defaultValue: ['Default'] });
 	const themeAssets = nodecg.Replicant('themeAssets', { defaultValue: {} });
@@ -380,6 +382,12 @@ module.exports = function (nodecg) {
 				nodecg.log.info(`Deck for Player ${side} processed. Reloading database.`);
 				loadCardDatabase();
 				deckReplicant.value = { name: code, cards: deckCards.cards };
+
+				// Clear prize cards for this side when loading a new deck
+				const prizeRep = nodecg.Replicant(`prizeCards${side}`);
+				prizeRep.value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
+				nodecg.log.info(`Prize cards cleared for Player ${side} due to new deck load.`);
+
 				nodecg.log.info(`Database reloaded and deck for Player ${side} updated.`);
 				deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
 				if (callback) callback(null, `Deck for Player ${side} updated.`);
@@ -1341,6 +1349,15 @@ module.exports = function (nodecg) {
 			deckL.value = { name: '', cards: [] };
 			deckR.value = { name: '', cards: [] };
 
+			// Clear Prize Cards (System Reset should clear, not restore)
+			nodecg.Replicant('prizeCardsL').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
+			nodecg.Replicant('prizeCardsR').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
+			nodecg.log.info('Prize cards cleared for both sides during system reset.');
+
+			// Reset Game Setup
+			gameSetup.value = null;
+			nodecg.log.info('Game setup cleared during system reset.');
+
 			if (callback) callback(null, 'System reset successfully.');
 
 		} catch (e) {
@@ -1430,6 +1447,11 @@ module.exports = function (nodecg) {
 				nodecg.Replicant('prizeCardsR').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
 			}
 
+			// Clear Timelines
+			timelineGameplay.value = [];
+			timelineDisplay.value = [];
+			nodecg.log.info('Timelines cleared during game restart.');
+
 			if (callback) callback(null, 'Game Restart successfully.');
 
 		} catch (e) {
@@ -1442,14 +1464,6 @@ module.exports = function (nodecg) {
 		nodecg.log.warn('!!! Executing system state reset !!!');
 		executeResetSystem(callback);
 		nodecg.log.info('System state has been completely reset.');
-	});
-
-	nodecg.listenFor('reStart', (data, callback) => {
-		nodecg.log.warn('!!! Executing Game Restart !!!');
-		executeRestart(callback);
-		timelineGameplay.value = []; // Clear timeline on restart
-		timelineDisplay.value = []; // Clear display timeline on restart
-		nodecg.log.info('Game state has been completely restart.');
 	});
 
 	// Route messages from dashboard to graphics

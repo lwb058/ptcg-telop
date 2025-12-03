@@ -1193,8 +1193,6 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 	nodecg.listenFor('reStart', (data, callback) => {
 		nodecg.log.warn('!!! Executing Game Restart !!!');
 		gameLogic.executeRestart(callback);
-		timelineGameplay.value = []; // Clear timeline on restart
-		timelineDisplay.value = []; // Clear display timeline on restart
 		nodecg.log.info('Game state has been completely restart.');
 	});
 
