@@ -195,7 +195,13 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 		// Check if it's a special energy (starts with special:) - though usually handled before calling this
 		if (cardId.startsWith('special:')) return '';
 
-		return `${basePath}${cardId}.jpg`;
+		// Extract extension from database (matching client-side behavior)
+		const db = cardDatabase.value;
+		const cardData = db ? db[cardId] : null;
+		const imageUrl = cardData ? cardData.image_url : null;
+		const extension = imageUrl ? imageUrl.substring(imageUrl.lastIndexOf('.')) : '.jpg'; // Fallback to .jpg
+
+		return `${basePath}${cardId}${extension}`;
 	}
 
 	nodecg.listenFor('applyOpsPack', (data, callback) => {

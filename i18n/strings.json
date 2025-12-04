@@ -433,14 +433,14 @@
   },
   "record_gameplay": {
     "jp": "ゲームプレイ",
-    "chs": "游戏操作",
-    "cht": "遊戲操作",
+    "chs": "操作轨",
+    "cht": "操作軌",
     "en": "Gameplay"
   },
   "record_display": {
     "jp": "ディスプレイ",
-    "chs": "显示",
-    "cht": "顯示",
+    "chs": "展示轨",
+    "cht": "展示軌",
     "en": "Display"
   },
   "record_seek": {

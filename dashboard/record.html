@@ -359,6 +359,13 @@
             border-top: 1px solid #333;
             padding-top: 10px;
         }
+
+        .panel-disabled {
+            opacity: 0.4;
+            filter: grayscale(100%);
+            pointer-events: none;
+            user-select: none;
+        }
     </style>
 </head>
 
@@ -412,14 +419,14 @@
     </div>
 
     <div class="timeline-wrapper">
-        <div class="panel-section">
+        <div class="panel-section" id="panel-gameplay">
             <h3 style="margin-top: 10px;">Timeline - GamePlay</h3>
             <div id="timeline-list" class="timeline-container">
                 <!-- Timeline items will be injected here -->
             </div>
         </div>
 
-        <div class="panel-section">
+        <div class="panel-section" id="panel-display">
             <h3 style="margin-top: 10px;">Timeline - Display</h3>
             <div id="timeline-display-list" class="timeline-container">
                 <!-- Display Timeline items will be injected here -->
@@ -505,6 +512,26 @@
                 if (playbackConfig.value) {
                     trackGameplayToggle.checked = playbackConfig.value.gameplay;
                     trackDisplayToggle.checked = playbackConfig.value.display;
+
+                    // Visual feedback for panels
+                    const gameplayPanel = document.getElementById('panel-gameplay');
+                    const displayPanel = document.getElementById('panel-display');
+
+                    if (gameplayPanel) {
+                        if (playbackConfig.value.gameplay) {
+                            gameplayPanel.classList.remove('panel-disabled');
+                        } else {
+                            gameplayPanel.classList.add('panel-disabled');
+                        }
+                    }
+
+                    if (displayPanel) {
+                        if (playbackConfig.value.display) {
+                            displayPanel.classList.remove('panel-disabled');
+                        } else {
+                            displayPanel.classList.add('panel-disabled');
+                        }
+                    }
                 }
             }
 
