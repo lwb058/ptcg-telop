@@ -403,7 +403,6 @@
                     const cardData = cardDatabase.value[cardId];
                     const title = cardData ? cardData.name : 'Special Energy';
                     const bgImage = getCardImageUrl(cardId, true);
-                    // Note: The class controls the size (battle vs bench)
                     return `<div class="attached-special-energy-icon" style="background-image: ${bgImage}" title="${title}"></div>`;
                 };
 
@@ -446,8 +445,6 @@
                 }
                 container.innerHTML = html;
             }
-
-
 
             function renderSlot(side, index, slotData, oldSlotData) {
                 const slotEl = document.getElementById(`slot-${side}${index}`);
@@ -569,7 +566,7 @@
                             slotEl.style.opacity = '';
                         }
                         playAnimationIfNeeded();
-                        mainImg.onload = null; // Clean up handler
+                        mainImg.onload = null;
                     };
                     mainImg.src = getCardImageUrl(slotData.cardId);
                     mainImg.classList.toggle('is-v', cardData.pokemon && cardData.subtype === 'V');
@@ -876,10 +873,10 @@
                                 const imageRect = cardImageEl.getBoundingClientRect();
                                 const videoSize = 200;
                                 const hitVideo = document.createElement('video');
-                                hitVideo.className = 'hit-effect'; // Use class from main.html
+                                hitVideo.className = 'hit-effect';
                                 hitVideo.src = getHitVideoSrc(data.attackerType);
                                 hitVideo.muted = true;
-                                hitVideo.autoplay = true; // Revert to autoplay like main.html
+                                hitVideo.autoplay = true;
                                 hitVideo.style.width = `${videoSize}px`;
                                 hitVideo.style.height = `${videoSize}px`;
                                 hitVideo.style.left = `${imageRect.left + (imageRect.width / 2) - (videoSize / 2)}px`;
@@ -919,7 +916,7 @@
                             const side = animation.target.includes('-L') ? 'L' : 'R';
                             targetEl.classList.add(`anim-slide-out-${side}`);
                         }
-                        return; // End PROMOTE logic here.
+                        return;
                     }
 
                     // For all other animations, target is required and must be in this document.

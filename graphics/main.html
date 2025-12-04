@@ -38,7 +38,7 @@
     <!-- SVG Filter Definitions for Text Effects -->
     <svg width="0" height="0" style="position:absolute;z-index:-1;">
         <defs>
-            <!-- 战斗区数字滤镜 -->
+            <!-- Battle Filter -->
             <filter id="text-stroke-shadow-battle" x="-50%" y="-50%" width="200%" height="200%">
                 <feDropShadow dx="-4" dy="6" stdDeviation="2" flood-color="#00000099" result="shadow" />
                 <feMorphology in="SourceAlpha" result="stroke" operator="dilate" radius="4"></feMorphology>
@@ -50,7 +50,7 @@
                     <feMergeNode in="SourceGraphic" />
                 </feMerge>
             </filter>
-            <!-- 后备区数字滤镜 -->
+            <!-- Bench Filter -->
             <filter id="text-stroke-shadow-bench" x="-50%" y="-50%" width="200%" height="200%">
                 <feDropShadow dx="4" dy="4" stdDeviation="2" flood-color="#00000099" result="shadow" />
                 <feMorphology in="SourceAlpha" result="stroke" operator="dilate" radius="3"></feMorphology>
@@ -1431,8 +1431,6 @@
                     if (oldSettings.vstarEnabled !== newSettings.vstarEnabled) {
                         handleVstarVisibility(newSettings);
                     }
-
-                    // The activeTheme change is now handled by the activeThemeCss listener
 
                     if (oldSettings.language !== newSettings.language) {
                         setLanguageClass(newSettings.language);

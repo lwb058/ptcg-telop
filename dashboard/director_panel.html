@@ -16,13 +16,10 @@
             background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
             display: none;
-            /* justify-content: center;  Removed for manual positioning */
-            /* align-items: center;      Removed for manual positioning */
         }
 
         .timer-popup-content {
             position: absolute;
-            /* Added for manual positioning */
             background: #222;
             border: 1px solid #444;
             border-radius: 8px;
@@ -79,22 +76,28 @@
 <body>
 
     <div class="panel-section">
-        <h3>Game Setup & Timer</h3>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                <label for="first-player-select" data-i18n="first_move">First Move:</label>
-                <select id="first-player-select">
-                    <option value="">--Select--</option>
-                    <option value="L">Left Player</option>
-                    <option value="R">Right Player</option>
-                </select>
+        <h3>
+            <div style="display: flex; align-items: center; justify-content: space-between;">Game Setup
+                <div class="form-group" style="margin-bottom: 0; justify-content: center;">
+                    <label for="first-player-select" data-i18n="first_move">First Move:</label>
+                    <select id="first-player-select">
+                        <option value="">--Select--</option>
+                        <option value="L">Left Player</option>
+                        <option value="R">Right Player</option>
+                    </select>
+                </div>
             </div>
+        </h3>
+        <div style="display: flex; gap: 10px; align-items: center;">
             <div class="timer-module"
-                style="flex: 1; display: flex; align-items: center; gap: 5px; background: #333; padding: 5px; border-radius: 4px;">
+                style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 5px; background: #333; padding: 5px; border-radius: 4px;">
                 <div id="timer-display"
                     style="font-family: monospace; font-size: 1.5em; font-weight: bold; color: #fff;">00:00</div>
-                <button id="timer-toggle-btn" class="btn btn-primary" style="padding: 2px 8px;">Start</button>
-                <button id="timer-edit-btn" class="btn btn-secondary" style="padding: 2px 8px;">Edit</button>
+                <div style="margin-bottom: 0; justify-content: center;">
+                    <button id="timer-toggle-btn" class="btn btn-primary"
+                        style="min-width:80px; padding: 2px 8px;">Start</button>
+                    <button id="timer-edit-btn" class="btn btn-secondary" style="padding: 2px 8px;">Edit</button>
+                </div>
             </div>
         </div>
     </div>
@@ -119,7 +122,7 @@
 
     <div class="panel-section">
         <h3>
-            <div style="display: flex; align-items: center; justify-content: space-between;">Draft (Next OpsPack)
+            <div style="display: flex; align-items: center; justify-content: space-between;">Operation Queue
                 <div class="form-group" style="margin-bottom: 0; justify-content: center;">
                     <input type="checkbox" id="auto-apply-checkbox" style="transform: scale(1.2); flex-grow: 0;">
                     <label for="auto-apply-checkbox" style="margin-left: 5px;">Auto-Apply</label>
@@ -158,8 +161,10 @@
             nodecg.Replicant('playerL_name'),
             nodecg.Replicant('playerR_name'),
             nodecg.Replicant('cardDatabase'),
-            nodecg.Replicant('firstMove'), // Added
-            ...Array(18).fill(0).map((_, i) => { // Add all 18 slots
+            nodecg.Replicant('firstMove'),
+            nodecg.Replicant('matchTimer'),
+            nodecg.Replicant('gameTimeSettings'),
+            ...Array(18).fill(0).map((_, i) => {
                 const side = i < 9 ? 'L' : 'R';
                 const index = i % 9;
                 return nodecg.Replicant(`draft_slot${side}${index}`);
@@ -173,8 +178,8 @@
             const playerR_name = nodecg.Replicant('playerR_name');
             const cardDatabase = nodecg.Replicant('cardDatabase');
             const firstMove = nodecg.Replicant('firstMove');
-            const matchTimer = nodecg.Replicant('matchTimer'); // Added
-            const gameTimeSettings = nodecg.Replicant('gameTimeSettings'); // Added
+            const matchTimer = nodecg.Replicant('matchTimer');
+            const gameTimeSettings = nodecg.Replicant('gameTimeSettings');
             const slots = [];
             for (let i = 0; i < 9; i++) {
                 slots.push(nodecg.Replicant(`draft_slotL${i}`));
@@ -213,7 +218,7 @@
                 if (slot && slot.value && slot.value.cardId && db && db[slot.value.cardId]) {
                     return db[slot.value.cardId].name;
                 }
-                return slotId; // Fallback to slotId if name not found
+                return slotId;
             };
 
             function formatOperation(op) {
@@ -306,11 +311,8 @@
             function updateTimerDisplay() {
                 if (!matchTimer.value) return;
 
-                let elapsed = matchTimer.value.offset;
-                if (matchTimer.value.isRunning && matchTimer.value.startTime && matchTimer.value.mode === 'live') {
-                    elapsed += (Date.now() - matchTimer.value.startTime);
-                }
-                // In playback mode, offset is the current time, and startTime is used by playback loop but not for display calculation here
+                // Use server-calculated elapsed time to avoid client-server time sync issues
+                let elapsed = matchTimer.value.elapsed || 0;
 
                 // Handle Countdown vs Countup
                 let displayTime = elapsed;
@@ -325,7 +327,7 @@
 
                 if (matchTimer.value.mode === 'standby') {
                     timerDisplay.textContent = "Standby";
-                    timerDisplay.style.color = "#ffcc00"; // Yellow for standby
+                    timerDisplay.style.color = "#ffcc00";
                 } else {
                     timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                     timerDisplay.style.color = "#fff";
@@ -405,14 +407,8 @@
             function openTimerPopup() {
                 // Initialize with current timer value
                 if (matchTimer.value) {
-                    let elapsed = matchTimer.value.offset;
-                    if (matchTimer.value.isRunning && matchTimer.value.startTime && matchTimer.value.mode === 'live') {
-                        elapsed += (Date.now() - matchTimer.value.startTime);
-                    }
-
-                    // If countdown, we might want to edit the remaining time or elapsed time?
-                    // Usually "Edit Timer" implies editing the elapsed time (offset).
-                    // Let's stick to editing the elapsed time (offset) as that's what the system tracks.
+                    // Use server-calculated elapsed time
+                    let elapsed = matchTimer.value.elapsed || 0;
 
                     tempSeconds = Math.floor(elapsed / 1000);
                     updatePopupDisplay();
@@ -492,11 +488,6 @@
             const hotkeyManager = new HotkeyManager(nodecg, settingsRep);
 
             operationQueue.on('change', renderQueue);
-
-            draft_currentTurn.on('change', (newValue) => {
-                // The turn radio buttons are gone, so this listener is now empty.
-                // It can be removed if no other logic is added here.
-            });
 
             firstMove.on('change', (newValue) => {
                 firstPlayerSelect.value = newValue;

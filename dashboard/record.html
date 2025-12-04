@@ -555,10 +555,8 @@
             function updateTimerDisplay() {
                 if (!matchTimer.value) return;
 
-                let elapsed = matchTimer.value.offset;
-                if (matchTimer.value.isRunning && matchTimer.value.startTime && matchTimer.value.mode === 'live') {
-                    elapsed += (Date.now() - matchTimer.value.startTime);
-                }
+                // Use server-calculated elapsed time to avoid client-server time sync issues
+                let elapsed = matchTimer.value.elapsed || 0;
 
                 // Handle Countdown vs Countup
                 let displayTime = elapsed;
@@ -611,10 +609,8 @@
             function openTimerPopup() {
                 // Initialize with current timer value
                 if (matchTimer.value) {
-                    let elapsed = matchTimer.value.offset;
-                    if (matchTimer.value.isRunning && matchTimer.value.startTime && matchTimer.value.mode === 'live') {
-                        elapsed += (Date.now() - matchTimer.value.startTime);
-                    }
+                    // Use server-calculated elapsed time
+                    let elapsed = matchTimer.value.elapsed || 0;
 
                     tempSeconds = Math.floor(elapsed / 1000);
                     updatePopupDisplay();
@@ -778,7 +774,7 @@
                     const operationsHTML = pack.ops.map((op, idx) => {
                         const source = op.source || 'native';
                         const isDeleted = op.deleted;
-                        const sourceBadge = op.source === 'inserted' ? `${getI18nText('record_inserted')}<span class="operation-source-badge inserted"></span>` : '';
+                        const sourceBadge = op.source === 'inserted' ? `<span class="operation-source-badge inserted">${getI18nText('record_inserted')}</span>` : '';
                         const deletedBadge = isDeleted ? `<span class="operation-source-badge deleted">${getI18nText('record_deleted')}</span>` : '';
                         const actionButton = isDeleted
                             ? `<button class="btn-restore-op" data-op-index="${idx}" title="Restore this operation">↩</button>`

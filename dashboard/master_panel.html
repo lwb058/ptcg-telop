@@ -1569,7 +1569,6 @@
                 }
             });
 
-
             const resistanceCheck = document.getElementById('resistance-check');
 
             /**
@@ -1951,12 +1950,13 @@
                 updateWeaknessAndResistanceChecks();
             });
 
+            // Aim at opponent's battle pokemon
             aimBtn.addEventListener('click', () => {
                 const currentTurn = draft_currentTurn.value;
                 if (currentTurn === 'L') {
-                    selections.value = getOccupiedSlots().filter(id => id === 'slotR0'); // Aim at opponent's battle pokemon
+                    selections.value = getOccupiedSlots().filter(id => id === 'slotR0');
                 } else if (currentTurn === 'R') {
-                    selections.value = getOccupiedSlots().filter(id => id === 'slotL0'); // Aim at opponent's battle pokemon
+                    selections.value = getOccupiedSlots().filter(id => id === 'slotL0');
                 }
             });
 

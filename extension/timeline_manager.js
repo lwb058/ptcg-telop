@@ -8,13 +8,14 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			pausedTime: 0,
 			isRunning: false,
 			offset: 0,
-			mode: 'standby' // 'standby', 'live', or 'playback'
+			mode: 'standby',
+			elapsed: 0
 		}
 	});
 
 	const gameTimeSettings = nodecg.Replicant('gameTimeSettings', {
 		defaultValue: {
-			limit: 1500, // 25 minutes in seconds
+			limit: 1500,
 			useCountdown: true
 		}
 	});
@@ -49,21 +50,47 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 	const operationQueue = nodecg.Replicant('operationQueue');
 	const bundleVersion = nodecg.Replicant('bundleVersion');
 
+	// --- Server-side Timer Update Interval ---
+	let timerUpdateInterval = null;
+
+	function updateElapsedTime() {
+		if (!matchTimer.value) return;
+
+		let elapsed = matchTimer.value.offset;
+		if (matchTimer.value.isRunning && matchTimer.value.startTime && matchTimer.value.mode === 'live') {
+			elapsed += (Date.now() - matchTimer.value.startTime);
+		}
+
+		// Only update if changed to avoid unnecessary replicant updates
+		if (matchTimer.value.elapsed !== elapsed) {
+			matchTimer.value.elapsed = elapsed;
+		}
+	}
+
+	// Start the timer update interval
+	timerUpdateInterval = setInterval(updateElapsedTime, 100);
 
 	// --- Timer Logic (from original time_manager.js) ---
 	function startTimer() {
 		if (matchTimer.value.isRunning) return;
-		if (matchTimer.value.mode === 'standby') {
-			matchTimer.value.mode = 'live';
-			matchTimer.value.offset = 0;
+
+		// Prepare the new timer state
+		const newTimerState = { ...matchTimer.value };
+
+		if (newTimerState.mode === 'standby') {
+			newTimerState.mode = 'live';
+			newTimerState.offset = 0;
 		}
-		if (!matchTimer.value.startTime) {
-			matchTimer.value.startTime = Date.now();
-			matchTimer.value.pausedTime = 0;
-		} else {
-			matchTimer.value.startTime = Date.now();
-		}
-		matchTimer.value.isRunning = true;
+
+		// Set startTime to current time
+		newTimerState.startTime = Date.now();
+		newTimerState.isRunning = true;
+
+		// Calculate initial elapsed time
+		newTimerState.elapsed = newTimerState.offset;
+
+		// Apply all changes at once to avoid race conditions
+		matchTimer.value = newTimerState;
 	}
 
 	function stopTimer() {
@@ -73,6 +100,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			const currentRunDuration = now - matchTimer.value.startTime;
 			matchTimer.value.offset += currentRunDuration;
 			matchTimer.value.startTime = null;
+			matchTimer.value.elapsed = matchTimer.value.offset;
 		}
 		matchTimer.value.isRunning = false;
 	}
@@ -82,11 +110,13 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 		matchTimer.value.offset = 0;
 		matchTimer.value.isRunning = false;
 		matchTimer.value.mode = 'standby';
+		matchTimer.value.elapsed = 0;
 	}
 
 	function editTimer(newSeconds) {
 		const newOffset = newSeconds * 1000;
 		matchTimer.value.offset = newOffset;
+		matchTimer.value.elapsed = newOffset;
 		if (matchTimer.value.isRunning && matchTimer.value.mode === 'live') {
 			matchTimer.value.startTime = Date.now();
 		} else {
@@ -191,29 +221,27 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			if (matchTimer.value.mode === 'standby') {
 				nodecg.log.info(`OpsPack ${opsPack.id} NOT recorded (Standby Mode).`);
 			} else {
-				// 查找是否存在相同timestamp的OpsPack
 				const existingIndex = timelineGameplay.value.findIndex(
 					pack => pack.timestamp === opsPack.timestamp
 				);
 
 				if (existingIndex !== -1) {
-					// 存在相同timestamp，合并operations
 					const newTimeline = [...timelineGameplay.value];
 					const existingPack = newTimeline[existingIndex];
 
-					// 标记新操作为inserted来源
-					const insertedOps = opsPack.ops.map(op => ({
-						...op,
-						source: 'inserted',  // 仅标记insert追加的操作
-						insertedAt: Date.now()  // 记录插入时间
-					}));
+					// Only mark as 'inserted' when in playback mode, not in live mode
+					const insertedOps = matchTimer.value.mode === 'playback'
+						? opsPack.ops.map(op => ({
+							...op,
+							source: 'inserted',
+							insertedAt: Date.now()
+						}))
+						: opsPack.ops; // In live mode, keep operations as native
 
-					// 直接追加新操作到末尾
 					const mergedOps = [...existingPack.ops, ...insertedOps];
 
-					// 不需要显式设置modified字段，前端动态计算
 					newTimeline[existingIndex] = {
-						...existingPack,  // 保持现有的id和round
+						...existingPack,
 						ops: mergedOps
 					};
 
@@ -224,7 +252,6 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 						`Total: ${mergedOps.length} ops (${mergedOps.filter(op => op.source === 'inserted').length} inserted)`
 					);
 
-					// 发送合并通知到前端
 					nodecg.sendMessage('opsPackMerged', {
 						index: existingIndex,
 						timestamp: opsPack.timestamp,
@@ -232,9 +259,8 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 						newOpsCount: insertedOps.length
 					});
 				} else {
-					// 不存在，创建新OpsPack
-					// 在Insert模式且处于playback/live模式时，标记所有操作为inserted
-					const shouldMarkInserted = matchTimer.value.mode !== 'standby';
+					// Only mark as 'inserted' when in playback mode, not in live mode
+					const shouldMarkInserted = matchTimer.value.mode === 'playback';
 
 					const newOpsPack = shouldMarkInserted ? {
 						...opsPack,
@@ -252,7 +278,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 					if (shouldMarkInserted) {
 						nodecg.log.info(`OpsPack ${opsPack.id} created at ${opsPack.timestamp} with ${opsPack.ops.length} inserted operations (Insert Mode).`);
 					} else {
-						nodecg.log.info(`OpsPack ${opsPack.id} inserted at ${opsPack.timestamp} (Insert Mode - Standby).`);
+						nodecg.log.info(`OpsPack ${opsPack.id} created at ${opsPack.timestamp} with ${opsPack.ops.length} native operations (Insert Mode - Live).`);
 					}
 				}
 			}
@@ -386,10 +412,8 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 
 	nodecg.listenFor('_clearCard', () => {
 		nodecg.log.info('Broadcasting clearCard and clearing cardToShow replicants');
-		// Clear the source of truth replicants
 		cardToShowL.value = '';
 		cardToShowR.value = '';
-		// Broadcast to graphics to trigger hide animations
 		nodecg.sendMessage('clearCard');
 
 		// Check if Display Timeline is enabled before recording
@@ -419,9 +443,9 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 	// --- Timer-Driven Playback Logic ---
 
 	let playbackInterval = null;
-	const PLAYBACK_TICK_RATE = 100; // ms
-	let playbackQueue = []; // Queue for OpsPacks found during playback
-	let isPlaybackProcessing = false; // Lock for playback processor
+	const PLAYBACK_TICK_RATE = 100;
+	let playbackQueue = [];
+	let isPlaybackProcessing = false;
 
 	function stopPlaybackInterval() {
 		if (playbackInterval) {

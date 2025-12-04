@@ -2,9 +2,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const os = require('os'); // Import os for platform detection
-const { exec, spawn } = require('child_process'); // Import child_process
-const https = require('https'); // For update check
+const os = require('os');
+const { exec, spawn } = require('child_process');
+const https = require('https');
 
 module.exports = function (nodecg) {
 	nodecg.log.info('Bundle ptcg-telop starting up.');
@@ -236,18 +236,16 @@ module.exports = function (nodecg) {
 	const prizeCardsL = nodecg.Replicant('prizeCardsL', { defaultValue: Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false })) });
 	const prizeCardsR = nodecg.Replicant('prizeCardsR', { defaultValue: Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false })) });
 
-	// Player Slots (L0/R0 are Battle Slots)
-	// LIVE DATA: Used by graphics
-	// DRAFT DATA: Used by panels for immediate feedback
-	for (let i = 0; i < 9; i++) { // Changed from 6 to 9 to include extra bench
+	// Player Slots
+	for (let i = 0; i < 9; i++) {
 		const slotDefault = {
 			cardId: null,
 			damage: 0,
 			extraHp: 0,
 			attachedEnergy: [],
 			attachedToolIds: [],
-			abilityUsed: false, // Add new property
-			isKO: false, // Add new property for KO checkbox state
+			abilityUsed: false,
+			isKO: false,
 		};
 		if (i === 0) {
 			slotDefault.ailments = [];
@@ -320,9 +318,7 @@ module.exports = function (nodecg) {
 			nodecg.log.error('Failed to load i18n strings:', error);
 		}
 	}
-	// Initial load of the database and asset paths is now handled by the ptcgSettings.on('change') listener.
 
-	// Listen for messages to process deck codes or single card IDs
 	// Helper function to process deck import
 	const processDeckImport = (side, code, callback, progressOptions = { scale: 1, offset: 0 }) => {
 		nodecg.log.info(`[Import Flow] Attempting to import "${code}" as a DECK for Player ${side}.`);
@@ -420,92 +416,82 @@ module.exports = function (nodecg) {
 
 		const trySingleCardImport = () => {
 			const sanitizedCardId = code.replace('/', '-');
-			nodecg.log.info(`[Import Flow] Attempting to import "${sanitizedCardId}" as a SINGLE CARD.`);
-			// ... (rest of single card import logic remains same, need to ensure it's preserved or I need to include it in replacement)
-			// Wait, I need to see the rest of trySingleCardImport to replace it correctly.
-			// Since I am replacing a large block, I should probably check the file content again to be sure I don't delete the single card logic.
-			// Actually, the previous view showed lines 320-400. The single card import logic starts at 399.
-			// I will assume the single card logic follows standard pattern and I should probably NOT delete it if I can avoid it.
-			// But I am replacing the whole listener.
-			// Let's just define processDeckImport BEFORE the listener, and then rewrite the listener to use it.
-			// But I need to include the trySingleCardImport logic inside the listener.
-			// To be safe, I will read more lines.
-		};
-		nodecg.log.info(`[Import Flow] Attempting to import "${code}" (sanitized to ${sanitizedCardId}) as a SINGLE CARD for Player ${side}.`);
+			nodecg.log.info(`[Import Flow] Attempting to import "${code}" (sanitized to ${sanitizedCardId}) as a SINGLE CARD for Player ${side}.`);
 
-		const deckReplicant = side === 'L' ? deckL : deckR;
-		const db = cardDatabase.value;
+			const deckReplicant = side === 'L' ? deckL : deckR;
+			const db = cardDatabase.value;
 
-		const addCardToDeck = (idToAdd) => {
-			if (!Array.isArray(deckReplicant.value.cards)) deckReplicant.value.cards = [];
-			if (!deckReplicant.value.cards.includes(idToAdd)) {
-				deckReplicant.value.cards = [...deckReplicant.value.cards, idToAdd];
-				nodecg.log.info(`Card ${idToAdd} added to Player ${side}'s deck.`);
-			} else {
-				nodecg.log.info(`Card ${idToAdd} is already in Player ${side}'s deck.`);
-			}
-			deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
-			if (callback) callback(null, 'Card added to deck.');
-		};
-
-		if (db && db[sanitizedCardId] && db[sanitizedCardId].name) {
-			nodecg.log.info(`Card ${sanitizedCardId} found in database. Adding to deck.`);
-			addCardToDeck(sanitizedCardId);
-		} else {
-			nodecg.log.info(`Card ${sanitizedCardId} not in database. Fetching with Python...`);
-			const pythonDir = path.join(__dirname, '..', 'python');
-			deckLoadingStatus.value = { loading: true, side: side, percentage: 0, text: 'Fetching...' };
-
-			const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
-			const scriptMap = {
-				jp: 'get_single_card_jp.py',
-				chs: 'get_single_card_chs.py',
-				cht: 'get_single_card_cht.py',
-				en: 'get_single_card_en.py',
-			};
-			const pythonScriptFile = scriptMap[lang] || scriptMap.jp;
-			const pythonScriptPath = path.join(pythonDir, pythonScriptFile);
-			const dbFileName = `database_${lang}.json`;
-			const absoluteDbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
-			const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
-
-			const args = [pythonScriptPath, sanitizedCardId, '--database-path', absoluteDbPath];
-			const child = spawn(pythonCommand, args, { cwd: pythonDir });
-
-			let stderrData = '';
-			child.stderr.on('data', (data) => {
-				stderrData += data.toString();
-			});
-
-			child.on('close', (exitCode) => {
-				if (exitCode !== 0) {
-					nodecg.log.error(`[Import Flow] Failed to fetch card ${sanitizedCardId} (Exit Code: ${exitCode}).`);
-					nodecg.log.error(`Stderr: ${stderrData}`);
-					deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
-					if (callback) callback(new Error(`Failed to fetch card. Exit code: ${exitCode}`));
-					return;
+			const addCardToDeck = (idToAdd) => {
+				if (!Array.isArray(deckReplicant.value.cards)) deckReplicant.value.cards = [];
+				if (!deckReplicant.value.cards.includes(idToAdd)) {
+					deckReplicant.value.cards = [...deckReplicant.value.cards, idToAdd];
+					nodecg.log.info(`Card ${idToAdd} added to Player ${side}'s deck.`);
+				} else {
+					nodecg.log.info(`Card ${idToAdd} is already in Player ${side}'s deck.`);
 				}
-
-				nodecg.log.info(`Python script for ${sanitizedCardId} finished. Reloading database.`);
-				loadCardDatabase();
-
-				setTimeout(() => {
-					if (cardDatabase.value && cardDatabase.value[sanitizedCardId] && cardDatabase.value[sanitizedCardId].name) {
-						addCardToDeck(sanitizedCardId);
-					} else {
-						nodecg.log.error(`[Import Flow] FINAL FAILURE: Script ran for "${sanitizedCardId}" but it was not added to the database.`);
-						deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
-						if (callback) callback(new Error(`Failed to fetch card ${sanitizedCardId}.`));
-					}
-				}, 200);
-			});
-
-			child.on('error', (err) => {
-				nodecg.log.error(`[Import Flow] Failed to start subprocess for single card import: ${err.message}`);
 				deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
-				if (callback) callback(err);
-			});
-		}
+				if (callback) callback(null, 'Card added to deck.');
+			};
+
+			if (db && db[sanitizedCardId] && db[sanitizedCardId].name) {
+				nodecg.log.info(`Card ${sanitizedCardId} found in database. Adding to deck.`);
+				addCardToDeck(sanitizedCardId);
+			} else {
+				nodecg.log.info(`Card ${sanitizedCardId} not in database. Fetching with Python...`);
+				const pythonDir = path.join(__dirname, '..', 'python');
+				deckLoadingStatus.value = { loading: true, side: side, percentage: 0, text: 'Fetching...' };
+
+				const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
+				const scriptMap = {
+					jp: 'get_single_card_jp.py',
+					chs: 'get_single_card_chs.py',
+					cht: 'get_single_card_cht.py',
+					en: 'get_single_card_en.py',
+				};
+				const pythonScriptFile = scriptMap[lang] || scriptMap.jp;
+				const pythonScriptPath = path.join(pythonDir, pythonScriptFile);
+				const dbFileName = `database_${lang}.json`;
+				const absoluteDbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
+				const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
+
+				const args = [pythonScriptPath, sanitizedCardId, '--database-path', absoluteDbPath];
+				const child = spawn(pythonCommand, args, { cwd: pythonDir });
+
+				let stderrData = '';
+				child.stderr.on('data', (data) => {
+					stderrData += data.toString();
+				});
+
+				child.on('close', (exitCode) => {
+					if (exitCode !== 0) {
+						nodecg.log.error(`[Import Flow] Failed to fetch card ${sanitizedCardId} (Exit Code: ${exitCode}).`);
+						nodecg.log.error(`Stderr: ${stderrData}`);
+						deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
+						if (callback) callback(new Error(`Failed to fetch card. Exit code: ${exitCode}`));
+						return;
+					}
+
+					nodecg.log.info(`Python script for ${sanitizedCardId} finished. Reloading database.`);
+					loadCardDatabase();
+
+					setTimeout(() => {
+						if (cardDatabase.value && cardDatabase.value[sanitizedCardId] && cardDatabase.value[sanitizedCardId].name) {
+							addCardToDeck(sanitizedCardId);
+						} else {
+							nodecg.log.error(`[Import Flow] FINAL FAILURE: Script ran for "${sanitizedCardId}" but it was not added to the database.`);
+							deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
+							if (callback) callback(new Error(`Failed to fetch card ${sanitizedCardId}.`));
+						}
+					}, 200);
+				});
+
+				child.on('error', (err) => {
+					nodecg.log.error(`[Import Flow] Failed to start subprocess for single card import: ${err.message}`);
+					deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
+					if (callback) callback(err);
+				});
+			}
+		};
 	});
 
 
@@ -632,8 +618,6 @@ module.exports = function (nodecg) {
 		// Helper to select replicant prefix based on mode
 		const prefix = mode === 'draft' ? 'draft_' : 'live_';
 
-		// Ensure replicant.value is an object before modification, for slot-based operations.
-		// This check is bypassed for simpler replicants or operations that manage their own replicants.
 		if (type !== 'SET_POKEMON' && type !== 'APPLY_SWITCH' && type !== 'SET_ACTION_STATUS' && type !== 'SET_TURN' && type !== 'SET_SIDES' && type !== 'ATTACK' && type !== 'SET_STADIUM' && type !== 'SET_STADIUM_USED' && type !== 'SET_ABILITY_USED' && type !== 'SET_VSTAR_STATUS' && type !== 'SET_LOST_ZONE' && type !== 'SET_KO_STATUS' && (!replicant || typeof replicant.value !== 'object' || replicant.value === null)) {
 			// For PROMOTE, the logic handles its own replicants. For others, if the replicant is not ready, abort.
 			// SWITCH_POKEMON is now split and does not reach here directly.
@@ -804,14 +788,12 @@ module.exports = function (nodecg) {
 				targetVal.forceSlideIn = true;
 
 
-				// Core logic: When a Pokémon moves into a battle slot (or swaps with it), its ailments are cleared.
-				// Check if the target is a battle slot
+				// When a Pokémon moves into a battle slot (or swaps with it), its ailments are cleared.
 				if (target.endsWith('0')) {
-					if (sourceVal.cardId) { // Ensure we're not moving an empty slot's "ghost"
+					if (sourceVal.cardId) {
 						sourceVal.ailments = [];
 					}
 				}
-				// Check if the source is a battle slot and the target is not
 				if (source.endsWith('0') && !target.endsWith('0')) {
 					if (targetVal.cardId) {
 						targetVal.ailments = [];
