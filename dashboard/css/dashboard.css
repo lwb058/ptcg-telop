@@ -873,7 +873,6 @@ body.dragging-energy .manual-attach-zone {
 .pokemon-target-card.empty-target-slot {
     border: 2px dashed #ddd;
     border-radius: 5px;
-    background-color: #f0f2f5;
 }
 
 .pokemon-target-card.is-targeted {

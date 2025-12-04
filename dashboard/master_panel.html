@@ -1389,20 +1389,31 @@
                     return row;
                 };
 
-                // Helper to populate a row with Pokémon cards
-                const populateRow = (row, side, indices) => {
+                // Helper to populate a row with Pokémon cards (including empty slots); for extra bench (6-8), only render if occupied
+                const populateRow = (row, side, indices, onlyIfOccupied = false) => {
                     let hasPokemon = false;
                     indices.forEach(i => {
                         const slotId = `slot${side}${i}`;
                         const slot = slots.find(s => s.name === `draft_${slotId}`);
-                        if (slot && slot.value && slot.value.cardId) {
+                        const slotValue = slot ? slot.value : null;
+
+                        // Skip empty slots if onlyIfOccupied is true (for extra bench 6-8)
+                        if (onlyIfOccupied && (!slotValue || !slotValue.cardId)) {
+                            return;
+                        }
+
+                        // Create a card element
+                        const card = createTargetingCardElement(slotId, slotValue);
+
+                        // Check if this slot has a Pokémon
+                        if (slotValue && slotValue.cardId) {
                             hasPokemon = true;
-                            const card = createTargetingCardElement(slotId, slot.value);
                             if (currentSelections.includes(slotId)) {
                                 card.classList.add('is-targeted');
                             }
-                            row.appendChild(card);
                         }
+
+                        row.appendChild(card);
                     });
                     return hasPokemon; // Return true if at least one Pokémon was added
                 };
@@ -1412,25 +1423,29 @@
                 const playerBattleRow = createRow('battle player-row');
                 const playerBenchRow = createRow('bench player-row');
 
-                // Populate rows
-                const hasOpponentBench = populateRow(opponentBenchRow, opponentPlayerId, [1, 2, 3, 4, 5, 6, 7, 8]);
+                // For bench rows, render slots 1-5 with empty placeholders
+                const hasOpponentBench = populateRow(opponentBenchRow, opponentPlayerId, [1, 2, 3, 4, 5]);
                 const hasOpponentBattle = populateRow(opponentBattleRow, opponentPlayerId, [0]);
                 const hasPlayerBattle = populateRow(playerBattleRow, currentPlayerId, [0]);
-                const hasPlayerBench = populateRow(playerBenchRow, currentPlayerId, [1, 2, 3, 4, 5, 6, 7, 8]);
+                const hasPlayerBench = populateRow(playerBenchRow, currentPlayerId, [1, 2, 3, 4, 5]);
 
-                // Append rows in the correct order only if they have content
-                if (hasOpponentBench) battleField.appendChild(opponentBenchRow);
-                if (hasOpponentBattle) battleField.appendChild(opponentBattleRow);
+                // Add extra bench slots (6-8) to the SAME row, but only if occupied
+                populateRow(opponentBenchRow, opponentPlayerId, [6, 7, 8], true);
+                populateRow(playerBenchRow, currentPlayerId, [6, 7, 8], true);
 
-                // Add separator if both opponent and player have pokemon on the field
-                if ((hasOpponentBench || hasOpponentBattle) && (hasPlayerBattle || hasPlayerBench)) {
-                    const separator = document.createElement('div');
-                    separator.className = 'target-view-separator';
-                    battleField.appendChild(separator);
-                }
+                // Always append rows to show empty slots as placeholders
+                // Opponent side
+                battleField.appendChild(opponentBenchRow);
+                battleField.appendChild(opponentBattleRow);
 
-                if (hasPlayerBattle) battleField.appendChild(playerBattleRow);
-                if (hasPlayerBench) battleField.appendChild(playerBenchRow);
+                // Add separator
+                const separator = document.createElement('div');
+                separator.className = 'target-view-separator';
+                battleField.appendChild(separator);
+
+                // Player side
+                battleField.appendChild(playerBattleRow);
+                battleField.appendChild(playerBenchRow);
             }
 
             // --- Logic for dragging and dropping to swap Pokémon in the targeting view --- 
@@ -1559,6 +1574,7 @@
                         const sourceSide = sourceSlotId.charAt(4);
                         const destinationSide = destinationSlotId.charAt(4);
 
+                        // Allow swapping with empty slots (removed empty slot check)
                         if (sourceSide === destinationSide) {
                             queueOperation('SWITCH_POKEMON', {
                                 source: sourceSlotId,
