@@ -1103,18 +1103,29 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 						timelineDisplay.value = [];
 					}
 
-					if (data.firstMove) {
-						firstMove.value = data.firstMove;
-					}
-
-					if (data.prizeCardsL) {
-						nodecg.Replicant('prizeCardsL').value = data.prizeCardsL;
-					}
-					if (data.prizeCardsR) {
-						nodecg.Replicant('prizeCardsR').value = data.prizeCardsR;
-					}
 					if (data.gameSetup) {
 						gameSetup.value = data.gameSetup;
+						// Restore values from gameSetup
+						if (data.gameSetup.firstMove) {
+							firstMove.value = data.gameSetup.firstMove;
+						}
+						if (data.gameSetup.prizeCardsL) {
+							nodecg.Replicant('prizeCardsL').value = data.gameSetup.prizeCardsL;
+						}
+						if (data.gameSetup.prizeCardsR) {
+							nodecg.Replicant('prizeCardsR').value = data.gameSetup.prizeCardsR;
+						}
+					} else {
+						// Backward compatibility: read from root level if gameSetup doesn't exist
+						if (data.firstMove) {
+							firstMove.value = data.firstMove;
+						}
+						if (data.prizeCardsL) {
+							nodecg.Replicant('prizeCardsL').value = data.prizeCardsL;
+						}
+						if (data.prizeCardsR) {
+							nodecg.Replicant('prizeCardsR').value = data.prizeCardsR;
+						}
 					}
 
 					// Restore player names
@@ -1246,7 +1257,6 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				version: bundleVersion.value || "1919.810",
 				language: (ptcgSettings.value && ptcgSettings.value.language) || 'jp',
 				timestamp: new Date().toISOString(),
-				firstMove: firstMove.value,
 				deckL: {
 					name: deckL.value.name,
 					playerName: playerL_name.value || '',
@@ -1257,8 +1267,6 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				},
 				timeline: timelineGameplay.value,
 				timelineDisplay: timelineDisplay.value,
-				prizeCardsL: prizeCardsL.value,
-				prizeCardsR: prizeCardsR.value,
 				gameSetup: gameSetup.value
 			};
 			const jsonString = JSON.stringify(exportData, null, 2);
