@@ -45,6 +45,8 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 	const firstMove = nodecg.Replicant('firstMove');
 	const deckL = nodecg.Replicant('deckL');
 	const deckR = nodecg.Replicant('deckR');
+	const playerL_name = nodecg.Replicant('playerL_name');
+	const playerR_name = nodecg.Replicant('playerR_name');
 	const turnCount = nodecg.Replicant('turnCount');
 	const cardDatabase = nodecg.Replicant('cardDatabase');
 	const operationQueue = nodecg.Replicant('operationQueue');
@@ -682,8 +684,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 
 		playbackInterval = setInterval(() => {
 			// Update simulated time
-			// matchTimer.value.offset += PLAYBACK_TICK_RATE; // OLD: Drift-prone
-			matchTimer.value.offset = initialOffset + (Date.now() - matchTimer.value.startTime); // NEW: Drift-free
+			matchTimer.value.offset = initialOffset + (Date.now() - matchTimer.value.startTime);
 
 			const currentTimeMs = matchTimer.value.offset;
 			playbackStatus.value.currentTime = formatTimeMs(currentTimeMs);
@@ -1116,6 +1117,14 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 						gameSetup.value = data.gameSetup;
 					}
 
+					// Restore player names
+					if (data.deckL && data.deckL.playerName !== undefined) {
+						playerL_name.value = data.deckL.playerName;
+					}
+					if (data.deckR && data.deckR.playerName !== undefined) {
+						playerR_name.value = data.deckR.playerName;
+					}
+
 					if (callback) callback(null, 'Timeline, Decks, and Display imported.');
 				};
 
@@ -1240,9 +1249,11 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				firstMove: firstMove.value,
 				deckL: {
 					name: deckL.value.name,
+					playerName: playerL_name.value || '',
 				},
 				deckR: {
 					name: deckR.value.name,
+					playerName: playerR_name.value || '',
 				},
 				timeline: timelineGameplay.value,
 				timelineDisplay: timelineDisplay.value,
