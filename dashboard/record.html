@@ -191,15 +191,9 @@
         }
 
         /* Operation source indicators */
-        .operation-item.native {
-            /* Default style - native recording */
-        }
-
         .operation-item.inserted {
             background: rgba(100, 149, 237, 0.15);
-            /* Light blue background */
             border-left-color: #6495ed;
-            /* Blue left border */
         }
 
         .operation-item.deleted {
@@ -835,8 +829,6 @@
 									<span class="timestamp-separator">:</span>
 									<input type="number" 
 										   class="timestamp-input timestamp-seconds" 
-										   min="0" 
-										   max="59" 
 										   value="${seconds}" 
 										   data-index="${index}">
 								</span>
@@ -951,16 +943,93 @@
                         }
                     });
 
-                    // Seconds input field: automatically handle values over 59
+                    // Seconds input field: handle carry-over and borrow for both keyboard and spinner clicks
+                    let lastSecondsValue = seconds;
+
                     secondsInput.addEventListener('input', (e) => {
-                        let value = parseInt(e.target.value);
-                        if (value > 59) {
+                        let value = parseInt(e.target.value) || 0;
+                        let currentMinutes = parseInt(minutesInput.value) || 0;
+
+                        if (value >= 60) {
                             const extraMinutes = Math.floor(value / 60);
                             const newSeconds = value % 60;
-                            const currentMinutes = parseInt(minutesInput.value) || 0;
 
-                            minutesInput.value = currentMinutes + extraMinutes;
+                            currentMinutes += extraMinutes;
+                            if (currentMinutes > 99) currentMinutes = 99; // Cap at max
+
+                            minutesInput.value = currentMinutes;
                             secondsInput.value = newSeconds;
+                            lastSecondsValue = newSeconds;
+                        }
+                        else if (value < 0) {
+                            if (currentMinutes > 0) {
+                                minutesInput.value = currentMinutes - 1;
+                                secondsInput.value = 59;
+                                lastSecondsValue = 59;
+                            } else { // Can't go negative
+                                secondsInput.value = 0;
+                                lastSecondsValue = 0;
+                            }
+                        } else {
+                            lastSecondsValue = value;
+                        }
+                    });
+
+                    // Handle arrow key presses for seamless minute/second transitions
+                    secondsInput.addEventListener('keydown', (e) => {
+                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                            e.preventDefault(); // Prevent default browser behavior
+
+                            let currentSeconds = parseInt(secondsInput.value) || 0;
+                            let currentMinutes = parseInt(minutesInput.value) || 0;
+
+                            if (e.key === 'ArrowUp') {
+                                currentSeconds++;
+                                // Carry over to minutes when reaching 60
+                                if (currentSeconds >= 60) {
+                                    currentSeconds = 0;
+                                    currentMinutes++;
+                                    if (currentMinutes > 99) currentMinutes = 99; // Cap at max
+                                }
+                            } else if (e.key === 'ArrowDown') {
+                                currentSeconds--;
+                                // Borrow from minutes when going below 0
+                                if (currentSeconds < 0) {
+                                    if (currentMinutes > 0) {
+                                        currentSeconds = 59;
+                                        currentMinutes--;
+                                    } else {
+                                        currentSeconds = 0; // Can't go negative if no minutes to borrow
+                                    }
+                                }
+                            }
+
+                            // Update both inputs
+                            minutesInput.value = currentMinutes;
+                            secondsInput.value = currentSeconds;
+
+                            // Trigger validation and update
+                            validateAndUpdateTimestamp(secondsInput);
+                        }
+                    });
+
+                    // Handle arrow key presses for minutes (optional enhancement)
+                    minutesInput.addEventListener('keydown', (e) => {
+                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                            e.preventDefault();
+
+                            let currentMinutes = parseInt(minutesInput.value) || 0;
+
+                            if (e.key === 'ArrowUp') {
+                                currentMinutes++;
+                                if (currentMinutes > 99) currentMinutes = 99;
+                            } else if (e.key === 'ArrowDown') {
+                                currentMinutes--;
+                                if (currentMinutes < 0) currentMinutes = 0;
+                            }
+
+                            minutesInput.value = currentMinutes;
+                            validateAndUpdateTimestamp(minutesInput);
                         }
                     });
 
