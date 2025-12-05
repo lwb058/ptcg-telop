@@ -926,17 +926,6 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				throw new Error('Invalid index');
 			}
 
-			// Validate: new timestamp must not be earlier than previous OpsPack
-			if (index > 0) {
-				const prevPack = timelineGameplay.value[index - 1];
-				const prevTime = parseTime(prevPack.timestamp);
-				const newTime = parseTime(newTimestamp);
-
-				if (newTime < prevTime) {
-					throw new Error(`New timestamp (${newTimestamp}) cannot be earlier than previous OpsPack (${prevPack.timestamp})`);
-				}
-			}
-
 			// Update the timestamp
 			const newTimeline = [...timelineGameplay.value];
 			newTimeline[index].timestamp = newTimestamp;
