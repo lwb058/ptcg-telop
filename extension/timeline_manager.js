@@ -678,9 +678,12 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 		matchTimer.value.isRunning = true;
 		matchTimer.value.startTime = Date.now();
 
+		const initialOffset = matchTimer.value.offset;
+
 		playbackInterval = setInterval(() => {
 			// Update simulated time
-			matchTimer.value.offset += PLAYBACK_TICK_RATE;
+			// matchTimer.value.offset += PLAYBACK_TICK_RATE; // OLD: Drift-prone
+			matchTimer.value.offset = initialOffset + (Date.now() - matchTimer.value.startTime); // NEW: Drift-free
 
 			const currentTimeMs = matchTimer.value.offset;
 			playbackStatus.value.currentTime = formatTimeMs(currentTimeMs);
