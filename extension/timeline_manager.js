@@ -1067,16 +1067,16 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				// Execute sequentially to allow deckLoadingStatus to update correctly for each deck
 				const processImports = async () => {
 					let totalDecks = 0;
-					if (data.deckL && data.deckL.name) totalDecks++;
-					if (data.deckR && data.deckR.name) totalDecks++;
+					if (data.deckL && data.deckL.deckId) totalDecks++;
+					if (data.deckR && data.deckR.deckId) totalDecks++;
 
 					const scale = totalDecks > 0 ? 1 / totalDecks : 1;
 					let currentDeckIndex = 0;
 
-					if (data.deckL && data.deckL.name) {
+					if (data.deckL && data.deckL.deckId) {
 						await new Promise((resolve) => {
 							const offset = currentDeckIndex * scale * 100;
-							gameLogic.processDeckImport('L', data.deckL.name, (err) => {
+							gameLogic.processDeckImport('L', data.deckL.deckId, (err) => {
 								if (err) nodecg.log.warn(`Failed to re-import Deck L: ${err.message}`);
 								resolve(); // Resolve anyway to continue
 							}, { scale, offset });
@@ -1084,10 +1084,10 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 						currentDeckIndex++;
 					}
 
-					if (data.deckR && data.deckR.name) {
+					if (data.deckR && data.deckR.deckId) {
 						await new Promise((resolve) => {
 							const offset = currentDeckIndex * scale * 100;
-							gameLogic.processDeckImport('R', data.deckR.name, (err) => {
+							gameLogic.processDeckImport('R', data.deckR.deckId, (err) => {
 								if (err) nodecg.log.warn(`Failed to re-import Deck R: ${err.message}`);
 								resolve(); // Resolve anyway to continue
 							}, { scale, offset });
@@ -1104,16 +1104,17 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 					}
 
 					if (data.gameSetup) {
-						gameSetup.value = data.gameSetup;
-						// Restore values from gameSetup
+						// Deep clone values before assigning to avoid "object belongs to another Replicant" error
+						gameSetup.value = JSON.parse(JSON.stringify(data.gameSetup));
+						// Restore values from gameSetup (also need to deep clone)
 						if (data.gameSetup.firstMove) {
 							firstMove.value = data.gameSetup.firstMove;
 						}
 						if (data.gameSetup.prizeCardsL) {
-							nodecg.Replicant('prizeCardsL').value = data.gameSetup.prizeCardsL;
+							nodecg.Replicant('prizeCardsL').value = JSON.parse(JSON.stringify(data.gameSetup.prizeCardsL));
 						}
 						if (data.gameSetup.prizeCardsR) {
-							nodecg.Replicant('prizeCardsR').value = data.gameSetup.prizeCardsR;
+							nodecg.Replicant('prizeCardsR').value = JSON.parse(JSON.stringify(data.gameSetup.prizeCardsR));
 						}
 					} else {
 						// Backward compatibility: read from root level if gameSetup doesn't exist
@@ -1121,10 +1122,10 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 							firstMove.value = data.firstMove;
 						}
 						if (data.prizeCardsL) {
-							nodecg.Replicant('prizeCardsL').value = data.prizeCardsL;
+							nodecg.Replicant('prizeCardsL').value = JSON.parse(JSON.stringify(data.prizeCardsL));
 						}
 						if (data.prizeCardsR) {
-							nodecg.Replicant('prizeCardsR').value = data.prizeCardsR;
+							nodecg.Replicant('prizeCardsR').value = JSON.parse(JSON.stringify(data.prizeCardsR));
 						}
 					}
 
@@ -1258,16 +1259,16 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				language: (ptcgSettings.value && ptcgSettings.value.language) || 'jp',
 				timestamp: new Date().toISOString(),
 				deckL: {
-					name: deckL.value.name,
+					deckId: deckL.value.name,
 					playerName: playerL_name.value || '',
 				},
 				deckR: {
-					name: deckR.value.name,
+					deckId: deckR.value.name,
 					playerName: playerR_name.value || '',
 				},
+				gameSetup: gameSetup.value,
 				timeline: timelineGameplay.value,
-				timelineDisplay: timelineDisplay.value,
-				gameSetup: gameSetup.value
+				timelineDisplay: timelineDisplay.value
 			};
 			const jsonString = JSON.stringify(exportData, null, 2);
 			if (callback) callback(null, jsonString);
