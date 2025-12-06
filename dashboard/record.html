@@ -367,8 +367,9 @@
 
 <body>
     <div class="controls-bar">
-        <div class="btn-group">
+        <div class="btn-group" style="display: flex; gap: 5px;">
             <button id="play-btn" class="btn btn-primary">Replay</button>
+            <button id="timer-toggle-btn" class="btn btn-primary">Start</button>
             <button id="pause-btn" class="btn btn-warning" style="display: none;">Pause</button>
             <button id="resume-btn" class="btn btn-primary">Resume</button>
         </div>
@@ -470,6 +471,7 @@
             const trackGameplayToggle = document.getElementById('track-gameplay-toggle');
             const trackDisplayToggle = document.getElementById('track-display-toggle');
             const timerEditBtn = document.getElementById('timer-edit-btn');
+            const timerToggleBtn = document.getElementById('timer-toggle-btn');
 
             // Popup Elements
             const timerPopup = document.getElementById('timer-popup');
@@ -605,8 +607,7 @@
 
             matchTimer.on('change', (newValue) => {
                 updateTimerDisplay();
-                // We don't need a high-frequency interval here unless we want smooth live updates
-                // But for Record panel, maybe 1s update is fine? Or 100ms if we want to see playback smoothly.
+                updateControlButtons();
                 // Let's use 100ms for consistency.
                 if (newValue.isRunning) {
                     if (!window.recordTimerInterval) {
@@ -1257,22 +1258,52 @@
                 // UI will automatically refresh through timelineGameplay's change event
             });
 
-            playbackStatus.on('change', (newVal) => {
-                if (newVal) {
-                    // timerDisplay.innerText = `Playback: ${newVal.currentTime}`; // Removed, using matchTimer
-                    renderTimeline(); // Re-render to update highlights
-                    renderDisplayTimeline(); // Re-render display timeline highlights
+            function updateControlButtons() {
+                if (!matchTimer.value) return;
 
-                    // Update Button States
-                    // Replay button is always visible
-                    // Toggle between Pause (when playing) and Resume (when not playing)
-                    if (newVal.isPlaying) {
+                const isPlaybackMode = matchTimer.value.mode === 'playback';
+                const isRunning = matchTimer.value.isRunning;
+
+                // Timer Toggle Button (Start/Stop) - Only in Live mode
+                if (isPlaybackMode) {
+                    timerToggleBtn.style.display = 'none';
+                } else {
+                    timerToggleBtn.style.display = 'inline-block';
+                    // Update Start/Stop text/class based on isRunning
+                    if (isRunning) {
+                        timerToggleBtn.textContent = 'Stop';
+                        timerToggleBtn.classList.remove('btn-primary');
+                        timerToggleBtn.classList.add('btn-warning');
+                    } else {
+                        timerToggleBtn.textContent = 'Start';
+                        timerToggleBtn.classList.remove('btn-warning');
+                        timerToggleBtn.classList.add('btn-primary');
+                    }
+                }
+
+                // Pause/Resume Buttons - Only in Playback mode
+                if (isPlaybackMode && playbackStatus.value) {
+                    const isPlaying = playbackStatus.value.isPlaying;
+                    if (isPlaying) {
                         pauseBtn.style.display = 'inline-block';
                         resumeBtn.style.display = 'none';
                     } else {
                         pauseBtn.style.display = 'none';
                         resumeBtn.style.display = 'inline-block';
                     }
+                } else {
+                    pauseBtn.style.display = 'none';
+                    resumeBtn.style.display = 'none';
+                }
+            }
+
+            playbackStatus.on('change', (newVal) => {
+                if (newVal) {
+                    // timerDisplay.innerText = `Playback: ${newVal.currentTime}`; // Removed, using matchTimer
+                    renderTimeline(); // Re-render to update highlights
+                    renderDisplayTimeline(); // Re-render display timeline highlights
+
+                    updateControlButtons();
                 }
             });
 
@@ -1280,6 +1311,11 @@
                 if (confirm('Re-simulate entire timeline?')) {
                     nodecg.sendMessage('playTimeline');
                 }
+            });
+
+            timerToggleBtn.addEventListener('click', () => {
+                const action = matchTimer.value.isRunning ? 'stop' : 'start';
+                nodecg.sendMessage('timerControl', { action });
             });
 
             pauseBtn.addEventListener('click', () => {

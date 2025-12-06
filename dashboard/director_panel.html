@@ -91,15 +91,16 @@
         <div style="display: flex; gap: 10px; align-items: center;">
             <div class="timer-module"
                 style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 5px; background: #333; padding: 5px; border-radius: 4px;">
+
+                <button id="timer-toggle-btn" class="btn btn-primary"
+                    style="min-width:80px; padding: 2px 8px;">Start</button>
                 <div id="timer-display"
-                    style="font-family: monospace; font-size: 1.5em; font-weight: bold; color: #fff;">00:00</div>
-                <div style="margin-bottom: 0; justify-content: center;">
-                    <button id="timer-toggle-btn" class="btn btn-primary"
-                        style="min-width:80px; padding: 2px 8px;">Start</button>
-                    <button id="timer-edit-btn" class="btn btn-secondary" style="padding: 2px 8px;">Edit</button>
-                </div>
+                    style="font-family: monospace; font-size: 1.5em; font-weight: bold; color: #fff;">
+                    00:00</div><button id="timer-edit-btn" class="btn btn-secondary"
+                    style="padding: 2px 8px;">Edit</button>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Timer Edit Popup -->

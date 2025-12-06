@@ -96,7 +96,7 @@ body.is-inactive:hover {
     background-color: #4a69bd;
     color: white;
     border-color: #4a69bd;
-    min-width: 60px;
+    min-width: 80px;
 }
 
 .btn-primary:hover {
@@ -113,6 +113,18 @@ body.is-inactive:hover {
 .btn-secondary:hover {
     background-color: #3b9857;
 }
+
+.btn-warning {
+    background-color: #ffb20c;
+    color: black;
+    border-color: #cd6d0d;
+    min-width: 80px;
+}
+
+.btn-warning:hover {
+    background-color: #bf964e;
+}
+
 
 .btn-danger {
     background-color: #e74c3c;
@@ -590,15 +602,6 @@ details[open]>summary::before {
     font-size: 12px;
     background-color: #000000;
     color: white;
-}
-
-.btn-rainbow {
-    background: linear-gradient(to bottom right, red, orange, yellow, green, blue, indigo, violet);
-    color: white;
-}
-
-.btn-rainbow:hover {
-    background: linear-gradient(to bottom right, black, white);
 }
 
 .info-zone p {
