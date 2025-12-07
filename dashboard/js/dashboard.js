@@ -275,10 +275,10 @@ class HotkeyManager {
 /**
  * Formats an operation object into a human-readable string for display.
  * @param {object} op - The operation object.
- * @param {object} context - Context object containing cardDatabase (optional).
+ * @param {object} cardDb - The card database object (e.g. cardDatabase.value).
  * @returns {string} The formatted string.
  */
-function formatOperation(op) {
+function formatOperation(op, cardDb) {
     const { type, payload } = op;
     if (!payload) return type;
 
@@ -298,19 +298,30 @@ function formatOperation(op) {
         return isBattle ? 'Active' : `Bench ${num}`;
     };
 
-    // Helper to get card name from payload (if enriched) or fallback
-    const getName = (nameInPayload) => nameInPayload || 'Unknown Card';
+
+    // Helper to get card name from payload (if enriched) or fallback to looking up cardId
+    const getName = (nameInPayload, cardIdFallback) => {
+        if (nameInPayload) return nameInPayload;
+        if (cardIdFallback && cardDb && cardDb[cardIdFallback]) {
+            return cardDb[cardIdFallback].name;
+        }
+        return cardIdFallback || 'Card';
+    };
 
     switch (type) {
         case 'REMOVE_POKEMON':
-            return `${side} Remove: ${getName(payload.cardName)} (${getSlotName(payload.target)})`;
+            // Old REMOVE ops might not have cardName or cardId.
+            return `${side} Remove: ${getName(payload.cardName) === 'Card' ? 'Pokemon' : getName(payload.cardName)} (${getSlotName(payload.target)})`;
 
         case 'KO_POKEMON':
-            return `${side} KO: ${getName(payload.cardName)} (${getSlotName(payload.target)})`;
+            // Old KO ops might not have cardName.
+            return `${side} KO: ${getName(payload.cardName) === 'Card' ? 'Pokemon' : getName(payload.cardName)} (${getSlotName(payload.target)})`;
 
         case 'REPLACE_POKEMON':
             const action = payload.actionType || 'Replace';
-            return `${side} ${action}: ${getName(payload.targetName)} -> ${getName(payload.cardName)}`;
+            // REPLACE usually has cardId in payload even in old versions? 
+            // Checking master_panel: queueOperation('REPLACE_POKEMON', { ... cardId: ... })
+            return `${side} ${action}: ${getName(payload.targetName, payload.targetCardId)} -> ${getName(payload.cardName, payload.cardId)}`;
 
         case 'SWITCH_POKEMON':
         case 'APPLY_SWITCH':
@@ -326,34 +337,53 @@ function formatOperation(op) {
             return null; // Return null to indicate it should be skipped/hidden if possible
 
         case 'SET_POKEMON':
-            return `${side} Set: ${getName(payload.cardName)} (${getSlotName(payload.target)})`;
+            // Old SET ops have cardId.
+            return `${side} Set: ${getName(payload.cardName, payload.cardId)} (${getSlotName(payload.target)})`;
 
         case 'SET_TOOLS':
-            const toolNames = payload.toolNames ? `(${payload.toolNames.join(', ')})` : '';
-            return `${side} Attach Tools: ${getName(payload.targetName)} ${toolNames}`;
+            // Old SET_TOOLS usually has a list of toolIds in payload.tools?
+            // master_panel: payload.tools (array of IDs).
+            let toolDisplay = '';
+            if (payload.toolNames) {
+                toolDisplay = `(${payload.toolNames.join(', ')})`;
+            } else if (payload.tools && Array.isArray(payload.tools)) {
+                // Backward compat: lookup IDs
+                if (cardDb) {
+                    const names = payload.tools.map(id => cardDb[id]?.name || id);
+                    toolDisplay = `(${names.join(', ')})`;
+                } else {
+                    toolDisplay = `(${payload.tools.length} tools)`;
+                }
+            }
+            return `${side} Attach Tools: ${getName(payload.targetName)} ${toolDisplay}`;
 
         case 'SET_ENERGIES':
             // payload.energies is an array of types/IDs. 
             // We might want to format this nicely if enriched, otherwise just show count/raw.
             // If payload.energyNames exists (enriched), use it.
-            const energyDisplay = payload.energyNames ? `(${payload.energyNames.join(', ')})` :
-                (payload.energies ? `(${payload.energies.length} energies)` : '');
+            let energyDisplay = '';
+            if (payload.energyNames) {
+                energyDisplay = `(${payload.energyNames.join(', ')})`;
+            } else if (payload.energies) {
+                // Try to prettify if possible, or just count
+                energyDisplay = `(${payload.energies.length} energies)`;
+            }
             return `${side} Set Energy: ${getName(payload.targetName)} ${energyDisplay}`;
 
         case 'SET_DAMAGE':
-            return `${side} Damage: ${getName(payload.targetName) || payload.target} = ${payload.value}`;
+            return `${side} Damage: ${getName(payload.targetName) || getSlotName(payload.target)} = ${payload.value}`;
 
         case 'SET_EXTRA_HP':
-            return `${side} Extra HP: ${getName(payload.targetName) || payload.target} = ${payload.value}`;
+            return `${side} Extra HP: ${getName(payload.targetName) || getSlotName(payload.target)} = ${payload.value}`;
 
         case 'SET_AILMENTS':
-            return `${side} Ailments: ${getName(payload.targetName) || payload.target} = [${(payload.ailments || []).join(', ')}]`;
+            return `${side} Ailments: ${getName(payload.targetName) || getSlotName(payload.target)} = [${(payload.ailments || []).join(', ')}]`;
 
         case 'SET_ABILITY_USED':
-            return `${side} Ability Used: ${getName(payload.targetName) || payload.target} = ${payload.status}`;
+            return `${side} Ability Used: ${getName(payload.targetName) || getSlotName(payload.target)} = ${payload.status}`;
 
         case 'ATTACK':
-            const attacker = payload.attackerName || getSlotName(payload.attackerSlotId);
+            const attacker = payload.attackerName || getName(null, payload.attackerCardId) || getSlotName(payload.attackerSlotId);
             const targets = payload.targetNames ? payload.targetNames.join(', ') : 'Opponent';
             let desc = `${side} Attack: ${attacker} uses ${payload.attackName}`;
             if (targets) desc += ` on ${targets}`;
@@ -370,7 +400,7 @@ function formatOperation(op) {
             return `${side} Prize Cards: Remaining = ${payload.value}`;
 
         case 'SET_STADIUM':
-            return `Stadium: Set to ${payload.cardName || 'None'}`;
+            return `Stadium: Set to ${payload.cardName || getName(null, payload.cardId) || 'None'}`;
 
         case 'SET_STADIUM_USED':
             return `Stadium: Used = ${payload.used}`;

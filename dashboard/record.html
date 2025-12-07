@@ -720,7 +720,7 @@
             function formatOpSummary(op) {
                 // Use shared formatting logic
                 if (window.formatOperation) {
-                    return window.formatOperation(op);
+                    return window.formatOperation(op, cardDatabase.value);
                 }
                 // Fallback if not loaded
                 const { type, payload } = op;

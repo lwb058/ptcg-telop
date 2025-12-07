@@ -233,7 +233,7 @@
                     const item = document.createElement('div');
                     item.classList.add('operation-item');
                     item.dataset.opId = op.id;
-                    item.innerHTML = formatOperation(op);
+                    item.innerHTML = formatOperation(op, cardDatabase.value);
                     operationQueueEl.appendChild(item);
                 });
             };
