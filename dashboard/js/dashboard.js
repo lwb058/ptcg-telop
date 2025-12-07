@@ -325,23 +325,23 @@ function formatOperation(op, cardDb) {
 
         case 'SWITCH_POKEMON':
         case 'APPLY_SWITCH':
-            // Logic to display switch. If enriched, use payload names.
-            // If not enriched (old ops), fallback to slot names.
-            const sName = payload.sourceName || getSlotName(payload.source);
-            const tName = payload.targetName || getSlotName(payload.target);
-            return `${side} Switch: ${sName} <-> ${tName}`;
+            // If enriched, use payload names, else fallback to slot names.
+            const sSlot = getSlotName(payload.source);
+            const tSlot = getSlotName(payload.target);
+            const sNameStr = payload.sourceName ? `${payload.sourceName} (${sSlot})` : sSlot;
+            const tNameStr = payload.targetName ? `${payload.targetName} (${tSlot})` : tSlot;
+
+            return `${side} Switch: ${sNameStr} <-> ${tNameStr}`;
 
         case 'SLIDE_OUT':
             // Usually we don't want to show SLIDE_OUT if we show APPLY_SWITCH, 
             // but if we must, keep it simple.
-            return null; // Return null to indicate it should be skipped/hidden if possible
+            return null;
 
         case 'SET_POKEMON':
-            // Old SET ops have cardId.
             return `${side} Set: ${getName(payload.cardName, payload.cardId)} (${getSlotName(payload.target)})`;
 
         case 'SET_TOOLS':
-            // Old SET_TOOLS usually has a list of toolIds in payload.tools?
             // master_panel: payload.tools (array of IDs).
             let toolDisplay = '';
             if (payload.toolNames) {

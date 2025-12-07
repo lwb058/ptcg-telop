@@ -1005,6 +1005,52 @@ module.exports = function (nodecg) {
 	});
 
 	/**
+	 * Removes an operation (or multiple operations) from the queue by ID.
+	 * This is safer than removing by index, which can shift.
+	 */
+	nodecg.listenFor('removeOperationById', (ids, callback) => {
+		const queue = operationQueue.value;
+		if (!queue) return;
+
+		const idsToRemove = Array.isArray(ids) ? ids : [ids];
+		const originalLength = queue.length;
+		const newQueue = queue.filter(op => !idsToRemove.includes(op.id));
+
+		if (newQueue.length !== originalLength) {
+			operationQueue.value = newQueue;
+			syncLiveToDraft(); // Revert draft state to match new queue (or lack thereof)
+
+			try {
+				// Re-apply the remaining queue to DRAFT
+				newQueue.forEach(op => {
+					if (op.type === 'SWITCH_POKEMON') return; // Skip original switch if present (shouldn't be in queue usually)
+
+					if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
+						const draftRep = nodecg.Replicant(`draft_${op.payload.target}`);
+						applyOperationLogic(draftRep, op, 'draft');
+					} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
+						applyOperationLogic(draft_stadium, op, 'draft');
+					} else if (op.payload.target && op.payload.target.startsWith('slot')) {
+						const draftRep = nodecg.Replicant(op.payload.target.replace('slot', 'draft_slot'));
+						applyOperationLogic(draftRep, op, 'draft');
+					} else {
+						applyOperationLogic(null, op, 'draft');
+					}
+				});
+				nodecg.log.info(`Removed ${originalLength - newQueue.length} operations by ID.`);
+				if (callback) callback(null, 'Operations removed.');
+			} catch (e) {
+				nodecg.log.error('Error re-applying queue after deletion:', e);
+				if (callback) callback(e);
+			}
+
+		} else {
+			nodecg.log.warn('Attempted to remove operations by ID, but none were found.');
+			if (callback) callback(new Error('Operations not found.'));
+		}
+	});
+
+	/**
 	 * Updates an existing operation in the queue and re-applies the entire queue to the DRAFT state.
 	 */
 	nodecg.listenFor('updateOperation', ({ index, payload }, callback) => {
@@ -1652,8 +1698,8 @@ module.exports = function (nodecg) {
 			'SET_DAMAGE',
 			'SET_AILMENTS',
 			'KO_POKEMON',
-			'SLIDE_OUT', // New
-			'APPLY_SWITCH', // New
+			'SLIDE_OUT',
+			'APPLY_SWITCH',
 			'REPLACE_POKEMON',
 			'SET_POKEMON',
 			'REMOVE_POKEMON', // This triggers EXIT_POKEMON animation
@@ -1672,7 +1718,7 @@ module.exports = function (nodecg) {
 			case 2: return 1500;
 			case 3: return 2000; // KO animations
 			case 4: return 1500;
-			case 5: return 1500; // Switch/Evolve animations
+			case 5: return 1500;
 			case 6: return 1500;
 			default: return 1500;
 		}

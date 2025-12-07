@@ -745,6 +745,24 @@
                     return;
                 }
 
+                window.deleteOperation = function (packIndex, opIndices) {
+                    if (!timelineGameplay.value || !timelineGameplay.value[packIndex]) return;
+
+                    const newTimeline = [...timelineGameplay.value];
+                    const pack = newTimeline[packIndex];
+                    const newOps = [...pack.ops];
+
+                    const indicesToDelete = Array.isArray(opIndices) ? opIndices : [opIndices];
+
+                    indicesToDelete.forEach(idx => {
+                        if (newOps[idx]) {
+                            newOps[idx] = { ...newOps[idx], deleted: true };
+                        }
+                    });
+
+                    newTimeline[packIndex] = { ...pack, ops: newOps };
+                    timelineGameplay.value = newTimeline;
+                };        // Determine turn player and add class
                 const firstMover = firstMove.value || 'L';
 
                 timelineGameplay.value.forEach((pack, index) => {
@@ -780,7 +798,26 @@
                         item.classList.add('modified');
                     }
 
-                    // Calculate the count of each type of operation
+                    // Calculate visual counts (grouping SLIDE_OUT + APPLY_SWITCH)
+                    let visualTotal = 0;
+                    let visualActive = 0;
+
+                    for (let i = 0; i < pack.ops.length; i++) {
+                        const op = pack.ops[i];
+                        const nextOp = pack.ops[i + 1];
+
+                        // Skip SLIDE_OUT if it's the first part of a switch pair
+                        if (op.type === 'SLIDE_OUT' && nextOp && nextOp.type === 'APPLY_SWITCH') {
+                            continue;
+                        }
+
+                        visualTotal++;
+                        if (!op.deleted) {
+                            visualActive++;
+                        }
+                    }
+
+                    // Calculate the count of each type of operation (raw counts strictly referencing data)
                     const nativeCount = pack.ops.filter(op => !op.source && !op.deleted).length;
                     const insertedCount = pack.ops.filter(op => op.source === 'inserted' && !op.deleted).length;
                     const deletedCount = pack.ops.filter(op => op.deleted).length;
@@ -793,25 +830,55 @@
                     // Parse current timestamp
                     const [minutes, seconds] = pack.timestamp.split(':').map(Number);
 
+                    // Helper functions for source and badges
+                    const getSourceClass = (op) => op.source || 'native';
+                    const getSourceBadge = (op) => op.source === 'inserted' ? `<span class="operation-source-badge inserted">${getI18nText('record_inserted')}</span>` : '';
+
+                    let displayCounter = 0; // Initialize counter for visible items
+
                     // Create the operations list HTML
                     const operationsHTML = pack.ops.map((op, idx) => {
-                        const source = op.source || 'native';
+                        const source = getSourceClass(op);
+                        const sourceBadge = getSourceBadge(op);
                         const isDeleted = op.deleted;
-                        const sourceBadge = op.source === 'inserted' ? `<span class="operation-source-badge inserted">${getI18nText('record_inserted')}</span>` : '';
                         const deletedBadge = isDeleted ? `<span class="operation-source-badge deleted">${getI18nText('record_deleted')}</span>` : '';
+
+                        // --- Grouping Logic: SLIDE_OUT ---
+                        // Skip SLIDE_OUT if it's part of a switch pair (followed by APPLY_SWITCH)
+                        if (op.type === 'SLIDE_OUT') {
+                            const nextOp = pack.ops[idx + 1];
+                            if (nextOp && nextOp.type === 'APPLY_SWITCH') {
+                                return ''; // Skip rendering
+                            }
+                        }
+
+                        // Increment visible counter
+                        displayCounter++;
+
+                        // --- Grouping Logic: APPLY_SWITCH ---
+                        let indices = [idx];
+                        if (op.type === 'APPLY_SWITCH') {
+                            const prevOp = pack.ops[idx - 1];
+                            if (prevOp && prevOp.type === 'SLIDE_OUT') {
+                                // It's a pair! Target both.
+                                indices = [idx - 1, idx];
+                            }
+                        }
+
                         const actionButton = isDeleted
-                            ? `<button class="btn-restore-op" data-op-index="${idx}" title="Restore this operation">↩</button>`
-                            : `<button class="btn-delete-op" data-op-index="${idx}" title="Delete this operation">×</button>`;
+                            ? `<button class="btn btn-restore-op" data-op-indices='${JSON.stringify(indices)}' title="Restore">↩</button>`
+                            : `<button class="btn btn-delete-op" data-op-indices='${JSON.stringify(indices)}' title="Delete">✕</button>`;
+
                         return `
-                            <div class="operation-item ${source} ${isDeleted ? 'deleted-op' : ''}" data-op-index="${idx}">
-                                <div class="operation-content">
-                                    <span class="operation-number">${idx + 1}.</span> ${formatOpSummary(op)}${sourceBadge}${deletedBadge}
-                                </div>
-                                <div class="operation-actions">
-                                    ${actionButton}
-                                </div>
+                        <div class="operation-item ${source} ${isDeleted ? 'deleted-op' : ''}" data-op-index="${idx}">
+                            <div class="operation-content">
+                                <span class="operation-number">${displayCounter}.</span> ${formatOpSummary(op)}${sourceBadge}${deletedBadge}
                             </div>
-                        `;
+                            <div class="operation-actions">
+                                ${actionButton}
+                            </div>
+                        </div>
+                    `;
                     }).join('');
 
                     // Modify timestamp display in timeline-header
@@ -832,7 +899,7 @@
 										   value="${seconds}" 
 										   data-index="${index}">
 								</span>
-								| ${getI18nText('record_round')} ${pack.round || 1} - ${pack.ops.filter(op => !op.deleted).length}/${opCount} ${getI18nText('record_ops')}${modifiedBadge}</span>
+								| ${getI18nText('record_round')} ${pack.round || 1} - ${visualActive}/${visualTotal} ${getI18nText('record_ops')}${modifiedBadge}</span>
 							</span>
 							<div>
 								<button class="btn btn-sm btn-danger delete-btn" data-index="${index}" style="margin-left: 10px;">${getI18nText('delete')}</button>
@@ -855,29 +922,31 @@
                     const opsListEl = item.querySelector('.operations-list');
                     opsListEl.addEventListener('click', (e) => {
                         const target = e.target;
-                        const opIndex = parseInt(target.dataset.opIndex, 10);
                         if (target.classList.contains('btn-delete-op')) {
                             e.stopPropagation();
-                            const opToDelete = pack.ops[opIndex];
-                            const isNative = !opToDelete.source || opToDelete.source === 'native';
+                            const indices = JSON.parse(target.dataset.opIndices);
+                            const opsToDelete = indices.map(i => pack.ops[i]);
+                            const isAllNative = opsToDelete.every(o => !o.source || o.source === 'native');
 
                             // Native operations can be restored, so delete directly without confirmation
                             // Inserted operations are permanently removed, so require confirmation
-                            if (isNative) {
+                            if (isAllNative) {
                                 // Direct delete for native operations (can be restored)
-                                nodecg.sendMessage('deleteOperation', { opsPackIndex: index, operationIndex: opIndex })
+                                nodecg.sendMessage('deleteOperation', { opsPackIndex: index, operationIndex: indices })
                                     .catch(err => alert('Failed to delete operation: ' + err.message));
                             } else {
                                 // Confirm before deleting inserted operations (permanent)
-                                const confirmMessage = `Are you sure you want to delete operation #${opIndex + 1} (${formatOpSummary(opToDelete)})?\n\nThis is an INSERTED operation and will be permanently removed.`;
+                                const summary = opsToDelete.map(o => formatOpSummary(o)).join(', ');
+                                const confirmMessage = `Are you sure you want to delete operation(s) (${summary})?\n\nContains INSERTED operations which will be permanently removed.`;
                                 if (confirm(confirmMessage)) {
-                                    nodecg.sendMessage('deleteOperation', { opsPackIndex: index, operationIndex: opIndex })
+                                    nodecg.sendMessage('deleteOperation', { opsPackIndex: index, operationIndex: indices })
                                         .catch(err => alert('Failed to delete operation: ' + err.message));
                                 }
                             }
                         } else if (target.classList.contains('btn-restore-op')) {
                             e.stopPropagation();
-                            nodecg.sendMessage('restoreOperation', { opsPackIndex: index, operationIndex: opIndex })
+                            const indices = JSON.parse(target.dataset.opIndices);
+                            nodecg.sendMessage('restoreOperation', { opsPackIndex: index, operationIndex: indices })
                                 .catch(err => alert('Failed to restore operation: ' + err.message));
                         }
                     });

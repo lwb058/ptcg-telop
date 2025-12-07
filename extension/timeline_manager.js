@@ -643,12 +643,21 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 
 				nodecg.log.info(`Playback: Processing batch priority ${priority} (${batch.length} ops)`);
 
-				// 1. Trigger Visuals
-				triggerVisualsForOps(batch);
-
-				// 2. Apply Data
+				// 0. Filter out deleted operations first
 				const activeOps = batch.filter(op => !op.deleted);
 
+				if (activeOps.length === 0) {
+					// Even if all are deleted, we might need to wait if it was an animation batch?
+					// Usually if deleted, we skip animation.
+					// But we should check if we need to preserve timing structure? 
+					// For now, let's skip waiting if everything is deleted to speed up skip-through.
+					continue;
+				}
+
+				// 1. Trigger Visuals (only for active ops)
+				triggerVisualsForOps(activeOps);
+
+				// 2. Apply Data
 				activeOps.forEach(op => {
 					if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
 						gameLogic.applyOperationLogic(nodecg.Replicant(`live_${op.payload.target}`), op, 'live');
@@ -1150,7 +1159,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 		}
 	});
 
-	// Delete single operation from OpsPack (soft/hard delete based on source)
+	// Delete operation(s) from OpsPack (soft/hard delete based on source)
 	nodecg.listenFor('deleteOperation', (data, callback) => {
 		try {
 			const { opsPackIndex, operationIndex } = data;
@@ -1160,36 +1169,65 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			}
 
 			const targetPack = timelineGameplay.value[opsPackIndex];
+			const indices = Array.isArray(operationIndex) ? operationIndex : [operationIndex];
 
-			if (operationIndex < 0 || operationIndex >= targetPack.ops.length) {
-				throw new Error('Invalid operation index');
+			// Validate all indices
+			if (indices.some(idx => idx < 0 || idx >= targetPack.ops.length)) {
+				throw new Error('Invalid operation index provided');
 			}
 
-			const targetOp = targetPack.ops[operationIndex];
-			const isNative = !targetOp.source || targetOp.source === 'native';
+			// Sort indices descending to handle splice correctly (for hard delete) without shifting issues
+			// Although hard delete logic below is tricky with multiple indices if we splice one by one.
+			// Best to filter.
+			indices.sort((a, b) => b - a);
+
 			const newTimeline = [...timelineGameplay.value];
-			const newOps = [...targetPack.ops];
+			let newOps = [...targetPack.ops];
+			let anyHardDeleted = false;
 
-			if (isNative) {
-				// Soft delete
-				newOps[operationIndex] = {
-					...targetOp,
-					deleted: true,
-					deletedAt: Date.now()
-				};
+			indices.forEach(idx => {
+				const targetOp = newOps[idx]; // Note: for hard delete with filtering, getting by index is unsafe in loop if we mutate newOps immediately.
+				// However, simplistic iterations:
+				// If we have mixed hard/soft deletes in one batch, it gets complex. 
+				// BUT for our use case (grouped switch), both ops usually have same source (native or inserted).
+				// Let's assume uniform type for the batch or handle carefully.
 
-				newTimeline[opsPackIndex] = {
-					...targetPack,
-					ops: newOps
-				};
+				// Actually, because we modify newOps in place, if we splice, indices shift.
+				// But soft delete doesn't shift indices.
+				// Mixed case support is overkill? Let's check source of the first one or treat individually.
 
-				nodecg.log.info(`Operation ${targetOp.type} soft-deleted (marked) from OpsPack at ${targetPack.timestamp}.`);
-			} else {
-				// Hard Delete
-				newOps.splice(operationIndex, 1);
+				// Wait, if we use splice for hard delete in a loop, we MUST use descending order.
+				// And for soft delete, order doesn't matter but index must be valid.
+				// Since we sorted descending, let's proceed.
+			});
 
+			// Re-loop with robust logic:
+			// Soft deletes modify in place. Hard deletes remove.
+			// With descending sort, removing higher index first preserves lower indices.
+
+			for (const idx of indices) {
+				const targetOp = newOps[idx];
+				const isNative = !targetOp.source || targetOp.source === 'native';
+
+				if (isNative) {
+					// Soft delete
+					newOps[idx] = {
+						...targetOp,
+						deleted: true,
+						deletedAt: Date.now()
+					};
+					nodecg.log.info(`Operation ${targetOp.type} soft-deleted (marked) from OpsPack at ${targetPack.timestamp}.`);
+				} else {
+					// Hard Delete
+					newOps.splice(idx, 1);
+					anyHardDeleted = true;
+					nodecg.log.info(`Operation ${targetOp.type} hard-deleted (removed) from OpsPack at ${targetPack.timestamp}.`);
+				}
+			}
+
+			// Post-processing for empty packs (only relevant if hard deleted)
+			if (anyHardDeleted) {
 				const activeOps = newOps.filter(op => !op.deleted);
-
 				if (activeOps.length === 0) {
 					newTimeline.splice(opsPackIndex, 1);
 					nodecg.log.warn(`OpsPack at ${targetPack.timestamp} deleted (no active operations remaining).`);
@@ -1198,21 +1236,26 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 						...targetPack,
 						ops: newOps
 					};
-					nodecg.log.info(`Operation ${targetOp.type} hard-deleted (removed) from OpsPack at ${targetPack.timestamp}. Remaining: ${newOps.length} ops (${activeOps.length} active).`);
 				}
+			} else {
+				// Only soft deletes happened
+				newTimeline[opsPackIndex] = {
+					...targetPack,
+					ops: newOps
+				};
 			}
 
 			timelineGameplay.value = newTimeline;
 			nodecg.sendMessage('timelineRefreshed');
 
-			if (callback) callback(null, 'Operation deleted successfully.');
+			if (callback) callback(null, 'Operation(s) deleted successfully.');
 		} catch (e) {
 			nodecg.log.error('deleteOperation error:', e);
 			if (callback) callback(e);
 		}
 	});
 
-	// Restore single operation from OpsPack
+	// Restore operation(s) from OpsPack
 	nodecg.listenFor('restoreOperation', (data, callback) => {
 		try {
 			const { opsPackIndex, operationIndex } = data;
@@ -1222,19 +1265,22 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			}
 
 			const targetPack = timelineGameplay.value[opsPackIndex];
+			const indices = Array.isArray(operationIndex) ? operationIndex : [operationIndex];
 
-			if (operationIndex < 0 || operationIndex >= targetPack.ops.length) {
+			if (indices.some(idx => idx < 0 || idx >= targetPack.ops.length)) {
 				throw new Error('Invalid operation index');
 			}
 
 			const newTimeline = [...timelineGameplay.value];
 			const newOps = [...targetPack.ops];
-			const targetOp = newOps[operationIndex];
 
-			// Restore Delete
-			const { deleted, deletedAt, ...restoredOp } = targetOp;
-
-			newOps[operationIndex] = restoredOp;
+			indices.forEach(idx => {
+				const targetOp = newOps[idx];
+				// Restore Delete
+				const { deleted, deletedAt, ...restoredOp } = targetOp;
+				newOps[idx] = restoredOp;
+				nodecg.log.info(`Operation ${targetOp.type} restored in OpsPack at ${targetPack.timestamp}.`);
+			});
 
 			newTimeline[opsPackIndex] = {
 				...targetPack,
@@ -1242,15 +1288,16 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			};
 
 			timelineGameplay.value = newTimeline;
-			nodecg.log.info(`Operation ${targetOp.type} restored in OpsPack at ${targetPack.timestamp}.`);
 			nodecg.sendMessage('timelineRefreshed');
 
-			if (callback) callback(null, 'Operation restored successfully.');
+			if (callback) callback(null, 'Operation(s) restored successfully.');
 		} catch (e) {
 			nodecg.log.error('restoreOperation error:', e);
 			if (callback) callback(e);
 		}
 	});
+
+
 
 	nodecg.listenFor('exportTimeline', (data, callback) => {
 		try {

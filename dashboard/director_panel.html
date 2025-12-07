@@ -229,13 +229,61 @@
             const renderQueue = () => {
                 operationQueueEl.innerHTML = '';
                 if (!operationQueue.value) return;
-                operationQueue.value.forEach(op => {
+
+                const ops = operationQueue.value;
+                for (let i = 0; i < ops.length; i++) {
+                    const op = ops[i];
+
+                    // --- Skip SLIDE_OUT if followed by APPLY_SWITCH ---
+                    // We will render them together when we encounter APPLY_SWITCH
+                    if (op.type === 'SLIDE_OUT') {
+                        // Look ahead to see if the next one is APPLY_SWITCH with same source/target?
+                        // Or just simpler: don't render SLIDE_OUT at all, but keep track of it?
+                        // Actually, if we just skip it, we can't delete it unless we attach it to the next one.
+
+                        // Check if the NEXT operation is APPLY_SWITCH (it should be, based on index.js logic)
+                        const nextOp = ops[i + 1];
+                        if (nextOp && nextOp.type === 'APPLY_SWITCH') {
+                            continue; // Skip rendering this SLIDE_OUT, it will be handled by the next APPLY_SWITCH
+                        }
+                    }
+
                     const item = document.createElement('div');
                     item.classList.add('operation-item');
                     item.dataset.opId = op.id;
-                    item.innerHTML = formatOperation(op, cardDatabase.value);
+
+                    // --- Grouping Logic for APPLY_SWITCH ---
+                    // If this is APPLY_SWITCH, check if the PREVIOUS one was SLIDE_OUT
+                    let deleteIds = [op.id];
+                    if (op.type === 'APPLY_SWITCH') {
+                        const prevOp = ops[i - 1];
+                        if (prevOp && prevOp.type === 'SLIDE_OUT') {
+                            // It is a pair!
+                            deleteIds = [prevOp.id, op.id]; // We want to delete BOTH
+                        }
+                    }
+
+                    // Content
+                    const contentDiv = document.createElement('div');
+                    contentDiv.style.flex = '1';
+                    contentDiv.innerHTML = formatOperation(op, cardDatabase.value);
+                    item.appendChild(contentDiv);
+
+                    // Delete Button
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn btn-danger btn-sm';
+                    deleteBtn.style.marginLeft = '10px';
+                    deleteBtn.style.padding = '2px 6px';
+                    deleteBtn.textContent = '✕';
+                    deleteBtn.title = 'Remove Operation';
+                    deleteBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        nodecg.sendMessage('removeOperationById', deleteIds);
+                    };
+                    item.appendChild(deleteBtn);
+
                     operationQueueEl.appendChild(item);
-                });
+                }
             };
 
             // --- Timer Logic ---
