@@ -364,7 +364,8 @@
                     if (sourceSlotId) {
                         // Use REMOVE_POKEMON operation to match the Remove button behavior
                         queueOperation('REMOVE_POKEMON', {
-                            target: sourceSlotId
+                            target: sourceSlotId,
+                            cardName: getCardName(sourceSlotId) // Enrich payload
                         });
                     }
                 }
@@ -391,7 +392,8 @@
                     if (sourceSlotId) {
                         // K.O. the Pokemon
                         queueOperation('KO_POKEMON', {
-                            target: sourceSlotId
+                            target: sourceSlotId,
+                            cardName: getCardName(sourceSlotId) // Enrich payload
                         });
                     }
                 }
@@ -604,7 +606,8 @@
                         currentEnergies.splice(index, 1);
                         queueOrUpdateOperation('SET_ENERGIES', {
                             target: slotId,
-                            energies: currentEnergies
+                            energies: currentEnergies,
+                            targetName: getCardName(slotId)
                         });
                     });
                     energyContainer.appendChild(energyEl);
@@ -650,7 +653,9 @@
                             newTools.splice(indexToRemove, 1);
                             queueOrUpdateOperation('SET_TOOLS', {
                                 target: slotId,
-                                tools: newTools
+                                tools: newTools,
+                                targetName: getCardName(slotId),
+                                toolNames: newTools.map(tid => (cardDatabase.value && cardDatabase.value[tid]) ? cardDatabase.value[tid].name : tid)
                             });
                         }
                     });
@@ -739,7 +744,11 @@
             const handleTurnChange = (e) => {
                 const newTurn = e.target.value;
                 if (newTurn && newTurn !== draft_currentTurn.value) {
-                    queueOrUpdateOperation('SET_TURN', { side: newTurn });
+                    const pName = newTurn === 'L' ? (playerL_name.value || 'Left Player') : (playerR_name.value || 'Right Player');
+                    queueOrUpdateOperation('SET_TURN', {
+                        side: newTurn,
+                        playerName: pName // Enrich
+                    });
                 }
             };
 
@@ -749,7 +758,11 @@
             endTurnBtn.addEventListener('click', () => {
                 const currentTurn = draft_currentTurn.value;
                 const nextTurn = currentTurn === 'L' ? 'R' : 'L';
-                queueOrUpdateOperation('SET_TURN', { side: nextTurn });
+                const pName = nextTurn === 'L' ? (playerL_name.value || 'Left Player') : (playerR_name.value || 'Right Player');
+                queueOrUpdateOperation('SET_TURN', {
+                    side: nextTurn,
+                    playerName: pName // Enrich
+                });
             });
 
             // --- Selection Button Logic ---
@@ -812,7 +825,11 @@
             btnKo0hp.addEventListener('click', () => {
                 slots.forEach(slot => {
                     if (slot.value && slot.value.cardId && slot.value.isKO) {
-                        queueOperation('KO_POKEMON', { target: slot.name.replace('draft_', '') });
+                        const targetId = slot.name.replace('draft_', '');
+                        queueOperation('KO_POKEMON', {
+                            target: targetId,
+                            cardName: getCardName(targetId) // Enrich payload
+                        });
                     }
                 });
             });
@@ -996,9 +1013,12 @@
 
                     if (isTargetEmpty) {
                         // Drop on an empty slot -> SET_POKEMON
+                        const db = cardDatabase.value;
+                        const cardName = (db && db[draggedCardId]) ? db[draggedCardId].name : draggedCardId;
                         queueOperation('SET_POKEMON', {
                             target: destinationSlotId,
-                            cardId: draggedCardId
+                            cardId: draggedCardId,
+                            cardName: cardName // Enrich payload
                         });
                     } else {
                         // Drop on an existing pokemon -> determine actionType
@@ -1029,10 +1049,13 @@
                             }
                         }
 
+                        const cardName = (db && db[draggedCardId]) ? db[draggedCardId].name : draggedCardId;
                         queueOrUpdateOperation('REPLACE_POKEMON', {
                             target: destinationSlotId,
                             cardId: draggedCardId,
-                            actionType: actionType
+                            actionType: actionType,
+                            cardName: cardName, // Name of new card
+                            targetName: getCardName(destinationSlotId) // Name of old card
                         });
 
                         // Reset ability used status after replacing
@@ -1050,9 +1073,13 @@
                     const currentTools = slotReplicant.value.attachedToolIds || [];
                     if (currentTools.length < toolLimit) {
                         const newTools = [...currentTools, toolId];
+                        const db = cardDatabase.value;
+                        const toolNames = newTools.map(tid => (db && db[tid]) ? db[tid].name : tid);
                         queueOrUpdateOperation('SET_TOOLS', {
                             target: destinationSlotId,
-                            tools: newTools
+                            tools: newTools,
+                            targetName: getCardName(destinationSlotId),
+                            toolNames: toolNames
                         });
                     } else {
                         // Optional: Add a visual warning to the user in the future
@@ -1075,14 +1102,23 @@
                         if (sourceReplicant && sourceReplicant.value) {
                             const sourceEnergies = [...(sourceReplicant.value.attachedEnergy || [])];
                             sourceEnergies.splice(energyIndex, 1);
-                            queueOrUpdateOperation('SET_ENERGIES', { target: sourceSlot, energies: sourceEnergies });
+                            // Removing energy is also a SET_ENERGIES op
+                            queueOrUpdateOperation('SET_ENERGIES', {
+                                target: sourceSlot,
+                                energies: sourceEnergies,
+                                targetName: getCardName(sourceSlot)
+                            });
                         }
 
                         // Add to destination
                         const destReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
                         if (destReplicant && destReplicant.value) {
                             const destEnergies = [...(destReplicant.value.attachedEnergy || []), energyIdentifier]; // Use identifier
-                            queueOrUpdateOperation('SET_ENERGIES', { target: destinationSlotId, energies: destEnergies });
+                            queueOrUpdateOperation('SET_ENERGIES', {
+                                target: destinationSlotId,
+                                energies: destEnergies,
+                                targetName: getCardName(destinationSlotId)
+                            });
                         }
 
                     } else {
@@ -1102,7 +1138,8 @@
 
                         queueOrUpdateOperation('SET_ENERGIES', {
                             target: destinationSlotId,
-                            energies: finalEnergies
+                            energies: finalEnergies,
+                            targetName: getCardName(destinationSlotId)
                         });
 
                         if (isManualAttach) {
@@ -1116,9 +1153,12 @@
                     const sourceSlotId = e.dataTransfer.getData('text/plain');
                     if (sourceSlotId && destinationSlotId && sourceSlotId !== destinationSlotId) {
                         // Queue the switch operation
+                        // Queue the switch operation
                         queueOperation('SWITCH_POKEMON', {
                             source: sourceSlotId,
-                            target: destinationSlotId
+                            target: destinationSlotId,
+                            sourceName: getCardName(sourceSlotId),
+                            targetName: getCardName(destinationSlotId)
                         });
 
                         // Check for auto-retreat logic
@@ -1578,7 +1618,9 @@
                         if (sourceSide === destinationSide) {
                             queueOperation('SWITCH_POKEMON', {
                                 source: sourceSlotId,
-                                target: destinationSlotId
+                                target: destinationSlotId,
+                                sourceName: getCardName(sourceSlotId),
+                                targetName: getCardName(destinationSlotId)
                             });
                         }
                     }
@@ -2014,7 +2056,9 @@
                     attackName: attackName,
                     targets: targets || [],
                     damage: damage,
-                    isWeakness: isWeakness
+                    isWeakness: isWeakness,
+                    attackerName: getCardName(attackerSlotId), // Enrich
+                    targetNames: (targets || []).map(getCardName) // Enrich
                 });
             });
 
@@ -2065,7 +2109,10 @@
                     btn.appendChild(icon);
 
                     btn.addEventListener('click', () => {
-                        queueOrUpdateOperation('SET_STADIUM', { cardId: card.id });
+                        queueOrUpdateOperation('SET_STADIUM', {
+                            cardId: card.id,
+                            cardName: card.data.name // Enrich
+                        });
                         queueOrUpdateOperation('SET_STADIUM_USED', { used: false });
                     });
                     stadiumList.appendChild(btn);

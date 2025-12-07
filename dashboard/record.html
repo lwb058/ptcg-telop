@@ -718,15 +718,14 @@
             }
 
             function formatOpSummary(op) {
-                // Simplified summary for the timeline list
-                const { type, payload } = op;
-                const target = payload.target || '';
-                switch (type) {
-                    case 'ATTACK': return `Attack: ${payload.attackName}`;
-                    case 'SET_POKEMON': return `Set: ${getCardName(payload.cardId)}`;
-                    case 'KO_POKEMON': return `KO: ${target}`;
-                    default: return `${type} (${target})`;
+                // Use shared formatting logic
+                if (window.formatOperation) {
+                    return window.formatOperation(op);
                 }
+                // Fallback if not loaded
+                const { type, payload } = op;
+                const target = payload.target || ''; // Safe access
+                return `${type} (${target})`;
             }
 
             function renderTimeline() {

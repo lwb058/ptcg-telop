@@ -271,3 +271,114 @@ class HotkeyManager {
         }
     }
 }
+
+/**
+ * Formats an operation object into a human-readable string for display.
+ * @param {object} op - The operation object.
+ * @param {object} context - Context object containing cardDatabase (optional).
+ * @returns {string} The formatted string.
+ */
+function formatOperation(op) {
+    const { type, payload } = op;
+    if (!payload) return type;
+
+    const side = payload.target && payload.target.includes('L') ? '[L]' :
+        payload.target && payload.target.includes('R') ? '[R]' :
+            payload.source && payload.source.includes('L') ? '[L]' :
+                payload.source && payload.source.includes('R') ? '[R]' :
+                    payload.attackerSlotId && payload.attackerSlotId.includes('L') ? '[L]' :
+                        payload.attackerSlotId && payload.attackerSlotId.includes('R') ? '[R]' :
+                            payload.side === 'L' ? '[L]' :
+                                payload.side === 'R' ? '[R]' : '';
+
+    const getSlotName = (slotId) => {
+        if (!slotId) return '';
+        const isBattle = slotId.endsWith('0');
+        const num = slotId.slice(-1);
+        return isBattle ? 'Active' : `Bench ${num}`;
+    };
+
+    // Helper to get card name from payload (if enriched) or fallback
+    const getName = (nameInPayload) => nameInPayload || 'Unknown Card';
+
+    switch (type) {
+        case 'REMOVE_POKEMON':
+            return `${side} Remove: ${getName(payload.cardName)} (${getSlotName(payload.target)})`;
+
+        case 'KO_POKEMON':
+            return `${side} KO: ${getName(payload.cardName)} (${getSlotName(payload.target)})`;
+
+        case 'REPLACE_POKEMON':
+            const action = payload.actionType || 'Replace';
+            return `${side} ${action}: ${getName(payload.targetName)} -> ${getName(payload.cardName)}`;
+
+        case 'SWITCH_POKEMON':
+        case 'APPLY_SWITCH':
+            // Logic to display switch. If enriched, use payload names.
+            // If not enriched (old ops), fallback to slot names.
+            const sName = payload.sourceName || getSlotName(payload.source);
+            const tName = payload.targetName || getSlotName(payload.target);
+            return `${side} Switch: ${sName} <-> ${tName}`;
+
+        case 'SLIDE_OUT':
+            // Usually we don't want to show SLIDE_OUT if we show APPLY_SWITCH, 
+            // but if we must, keep it simple.
+            return null; // Return null to indicate it should be skipped/hidden if possible
+
+        case 'SET_POKEMON':
+            return `${side} Set: ${getName(payload.cardName)} (${getSlotName(payload.target)})`;
+
+        case 'SET_TOOLS':
+            const toolNames = payload.toolNames ? `(${payload.toolNames.join(', ')})` : '';
+            return `${side} Attach Tools: ${getName(payload.targetName)} ${toolNames}`;
+
+        case 'SET_ENERGIES':
+            // payload.energies is an array of types/IDs. 
+            // We might want to format this nicely if enriched, otherwise just show count/raw.
+            // If payload.energyNames exists (enriched), use it.
+            const energyDisplay = payload.energyNames ? `(${payload.energyNames.join(', ')})` :
+                (payload.energies ? `(${payload.energies.length} energies)` : '');
+            return `${side} Set Energy: ${getName(payload.targetName)} ${energyDisplay}`;
+
+        case 'SET_DAMAGE':
+            return `${side} Damage: ${getName(payload.targetName) || payload.target} = ${payload.value}`;
+
+        case 'SET_EXTRA_HP':
+            return `${side} Extra HP: ${getName(payload.targetName) || payload.target} = ${payload.value}`;
+
+        case 'SET_AILMENTS':
+            return `${side} Ailments: ${getName(payload.targetName) || payload.target} = [${(payload.ailments || []).join(', ')}]`;
+
+        case 'SET_ABILITY_USED':
+            return `${side} Ability Used: ${getName(payload.targetName) || payload.target} = ${payload.status}`;
+
+        case 'ATTACK':
+            const attacker = payload.attackerName || getSlotName(payload.attackerSlotId);
+            const targets = payload.targetNames ? payload.targetNames.join(', ') : 'Opponent';
+            let desc = `${side} Attack: ${attacker} uses ${payload.attackName}`;
+            if (targets) desc += ` on ${targets}`;
+            if (payload.damage > 0) desc += ` for ${payload.damage}`;
+            return desc;
+
+        case 'SET_TURN':
+            return `Turn: ${payload.playerName || payload.side}`;
+
+        case 'SET_ACTION_STATUS':
+            return `${side} Status: ${payload.target.replace('_', ' ')} = ${payload.status}`;
+
+        case 'SET_SIDES':
+            return `${side} Prize Cards: Remaining = ${payload.value}`;
+
+        case 'SET_STADIUM':
+            return `Stadium: Set to ${payload.cardName || 'None'}`;
+
+        case 'SET_STADIUM_USED':
+            return `Stadium: Used = ${payload.used}`;
+
+        default:
+            return `${side} ${type}: ${JSON.stringify(payload)}`;
+    }
+}
+
+// Make it globally available
+window.formatOperation = formatOperation;
