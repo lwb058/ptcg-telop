@@ -134,20 +134,6 @@
             margin-top: 8px;
         }
 
-        .operation-item {
-            padding: 4px 8px;
-            margin: 2px 0;
-            background: rgba(255, 255, 255, 0.05);
-            border-left: 2px solid #555;
-            font-size: 0.85em;
-            line-height: 1.4;
-        }
-
-        .operation-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-left-color: #d30000;
-        }
-
         .operation-number {
             display: inline-block;
             min-width: 20px;
@@ -190,18 +176,6 @@
             font-weight: bold;
         }
 
-        /* Operation source indicators */
-        .operation-item.inserted {
-            background: rgba(100, 149, 237, 0.15);
-            border-left-color: #6495ed;
-        }
-
-        .operation-item.deleted {
-            opacity: 0.4;
-            text-decoration: line-through;
-            background: rgba(255, 0, 0, 0.05);
-        }
-
         .operation-source-badge {
             display: inline-block;
             padding: 1px 4px;
@@ -221,24 +195,6 @@
             color: white;
         }
 
-        /* Task 4: Operation item with delete button */
-        .operation-item {
-            padding: 4px 8px;
-            margin: 2px 0;
-            background: rgba(255, 255, 255, 0.05);
-            border-left: 2px solid #555;
-            font-size: 0.85em;
-            line-height: 1.4;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .operation-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-left-color: #d30000;
-        }
-
         .operation-content {
             flex: 1;
         }
@@ -248,44 +204,6 @@
             gap: 4px;
             opacity: 0;
             transition: opacity 0.2s;
-        }
-
-        .operation-item:hover .operation-actions {
-            opacity: 1;
-        }
-
-        .btn-delete-op {
-            padding: 2px 6px;
-            font-size: 0.7em;
-            background: #d30000;
-            border: none;
-            color: white;
-            border-radius: 3px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn-delete-op:hover {
-            background: #ff0000;
-        }
-
-        .btn-restore-op {
-            padding: 2px 6px;
-            font-size: 0.7em;
-            background: #28a745;
-            border: none;
-            color: white;
-            border-radius: 3px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn-restore-op:hover {
-            background: #218838;
-        }
-
-        .operation-item.deleted-op {
-            background: rgba(80, 80, 80, 0.2);
         }
 
         /* Timer Edit Popup Styles */
@@ -298,13 +216,10 @@
             background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
             display: none;
-            /* justify-content: center; Removed for manual positioning */
-            /* align-items: center;     Removed for manual positioning */
         }
 
         .timer-popup-content {
             position: absolute;
-            /* Added for manual positioning */
             background: #222;
             border: 1px solid #444;
             border-radius: 8px;
@@ -762,8 +677,7 @@
 
                     newTimeline[packIndex] = { ...pack, ops: newOps };
                     timelineGameplay.value = newTimeline;
-                };        // Determine turn player and add class
-                const firstMover = firstMove.value || 'L';
+                };
 
                 timelineGameplay.value.forEach((pack, index) => {
                     const item = document.createElement('div');
@@ -776,6 +690,7 @@
                     }
 
                     // Determine turn player and add class
+                    const firstMover = firstMove.value || 'L';
                     const round = pack.round || 1;
                     const isOdd = round % 2 !== 0;
                     const isPlayerL = (firstMover === 'L' && isOdd) || (firstMover === 'R' && !isOdd);
