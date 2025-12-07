@@ -1173,7 +1173,12 @@
                         if (isManualAttach) {
                             const turn = draft_currentTurn.value;
                             const actionStatusTarget = `action_energy_${turn}`;
-                            queueOrUpdateOperation('SET_ACTION_STATUS', { target: actionStatusTarget, status: true });
+                            const playerName = turn === 'L' ? playerL_name.value : playerR_name.value;
+                            queueOrUpdateOperation('SET_ACTION_STATUS', {
+                                target: actionStatusTarget,
+                                status: true,
+                                playerName: playerName || `[${turn}]`
+                            });
                         }
                     }
                 } else if (isPokemonSwap) {

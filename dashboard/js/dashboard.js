@@ -454,6 +454,27 @@ function formatOperation(op, cardDb) {
             return `${payload.playerName || payload.side}'s Turn`;
 
         case 'SET_ACTION_STATUS':
+            // Extract action type from target (e.g., "action_energy_L" -> "energy")
+            const actionMatch = payload.target.match(/action_(\w+)_([LR])/);
+            if (actionMatch) {
+                const actionType = actionMatch[1]; // energy, supporter, retreat
+                const playerSide = actionMatch[2]; // L or R
+                const status = payload.status;
+
+                // Get player name if available
+                const playerName = payload.playerName || `[${playerSide}]`;
+
+                // Action descriptions
+                const actionDescriptions = {
+                    energy: status ? 'Manually Attached Energy' : 'Manually Attach Available',
+                    supporter: status ? 'Played Supporter' : 'Supporter Available',
+                    retreat: status ? 'Retreated Pokemon' : 'Retreat Available'
+                };
+
+                const actionDesc = actionDescriptions[actionType] || `${actionType} = ${status}`;
+                return `${playerName}: ${actionDesc}`;
+            }
+            // Fallback for old format
             return `${side} Status: ${payload.target.replace('_', ' ')} = ${payload.status}`;
 
         case 'SET_SIDES':

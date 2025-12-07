@@ -224,7 +224,8 @@ function setupPlayerPanel(side) {
                 const isChecked = event.target.checked;
                 queueOrUpdateOperation('SET_ACTION_STATUS', {
                     target: `action_${actionType}_${upperCaseSide}`,
-                    status: isChecked
+                    status: isChecked,
+                    playerName: playerName.value || `[${upperCaseSide}]`
                 });
             };
         };
