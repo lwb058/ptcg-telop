@@ -62,6 +62,15 @@ function setupPlayerPanel(side) {
         draft_slot0 = nodecg.Replicant(`draft_slot${upperCaseSide}0`);
 
         // --- DOM Elements ---
+        const getCardName = (slotId) => {
+            const db = cardDatabase.value;
+            const slotRep = nodecg.Replicant(`draft_${slotId}`);
+            if (slotRep && slotRep.value && slotRep.value.cardId && db && db[slotRep.value.cardId]) {
+                return db[slotRep.value.cardId].name;
+            }
+            return 'Pokemon';
+        };
+
         const playerNameInput = document.getElementById(`player-name-${lowerCaseSide}`);
         const deckIdInput = document.getElementById(`deck-id-${lowerCaseSide}`);
         const setDeckBtn = document.getElementById(`set-deck-btn-${lowerCaseSide}`);
@@ -435,7 +444,9 @@ function setupPlayerPanel(side) {
                         currentEnergies.splice(energyIndex, 1);
                         queueOrUpdateOperation('SET_ENERGIES', {
                             target: `slot${upperCaseSide}${index}`,
-                            energies: currentEnergies
+                            energies: currentEnergies,
+                            targetName: getCardName(`slot${upperCaseSide}${index}`),
+                            energyNames: currentEnergies // Ideally map to names if needed, but array of types is okay for now or map it?
                         });
                     });
                     energyContainer.appendChild(energyEl);
@@ -466,7 +477,15 @@ function setupPlayerPanel(side) {
             slotEl.querySelector('.empty-pokemon-select').addEventListener('change', (e) => {
                 const newCardId = e.target.value;
                 if (newCardId) {
-                    queueOperation('SET_POKEMON', { target: slotId, cardId: newCardId });
+                    if (db && db[newCardId]) {
+                        queueOperation('SET_POKEMON', {
+                            target: slotId,
+                            cardId: newCardId,
+                            cardName: db[newCardId].name
+                        });
+                    } else {
+                        queueOperation('SET_POKEMON', { target: slotId, cardId: newCardId });
+                    }
                     e.target.value = "";
                 }
             });
@@ -474,11 +493,19 @@ function setupPlayerPanel(side) {
             const pokemonView = slotEl.querySelector('.pokemon-view');
 
             pokemonView.querySelector('.damage-input').addEventListener('change', (e) => {
-                queueOrUpdateOperation('SET_DAMAGE', { target: slotId, value: parseInt(e.target.value, 10) || 0 });
+                queueOrUpdateOperation('SET_DAMAGE', {
+                    target: slotId,
+                    value: parseInt(e.target.value, 10) || 0,
+                    targetName: getCardName(slotId)
+                });
             });
 
             pokemonView.querySelector('.extrahp-input').addEventListener('change', (e) => {
-                queueOrUpdateOperation('SET_EXTRA_HP', { target: slotId, value: parseInt(e.target.value, 10) || 0 });
+                queueOrUpdateOperation('SET_EXTRA_HP', {
+                    target: slotId,
+                    value: parseInt(e.target.value, 10) || 0,
+                    targetName: getCardName(slotId)
+                });
             });
 
             pokemonView.querySelector('.ability-checkbox-wrapper').addEventListener('click', (e) => {
@@ -488,7 +515,11 @@ function setupPlayerPanel(side) {
                 const currentStatus = abilityIcon.classList.contains('used');
                 const newStatus = !currentStatus;
 
-                queueOrUpdateOperation('SET_ABILITY_USED', { target: slotId, status: newStatus });
+                queueOrUpdateOperation('SET_ABILITY_USED', {
+                    target: slotId,
+                    status: newStatus,
+                    targetName: getCardName(slotId)
+                });
             });
 
             const toolDisplay = pokemonView.querySelector('.tool-display');
@@ -507,7 +538,9 @@ function setupPlayerPanel(side) {
                                 newTools.splice(indexToRemove, 1);
                                 queueOrUpdateOperation('SET_TOOLS', {
                                     target: slotId,
-                                    tools: newTools
+                                    tools: newTools,
+                                    targetName: getCardName(slotId),
+                                    toolNames: newTools.map(tid => (cardDatabase.value && cardDatabase.value[tid]) ? cardDatabase.value[tid].name : tid)
                                 });
                             }
                         }
@@ -522,10 +555,13 @@ function setupPlayerPanel(side) {
                     const selectedOption = select.options[select.selectedIndex];
                     const actionType = selectedOption.dataset.actionType;
 
+                    const db = cardDatabase.value;
                     queueOrUpdateOperation('REPLACE_POKEMON', {
                         target: slotId,
                         cardId: newCardId,
-                        actionType: actionType
+                        actionType: actionType,
+                        targetName: getCardName(slotId),
+                        cardName: (db && db[newCardId]) ? db[newCardId].name : 'Pokemon'
                     });
 
                     queueOrUpdateOperation('SET_ABILITY_USED', { target: slotId, status: false });
@@ -536,9 +572,9 @@ function setupPlayerPanel(side) {
             pokemonView.querySelector('.remove-btn').addEventListener('click', () => {
                 const slotReplicant = nodecg.Replicant(`draft_${slotId}`);
                 if (slotReplicant.value && slotReplicant.value.isKO) {
-                    queueOperation('KO_POKEMON', { target: slotId });
+                    queueOperation('KO_POKEMON', { target: slotId, cardName: getCardName(slotId) });
                 } else {
-                    queueOperation('REMOVE_POKEMON', { target: slotId });
+                    queueOperation('REMOVE_POKEMON', { target: slotId, cardName: getCardName(slotId) });
                 }
             });
 
@@ -555,7 +591,12 @@ function setupPlayerPanel(side) {
                         if (swapBtn.getAttribute('data-bs-toggle') !== 'dropdown') {
                             e.preventDefault();
                             e.stopPropagation();
-                            queueOperation('SWITCH_POKEMON', { source: slotId, target: `slot${upperCaseSide}0` });
+                            queueOperation('SWITCH_POKEMON', {
+                                source: slotId,
+                                target: `slot${upperCaseSide}0`,
+                                sourceName: getCardName(slotId),
+                                targetName: getCardName(`slot${upperCaseSide}0`)
+                            });
                         }
                     }, true);
                 }
@@ -575,7 +616,11 @@ function setupPlayerPanel(side) {
                         } else {
                             currentAilments.push(ailment);
                         }
-                        queueOrUpdateOperation('SET_AILMENTS', { target: slotId, ailments: currentAilments });
+                        queueOrUpdateOperation('SET_AILMENTS', {
+                            target: slotId,
+                            ailments: currentAilments,
+                            targetName: getCardName(slotId)
+                        });
                     });
                 });
             }
@@ -737,7 +782,12 @@ function setupPlayerPanel(side) {
                 const target = event.target.dataset.targetSlot;
 
                 if (source && target) {
-                    queueOperation('SWITCH_POKEMON', { source, target });
+                    queueOperation('SWITCH_POKEMON', {
+                        source,
+                        target,
+                        sourceName: getCardName(source),
+                        targetName: getCardName(target)
+                    });
                 }
             }
         };

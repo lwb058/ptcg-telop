@@ -235,7 +235,6 @@
                     const op = ops[i];
 
                     // --- Skip SLIDE_OUT if followed by APPLY_SWITCH ---
-                    // We will render them together when we encounter APPLY_SWITCH
                     if (op.type === 'SLIDE_OUT') {
                         // Check if the NEXT operation is APPLY_SWITCH (it should be, based on index.js logic)
                         const nextOp = ops[i + 1];

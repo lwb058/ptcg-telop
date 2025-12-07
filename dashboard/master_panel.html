@@ -337,7 +337,11 @@
                     if (slotReplicant && slotReplicant.value && slotReplicant.value.cardId) {
                         const currentDamage = slotReplicant.value.damage || 0;
                         const newDamage = currentDamage + amountToAdd;
-                        queueOrUpdateOperation('SET_DAMAGE', { target: slotId, value: newDamage });
+                        queueOrUpdateOperation('SET_DAMAGE', {
+                            target: slotId,
+                            value: newDamage,
+                            targetName: getCardName(slotId)
+                        });
                     }
                 });
             });
@@ -561,7 +565,11 @@
                     abilityBtn.addEventListener('click', (e) => {
                         e.stopPropagation(); // Prevent card drag
                         const newStatus = !slotValue.abilityUsed;
-                        queueOrUpdateOperation('SET_ABILITY_USED', { target: slotId, status: newStatus });
+                        queueOrUpdateOperation('SET_ABILITY_USED', {
+                            target: slotId,
+                            status: newStatus,
+                            targetName: getCardName(slotId)
+                        });
                     });
                 } else {
                     abilityBtn.disabled = true;
@@ -909,7 +917,11 @@
                         }
 
                         if (newExtraHp !== undefined) {
-                            queueOrUpdateOperation('SET_EXTRA_HP', { target: slotId, value: newExtraHp });
+                            queueOrUpdateOperation('SET_EXTRA_HP', {
+                                target: slotId,
+                                value: newExtraHp,
+                                targetName: getCardName(slotId)
+                            });
                         }
                     }
                 });

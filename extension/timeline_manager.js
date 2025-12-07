@@ -647,10 +647,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				const activeOps = batch.filter(op => !op.deleted);
 
 				if (activeOps.length === 0) {
-					// Even if all are deleted, we might need to wait if it was an animation batch?
-					// Usually if deleted, we skip animation.
-					// But we should check if we need to preserve timing structure? 
-					// For now, let's skip waiting if everything is deleted to speed up skip-through.
+					// Skip waiting if all ops in batch are deleted to speed up playback.
 					continue;
 				}
 
@@ -1176,34 +1173,12 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				throw new Error('Invalid operation index provided');
 			}
 
-			// Sort indices descending to handle splice correctly (for hard delete) without shifting issues
-			// Although hard delete logic below is tricky with multiple indices if we splice one by one.
-			// Best to filter.
+			// Sort indices descending to handle hard deletes (splice) without shifting lower indices.
 			indices.sort((a, b) => b - a);
 
 			const newTimeline = [...timelineGameplay.value];
 			let newOps = [...targetPack.ops];
 			let anyHardDeleted = false;
-
-			indices.forEach(idx => {
-				const targetOp = newOps[idx]; // Note: for hard delete with filtering, getting by index is unsafe in loop if we mutate newOps immediately.
-				// However, simplistic iterations:
-				// If we have mixed hard/soft deletes in one batch, it gets complex. 
-				// BUT for our use case (grouped switch), both ops usually have same source (native or inserted).
-				// Let's assume uniform type for the batch or handle carefully.
-
-				// Actually, because we modify newOps in place, if we splice, indices shift.
-				// But soft delete doesn't shift indices.
-				// Mixed case support is overkill? Let's check source of the first one or treat individually.
-
-				// Wait, if we use splice for hard delete in a loop, we MUST use descending order.
-				// And for soft delete, order doesn't matter but index must be valid.
-				// Since we sorted descending, let's proceed.
-			});
-
-			// Re-loop with robust logic:
-			// Soft deletes modify in place. Hard deletes remove.
-			// With descending sort, removing higher index first preserves lower indices.
 
 			for (const idx of indices) {
 				const targetOp = newOps[idx];

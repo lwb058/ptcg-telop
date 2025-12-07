@@ -843,10 +843,7 @@
                             const opsToDelete = indices.map(i => pack.ops[i]);
                             const isAllNative = opsToDelete.every(o => !o.source || o.source === 'native');
 
-                            // Native operations can be restored, so delete directly without confirmation
-                            // Inserted operations are permanently removed, so require confirmation
                             if (isAllNative) {
-                                // Direct delete for native operations (can be restored)
                                 nodecg.sendMessage('deleteOperation', { opsPackIndex: index, operationIndex: indices })
                                     .catch(err => alert('Failed to delete operation: ' + err.message));
                             } else {

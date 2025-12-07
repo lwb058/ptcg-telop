@@ -391,19 +391,25 @@ function formatOperation(op, cardDb) {
             return desc;
 
         case 'SET_TURN':
-            return `Turn: ${payload.playerName || payload.side}`;
+            return `${payload.playerName || payload.side}'s Turn`;
 
         case 'SET_ACTION_STATUS':
             return `${side} Status: ${payload.target.replace('_', ' ')} = ${payload.status}`;
 
         case 'SET_SIDES':
-            return `${side} Prize Cards: Remaining = ${payload.value}`;
+            return `${side} Prize Cards: Remaining ${payload.value}`;
 
         case 'SET_STADIUM':
             return `Stadium: Set to ${payload.cardName || getName(null, payload.cardId) || 'None'}`;
 
         case 'SET_STADIUM_USED':
             return `Stadium: Used = ${payload.used}`;
+
+        case 'SET_LOST_ZONE':
+            return `${side} Lost Zone: ${payload.value}`;
+
+        case 'SET_VSTAR_STATUS':
+            return `${side} ${payload.used ? 'Use VSTAR Power' : ' VSTAR Power Available'}`;
 
         default:
             return `${side} ${type}: ${JSON.stringify(payload)}`;
