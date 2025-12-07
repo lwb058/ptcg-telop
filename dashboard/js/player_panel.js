@@ -62,15 +62,6 @@ function setupPlayerPanel(side) {
         draft_slot0 = nodecg.Replicant(`draft_slot${upperCaseSide}0`);
 
         // --- DOM Elements ---
-        const getCardName = (slotId) => {
-            const db = cardDatabase.value;
-            const slotRep = nodecg.Replicant(`draft_${slotId}`);
-            if (slotRep && slotRep.value && slotRep.value.cardId && db && db[slotRep.value.cardId]) {
-                return db[slotRep.value.cardId].name;
-            }
-            return 'Pokemon';
-        };
-
         const playerNameInput = document.getElementById(`player-name-${lowerCaseSide}`);
         const deckIdInput = document.getElementById(`deck-id-${lowerCaseSide}`);
         const setDeckBtn = document.getElementById(`set-deck-btn-${lowerCaseSide}`);
@@ -446,7 +437,7 @@ function setupPlayerPanel(side) {
                             target: `slot${upperCaseSide}${index}`,
                             energies: currentEnergies,
                             targetName: getCardName(`slot${upperCaseSide}${index}`),
-                            energyNames: currentEnergies // Ideally map to names if needed, but array of types is okay for now or map it?
+                            energyNames: getEnergyNames(currentEnergies)
                         });
                     });
                     energyContainer.appendChild(energyEl);

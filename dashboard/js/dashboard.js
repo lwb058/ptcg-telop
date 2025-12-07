@@ -66,6 +66,66 @@ function queueOrUpdateOperation(type, payload) {
 }
 
 /**
+ * Gets the card name for a given slot ID.
+ * Relies on `cardDatabase` replicant and slot replicants being in scope.
+ * @param {string} slotId - The slot ID (e.g., "slotL0")
+ * @returns {string} The card name or 'Pokemon' as fallback
+ */
+function getCardName(slotId) {
+    const db = cardDatabase.value;
+    const slotRep = nodecg.Replicant(`draft_${slotId}`);
+    if (slotRep && slotRep.value && slotRep.value.cardId && db && db[slotRep.value.cardId]) {
+        return db[slotRep.value.cardId].name;
+    }
+    return 'Pokemon';
+}
+
+/**
+ * Converts energy identifiers to readable names with grouping by type.
+ * Relies on `cardDatabase` and `language` replicants being in scope.
+ * @param {Array} energies - Array of energy identifiers
+ * @returns {Array} Array of formatted energy names with counts (e.g., ["水 × 2", "悪 × 1"])
+ */
+function getEnergyNames(energies) {
+    if (!energies || energies.length === 0) return [];
+    const db = cardDatabase.value;
+    const lang = language.value || 'jp';
+
+    // Energy type localization map
+    const energyI18n = {
+        '草': { jp: '草', en: 'Grass', chs: '草', cht: '草' },
+        '炎': { jp: '炎', en: 'Fire', chs: '火', cht: '火' },
+        '水': { jp: '水', en: 'Water', chs: '水', cht: '水' },
+        '雷': { jp: '雷', en: 'Lightning', chs: '雷', cht: '雷' },
+        '超': { jp: '超', en: 'Psychic', chs: '超', cht: '超' },
+        '闘': { jp: '闘', en: 'Fighting', chs: '斗', cht: '鬥' },
+        '悪': { jp: '悪', en: 'Darkness', chs: '恶', cht: '惡' },
+        '鋼': { jp: '鋼', en: 'Metal', chs: '钢', cht: '鋼' },
+        '竜': { jp: '竜', en: 'Dragon', chs: '龙', cht: '龍' },
+        '無': { jp: '無', en: 'Colorless', chs: '无', cht: '無' }
+    };
+
+    // Count energies by type
+    const energyCounts = {};
+    energies.forEach(energy => {
+        let displayName;
+        if (energy.startsWith('special:')) {
+            const cardId = energy.substring(8);
+            displayName = (db && db[cardId]) ? db[cardId].name : 'Special';
+        } else {
+            // Basic energy - use localized name
+            displayName = energyI18n[energy] ? energyI18n[energy][lang] || energy : energy;
+        }
+        energyCounts[displayName] = (energyCounts[displayName] || 0) + 1;
+    });
+
+    // Format as "Type × Count"
+    return Object.entries(energyCounts).map(([type, count]) =>
+        count > 1 ? `${type} × ${count}` : type
+    );
+}
+
+/**
  * Checks if a keyboard event matches a hotkey string (e.g., "Shift+S").
  * This is a pure function with no dependencies.
  */

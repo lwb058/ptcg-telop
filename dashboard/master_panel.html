@@ -615,7 +615,8 @@
                         queueOrUpdateOperation('SET_ENERGIES', {
                             target: slotId,
                             energies: currentEnergies,
-                            targetName: getCardName(slotId)
+                            targetName: getCardName(slotId),
+                            energyNames: getEnergyNames(currentEnergies)
                         });
                     });
                     energyContainer.appendChild(energyEl);
@@ -715,14 +716,6 @@
             };
 
             const getOccupiedSlots = () => slots.filter(s => s.value && s.value.cardId).map(s => s.name.replace('draft_', ''));
-            const getCardName = (slotId) => {
-                const db = cardDatabase.value;
-                const slot = slots.find(s => s.name === `draft_${slotId}`);
-                if (slot && slot.value && slot.value.cardId && db && db[slot.value.cardId]) {
-                    return db[slot.value.cardId].name;
-                }
-                return slotId; // Fallback to slotId if name not found
-            };
 
             // --- UI Update Functions ---
             const updateTotalPokemons = () => {
@@ -1138,7 +1131,8 @@
                             queueOrUpdateOperation('SET_ENERGIES', {
                                 target: sourceSlot,
                                 energies: sourceEnergies,
-                                targetName: getCardName(sourceSlot)
+                                targetName: getCardName(sourceSlot),
+                                energyNames: getEnergyNames(sourceEnergies)
                             });
                         }
 
@@ -1149,7 +1143,8 @@
                             queueOrUpdateOperation('SET_ENERGIES', {
                                 target: destinationSlotId,
                                 energies: destEnergies,
-                                targetName: getCardName(destinationSlotId)
+                                targetName: getCardName(destinationSlotId),
+                                energyNames: getEnergyNames(destEnergies)
                             });
                         }
 
@@ -1171,7 +1166,8 @@
                         queueOrUpdateOperation('SET_ENERGIES', {
                             target: destinationSlotId,
                             energies: finalEnergies,
-                            targetName: getCardName(destinationSlotId)
+                            targetName: getCardName(destinationSlotId),
+                            energyNames: getEnergyNames(finalEnergies)
                         });
 
                         if (isManualAttach) {
