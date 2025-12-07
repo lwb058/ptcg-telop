@@ -303,9 +303,11 @@
                 if (matchTimer.value.mode === 'standby') {
                     timerDisplay.textContent = "Standby";
                     timerDisplay.style.color = "#ffcc00";
+                    timerEditBtn.disabled = true;
                 } else {
                     timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                     timerDisplay.style.color = "#fff";
+                    timerEditBtn.disabled = false;
                 }
 
                 // Update button state based on mode

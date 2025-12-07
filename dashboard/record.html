@@ -513,10 +513,12 @@
                 if (matchTimer.value.mode === 'standby') {
                     timerDisplay.innerText = "Standby";
                     timerDisplay.style.color = "#ffcc00";
+                    timerEditBtn.disabled = true;
                 } else {
                     const modeStr = matchTimer.value.mode === 'playback' ? 'Playback' : 'Live';
                     timerDisplay.innerText = `${modeStr} - ${timeStr}`;
                     timerDisplay.style.color = "#ddd";
+                    timerEditBtn.disabled = false;
                 }
             }
 
