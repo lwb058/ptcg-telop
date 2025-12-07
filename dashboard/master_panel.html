@@ -686,6 +686,26 @@
 
 
             // --- Helper Functions ---
+            const handleUnifiedPokemonSwitch = (sourceSlotId, destinationSlotId) => {
+                if (!sourceSlotId || !destinationSlotId || sourceSlotId === destinationSlotId) return;
+
+                const sourceSide = sourceSlotId.charAt(4); // e.g. slotL0 -> L
+                const destinationSide = destinationSlotId.charAt(4);
+
+                // Ensure strict side matching
+                if (sourceSide !== destinationSide) {
+                    console.warn('Cannot switch Pokemon between different players.');
+                    return;
+                }
+
+                queueOperation('SWITCH_POKEMON', {
+                    source: sourceSlotId,
+                    target: destinationSlotId,
+                    sourceName: getCardName(sourceSlotId),
+                    targetName: getCardName(destinationSlotId)
+                });
+            };
+
             const getOccupiedSlots = () => slots.filter(s => s.value && s.value.cardId).map(s => s.name.replace('draft_', ''));
             const getCardName = (slotId) => {
                 const db = cardDatabase.value;
@@ -1151,28 +1171,7 @@
                 } else if (isPokemonSwap) {
                     // --- Handle POKEMON swap ---
                     const sourceSlotId = e.dataTransfer.getData('text/plain');
-                    if (sourceSlotId && destinationSlotId && sourceSlotId !== destinationSlotId) {
-                        // Queue the switch operation
-                        // Queue the switch operation
-                        queueOperation('SWITCH_POKEMON', {
-                            source: sourceSlotId,
-                            target: destinationSlotId,
-                            sourceName: getCardName(sourceSlotId),
-                            targetName: getCardName(destinationSlotId)
-                        });
-
-                        // Check for auto-retreat logic
-                        const settings = settingsRep.value || {};
-                        const isRetreat = sourceSlotId.endsWith('0'); // Dragged from a battle slot
-
-                        if (isRetreat && settings.autoRetreatToggle) {
-                            const turn = draft_currentTurn.value;
-                            if (turn) {
-                                const actionStatusTarget = `action_retreat_${turn}`;
-                                queueOrUpdateOperation('SET_ACTION_STATUS', { target: actionStatusTarget, status: true });
-                            }
-                        }
-                    }
+                    handleUnifiedPokemonSwitch(sourceSlotId, destinationSlotId);
                 }
             });
 
@@ -1609,21 +1608,7 @@
                     }
                 } else if (isPokemonSwap) {
                     const sourceSlotId = e.dataTransfer.getData('text/plain');
-
-                    if (sourceSlotId && destinationSlotId && sourceSlotId !== destinationSlotId) {
-                        const sourceSide = sourceSlotId.charAt(4);
-                        const destinationSide = destinationSlotId.charAt(4);
-
-                        // Allow swapping with empty slots (removed empty slot check)
-                        if (sourceSide === destinationSide) {
-                            queueOperation('SWITCH_POKEMON', {
-                                source: sourceSlotId,
-                                target: destinationSlotId,
-                                sourceName: getCardName(sourceSlotId),
-                                targetName: getCardName(destinationSlotId)
-                            });
-                        }
-                    }
+                    handleUnifiedPokemonSwitch(sourceSlotId, destinationSlotId);
                 }
             });
 

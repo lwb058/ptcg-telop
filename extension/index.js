@@ -804,29 +804,7 @@ module.exports = function (nodecg) {
 				sourceRep.value = targetVal;
 				targetRep.value = sourceVal;
 
-				// --- Auto Retreat Logic ---
-				const autoRetreat = ptcgSettings.value && ptcgSettings.value.autoRetreatToggle;
-				if (autoRetreat && mode === 'draft') {
-					// Check if it involves the Active Spot
-					if (source === 'slotL0') {
-						nodecg.Replicant('draft_action_retreat_L').value = true;
-						operationQueue.value.push({
-							type: 'SET_ACTION_STATUS',
-							payload: { target: 'action_retreat_L', status: true },
-							priority: 1, // State change
-							id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-						});
-					}
-					if (source === 'slotR0') {
-						nodecg.Replicant('draft_action_retreat_R').value = true;
-						operationQueue.value.push({
-							type: 'SET_ACTION_STATUS',
-							payload: { target: 'action_retreat_R', status: true },
-							priority: 1, // State change
-							id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-						});
-					}
-				}
+				// --- Auto Retreat Logic Moved to queueOperation ---
 				break;
 			}
 			case 'ATTACK': {
@@ -952,7 +930,6 @@ module.exports = function (nodecg) {
 
 		lastOpTime = now;
 		lastOpSignature = opSignature;
-		// -----------------------------
 
 		// Apply the logic to the DRAFT state for immediate feedback
 		if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
@@ -974,6 +951,34 @@ module.exports = function (nodecg) {
 
 		// If the operation is a switch, split it into two separate operations for the LIVE queue
 		if (op.type === 'SWITCH_POKEMON') {
+			const opsToPush = [];
+
+			// --- Auto Retreat Logic ---
+			const autoRetreat = ptcgSettings.value && ptcgSettings.value.autoRetreatToggle;
+			const { source } = op.payload;
+
+			if (autoRetreat) {
+				// Check if it involves the Active Spot (source only)
+				if (source === 'slotL0') {
+					// Update draft immediately for responsiveness
+					nodecg.Replicant('draft_action_retreat_L').value = true;
+					opsToPush.push({
+						type: 'SET_ACTION_STATUS',
+						payload: { target: 'action_retreat_L', status: true },
+						priority: 1, // State change (High priority)
+						id: `${Date.now()}-retreat-${Math.random().toString(36).substring(2, 9)}`
+					});
+				} else if (source === 'slotR0') {
+					nodecg.Replicant('draft_action_retreat_R').value = true;
+					opsToPush.push({
+						type: 'SET_ACTION_STATUS',
+						payload: { target: 'action_retreat_R', status: true },
+						priority: 1,
+						id: `${Date.now()}-retreat-${Math.random().toString(36).substring(2, 9)}`
+					});
+				}
+			}
+
 			const slideOutOp = {
 				type: 'SLIDE_OUT',
 				payload: op.payload,
@@ -986,8 +991,11 @@ module.exports = function (nodecg) {
 				priority: 6,
 				id: `${Date.now()}-applyswitch-${Math.random().toString(36).substring(2, 9)}`
 			};
-			operationQueue.value.push(slideOutOp, applySwitchOp);
-			nodecg.log.info(`Split SWITCH_POKEMON into SLIDE_OUT (prio 5) and APPLY_SWITCH (prio 6)`);
+
+			opsToPush.push(slideOutOp, applySwitchOp);
+			operationQueue.value.push(...opsToPush);
+
+			nodecg.log.info(`Split SWITCH_POKEMON into [${opsToPush.map(o => o.type).join(', ')}]`);
 		} else {
 			// For all other operations, add them to the queue as usual
 			op.id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -1077,6 +1085,9 @@ module.exports = function (nodecg) {
 			newQueue.forEach(op => {
 				if (op.payload.target && op.payload.target.startsWith('slot')) {
 					affectedSlots.add(op.payload.target);
+				}
+				if (op.payload.source && op.payload.source.startsWith('slot')) {
+					affectedSlots.add(op.payload.source);
 				}
 				if (op.payload.targets) { // For multi-target ops like ATTACK
 					op.payload.targets.forEach(t => affectedSlots.add(t));
