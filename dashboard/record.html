@@ -35,6 +35,7 @@
             padding: 8px;
             cursor: pointer;
             transition: background 0.2s;
+            position: relative;
         }
 
         .timeline-item:hover {
@@ -277,13 +278,98 @@
             pointer-events: none;
             user-select: none;
         }
+
+        /* Inline Confirmation UI for Delete Operation */
+        .operation-confirm-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 107, 107, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 4px 8px;
+            border-radius: 3px;
+            animation: confirmSlideIn 0.2s ease-out;
+            z-index: 10;
+        }
+
+        @keyframes confirmSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .operation-confirm-message {
+            color: white;
+            font-weight: bold;
+            font-size: 0.85em;
+            flex: 1;
+        }
+
+        .operation-confirm-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .operation-confirm-yes,
+        .operation-confirm-no {
+            padding: 4px 12px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .operation-confirm-yes {
+            background: #fff;
+            color: #d30000;
+        }
+
+        .operation-confirm-yes:hover {
+            background: #f0f0f0;
+            transform: scale(1.05);
+        }
+
+        .operation-confirm-no {
+            background: #333;
+            color: #fff;
+        }
+
+        .operation-confirm-no:hover {
+            background: #444;
+            transform: scale(1.05);
+        }
+
+        .operation-item {
+            position: relative;
+        }
+
+        .operation-confirm-countdown {
+            display: inline-block;
+            min-width: 12px;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+        }
     </style>
 </head>
 
 <body>
     <div class="controls-bar">
         <div class="btn-group" style="display: flex; gap: 5px;">
-            <button id="play-btn" class="btn btn-primary">Replay</button>
+            <button id="replay-btn" class="btn btn-primary" style="min-width:80px">Replay</button>
             <button id="timer-toggle-btn" class="btn btn-primary">Start</button>
             <button id="pause-btn" class="btn btn-warning" style="display: none;">Pause</button>
             <button id="resume-btn" class="btn btn-primary">Resume</button>
@@ -374,7 +460,7 @@
             const deckLoadingStatus = nodecg.Replicant('deckLoadingStatus');
             const timelineList = document.getElementById('timeline-list');
             const timelineDisplayList = document.getElementById('timeline-display-list');
-            const playBtn = document.getElementById('play-btn');
+            const replayBtn = document.getElementById('replay-btn');
             const pauseBtn = document.getElementById('pause-btn');
             const resumeBtn = document.getElementById('resume-btn');
             const exportBtn = document.getElementById('export-btn');
@@ -408,7 +494,7 @@
             // Update all static UI text with i18n
             function updateStaticUI() {
                 // Update control panel buttons
-                playBtn.textContent = getI18nText('record_replay');
+                replayBtn.textContent = getI18nText('record_replay');
                 pauseBtn.textContent = getI18nText('record_pause');
                 resumeBtn.textContent = getI18nText('record_resume');
                 exportBtn.textContent = getI18nText('record_export_json');
@@ -849,13 +935,79 @@
                                 nodecg.sendMessage('deleteOperation', { opsPackIndex: index, operationIndex: indices })
                                     .catch(err => alert('Failed to delete operation: ' + err.message));
                             } else {
-                                // Confirm before deleting inserted operations (permanent)
+                                // Show inline confirmation for inserted operations
+                                const operationItem = target.closest('.operation-item');
+                                if (!operationItem) return;
+
+                                // Prevent multiple confirmations
+                                if (operationItem.querySelector('.operation-confirm-overlay')) return;
+
                                 const summary = opsToDelete.map(o => formatOpSummary(o)).join(', ');
-                                const confirmMessage = `Are you sure you want to delete operation(s) (${summary})?\n\nContains INSERTED operations which will be permanently removed.`;
-                                if (confirm(confirmMessage)) {
+
+                                // Create confirmation overlay
+                                const confirmOverlay = document.createElement('div');
+                                confirmOverlay.className = 'operation-confirm-overlay';
+
+                                let countdown = 3;
+                                confirmOverlay.innerHTML = `
+                                    <div class="operation-confirm-message">
+                                        Permanent Delete <strong>${summary}</strong>? (<span class="operation-confirm-countdown">${countdown}</span>s)
+                                    </div>
+                                    <div class="operation-confirm-buttons">
+                                        <button class="operation-confirm-yes">Yes</button>
+                                        <button class="operation-confirm-no">No</button>
+                                    </div>
+                                `;
+
+                                // Add overlay to operation item
+                                operationItem.appendChild(confirmOverlay);
+
+                                // Auto-dismiss timer
+                                let dismissTimer = null;
+                                let countdownInterval = null;
+
+                                const cleanup = () => {
+                                    if (dismissTimer) clearTimeout(dismissTimer);
+                                    if (countdownInterval) clearInterval(countdownInterval);
+                                    if (confirmOverlay.parentNode) {
+                                        confirmOverlay.remove();
+                                    }
+                                };
+
+                                // Update countdown every second
+                                const countdownDisplay = confirmOverlay.querySelector('.operation-confirm-countdown');
+                                countdownInterval = setInterval(() => {
+                                    countdown--;
+                                    if (countdownDisplay && countdown > 0) {
+                                        countdownDisplay.textContent = countdown;
+                                    }
+                                }, 1000);
+
+                                // Auto-dismiss after 3 seconds
+                                dismissTimer = setTimeout(() => {
+                                    cleanup();
+                                }, 3000);
+
+                                // Yes button - proceed with deletion
+                                const yesBtn = confirmOverlay.querySelector('.operation-confirm-yes');
+                                yesBtn.addEventListener('click', (e) => {
+                                    e.stopPropagation();
+                                    cleanup();
                                     nodecg.sendMessage('deleteOperation', { opsPackIndex: index, operationIndex: indices })
                                         .catch(err => alert('Failed to delete operation: ' + err.message));
-                                }
+                                });
+
+                                // No button - cancel
+                                const noBtn = confirmOverlay.querySelector('.operation-confirm-no');
+                                noBtn.addEventListener('click', (e) => {
+                                    e.stopPropagation();
+                                    cleanup();
+                                });
+
+                                // Stop propagation on overlay clicks
+                                confirmOverlay.addEventListener('click', (e) => {
+                                    e.stopPropagation();
+                                });
                             }
                         } else if (target.classList.contains('btn-restore-op')) {
                             e.stopPropagation();
@@ -1219,11 +1371,76 @@
                     });
 
                     const deleteBtn = item.querySelector('.delete-btn');
-                    deleteBtn.addEventListener('click', () => {
-                        if (confirm('Are you sure you want to delete this Display Op?')) {
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+
+                        // Prevent multiple confirmations
+                        if (item.querySelector('.operation-confirm-overlay')) return;
+
+                        // Create confirmation overlay
+                        const confirmOverlay = document.createElement('div');
+                        confirmOverlay.className = 'operation-confirm-overlay';
+
+                        let countdown = 3;
+                        confirmOverlay.innerHTML = `
+                            <div class="operation-confirm-message">
+                                Delete <strong>${summary}</strong>? (<span class="operation-confirm-countdown">${countdown}</span>s)
+                            </div>
+                            <div class="operation-confirm-buttons">
+                                <button class="operation-confirm-yes">Yes</button>
+                                <button class="operation-confirm-no">No</button>
+                            </div>
+                        `;
+
+                        // Add overlay to timeline item
+                        item.appendChild(confirmOverlay);
+
+                        // Auto-dismiss timer
+                        let dismissTimer = null;
+                        let countdownInterval = null;
+
+                        const cleanup = () => {
+                            if (dismissTimer) clearTimeout(dismissTimer);
+                            if (countdownInterval) clearInterval(countdownInterval);
+                            if (confirmOverlay.parentNode) {
+                                confirmOverlay.remove();
+                            }
+                        };
+
+                        // Update countdown every second
+                        const countdownDisplay = confirmOverlay.querySelector('.operation-confirm-countdown');
+                        countdownInterval = setInterval(() => {
+                            countdown--;
+                            if (countdownDisplay && countdown > 0) {
+                                countdownDisplay.textContent = countdown;
+                            }
+                        }, 1000);
+
+                        // Auto-dismiss after 3 seconds
+                        dismissTimer = setTimeout(() => {
+                            cleanup();
+                        }, 3000);
+
+                        // Yes button - proceed with deletion
+                        const yesBtn = confirmOverlay.querySelector('.operation-confirm-yes');
+                        yesBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            cleanup();
                             nodecg.sendMessage('deleteDisplayOp', index)
                                 .catch(err => alert('Failed to delete: ' + err));
-                        }
+                        });
+
+                        // No button - cancel
+                        const noBtn = confirmOverlay.querySelector('.operation-confirm-no');
+                        noBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            cleanup();
+                        });
+
+                        // Stop propagation on overlay clicks
+                        confirmOverlay.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                        });
                     });
 
                     const restoreBtn = item.querySelector('.seek-btn');
@@ -1290,18 +1507,69 @@
 
             playbackStatus.on('change', (newVal) => {
                 if (newVal) {
-                    // timerDisplay.innerText = `Playback: ${newVal.currentTime}`; // Removed, using matchTimer
-                    renderTimeline(); // Re-render to update highlights
-                    renderDisplayTimeline(); // Re-render display timeline highlights
-
+                    renderTimeline();
+                    renderDisplayTimeline();
                     updateControlButtons();
                 }
             });
 
-            playBtn.addEventListener('click', () => {
-                if (confirm('Re-simulate entire timeline?')) {
-                    nodecg.sendMessage('playTimeline');
+            // Replay button countdown state
+            let replayCountdownTimer = null;
+            let replayCountdownInterval = null;
+            let replayCountdown = 0;
+
+            replayBtn.addEventListener('click', () => {
+                // If countdown is active, cancel it
+                if (replayCountdownTimer) {
+                    clearTimeout(replayCountdownTimer);
+                    clearInterval(replayCountdownInterval);
+                    replayCountdownTimer = null;
+                    replayCountdownInterval = null;
+                    replayCountdown = 0;
+
+                    // Restore original i18n text
+                    replayBtn.textContent = getI18nText('record_replay');
+                    replayBtn.classList.remove('btn-danger');
+                    replayBtn.classList.add('btn-primary');
+                    return;
                 }
+
+                // Start countdown
+                replayCountdown = 3;
+                replayBtn.classList.remove('btn-primary');
+                replayBtn.classList.add('btn-danger');
+
+                // Update button text with countdown
+                const updateCountdownText = () => {
+                    const baseText = getI18nText('record_replay');
+                    replayBtn.textContent = `${baseText} (${replayCountdown})`;
+                };
+
+                updateCountdownText();
+
+                // Update countdown every second
+                replayCountdownInterval = setInterval(() => {
+                    replayCountdown--;
+                    if (replayCountdown > 0) {
+                        updateCountdownText();
+                    }
+                }, 1000);
+
+                // Execute replay after 3 seconds
+                replayCountdownTimer = setTimeout(() => {
+                    clearInterval(replayCountdownInterval);
+                    replayCountdownTimer = null;
+                    replayCountdownInterval = null;
+                    replayCountdown = 0;
+
+                    // Restore button appearance
+                    replayBtn.textContent = getI18nText('record_replay');
+                    replayBtn.classList.remove('btn-warning');
+                    replayBtn.classList.add('btn-primary');
+
+                    // Execute replay
+                    nodecg.sendMessage('playTimeline');
+                }, 3000);
             });
 
             timerToggleBtn.addEventListener('click', () => {
