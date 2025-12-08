@@ -296,7 +296,7 @@
                         prizeRep.value = newPrizes;
                         nodecg.sendMessage('recordDisplayOp', {
                             type: 'TOGGLE_PRIZE_TAKEN',
-                            payload: { side: side, index: i, isTaken: newIsTaken }
+                            payload: { side: side, index: i, isTaken: newIsTaken, cardId: newPrizes[i].cardId }
                         });
                     });
                 }

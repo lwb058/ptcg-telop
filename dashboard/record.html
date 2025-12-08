@@ -1117,9 +1117,18 @@
                     } else if (op.type === 'TOGGLE_EXTRA_BENCH') {
                         summary = `Extra Bench (${op.payload.side}): ${op.payload.visible ? 'Show' : 'Hide'}`;
                     } else if (op.type === 'TOGGLE_PRIZE_TAKEN') {
-                        summary = `Prize (${op.payload.side}) #${op.payload.index + 1}: ${op.payload.isTaken ? 'Taken' : 'Untaken'}`;
+                        const cardName = (op.payload.cardId && cardDatabase.value && cardDatabase.value[op.payload.cardId])
+                            ? cardDatabase.value[op.payload.cardId].name
+                            : null;
+                        const status = op.payload.isTaken ? 'Taken' : 'Untaken';
+                        summary = cardName
+                            ? `Prize (${op.payload.side}) #${op.payload.index + 1}: ${cardName} ${status}`
+                            : `Prize (${op.payload.side}) #${op.payload.index + 1}: ${status}`;
                     } else if (op.type === 'SET_PRIZE_CARD') {
-                        summary = `Set Prize (${op.payload.side}) #${op.payload.index + 1}: ${op.payload.cardId}`;
+                        const cardName = (cardDatabase.value && cardDatabase.value[op.payload.cardId])
+                            ? cardDatabase.value[op.payload.cardId].name
+                            : op.payload.cardId;
+                        summary = `Set Prize (${op.payload.side}) #${op.payload.index + 1}: ${cardName}`;
                     } else if (op.type === 'CLEAR_PRIZE_CARDS') {
                         summary = `Clear Prizes (${op.payload.side})`;
                     } else {
