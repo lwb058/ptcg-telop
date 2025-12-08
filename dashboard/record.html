@@ -787,7 +787,6 @@
                     // Highlight active item
                     if (playbackStatus.value && playbackStatus.value.currentIndexGameplay === index) {
                         item.classList.add('active');
-                        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
 
                     const opCount = pack.ops.length;
@@ -1510,6 +1509,27 @@
                     renderTimeline();
                     renderDisplayTimeline();
                     updateControlButtons();
+
+                    // Auto-scroll to active items during playback
+                    if (newVal.isPlaying) {
+                        // Use setTimeout to ensure DOM has been updated after render
+                        setTimeout(() => {
+                            // Scroll to active gameplay item
+                            if (newVal.currentIndexGameplay !== undefined && newVal.currentIndexGameplay !== null) {
+                                const activeGameplayItem = timelineList.querySelector('.timeline-item.active');
+                                if (activeGameplayItem) {
+                                    activeGameplayItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                            }
+                            // Scroll to active display item
+                            if (newVal.currentIndexDisplay !== undefined && newVal.currentIndexDisplay !== null) {
+                                const activeDisplayItem = timelineDisplayList.querySelector('.timeline-item.active');
+                                if (activeDisplayItem) {
+                                    activeDisplayItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                            }
+                        }, 50); // Small delay to ensure render completes
+                    }
                 }
             });
 
