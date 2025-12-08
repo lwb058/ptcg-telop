@@ -46,20 +46,42 @@ function queueOperation(type, payload) {
 
 /**
  * Updates an existing operation in the queue or adds a new one if it doesn't exist.
+ * For SET_ACTION_STATUS operations, updates ALL matching operations to ensure consistency.
  * Relies on the `operationQueue` replicant being in scope.
  */
 function queueOrUpdateOperation(type, payload) {
     const queue = operationQueue.value;
     if (Array.isArray(queue)) {
-        const existingOpIndex = queue.findIndex(op =>
-            op.type === type &&
-            op.payload.target === payload.target
-        );
+        // For SET_ACTION_STATUS, find ALL matching operations (not just the first)
+        if (type === 'SET_ACTION_STATUS') {
+            const matchingIndices = [];
+            queue.forEach((op, index) => {
+                if (op.type === type && op.payload.target === payload.target) {
+                    matchingIndices.push(index);
+                }
+            });
 
-        if (existingOpIndex > -1) {
-            nodecg.sendMessage('updateOperation', { index: existingOpIndex, payload })
-                .catch(e => console.error(`Failed to update operation ${type}`, e));
-            return;
+            if (matchingIndices.length > 0) {
+                // Update all matching operations
+                const updatePromises = matchingIndices.map(index =>
+                    nodecg.sendMessage('updateOperation', { index, payload })
+                        .catch(e => console.error(`Failed to update operation ${type} at index ${index}`, e))
+                );
+                Promise.all(updatePromises);
+                return;
+            }
+        } else {
+            // For other operation types, update only the first match (original behavior)
+            const existingOpIndex = queue.findIndex(op =>
+                op.type === type &&
+                op.payload.target === payload.target
+            );
+
+            if (existingOpIndex > -1) {
+                nodecg.sendMessage('updateOperation', { index: existingOpIndex, payload })
+                    .catch(e => console.error(`Failed to update operation ${type}`, e));
+                return;
+            }
         }
     }
     queueOperation(type, payload);

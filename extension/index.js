@@ -959,23 +959,39 @@ module.exports = function (nodecg) {
 
 			if (autoRetreat) {
 				// Check if it involves the Active Spot (source only)
-				if (source === 'slotL0') {
+				if (source === 'slotL0' || source === 'slotR0') {
+					const side = source === 'slotL0' ? 'L' : 'R';
+					const targetAction = `action_retreat_${side}`;
+
 					// Update draft immediately for responsiveness
-					nodecg.Replicant('draft_action_retreat_L').value = true;
-					opsToPush.push({
-						type: 'SET_ACTION_STATUS',
-						payload: { target: 'action_retreat_L', status: true },
-						priority: 1, // State change (High priority)
-						id: `${Date.now()}-retreat-${Math.random().toString(36).substring(2, 9)}`
-					});
-				} else if (source === 'slotR0') {
-					nodecg.Replicant('draft_action_retreat_R').value = true;
-					opsToPush.push({
-						type: 'SET_ACTION_STATUS',
-						payload: { target: 'action_retreat_R', status: true },
-						priority: 1,
-						id: `${Date.now()}-retreat-${Math.random().toString(36).substring(2, 9)}`
-					});
+					nodecg.Replicant(`draft_${targetAction}`).value = true;
+
+					// Check if operation already exists in queue to prevent duplicates
+					const existingOpIndex = operationQueue.value.findIndex(o =>
+						o.type === 'SET_ACTION_STATUS' && o.payload.target === targetAction
+					);
+
+					if (existingOpIndex === -1) {
+						opsToPush.push({
+							type: 'SET_ACTION_STATUS',
+							payload: { target: targetAction, status: true },
+							priority: 1, // State change (High priority)
+							id: `${Date.now()}-retreat-${Math.random().toString(36).substring(2, 9)}`
+						});
+					} else {
+						// Found existing op. Check its status.
+						if (operationQueue.value[existingOpIndex].payload.status === false) {
+							// Status is false (Available), update it to true (Retreated)
+							nodecg.sendMessage('updateOperation', {
+								index: existingOpIndex,
+								payload: { status: true }
+							});
+							nodecg.log.info(`Updated existing retreat op at index ${existingOpIndex} to true.`);
+						} else {
+							// Status is already true, skip duplicate
+							nodecg.log.info(`Skipped duplicate retreat op for ${targetAction} (already true).`);
+						}
+					}
 				}
 			}
 
@@ -1521,15 +1537,37 @@ module.exports = function (nodecg) {
 			const currentTurn = draft_currentTurn.value;
 			if (currentTurn === side) {
 				const actionStatusTarget = `action_supporter_${side}`;
-				// Use queueOrUpdateOperation to avoid duplicate operations
-				nodecg.sendMessage('queueOperation', {
-					type: 'SET_ACTION_STATUS',
-					payload: {
-						target: actionStatusTarget,
-						status: true
+
+				// Check for existing operation to prevent duplicates
+				const queue = operationQueue.value;
+				const existingOpIndex = queue.findIndex(op =>
+					op.type === 'SET_ACTION_STATUS' && op.payload.target === actionStatusTarget
+				);
+
+				if (existingOpIndex === -1) {
+					// Use queueOperation to add to the queue
+					nodecg.sendMessage('queueOperation', {
+						type: 'SET_ACTION_STATUS',
+						payload: {
+							target: actionStatusTarget,
+							status: true
+						}
+					});
+					nodecg.log.info(`Auto-checked supporter for Player ${side} due to viewing card ${cardData.name || cardId}.`);
+				} else {
+					// Found existing op. Check its status.
+					if (queue[existingOpIndex].payload.status === false) {
+						// Status is false (Available), update it to true (Played)
+						nodecg.sendMessage('updateOperation', {
+							index: existingOpIndex,
+							payload: { status: true }
+						});
+						nodecg.log.info(`Updated existing supporter op at index ${existingOpIndex} to true.`);
+					} else {
+						// Status is already true, skip duplicate
+						nodecg.log.info(`Skipped duplicate supporter auto-check for Player ${side} (already true).`);
 					}
-				});
-				nodecg.log.info(`Auto-checked supporter for Player ${side} due to viewing card ${cardId}.`);
+				}
 			}
 		}
 	}

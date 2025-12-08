@@ -168,7 +168,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 	function getCurrentMatchTime() {
 		if (!matchTimer.value) return "00:00";
 		let elapsed = matchTimer.value.offset;
-		if (matchTimer.value.isRunning && matchTimer.value.startTime) {
+		if (matchTimer.value.isRunning && matchTimer.value.startTime && matchTimer.value.mode === 'live') {
 			elapsed += (Date.now() - matchTimer.value.startTime);
 		}
 		const totalSeconds = Math.floor(elapsed / 1000);
@@ -788,6 +788,16 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 		if (playbackStatus.value.isPlaying) {
 			playbackStatus.value.isPlaying = false;
 			stopPlaybackInterval();
+
+			// Also pause the matchTimer
+			if (matchTimer.value.isRunning) {
+				matchTimer.value.isRunning = false;
+				matchTimer.value.startTime = null;
+				// offset is already updated by the playback interval, 
+				// but to be safe we could do one final calc if we wanted precision,
+				// but relying on the last interval tick is sufficient for now.
+			}
+
 			if (callback) callback(null, 'Playback paused.');
 		}
 	});
