@@ -972,9 +972,10 @@ module.exports = function (nodecg) {
 					);
 
 					if (existingOpIndex === -1) {
+						const playerName = side === 'L' ? playerL_name.value : playerR_name.value;
 						opsToPush.push({
 							type: 'SET_ACTION_STATUS',
-							payload: { target: targetAction, status: true },
+							payload: { target: targetAction, status: true, playerName: playerName || `[${side}]` },
 							priority: 1, // State change (High priority)
 							id: `${Date.now()}-retreat-${Math.random().toString(36).substring(2, 9)}`
 						});
@@ -982,9 +983,10 @@ module.exports = function (nodecg) {
 						// Found existing op. Check its status.
 						if (operationQueue.value[existingOpIndex].payload.status === false) {
 							// Status is false (Available), update it to true (Retreated)
+							const playerName = side === 'L' ? playerL_name.value : playerR_name.value;
 							nodecg.sendMessage('updateOperation', {
 								index: existingOpIndex,
-								payload: { status: true }
+								payload: { status: true, playerName: playerName || `[${side}]` }
 							});
 							nodecg.log.info(`Updated existing retreat op at index ${existingOpIndex} to true.`);
 						} else {
@@ -1545,22 +1547,25 @@ module.exports = function (nodecg) {
 				);
 
 				if (existingOpIndex === -1) {
+					const playerName = side === 'L' ? playerL_name.value : playerR_name.value;
 					// Use queueOperation to add to the queue
 					nodecg.sendMessage('queueOperation', {
 						type: 'SET_ACTION_STATUS',
 						payload: {
 							target: actionStatusTarget,
-							status: true
+							status: true,
+							playerName: playerName || `[${side}]`
 						}
 					});
 					nodecg.log.info(`Auto-checked supporter for Player ${side} due to viewing card ${cardData.name || cardId}.`);
 				} else {
 					// Found existing op. Check its status.
 					if (queue[existingOpIndex].payload.status === false) {
+						const playerName = side === 'L' ? playerL_name.value : playerR_name.value;
 						// Status is false (Available), update it to true (Played)
 						nodecg.sendMessage('updateOperation', {
 							index: existingOpIndex,
-							payload: { status: true }
+							payload: { status: true, playerName: playerName || `[${side}]` }
 						});
 						nodecg.log.info(`Updated existing supporter op at index ${existingOpIndex} to true.`);
 					} else {
