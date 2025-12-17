@@ -1313,6 +1313,21 @@
 
                 updateCurrentTurnBorder(live_currentTurn.value);
 
+                // Update Stadium Border Gradient
+                requestAnimationFrame(() => { // Ensure style changes from updateThemeClasses have taken effect
+                    const stadiumCard = document.getElementById('stadium-card');
+                    if (stadiumCard) {
+                        const playerL = document.getElementById('player-L-area');
+                        const playerR = document.getElementById('player-R-area');
+
+                        const borderL = playerL ? getComputedStyle(playerL).getPropertyValue('--module-color-border').trim() : '#ffffff';
+                        const borderR = playerR ? getComputedStyle(playerR).getPropertyValue('--module-color-border').trim() : '#ffffff';
+
+                        stadiumCard.style.setProperty('--stadium-border-L', borderL || '#ffffff');
+                        stadiumCard.style.setProperty('--stadium-border-R', borderR || '#ffffff');
+                    }
+                });
+
                 sides.forEach(side => {
                     for (let i = 0; i < 6; i++) {
                         const replicant = live_slotReplicants[`live_slot${side}${i}`];
@@ -1446,7 +1461,24 @@
                 updateSideArea('L', live_sideL.value);
                 updateSideArea('R', live_sideR.value);
                 renderStadium(live_stadium.value, { cardId: null });
+                // Update current turn border with new theme assets
                 updateCurrentTurnBorder(live_currentTurn.value);
+
+                // Update Stadium Border Gradient
+                const stadiumCard = document.getElementById('stadium-card');
+                if (stadiumCard) {
+                    // We need to get the border color from the themed player areas
+                    // Since updateThemeClasses has already run, these areas should have the correct theme classes
+                    const playerL = document.getElementById('player-L-area');
+                    const playerR = document.getElementById('player-R-area');
+
+                    const borderL = playerL ? getComputedStyle(playerL).getPropertyValue('--module-color-border').trim() : '#ffffff';
+                    const borderR = playerR ? getComputedStyle(playerR).getPropertyValue('--module-color-border').trim() : '#ffffff';
+
+                    stadiumCard.style.setProperty('--stadium-border-L', borderL || '#ffffff');
+                    stadiumCard.style.setProperty('--stadium-border-R', borderR || '#ffffff');
+                }
+
                 sides.forEach(side => {
                     actionTypes.forEach(action => {
                         const rep = nodecg.Replicant(`live_action_${action}_${side}`);

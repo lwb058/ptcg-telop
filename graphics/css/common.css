@@ -1142,7 +1142,7 @@ html {
     background-size: 120%;
     /* Crop the card art to better fit the container */
     background-position: center 25%;
-    border: 2px solid var(--module-color-border);
+    /* border: 2px solid var(--module-color-border); Removed solid border */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
@@ -1150,6 +1150,29 @@ html {
     overflow: hidden;
     position: relative;
     transition: filter 0.5s ease;
+    z-index: 1;
+    /* Establish stacking context */
+}
+
+#stadium-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    padding: 2px;
+    /* Border width */
+    background: linear-gradient(to right, var(--stadium-border-L, white), var(--stadium-border-R, white));
+    mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 2;
+    /* On top of the background image */
 }
 
 #stadium-name {
