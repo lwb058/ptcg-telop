@@ -129,19 +129,24 @@
 			<div class="collapsible-content">
 				<div class="setting-grid">
 					<div class="form-group-hotkey">
-						<label for="theme-select" id="label-theme">Theme</label>
+						<label for="theme-select" id="label-theme">Left Theme</label>
 						<select id="theme-select" class="form-select" style="justify-self: end; width: 100%;"></select>
 					</div>
-				</div>
-				<hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
-				<details>
-					<summary>
-						<h4 id="label-type-color">Type Color</h4>
-					</summary>
-					<div id="color-settings-container" style="padding-top: 10px;">
-						<!-- Color settings will be dynamically inserted here -->
+					<div class="form-group-hotkey">
+						<label for="theme-select-R" id="label-theme-R">Right Theme</label>
+						<select id="theme-select-R" class="form-select"
+							style="justify-self: end; width: 100%;"></select>
 					</div>
-				</details>
+					<hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
+					<details>
+						<summary>
+							<h4 id="label-type-color">Type Color</h4>
+						</summary>
+						<div id="color-settings-container" style="padding-top: 10px;">
+							<!-- Color settings will be dynamically inserted here -->
+						</div>
+					</details>
+				</div>
 			</div>
 		</div>
 		<div class="panel-section panel-section-flex">
@@ -155,7 +160,8 @@
 							style="width: auto; height: auto; justify-self: end;">
 					</div>
 					<div class="form-group-hotkey">
-						<label for="force-refetch-deck-toggle" id="label-force-refetch-deck">Force Re-fetch Deck</label>
+						<label for="force-refetch-deck-toggle" id="label-force-refetch-deck">Force Re-fetch
+							Deck</label>
 						<input type="checkbox" id="force-refetch-deck-toggle"
 							style="width: auto; height: auto; justify-self: end;">
 					</div>
@@ -254,6 +260,7 @@
 
 			const toolLimitInput = document.getElementById('tool-limit-input');
 			const themeSelect = document.getElementById('theme-select');
+			const themeSelectR = document.getElementById('theme-select-R');
 			const languageSelect = document.getElementById('language-select');
 			const saveBtn = document.getElementById('save-settings-btn');
 			const clearDbBtn = document.getElementById('clear-database-btn');
@@ -283,7 +290,9 @@
 				document.getElementById('label-system').textContent = getI18nText('settings_system');
 				document.getElementById('label-reverse-card-display').textContent = getI18nText('settings_reverse_card_display');
 				document.getElementById('label-appearance').textContent = getI18nText('settings_appearance');
-				document.getElementById('label-theme').textContent = getI18nText('settings_theme');
+				document.getElementById('label-appearance').textContent = getI18nText('settings_appearance');
+				document.getElementById('label-theme').textContent = getI18nText('settings_theme') + " (L)";
+				document.getElementById('label-theme-R').textContent = getI18nText('settings_theme') + " (R)";
 				document.getElementById('label-type-color').textContent = getI18nText('settings_type_color_title');
 				document.getElementById('label-tool-carry-limit').textContent = getI18nText('settings_tool_carry_limit');
 				document.getElementById('label-language').textContent = getI18nText('settings_language');
@@ -310,8 +319,10 @@
 
 			let renderedColorElements = {};
 
-			function updateThemeDropdown(availableThemes, activeTheme) {
-				if (!themeSelect) return;
+			function updateThemeDropdown(availableThemes, activeTheme, activeThemeR) {
+				if (!themeSelect || !themeSelectR) return;
+
+				// Left Theme (Standard)
 				themeSelect.innerHTML = '';
 				availableThemes.forEach(themeName => {
 					const option = document.createElement('option');
@@ -320,6 +331,21 @@
 					themeSelect.appendChild(option);
 				});
 				themeSelect.value = activeTheme || 'Default';
+
+				// Right Theme (With "Follow Left" option)
+				themeSelectR.innerHTML = '';
+				const followOption = document.createElement('option');
+				followOption.value = 'Follow Left';
+				followOption.textContent = 'Follow Left';
+				themeSelectR.appendChild(followOption);
+
+				availableThemes.forEach(themeName => {
+					const option = document.createElement('option');
+					option.value = themeName;
+					option.textContent = themeName;
+					themeSelectR.appendChild(option);
+				});
+				themeSelectR.value = activeThemeR || 'Follow Left';
 			}
 
 			function renderAll(settings) {
@@ -401,7 +427,7 @@
 				}
 
 				// Update theme dropdown
-				updateThemeDropdown(themeList.value || ['Default'], settings ? settings.activeTheme : 'Default');
+				updateThemeDropdown(themeList.value || ['Default'], settings ? settings.activeTheme : 'Default', settings ? settings.activeThemeR : 'Follow Left');
 
 				// --- Hotkey Logic ---
 				const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -500,7 +526,7 @@
 			});
 
 			themeList.on('change', (newThemeList) => {
-				updateThemeDropdown(newThemeList || ['Default'], settingsRep.value ? settingsRep.value.activeTheme : 'Default');
+				updateThemeDropdown(newThemeList || ['Default'], settingsRep.value ? settingsRep.value.activeTheme : 'Default', settingsRep.value ? settingsRep.value.activeThemeR : 'Follow Left');
 			});
 
 			saveBtn.addEventListener('click', () => {
@@ -563,6 +589,7 @@
 				const newWeaknessDamage = weaknessDamageToggle.checked;
 				const newForceRefetchDeck = forceRefetchDeckToggle.checked;
 				const newActiveTheme = themeSelect.value;
+				const newActiveThemeR = themeSelectR.value;
 				const newToolLimit = parseInt(toolLimitInput.value, 10) || 4;
 				const newLanguage = languageSelect.value;
 
@@ -584,6 +611,7 @@
 					autoTrashTM: newAutoTrashTM,
 					weaknessDamage: newWeaknessDamage,
 					activeTheme: newActiveTheme,
+					activeThemeR: newActiveThemeR,
 					toolLimit: newToolLimit,
 					language: newLanguage,
 					forceRefetchDeck: newForceRefetchDeck

@@ -139,17 +139,36 @@ module.exports = function (nodecg) {
 
 	ptcgSettings.on('change', (newValue, oldValue) => {
 
-		// --- START THEME CHANGE LOGIC ---
-		const newTheme = (newValue && newValue.activeTheme) || 'Default';
-		const oldTheme = (oldValue && oldValue.activeTheme) || 'Default';
 
-		if (newTheme !== oldTheme || !oldValue) { // Update on theme change or initial load
-			nodecg.log.info(`Active theme is '${newTheme}'. Updating CSS URL.`);
-			if (newTheme === 'Default' || !themeList.value.includes(newTheme)) {
-				activeThemeCss.value = null;
+		// --- START THEME CHANGE LOGIC ---
+		const newThemeL = (newValue && newValue.activeTheme) || 'Default';
+		const newThemeR_Setting = (newValue && newValue.activeThemeR) || 'Follow Left';
+		const oldThemeL = (oldValue && oldValue.activeTheme) || 'Default';
+		const oldThemeR_Setting = (oldValue && oldValue.activeThemeR) || 'Follow Left';
+
+		if (newThemeL !== oldThemeL || newThemeR_Setting !== oldThemeR_Setting || !oldValue) {
+			nodecg.log.info(`Theme update detected. Left: '${newThemeL}', Right: '${newThemeR_Setting}'`);
+
+			const getThemePath = (themeName) => {
+				if (themeName === 'Default' || !themeList.value.includes(themeName)) {
+					return null;
+				}
+				return `/assets/ptcg-telop/${themeName}/${themeName}.css`;
+			};
+
+			const leftPath = getThemePath(newThemeL);
+			let rightPath;
+
+			if (newThemeR_Setting === 'Follow Left') {
+				rightPath = leftPath;
 			} else {
-				activeThemeCss.value = `/assets/ptcg-telop/${newTheme}/${newTheme}.css`;
+				rightPath = getThemePath(newThemeR_Setting);
 			}
+
+			activeThemeCss.value = {
+				left: leftPath,
+				right: rightPath
+			};
 		}
 		// --- END THEME CHANGE LOGIC ---
 

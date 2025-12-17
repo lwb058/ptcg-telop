@@ -28,7 +28,8 @@
         })();
     </script>
     <link rel="stylesheet" href="css/common.css">
-    <link id="theme-css-link" rel="stylesheet" href="" disabled>
+    <link id="theme-css-L" rel="stylesheet" href="" disabled>
+    <link id="theme-css-R" rel="stylesheet" href="" disabled>
     <style>
         /* All styles have been moved to graphics/css/common.css */
     </style>
@@ -415,14 +416,37 @@
                 const takenFile = style.getPropertyValue('--asset-side-taken').trim().replace(/['\"]/g, '');
                 const remainFile = style.getPropertyValue('--asset-side-remain').trim().replace(/['\"]/g, '');
 
-                const takenIcon = resolveAssetPath(takenFile);
-                const remainingIcon = resolveAssetPath(remainFile);
+                const takenIcon = resolveAssetPath(takenFile, false, side);
+                const remainingIcon = resolveAssetPath(remainFile, false, side);
 
                 const icons = area.querySelectorAll('.side-icon');
                 const taken = 6 - remaining;
                 icons.forEach((icon, index) => {
                     icon.src = index < taken ? takenIcon : remainingIcon;
                 });
+            }
+
+            // ... (keeping existing updateActionIcon) ...
+
+            function updateThemeClasses(settings) {
+                const updateSideClass = (side, themeName) => {
+                    const playerArea = document.getElementById(`player-${side}-area`);
+                    const sideArea = document.getElementById(`side-${side}-area`);
+
+                    if (playerArea) {
+                        playerArea.className = `player-area ${themeName}`;
+                    }
+                    if (sideArea) {
+                        // Assuming side-area also needs the base class 'side-area'
+                        sideArea.className = `side-area ${themeName}`;
+                    }
+                };
+
+                const themeL = settings.activeTheme || 'Default';
+                const themeR = (settings.activeThemeR === 'Follow Left') ? themeL : (settings.activeThemeR || 'Default');
+
+                updateSideClass('L', themeL);
+                updateSideClass('R', themeR);
             }
 
             function updateActionIcon(side, action, isUsed) {
@@ -440,17 +464,20 @@
                 const firstMoveFile = style.getPropertyValue('--asset-first-move').trim().replace(/['\"]/g, '');
                 const secondMoveFile = style.getPropertyValue('--asset-second-move').trim().replace(/['\"]/g, '');
 
-                const firstMoveIconSrc = resolveAssetPath(firstMoveFile, true);
-                const secondMoveIconSrc = resolveAssetPath(secondMoveFile, true);
+                // Resolve icons for each side independently
+                const firstMoveIconSrc_L = resolveAssetPath(firstMoveFile, true, 'L');
+                const secondMoveIconSrc_L = resolveAssetPath(secondMoveFile, true, 'L');
+                const firstMoveIconSrc_R = resolveAssetPath(firstMoveFile, true, 'R');
+                const secondMoveIconSrc_R = resolveAssetPath(secondMoveFile, true, 'R');
 
                 if (firstMoveValue === 'L') {
-                    iconL.src = firstMoveIconSrc;
-                    iconR.src = secondMoveIconSrc;
+                    iconL.src = firstMoveIconSrc_L;
+                    iconR.src = secondMoveIconSrc_R;
                     iconL.classList.remove('hidden');
                     iconR.classList.remove('hidden');
                 } else if (firstMoveValue === 'R') {
-                    iconL.src = secondMoveIconSrc;
-                    iconR.src = firstMoveIconSrc;
+                    iconL.src = secondMoveIconSrc_L;
+                    iconR.src = firstMoveIconSrc_R;
                     iconL.classList.remove('hidden');
                     iconR.classList.remove('hidden');
                 } else {
@@ -527,17 +554,32 @@
             }
 
             function updateCurrentTurnBorder(currentTurn) {
-                const lBorder = document.getElementById('current-L-border');
-                const rBorder = document.getElementById('current-R-border');
+                const borderL = document.getElementById('current-L-border');
+                const borderR = document.getElementById('current-R-border');
+
+                const style = getComputedStyle(document.documentElement);
+                const currentTurnFile = style.getPropertyValue('--asset-current-turn').trim().replace(/['\"]/g, '');
+
+                // Set the background image for each border with side-specific theming
+                if (borderL) {
+                    const iconSrc_L = resolveAssetPath(currentTurnFile, false, 'L');
+                    borderL.style.setProperty('--bg-current-turn', `url(${iconSrc_L})`);
+                }
+                if (borderR) {
+                    const iconSrc_R = resolveAssetPath(currentTurnFile, false, 'R');
+                    borderR.style.setProperty('--bg-current-turn', `url(${iconSrc_R})`);
+                }
+
+                // Toggle active class based on current turn
                 if (currentTurn === 'L') {
-                    lBorder.classList.add('active');
-                    rBorder.classList.remove('active');
+                    borderL?.classList.add('active');
+                    borderR?.classList.remove('active');
                 } else if (currentTurn === 'R') {
-                    rBorder.classList.add('active');
-                    lBorder.classList.remove('active');
+                    borderL?.classList.remove('active');
+                    borderR?.classList.add('active');
                 } else {
-                    lBorder.classList.remove('active');
-                    rBorder.classList.remove('active');
+                    borderL?.classList.remove('active');
+                    borderR?.classList.remove('active');
                 }
             }
 
@@ -1193,12 +1235,25 @@
                 return i18nStrings.value[key][language.value] || i18nStrings.value[key]['jp'] || key;
             };
 
-            function resolveAssetPath(assetName, isLangSpecific = false) {
+            function resolveAssetPath(assetName, isLangSpecific = false, side = null) {
                 const settings = settingsRep.value || {};
                 const assets = themeAssets.value || {};
                 const lang = language.value || 'jp';
                 const basePath = '/assets/ptcg-telop/';
-                const activeTheme = settings.activeTheme || 'Default';
+
+                // improved activeTheme resolution
+                let activeTheme = 'Default';
+                if (side === 'L') {
+                    activeTheme = settings.activeTheme || 'Default';
+                } else if (side === 'R') {
+                    // Right side logic: if "Follow Left", use Left's theme.
+                    activeTheme = (settings.activeThemeR === 'Follow Left')
+                        ? (settings.activeTheme || 'Default')
+                        : (settings.activeThemeR || 'Default');
+                } else {
+                    // Fallback to Left/Default if no side specified (e.g. for common assets)
+                    activeTheme = settings.activeTheme || 'Default';
+                }
 
                 const potentialPath = assetName.replace(/url\((['\"]?)(.*?)\1\)/, '$2');
                 const cleanAssetName = potentialPath.split('/').pop();
@@ -1219,22 +1274,35 @@
             function updateCustomizableAssets() {
                 const root = document.documentElement;
                 const style = getComputedStyle(root);
+                // We use getComputedStyle on root to get default values, 
+                // but we might need scoped values. 
+                // However, the assets themselves are resolved via JS, so we use the settings.
 
                 const getFile = (varName) => style.getPropertyValue(varName).trim().replace(/['\"]/g, '');
 
-                root.style.setProperty('--bg-player-area', `url(${resolveAssetPath(getFile('--asset-panel-bg'))})`);
-                root.style.setProperty('--bg-active-slot', `url(${resolveAssetPath(getFile('--asset-active-bg'))})`);
-                root.style.setProperty('--bg-bench-slot', `url(${resolveAssetPath(getFile('--asset-bench-bg'))})`);
-                root.style.setProperty('--bg-current-turn', `url(${resolveAssetPath(getFile('--asset-current-turn'))})`);
+                const applyToSide = (side) => {
+                    const areaId = side === 'L' ? 'player-L-area' : 'player-R-area';
+                    const areaEl = document.getElementById(areaId);
+                    if (!areaEl) return;
 
-                document.getElementById('vstar-L-icon').src = resolveAssetPath(getFile('--asset-vstar'));
-                document.getElementById('vstar-R-icon').src = resolveAssetPath(getFile('--asset-vstar'));
-                document.getElementById('action-L-energy').src = resolveAssetPath(getFile('--asset-action-energy'));
-                document.getElementById('action-L-supporter').src = resolveAssetPath(getFile('--asset-action-supporter'));
-                document.getElementById('action-L-retreat').src = resolveAssetPath(getFile('--asset-action-retreat'));
-                document.getElementById('action-R-energy').src = resolveAssetPath(getFile('--asset-action-energy'));
-                document.getElementById('action-R-supporter').src = resolveAssetPath(getFile('--asset-action-supporter'));
-                document.getElementById('action-R-retreat').src = resolveAssetPath(getFile('--asset-action-retreat'));
+                    // Apply to the specific player area element
+                    areaEl.style.setProperty('--bg-player-area', `url(${resolveAssetPath(getFile('--asset-panel-bg'), false, side)})`);
+                    areaEl.style.setProperty('--bg-active-slot', `url(${resolveAssetPath(getFile('--asset-active-bg'), false, side)})`);
+                    areaEl.style.setProperty('--bg-bench-slot', `url(${resolveAssetPath(getFile('--asset-bench-bg'), false, side)})`);
+                    areaEl.style.setProperty('--bg-current-turn', `url(${resolveAssetPath(getFile('--asset-current-turn'), false, side)})`);
+                }
+
+                applyToSide('L');
+                applyToSide('R');
+
+                document.getElementById('vstar-L-icon').src = resolveAssetPath(getFile('--asset-vstar'), false, 'L');
+                document.getElementById('vstar-R-icon').src = resolveAssetPath(getFile('--asset-vstar'), false, 'R');
+                document.getElementById('action-L-energy').src = resolveAssetPath(getFile('--asset-action-energy'), false, 'L');
+                document.getElementById('action-L-supporter').src = resolveAssetPath(getFile('--asset-action-supporter'), false, 'L');
+                document.getElementById('action-L-retreat').src = resolveAssetPath(getFile('--asset-action-retreat'), false, 'L');
+                document.getElementById('action-R-energy').src = resolveAssetPath(getFile('--asset-action-energy'), false, 'R');
+                document.getElementById('action-R-supporter').src = resolveAssetPath(getFile('--asset-action-supporter'), false, 'R');
+                document.getElementById('action-R-retreat').src = resolveAssetPath(getFile('--asset-action-retreat'), false, 'R');
 
                 updateFirstMoveIcon(firstMove.value);
                 updateLostZoneCounter('L', live_lostZoneL.value);
@@ -1242,6 +1310,9 @@
 
                 updateSideArea('L', live_sideL.value);
                 updateSideArea('R', live_sideR.value);
+
+                updateCurrentTurnBorder(live_currentTurn.value);
+
                 sides.forEach(side => {
                     for (let i = 0; i < 6; i++) {
                         const replicant = live_slotReplicants[`live_slot${side}${i}`];
@@ -1262,18 +1333,32 @@
                 }
             }
 
+
+
             const activeThemeCss = nodecg.Replicant('activeThemeCss');
-            activeThemeCss.on('change', (newUrl) => {
-                const themeCssLink = document.getElementById('theme-css-link');
-                if (themeCssLink) {
-                    if (newUrl) {
-                        themeCssLink.href = newUrl;
-                        themeCssLink.disabled = false;
-                    } else {
-                        themeCssLink.disabled = true;
-                        themeCssLink.href = '';
+            activeThemeCss.on('change', (newVal) => {
+                const setLink = (id, url) => {
+                    const link = document.getElementById(id);
+                    if (link) {
+                        if (url) {
+                            link.href = url;
+                            link.disabled = false;
+                        } else {
+                            link.disabled = true;
+                            link.href = '';
+                        }
                     }
+                };
+
+                if (newVal && typeof newVal === 'object') {
+                    setLink('theme-css-L', newVal.left);
+                    setLink('theme-css-R', newVal.right);
+                } else {
+                    // Fallback for old value format or null
+                    setLink('theme-css-L', null);
+                    setLink('theme-css-R', null);
                 }
+
                 // Update assets which might be overridden by the theme
                 updateCustomizableAssets();
             });
@@ -1436,6 +1521,9 @@
                         setLanguageClass(newSettings.language);
                         updateCustomizableAssets();
                     }
+
+                    // Always update theme classes just in case
+                    updateThemeClasses(newSettings);
                 });
 
                 handleVstarVisibility(settingsRep.value);

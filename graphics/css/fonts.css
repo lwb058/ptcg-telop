@@ -28,11 +28,13 @@
   src: url('/assets/ptcg-telop/font/MPLUS1p-Regular.ttf') format('truetype');
   font-weight: 400;
 }
+
 @font-face {
   font-family: 'PTCG-Main-JP';
   src: url('/assets/ptcg-telop/font/MPLUS1p-Bold.ttf') format('truetype');
   font-weight: 700;
 }
+
 @font-face {
   font-family: 'PTCG-Main-JP';
   src: url('/assets/ptcg-telop/font/MPLUS1p-Black.ttf') format('truetype');
@@ -56,6 +58,7 @@
   src: url('/assets/ptcg-telop/font/NotoSans-VariableFont_wdth,wght.ttf') format('truetype');
   font-weight: 400;
 }
+
 @font-face {
   font-family: 'PTCG-Attack-CHS';
   src: url('/assets/ptcg-telop/font/UnboundedSans.ttf') format('truetype');
@@ -67,11 +70,13 @@
   src: url('/assets/ptcg-telop/font/NotoSans-VariableFont_wdth,wght.ttf') format('truetype');
   font-weight: 400;
 }
+
 @font-face {
   font-family: 'PTCG-Attack-CHT';
   src: url('/assets/ptcg-telop/font/MantouSans-Regular.ttf') format('truetype');
   font-weight: 400;
 }
+
 /* --- 2. Language-based Switching Logic --- */
 
 /* 
@@ -82,14 +87,17 @@
 body.lang-jp {
   --font-main-lang: 'PTCG-Main-JP';
   --font-attack-lang: 'PTCG-Attack-JP';
+  --font-player-lang: 'Font-Player-Name';
 }
 
 body.lang-chs {
   --font-main-lang: 'PTCG-Main-CHS';
   --font-attack-lang: 'PTCG-Attack-CHS';
+  --font-player-lang: 'Font-Player-Name';
 }
 
 body.lang-cht {
   --font-main-lang: 'PTCG-Main-CHT';
   --font-attack-lang: 'PTCG-Attack-CHT';
+  --font-player-lang: 'Font-Player-Name';
 }

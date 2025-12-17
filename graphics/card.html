@@ -27,7 +27,8 @@
         })();
     </script>
     <link rel="stylesheet" href="css/common.css">
-    <link id="theme-css-link" rel="stylesheet" href="" disabled>
+    <link id="theme-css-L" rel="stylesheet" href="" disabled>
+    <link id="theme-css-R" rel="stylesheet" href="" disabled>
     <style>
         /* Styles specific to the card display graphic */
         /* Common styles like body, overlay-frame, and animations are now in common.css */
@@ -353,16 +354,32 @@
         });
 
         // --- Theming and Asset Preloading (unchanged) ---
-        function resolveAssetPath(assetName, isLangSpecific = false) {
+        // --- Theming and Asset Preloading (unchanged) ---
+        function resolveAssetPath(assetName, isLangSpecific = false, side = null) {
             const settings = settingsRep.value || {};
             const activeTheme = settings.activeTheme || 'Default';
             const themeAssetMap = themeAssets.value || {};
             const lang = language.value || 'jp';
             const basePath = '/assets/ptcg-telop/';
+
+            // improved activeTheme resolution
+            let resolvedTheme = 'Default';
+            if (side === 'L') {
+                resolvedTheme = settings.activeTheme || 'Default';
+            } else if (side === 'R') {
+                // Right side logic: if "Follow Left", use Left's theme.
+                resolvedTheme = (settings.activeThemeR === 'Follow Left')
+                    ? (settings.activeTheme || 'Default')
+                    : (settings.activeThemeR || 'Default');
+            } else {
+                // Fallback to Left/Default if no side specified
+                resolvedTheme = settings.activeTheme || 'Default';
+            }
+
             const potentialPath = assetName.replace(/url\((['\"]?)(.*?)\1\)/, '$2');
             const cleanAssetName = potentialPath.split('/').pop();
-            if (activeTheme !== 'Default' && themeAssetMap[activeTheme] && themeAssetMap[activeTheme].includes(cleanAssetName)) {
-                return `${basePath}${activeTheme}/${cleanAssetName}`;
+            if (resolvedTheme !== 'Default' && themeAssetMap[resolvedTheme] && themeAssetMap[resolvedTheme].includes(cleanAssetName)) {
+                return `${basePath}${resolvedTheme}/${cleanAssetName}`;
             }
             if (isLangSpecific) {
                 const baseName = assetName.replace(/_jp\.png$/, '');
@@ -374,33 +391,59 @@
 
         function updateCustomizableAssets() {
             const root = document.documentElement;
-            root.style.setProperty('--asset-card-bg', `url(${resolveAssetPath('card-bg.png')})`);
-            root.style.setProperty('--asset-side-bg', `url(${resolveAssetPath('side-bg.png')})`);
+            const style = getComputedStyle(root);
+
+            const getFile = (varName) => style.getPropertyValue(varName).trim().replace(/['\"]/g, '');
+
+            const applyToSide = (side) => {
+                const areaId = side === 'L' ? 'player-L-area' : 'player-R-area';
+                const areaEl = document.getElementById(areaId);
+                if (!areaEl) return;
+
+                areaEl.style.setProperty('--asset-card-bg', `url(${resolveAssetPath('card-bg.png', false, side)})`);
+                areaEl.style.setProperty('--asset-side-bg', `url(${resolveAssetPath('side-bg.png', false, side)})`);
+            };
+
+            applyToSide('L');
+            applyToSide('R');
         }
 
-        function preloadDeckImages(deck) {
-            if (!deck || !deck.cards || !assetPaths.value || !assetPaths.value.cardImgPath || !preloaderContainer) return;
-            deck.cards.forEach(cardId => {
-                const fullPath = getCardImageUrl(cardId);
-                if (fullPath !== defaultImage && !preloaderContainer.querySelector(`img[src="${fullPath}"]`)) {
-                    const img = document.createElement('img');
-                    img.src = fullPath;
-                    preloaderContainer.appendChild(img);
+        function updateThemeClasses(settings) {
+            const updateSideClass = (side, themeName) => {
+                const area = document.getElementById(`player-${side}-area`);
+                if (area) {
+                    area.className = `player-area ${themeName}`;
                 }
-            });
+            };
+
+            const themeL = settings.activeTheme || 'Default';
+            const themeR = (settings.activeThemeR === 'Follow Left') ? themeL : (settings.activeThemeR || 'Default');
+
+            updateSideClass('L', themeL);
+            updateSideClass('R', themeR);
         }
 
         const activeThemeCss = nodecg.Replicant('activeThemeCss');
-        activeThemeCss.on('change', (newUrl) => {
-            const themeCssLink = document.getElementById('theme-css-link');
-            if (themeCssLink) {
-                if (newUrl) {
-                    themeCssLink.href = newUrl;
-                    themeCssLink.disabled = false;
-                } else {
-                    themeCssLink.disabled = true;
-                    themeCssLink.href = '';
+        activeThemeCss.on('change', (newVal) => {
+            const setLink = (id, url) => {
+                const link = document.getElementById(id);
+                if (link) {
+                    if (url) {
+                        link.href = url;
+                        link.disabled = false;
+                    } else {
+                        link.disabled = true;
+                        link.href = '';
+                    }
                 }
+            };
+
+            if (newVal && typeof newVal === 'object') {
+                setLink('theme-css-L', newVal.left);
+                setLink('theme-css-R', newVal.right);
+            } else {
+                setLink('theme-css-L', null);
+                setLink('theme-css-R', null);
             }
             updateCustomizableAssets();
         });
@@ -416,6 +459,8 @@
             preloadDeckImages(deckR.value);
             deckL.on('change', (newVal) => preloadDeckImages(newVal));
             deckR.on('change', (newVal) => preloadDeckImages(newVal));
+
+            updateThemeClasses(settings);
         });
 
         i18nStrings.on('change', updateUIStrings);
@@ -435,6 +480,8 @@
                 updateCustomizableAssets();
                 updateUIStrings();
             }
+
+            updateThemeClasses(newSettings);
         });
     </script>
 </body>

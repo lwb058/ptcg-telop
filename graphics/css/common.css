@@ -917,7 +917,6 @@ html {
 }
 
 .damage-number {
-    /* Set the text color to a vertical gradient from light yellow to orange */
     background: linear-gradient(to bottom, #e26d6d 20%, #ffffff 100%);
     -webkit-background-clip: text;
     /* Clip the background to the text shape for webkit browsers */
@@ -926,7 +925,6 @@ html {
 }
 
 .heal-number {
-    /* Set the text color to a vertical gradient from light green to a brighter green */
     background: linear-gradient(to bottom, #67e07f 20%, #ffffff 100%);
     -webkit-background-clip: text;
     background-clip: text;
@@ -955,6 +953,7 @@ html {
 
 /* --- Player Area --- */
 .player-area {
+    font-family: var(--font-main-lang, sans-serif);
     width: 406px;
     height: 100%;
     display: flex;
@@ -969,7 +968,7 @@ html {
 }
 
 .player-info {
-    font-family: 'Font-Player-Name', sans-serif;
+    font-family: var(--font-player-lang), sans-serif;
     font-size: 28px;
     font-weight: 800;
     font-style: normal;
@@ -987,22 +986,18 @@ html {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    /* Key change for alignment */
     text-shadow: 2px 2px 4px #000;
 }
 
 .player-name {
     flex-grow: 1;
-    /* Allow name to take up space */
     text-align: left;
-    /* Align name to the left */
 }
 
 .vstar-icon {
     width: 82px;
     height: 40px;
     flex-shrink: 0;
-    /* Prevent icon from shrinking */
     transition: filter 0.3s ease, opacity 0.3s ease;
 }
 

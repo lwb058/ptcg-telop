@@ -27,7 +27,8 @@
         })();
     </script>
     <link rel="stylesheet" href="css/common.css">
-    <link id="theme-css-link" rel="stylesheet" href="" disabled>
+    <link id="theme-css-L" rel="stylesheet" href="" disabled>
+    <link id="theme-css-R" rel="stylesheet" href="" disabled>
     <style>
         .player-area {
             height: 560px;
@@ -695,12 +696,25 @@
             const themeAssets = nodecg.Replicant('themeAssets');
             const i18nStrings = nodecg.Replicant('i18nStrings');
 
-            function resolveAssetPath(assetName, isLangSpecific = false) {
+            function resolveAssetPath(assetName, isLangSpecific = false, side = null) {
                 const settings = settingsRep.value || {};
                 const assets = themeAssets.value || {};
                 const lang = language.value || 'jp';
                 const basePath = '/assets/ptcg-telop/';
-                const activeTheme = settings.activeTheme || 'Default';
+
+                // improved activeTheme resolution
+                let activeTheme = 'Default';
+                if (side === 'L') {
+                    activeTheme = settings.activeTheme || 'Default';
+                } else if (side === 'R') {
+                    // Right side logic: if "Follow Left", use Left's theme.
+                    activeTheme = (settings.activeThemeR === 'Follow Left')
+                        ? (settings.activeTheme || 'Default')
+                        : (settings.activeThemeR || 'Default');
+                } else {
+                    // Fallback to Left/Default if no side specified
+                    activeTheme = settings.activeTheme || 'Default';
+                }
 
                 const potentialPath = assetName.replace(/url\((['\"]?)(.*?)\1\)/, '$2');
                 const cleanAssetName = potentialPath.split('/').pop();
@@ -720,8 +734,21 @@
 
             function updateCustomizableAssets() {
                 const root = document.documentElement;
-                root.style.setProperty('--asset-extra-bg', `url(${resolveAssetPath('extra-bg.png')})`);
-                root.style.setProperty('--asset-bench-bg', `url(${resolveAssetPath('bench-bg.png')})`);
+                const style = getComputedStyle(root);
+
+                const getFile = (varName) => style.getPropertyValue(varName).trim().replace(/['\"]/g, '');
+
+                const applyToSide = (side) => {
+                    const areaId = side === 'L' ? 'player-L-area' : 'player-R-area';
+                    const areaEl = document.getElementById(areaId);
+                    if (!areaEl) return;
+
+                    areaEl.style.setProperty('--asset-extra-bg', `url(${resolveAssetPath('extra-bg.png', false, side)})`);
+                    areaEl.style.setProperty('--asset-bench-bg', `url(${resolveAssetPath('bench-bg.png', false, side)})`);
+                };
+
+                applyToSide('L');
+                applyToSide('R');
 
                 const abilityIconSrc = resolveAssetPath('ability_jp.png', true);
                 document.querySelectorAll('.bench-skill-ability-tag').forEach(img => {
@@ -729,17 +756,42 @@
                 });
             }
 
-            const activeThemeCss = nodecg.Replicant('activeThemeCss');
-            activeThemeCss.on('change', (newUrl) => {
-                const themeCssLink = document.getElementById('theme-css-link');
-                if (themeCssLink) {
-                    if (newUrl) {
-                        themeCssLink.href = newUrl;
-                        themeCssLink.disabled = false;
-                    } else {
-                        themeCssLink.disabled = true;
-                        themeCssLink.href = '';
+            function updateThemeClasses(settings) {
+                const updateSideClass = (side, themeName) => {
+                    const area = document.getElementById(`player-${side}-area`);
+                    if (area) {
+                        area.className = `player-area ${themeName}`;
                     }
+                };
+
+                const themeL = settings.activeTheme || 'Default';
+                const themeR = (settings.activeThemeR === 'Follow Left') ? themeL : (settings.activeThemeR || 'Default');
+
+                updateSideClass('L', themeL);
+                updateSideClass('R', themeR);
+            }
+
+            const activeThemeCss = nodecg.Replicant('activeThemeCss');
+            activeThemeCss.on('change', (newVal) => {
+                const setLink = (id, url) => {
+                    const link = document.getElementById(id);
+                    if (link) {
+                        if (url) {
+                            link.href = url;
+                            link.disabled = false;
+                        } else {
+                            link.disabled = true;
+                            link.href = '';
+                        }
+                    }
+                };
+
+                if (newVal && typeof newVal === 'object') {
+                    setLink('theme-css-L', newVal.left);
+                    setLink('theme-css-R', newVal.right);
+                } else {
+                    setLink('theme-css-L', null);
+                    setLink('theme-css-R', null);
                 }
                 updateCustomizableAssets();
             });
@@ -786,6 +838,8 @@
                         updateCustomizableAssets();
                         updateBodyLanguageClass();
                     }
+
+                    updateThemeClasses(newSettings);
                 });
 
                 const preloaderContainer = document.getElementById('video-preloader');
