@@ -137,6 +137,11 @@
 						<select id="theme-select-R" class="form-select"
 							style="justify-self: end; width: 100%;"></select>
 					</div>
+					<div class="form-group-hotkey">
+						<label for="hide-attack-name-toggle" id="label-hide-attack-name">Hide Attack Name</label>
+						<input type="checkbox" id="hide-attack-name-toggle"
+							style="width: auto; height: auto; justify-self: end;">
+					</div>
 					<hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
 					<details>
 						<summary>
@@ -246,6 +251,7 @@
 			const autoCheckSupporterToggle = document.getElementById('auto-check-supporter-toggle');
 			const autoTrashTmToggle = document.getElementById('auto-trash-tm-toggle');
 			const weaknessDamageToggle = document.getElementById('weakness-damage-toggle');
+			const hideAttackNameToggle = document.getElementById('hide-attack-name-toggle');
 			const timeLimitInput = document.getElementById('time-limit-input');
 
 			// Hotkey Elements
@@ -293,6 +299,7 @@
 				document.getElementById('label-appearance').textContent = getI18nText('settings_appearance');
 				document.getElementById('label-theme').textContent = getI18nText('settings_theme') + " (L)";
 				document.getElementById('label-theme-R').textContent = getI18nText('settings_theme') + " (R)";
+				document.getElementById('label-hide-attack-name').textContent = getI18nText('settings_hide_attack_name');
 				document.getElementById('label-type-color').textContent = getI18nText('settings_type_color_title');
 				document.getElementById('label-tool-carry-limit').textContent = getI18nText('settings_tool_carry_limit');
 				document.getElementById('label-language').textContent = getI18nText('settings_language');
@@ -414,6 +421,7 @@
 				autoTrashTmToggle.checked = !!(settings && settings.autoTrashTM);
 				forceRefetchDeckToggle.checked = !!(settings && settings.forceRefetchDeck);
 				weaknessDamageToggle.checked = !!(settings && settings.weaknessDamage);
+				hideAttackNameToggle.checked = !!(settings && settings.hideAttackName);
 				toolLimitInput.value = (settings && settings.toolLimit) ? settings.toolLimit : 4;
 				languageSelect.value = (settings && settings.language) ? settings.language : "jp";
 
@@ -592,6 +600,7 @@
 				const newActiveThemeR = themeSelectR.value;
 				const newToolLimit = parseInt(toolLimitInput.value, 10) || 4;
 				const newLanguage = languageSelect.value;
+				const newHideAttackName = hideAttackNameToggle.checked;
 
 				const currentSettings = settingsRep.value || {};
 				// Make sure to not include the old useCustomAppearance setting
@@ -614,7 +623,8 @@
 					activeThemeR: newActiveThemeR,
 					toolLimit: newToolLimit,
 					language: newLanguage,
-					forceRefetchDeck: newForceRefetchDeck
+					forceRefetchDeck: newForceRefetchDeck,
+					hideAttackName: newHideAttackName
 				};
 
 				// Save Game Time Settings

@@ -1750,19 +1750,8 @@
                         const moveNameEl = fxContainer.querySelector('.attack-fx-move-name');
                         const attackerNameEl = fxContainer.querySelector('.attack-fx-attacker-name');
 
-                        moveNameEl.textContent = data.moveName;
-                        attackerNameEl.textContent = data.attackerName;
-
                         const typeClass = `type-${(data.attackerType || '無').toLowerCase()}`;
-                        fxContainer.className = '';
-                        void fxContainer.offsetWidth;
-                        fxContainer.classList.add('active', typeClass);
-
                         const animationClass = `animate-${data.attackerSide}`;
-                        fxContainer.classList.add(animationClass);
-
-                        videoEl.currentTime = 0;
-                        videoEl.play();
 
                         let hasAnimationEnded = false;
                         const onAnimationEnd = () => {
@@ -1828,12 +1817,27 @@
                             Promise.all(hitPromises).then(resolve);
                         };
 
-                        videoEl.addEventListener('ended', onAnimationEnd);
-                        fxContainer.addEventListener('animationend', (e) => {
-                            if (e.target === fxContainer) onAnimationEnd();
-                        });
+                        if (settingsRep.value && settingsRep.value.hideAttackName) {
+                            onAnimationEnd();
+                        } else {
+                            moveNameEl.textContent = data.moveName;
+                            attackerNameEl.textContent = data.attackerName;
 
-                        setTimeout(onAnimationEnd, 2000); // Safety timeout
+                            fxContainer.className = '';
+                            void fxContainer.offsetWidth;
+                            fxContainer.classList.add('active', typeClass);
+                            fxContainer.classList.add(animationClass);
+
+                            videoEl.currentTime = 0;
+                            videoEl.play();
+
+                            videoEl.addEventListener('ended', onAnimationEnd);
+                            fxContainer.addEventListener('animationend', (e) => {
+                                if (e.target === fxContainer) onAnimationEnd();
+                            });
+
+                            setTimeout(onAnimationEnd, 2000); // Safety timeout
+                        }
 
                         data.targets.forEach(targetInfo => {
                             const targetEl = document.getElementById(targetInfo.targetId.replace('slot', 'slot-'));

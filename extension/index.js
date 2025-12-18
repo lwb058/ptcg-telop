@@ -55,7 +55,8 @@ module.exports = function (nodecg) {
 			weaknessDamage: true,
 			toolLimit: 4,
 			language: "jp",
-			forceRefetchDeck: false
+			forceRefetchDeck: false,
+			hideAttackName: false
 		}
 	});
 
@@ -1224,8 +1225,8 @@ module.exports = function (nodecg) {
 			'SET_DAMAGE',
 			'SET_AILMENTS',
 			'KO_POKEMON',
-			'SLIDE_OUT', // New
-			'APPLY_SWITCH', // New
+			'SLIDE_OUT',
+			'APPLY_SWITCH',
 			'REPLACE_POKEMON',
 			'SET_POKEMON',
 			'REMOVE_POKEMON', // This triggers EXIT_POKEMON animation

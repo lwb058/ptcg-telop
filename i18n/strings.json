@@ -209,6 +209,12 @@
     "cht": "支持開發者",
     "en": "Support Developer"
   },
+  "settings_hide_attack_name": {
+    "jp": "ワザ宣言効果を非表示",
+    "chs": "不显示招式名效果",
+    "cht": "隱藏招式名稱",
+    "en": "Hide Attack Name"
+  },
   "donation_modal_title": {
     "jp": "ご応援ありがとうございます！",
     "chs": "感谢您对这个项目的支持！",
