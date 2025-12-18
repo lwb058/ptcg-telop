@@ -28,22 +28,18 @@
     --asset-side-taken: 'side_taken.png';
     --asset-weakness: 'weakness.png';
 
-
-    --color-bg-panel: #3db1ff;
-    --color-bg-module: #0a406d;
+    --main-color: #3db1ff;
+    --first-color: #0a406d;
+    --second-color: #3db1ffbd;
+    --third-color: #1a59be83;
+    --stroke-color: #ffffff;
     --module-border: 2px;
     --module-border-radius: 8px;
-    --module-color-border: #ffffff;
     --image-border: 3px;
-    --text-light: #F3F4F6;
-    --text-dark: #9CA3AF;
-    --sub-color: #3db1ffbd;
-    --third-color: #1a59be83;
     --hp-high: #22C55E;
     --hp-medium: #F59E0B;
     --hp-low: #da0000;
     --hp-border: 2px;
-    --hp-border-color: #ffffff;
     --ability-tag-color: #d4000e;
 }
 
@@ -54,7 +50,7 @@ html {
     width: 1920px;
     height: 1080px;
     font-family: var(--font-main-lang, sans-serif);
-    color: var(--text-light);
+    color: var(--stroke-color);
     background-color: transparent;
     overflow: hidden;
 }
@@ -72,12 +68,12 @@ html {
     height: 390px;
     flex-shrink: 0;
     margin-bottom: 5px;
-    background-color: var(--color-bg-module);
+    background-color: var(--first-color);
     background-image: var(--bg-active-slot);
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
-    border: var(--module-border) solid var(--module-color-border);
+    border: var(--module-border) solid var(--stroke-color);
     border-radius: var(--module-border-radius);
     padding: 4px;
     box-sizing: border-box;
@@ -109,7 +105,7 @@ html {
     margin: 0 auto;
     overflow: hidden;
     border-radius: var(--module-border-radius);
-    border: var(--image-border) solid var(--module-color-border);
+    border: var(--image-border) solid var(--stroke-color);
 }
 
 .battle-pokemon-image {
@@ -163,10 +159,10 @@ html {
 }
 
 .battle-attached-energies:not(:empty) {
-    background-color: var(--module-color-border);
+    background-color: var(--stroke-color);
     border-radius: 0px 17px 0px 0px;
     padding: 3px;
-    border: 1px solid var(--module-color-border);
+    border: 1px solid var(--stroke-color);
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
 }
 
@@ -176,7 +172,7 @@ html {
     z-index: 10;
     overflow: hidden;
     border-radius: 4px;
-    border: var(--module-border) solid var(--module-color-border);
+    border: var(--module-border) solid var(--stroke-color);
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
     position: relative;
 }
@@ -235,7 +231,7 @@ html {
     background-color: rgba(0, 0, 0, 0.5);
     border-radius: 13px;
     overflow: hidden;
-    border: var(--hp-border) solid var(--hp-border-color);
+    border: var(--hp-border) solid var(--stroke-color);
 }
 
 .battle-hp-bar {
@@ -250,7 +246,7 @@ html {
     display: flex;
     flex-direction: column;
     justify-content: space-around;
-    background-color: var(--sub-color);
+    background-color: var(--second-color);
     border-radius: var(--module-border-radius);
     padding: 2px;
     gap: 2px;
@@ -364,12 +360,12 @@ html {
     padding: 5px;
     border-radius: 6px;
     box-sizing: border-box;
-    background-color: var(--color-bg-module);
+    background-color: var(--first-color);
     background-image: var(--bg-bench-slot);
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
-    border: var(--module-border) solid var(--module-color-border);
+    border: var(--module-border) solid var(--stroke-color);
     position: relative;
 }
 
@@ -390,7 +386,7 @@ html {
     flex-shrink: 0;
     overflow: hidden;
     border-radius: 4px;
-    border: var(--image-border) solid var(--module-color-border);
+    border: var(--image-border) solid var(--stroke-color);
 }
 
 .bench-pokemon-image {
@@ -414,10 +410,10 @@ html {
 }
 
 .bench-attached-energies:not(:empty) {
-    background-color: var(--module-color-border);
+    background-color: var(--stroke-color);
     border-radius: 0px 8px 0px 0px;
     padding: 1px;
-    border: 1px solid var(--module-color-border);
+    border: 1px solid var(--stroke-color);
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
 }
 
@@ -480,7 +476,7 @@ html {
     height: 23px;
     overflow: hidden;
     border-radius: 3px;
-    border: var(--module-border) solid var(--module-color-border);
+    border: var(--module-border) solid var(--stroke-color);
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
     position: relative;
 }
@@ -544,7 +540,7 @@ html {
     background-color: rgba(0, 0, 0, 0.5);
     border-radius: 8px;
     overflow: hidden;
-    border: var(--hp-border) solid var(--hp-border-color);
+    border: var(--hp-border) solid var(--stroke-color);
 }
 
 .bench-hp-bar {
@@ -960,7 +956,7 @@ html {
     flex-direction: column;
     padding: 5px;
     box-sizing: border-box;
-    background-color: var(--color-bg-panel);
+    background-color: var(--main-color);
     background-image: var(--bg-player-area);
     background-size: cover;
     background-repeat: no-repeat;
@@ -975,13 +971,13 @@ html {
     height: 70px;
     letter-spacing: 2px;
     flex-shrink: 0;
-    /* background-color: var(--color-bg-module); 
-    border: var(--module-border) solid var(--module-color-border); 
+    /* background-color: var(--first-color); 
+    border: var(--module-border) solid var(--stroke-color); 
     border-radius: var(--module-border-radius); */
     box-sizing: border-box;
     padding: 0 10px;
     /* Adjusted padding */
-    color: var(--text-light);
+    color: var(--stroke-color);
     margin-bottom: 5px;
     display: flex;
     align-items: center;
@@ -1048,8 +1044,8 @@ html {
     justify-content: space-between;
     padding: 4px;
     box-sizing: border-box;
-    background-color: var(--color-bg-module);
-    border: var(--module-border) solid var(--module-color-border);
+    background-color: var(--first-color);
+    border: var(--module-border) solid var(--stroke-color);
     border-radius: var(--module-border-radius);
 }
 
@@ -1082,8 +1078,8 @@ html {
     gap: 2px;
     padding: 4px;
     box-sizing: border-box;
-    background-color: var(--color-bg-module);
-    border: var(--module-border) solid var(--module-color-border);
+    background-color: var(--first-color);
+    border: var(--module-border) solid var(--stroke-color);
     border-radius: var(--module-border-radius);
 }
 
@@ -1142,7 +1138,7 @@ html {
     background-size: 120%;
     /* Crop the card art to better fit the container */
     background-position: center 25%;
-    /* border: 2px solid var(--module-color-border); Removed solid border */
+    /* border: 2px solid var(--stroke-color); Removed solid border */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;

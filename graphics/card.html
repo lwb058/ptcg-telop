@@ -105,7 +105,7 @@
             aspect-ratio: 868/1212;
             justify-content: center;
             align-items: center;
-            border: 2px solid var(--module-color-border);
+            border: 2px solid var(--stroke-color);
             border-radius: 12px;
         }
 
@@ -397,11 +397,18 @@
 
             const applyToSide = (side) => {
                 const areaId = side === 'L' ? 'player-L-area' : 'player-R-area';
-                const areaEl = document.getElementById(areaId);
-                if (!areaEl) return;
+                const prizeBgId = side === 'L' ? 'prize-background-container-L' : 'prize-background-container-R';
 
-                areaEl.style.setProperty('--asset-card-bg', `url(${resolveAssetPath('card-bg.png', false, side)})`);
-                areaEl.style.setProperty('--asset-side-bg', `url(${resolveAssetPath('side-bg.png', false, side)})`);
+                const areaEl = document.getElementById(areaId);
+                const prizeBgEl = document.getElementById(prizeBgId);
+
+                if (areaEl) {
+                    areaEl.style.setProperty('--asset-card-bg', `url(${resolveAssetPath('card-bg.png', false, side)})`);
+                }
+
+                if (prizeBgEl) {
+                    prizeBgEl.style.setProperty('--asset-side-bg', `url(${resolveAssetPath('side-bg.png', false, side)})`);
+                }
             };
 
             applyToSide('L');
@@ -411,8 +418,13 @@
         function updateThemeClasses(settings) {
             const updateSideClass = (side, themeName) => {
                 const area = document.getElementById(`player-${side}-area`);
+                const prizeArea = document.getElementById(`prize-background-container-${side}`);
+
                 if (area) {
                     area.className = `player-area ${themeName}`;
+                }
+                if (prizeArea) {
+                    prizeArea.className = `prize-background-container ${themeName}`;
                 }
             };
 

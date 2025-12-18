@@ -881,10 +881,10 @@
                     const imageArea = slotEl.querySelector('.battle-card-image-area, .bench-card-image-area');
                     const cardData = db[slotData.cardId];
 
-                    slotEl.style.borderColor = 'var(--module-color-border)';
-                    if (imageArea) imageArea.style.borderColor = 'var(--module-color-border)';
+                    slotEl.style.borderColor = 'var(--stroke-color)';
+                    if (imageArea) imageArea.style.borderColor = 'var(--stroke-color)';
 
-                    slotEl.style.backgroundColor = 'var(--color-bg-module)';
+                    slotEl.style.backgroundColor = 'var(--first-color)';
 
                     const oldToolIds = oldSlotData ? (oldSlotData.attachedToolIds || []) : [];
                     const newToolIds = slotData ? (slotData.attachedToolIds || []) : [];
@@ -1320,8 +1320,8 @@
                         const playerL = document.getElementById('player-L-area');
                         const playerR = document.getElementById('player-R-area');
 
-                        const borderL = playerL ? getComputedStyle(playerL).getPropertyValue('--module-color-border').trim() : '#ffffff';
-                        const borderR = playerR ? getComputedStyle(playerR).getPropertyValue('--module-color-border').trim() : '#ffffff';
+                        const borderL = playerL ? getComputedStyle(playerL).getPropertyValue('--stroke-color').trim() : '#ffffff';
+                        const borderR = playerR ? getComputedStyle(playerR).getPropertyValue('--stroke-color').trim() : '#ffffff';
 
                         stadiumCard.style.setProperty('--stadium-border-L', borderL || '#ffffff');
                         stadiumCard.style.setProperty('--stadium-border-R', borderR || '#ffffff');
@@ -1472,8 +1472,8 @@
                     const playerL = document.getElementById('player-L-area');
                     const playerR = document.getElementById('player-R-area');
 
-                    const borderL = playerL ? getComputedStyle(playerL).getPropertyValue('--module-color-border').trim() : '#ffffff';
-                    const borderR = playerR ? getComputedStyle(playerR).getPropertyValue('--module-color-border').trim() : '#ffffff';
+                    const borderL = playerL ? getComputedStyle(playerL).getPropertyValue('--stroke-color').trim() : '#ffffff';
+                    const borderR = playerR ? getComputedStyle(playerR).getPropertyValue('--stroke-color').trim() : '#ffffff';
 
                     stadiumCard.style.setProperty('--stadium-border-L', borderL || '#ffffff');
                     stadiumCard.style.setProperty('--stadium-border-R', borderR || '#ffffff');
