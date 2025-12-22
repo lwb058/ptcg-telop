@@ -80,20 +80,20 @@
             </div>
             <div class="active-slot" id="slot-L0">
                 <div class="active-pokemon-wrapper hidden">
-                    <div class="battle-pokemon-name"></div>
-                    <div class="battle-card-image-area">
-                        <img class="battle-pokemon-image">
-                        <div class="battle-status-ailment"></div>
-                        <div class="battle-attached-energies"></div>
-                        <div class="battle-attached-tools-wrapper"></div>
+                    <div class="pokemon-name"></div>
+                    <div class="card-image-area">
+                        <img class="pokemon-image">
+                        <div class="status-ailment"></div>
+                        <div class="attached-energies"></div>
+                        <div class="attached-tools-wrapper"></div>
                     </div>
-                    <div class="battle-hp-gauge">
-                        <div class="battle-hp-bar-container">
-                            <div class="battle-hp-text"></div>
-                            <div class="battle-hp-bar"></div>
+                    <div class="hp-gauge">
+                        <div class="hp-bar-container">
+                            <div class="hp-text"></div>
+                            <div class="hp-bar"></div>
                         </div>
                     </div>
-                    <div class="battle-skills-container"></div>
+                    <div class="skills-container"></div>
                 </div>
             </div>
             <div class="bench-slots">
@@ -122,20 +122,20 @@
             </div>
             <div class="active-slot" id="slot-R0">
                 <div class="active-pokemon-wrapper hidden">
-                    <div class="battle-pokemon-name"></div>
-                    <div class="battle-card-image-area">
-                        <img class="battle-pokemon-image">
-                        <div class="battle-status-ailment"></div>
-                        <div class="battle-attached-energies"></div>
-                        <div class="battle-attached-tools-wrapper"></div>
+                    <div class="pokemon-name"></div>
+                    <div class="card-image-area">
+                        <img class="pokemon-image">
+                        <div class="status-ailment"></div>
+                        <div class="attached-energies"></div>
+                        <div class="attached-tools-wrapper"></div>
                     </div>
-                    <div class="battle-hp-gauge">
-                        <div class="battle-hp-bar-container">
-                            <div class="battle-hp-text"></div>
-                            <div class="battle-hp-bar"></div>
+                    <div class="hp-gauge">
+                        <div class="hp-bar-container">
+                            <div class="hp-text"></div>
+                            <div class="hp-bar"></div>
                         </div>
                     </div>
-                    <div class="battle-skills-container"></div>
+                    <div class="skills-container"></div>
                 </div>
             </div>
             <div class="bench-slots">
@@ -280,10 +280,7 @@
                     const text = isHeal ? `+${number}` : `${-number}`;
                     const isBattleSlot = targetSlotEl.classList.contains('active-slot');
                     const numberTypeClass = isHeal ? 'heal-number' : 'damage-number';
-                    const numberSizeClass = isBattleSlot
-                        ? (isHeal ? 'heal-number-battle' : 'damage-number-battle')
-                        : (isHeal ? 'heal-number-bench' : 'damage-number-bench');
-                    const cardImageSelector = isBattleSlot ? '.battle-card-image-area' : '.bench-card-image-area';
+                    const cardImageSelector = '.card-image-area';
                     const cardImageEl = targetSlotEl.querySelector(cardImageSelector);
                     if (!cardImageEl) return resolve();
 
@@ -291,7 +288,7 @@
                         const imageRect = cardImageEl.getBoundingClientRect();
                         if (imageRect.width === 0) return resolve();
                         const numberEl = document.createElement('div');
-                        numberEl.className = `${numberTypeClass} ${numberSizeClass}`;
+                        numberEl.className = numberTypeClass;
                         numberEl.textContent = text;
                         numberEl.style.left = `${imageRect.left + imageRect.width / 2}px`;
                         numberEl.style.top = `${imageRect.top + imageRect.height / 2}px`;
@@ -616,8 +613,8 @@
             function updateAttachedTools(slotEl, newToolIds, oldToolIds, isBattleSlot, forceRedraw = false) {
                 return new Promise(resolve => {
                     const db = cardDatabase.value;
-                    const wrapperSelector = isBattleSlot ? '.battle-attached-tools-wrapper' : '.bench-attached-tools-wrapper';
-                    const itemClass = isBattleSlot ? 'battle-attached-tool-item' : 'bench-attached-tool-item';
+                    const wrapperSelector = '.attached-tools-wrapper';
+                    const itemClass = 'attached-tool-item';
                     const wrapperEl = slotEl.querySelector(wrapperSelector);
                     if (!wrapperEl) return resolve();
 
@@ -857,7 +854,7 @@
                                 if (toolsWrapper) toolsWrapper.innerHTML = '';
                                 const energyWrapper = activeWrapper.querySelector('.battle-attached-energies');
                                 if (energyWrapper) energyWrapper.innerHTML = '';
-                                const ailmentsWrapper = activeWrapper.querySelector('.battle-status-ailment');
+                                const ailmentsWrapper = activeWrapper.querySelector('.status-ailment');
                                 if (ailmentsWrapper) ailmentsWrapper.innerHTML = '';
                             }
                             if (benchWrapper) {
@@ -882,9 +879,9 @@
                     const cardData = db[slotData.cardId];
 
                     slotEl.style.borderColor = 'var(--stroke-color)';
-                    if (imageArea) imageArea.style.borderColor = 'var(--stroke-color)';
+                    // if (imageArea) imageArea.style.borderColor = 'var(--stroke-color)';
 
-                    slotEl.style.backgroundColor = 'var(--first-color)';
+                    slotEl.style.backgroundColor = 'var(--main-color)';
 
                     const oldToolIds = oldSlotData ? (oldSlotData.attachedToolIds || []) : [];
                     const newToolIds = slotData ? (slotData.attachedToolIds || []) : [];
@@ -933,8 +930,8 @@
                     if (index === 0) {
                         const wrapper = slotEl.querySelector('.active-pokemon-wrapper');
                         wrapper.classList.remove('hidden');
-                        wrapper.querySelector('.battle-pokemon-name').textContent = cardData.name;
-                        const img = wrapper.querySelector('.battle-pokemon-image');
+                        wrapper.querySelector('.pokemon-name').textContent = cardData.name;
+                        const img = wrapper.querySelector('.pokemon-image');
 
                         if (isNewCard || forceSlideIn) {
                             // Pre-position the slot off-screen to prevent visual glitch during image loading
@@ -961,9 +958,9 @@
                         const hpUpdatePromise = new Promise(resolve => {
                             const hpUpdate = () => {
                                 const hpPromises = [];
-                                const hpTextEl = wrapper.querySelector('.battle-hp-text');
+                                const hpTextEl = wrapper.querySelector('.hp-text');
                                 hpPromises.push(animateHp(hpTextEl, startHp, currentHp, startMaxHp, maxHp, 500));
-                                const hpBar = wrapper.querySelector('.battle-hp-bar');
+                                const hpBar = wrapper.querySelector('.hp-bar');
                                 hpBar.style.width = `${hpPercent}%`;
                                 hpBar.style.backgroundColor = hpColor;
                                 if (hpChangeToShow !== 0) {
@@ -982,11 +979,11 @@
 
                         promises.push(updateAttachedTools(slotEl, newToolIds, oldToolIds, true, isCardChanged));
 
-                        const energyContainer = wrapper.querySelector('.battle-attached-energies');
+                        const energyContainer = wrapper.querySelector('.attached-energies');
                         renderAttachedEnergies(energyContainer, slotData.attachedEnergy, getEnergyIcon);
 
-                        promises.push(updateStatusAilments(wrapper.querySelector('.battle-status-ailment'), newAilments, ailmentsBeforeChange));
-                        const skillsContainer = wrapper.querySelector('.battle-skills-container');
+                        promises.push(updateStatusAilments(wrapper.querySelector('.status-ailment'), newAilments, ailmentsBeforeChange));
+                        const skillsContainer = wrapper.querySelector('.skills-container');
                         skillsContainer.innerHTML = '';
                         const allSkills = [...(cardData.pokemon.abilities || []), ...(cardData.pokemon.attacks || [])];
                         allSkills.slice(0, 2).forEach(skill => {
@@ -997,7 +994,7 @@
                                 const style = getComputedStyle(document.documentElement);
                                 const abilityFile = style.getPropertyValue('--asset-ability').trim().replace(/['\"]/g, '');
                                 const abilityIconSrc = resolveAssetPath(abilityFile, true);
-                                tagHtml = `<img src="${abilityIconSrc}" class="battle-skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
+                                tagHtml = `<img src="${abilityIconSrc}" class="skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
                             } else {
                                 const cost = skill.cost || [];
                                 const iconsToRender = cost.length > 0 ? cost : [null];
@@ -1007,11 +1004,11 @@
                             skillsContainer.innerHTML += `
                             <div class="skill-row-wrapper">
                                 ${tagHtml}
-                                <div class="battle-skill">
-                                    <div class="battle-skill-name-wrapper">
-                                        <span class="battle-skill-name ${isAbility ? 'is-ability' : ''} ${abilityUsedClass}">${skill.name}</span>
+                                <div class="skill">
+                                    <div class="skill-name-wrapper">
+                                        <span class="skill-name ${isAbility ? 'is-ability' : ''} ${abilityUsedClass}">${skill.name}</span>
                                     </div>
-                                    <div class="battle-skill-damage">${sanitizeDamage(skill.damage)}</div>
+                                    <div class="skill-damage">${sanitizeDamage(skill.damage)}</div>
                                 </div>
                             </div>
                         `;
@@ -1023,26 +1020,26 @@
                         if (forceRedraw) {
                             slotEl.innerHTML = `
                             <div class="bench-pokemon-wrapper">
-                                <div class="bench-card-image-area">
-                                    <img class="bench-pokemon-image">
-                                    <div class="bench-attached-energies"></div>
-                                    <div class="bench-attached-tools-wrapper"></div>
+                                <div class="card-image-area">
+                                    <img class="pokemon-image">
+                                    <div class="attached-energies"></div>
+                                    <div class="attached-tools-wrapper"></div>
                                 </div>
                                 <div class="bench-info-area">
-                                    <div class="bench-pokemon-name">${cardData.name}</div>
-                                    <div class="bench-hp-gauge">
-                                        <div class="bench-hp-bar-container">
-                                            <div class="bench-hp-text"></div>
-                                            <div class="bench-hp-bar"></div>
+                                    <div class="pokemon-name">${cardData.name}</div>
+                                    <div class="hp-gauge">
+                                        <div class="hp-bar-container">
+                                            <div class="hp-text"></div>
+                                            <div class="hp-bar"></div>
                                         </div>
                                     </div>
-                                    <div class="bench-skills-container"></div>
+                                    <div class="skills-container"></div>
                                 </div>
                             </div>`;
                             wrapper = slotEl.querySelector('.bench-pokemon-wrapper');
                             slotEl.dataset.cardId = slotData.cardId;
 
-                            const mainImg = wrapper.querySelector('.bench-pokemon-image');
+                            const mainImg = wrapper.querySelector('.pokemon-image');
 
                             // Pre-position the slot off-screen to prevent visual glitch during image loading
                             if (isNewCard || forceSlideIn) {
@@ -1069,7 +1066,7 @@
                             promises.push(handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn));
                         }
                         wrapper.classList.remove('hidden');
-                        const skillsContainer = wrapper.querySelector('.bench-skills-container');
+                        const skillsContainer = wrapper.querySelector('.skills-container');
                         const allSkills = [...(cardData.pokemon.abilities || []), ...(cardData.pokemon.attacks || [])];
                         let skillsHtml = '';
                         allSkills.slice(0, 2).forEach(skill => {
@@ -1080,19 +1077,19 @@
                                 const style = getComputedStyle(document.documentElement);
                                 const abilityFile = style.getPropertyValue('--asset-ability').trim().replace(/['\"]/g, '');
                                 const abilityIconSrc = resolveAssetPath(abilityFile, true);
-                                tagHtml = `<img src="${abilityIconSrc}" class="bench-skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
+                                tagHtml = `<img src="${abilityIconSrc}" class="skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
                             } else {
                                 const cost = skill.cost || [];
                                 const iconsToRender = cost.length > 0 ? cost : [null];
                                 const iconsHtml = iconsToRender.map(getEnergyIcon).join('');
-                                tagHtml = `<div class="bench-energy-cost-container">${iconsHtml}</div>`;
+                                tagHtml = `<div class="energy-cost-container">${iconsHtml}</div>`;
                             }
                             skillsHtml += `
-                            <div class="bench-skill-row-wrapper">
+                            <div class="skill-row-wrapper">
                                 ${tagHtml}
-                                <div class="bench-skill">
-                                    <div class="bench-skill-name-wrapper"><span class="bench-skill-name ${isAbility ? 'is-ability' : ''} ${abilityUsedClass}">${skill.name}</span></div>
-                                    <div class="bench-skill-damage">${sanitizeDamage(skill.damage)}</div>
+                                <div class="skill">
+                                    <div class="skill-name-wrapper"><span class="skill-name ${isAbility ? 'is-ability' : ''} ${abilityUsedClass}">${skill.name}</span></div>
+                                    <div class="skill-damage">${sanitizeDamage(skill.damage)}</div>
                                 </div>
                             </div>`;
                         });
@@ -1103,8 +1100,8 @@
                         const hpUpdatePromise = new Promise(resolve => {
                             const hpUpdate = () => {
                                 const hpPromises = [];
-                                const hpTextEl = wrapper.querySelector('.bench-hp-text');
-                                const hpBarEl = wrapper.querySelector('.bench-hp-bar');
+                                const hpTextEl = wrapper.querySelector('.hp-text');
+                                const hpBarEl = wrapper.querySelector('.hp-bar');
                                 hpPromises.push(animateHp(hpTextEl, startHp, currentHp, startMaxHp, maxHp, 500));
                                 hpBarEl.style.width = `${hpPercent}%`;
                                 hpBarEl.style.backgroundColor = hpColor;
@@ -1117,7 +1114,7 @@
                         });
                         promises.push(hpUpdatePromise);
 
-                        const energyContainer = wrapper.querySelector('.bench-attached-energies');
+                        const energyContainer = wrapper.querySelector('.attached-energies');
                         const getBenchEnergyIcon = (type) => `<img class="energy-icon" src="/assets/ptcg-telop/icons/${ENERGY_MAP[type] || 'エネなし'}.png">`;
                         renderAttachedEnergies(energyContainer, slotData.attachedEnergy, getBenchEnergyIcon);
                     }
@@ -1314,19 +1311,33 @@
                 updateCurrentTurnBorder(live_currentTurn.value);
 
                 // Update Stadium Border Gradient
-                requestAnimationFrame(() => { // Ensure style changes from updateThemeClasses have taken effect
+                // Use retry logic to handle potential race conditions in OBS/slower styling application
+                const updateStadiumBorder = () => {
                     const stadiumCard = document.getElementById('stadium-card');
                     if (stadiumCard) {
                         const playerL = document.getElementById('player-L-area');
                         const playerR = document.getElementById('player-R-area');
 
-                        const borderL = playerL ? getComputedStyle(playerL).getPropertyValue('--stroke-color').trim() : '#ffffff';
-                        const borderR = playerR ? getComputedStyle(playerR).getPropertyValue('--stroke-color').trim() : '#ffffff';
+                        const getBorderColor = (el) => {
+                            if (!el) return '#ffffff';
+                            const style = getComputedStyle(el);
+                            const c1 = style.getPropertyValue('--module-color-border').trim();
+                            const c2 = style.getPropertyValue('--stroke-color').trim();
+                            // Return the first valid color, or default to white
+                            return (c1 && c1 !== '') ? c1 : ((c2 && c2 !== '') ? c2 : '#ffffff');
+                        };
 
-                        stadiumCard.style.setProperty('--stadium-border-L', borderL || '#ffffff');
-                        stadiumCard.style.setProperty('--stadium-border-R', borderR || '#ffffff');
+                        const borderL = getBorderColor(playerL);
+                        const borderR = getBorderColor(playerR);
+
+                        stadiumCard.style.setProperty('--stadium-border-L', borderL);
+                        stadiumCard.style.setProperty('--stadium-border-R', borderR);
                     }
-                });
+                };
+
+                updateStadiumBorder();
+                // Single retry after a delay to ensure styles are fully calculated
+                setTimeout(updateStadiumBorder, 500);
 
                 sides.forEach(side => {
                     for (let i = 0; i < 6; i++) {
@@ -1351,6 +1362,8 @@
 
 
             const activeThemeCss = nodecg.Replicant('activeThemeCss');
+            const settingsRep = nodecg.Replicant('ptcg-settings'); // Moved up for use in activeThemeCss
+
             activeThemeCss.on('change', (newVal) => {
                 const setLink = (id, url) => {
                     const link = document.getElementById(id);
@@ -1374,6 +1387,12 @@
                     setLink('theme-css-R', null);
                 }
 
+                // Apply active theme class to body
+                const settings = settingsRep.value || {};
+                const themeName = settings.activeTheme || 'Default';
+                document.body.className = document.body.className.replace(/theme-[\w-]+/g, '').trim(); // Remove old theme classes if any
+                document.body.classList.add(themeName); // Add simple theme name class (e.g. "Neon")
+
                 // Update assets which might be overridden by the theme
                 updateCustomizableAssets();
             });
@@ -1388,7 +1407,7 @@
             const live_sideR = nodecg.Replicant('live_sideR');
             const live_stadium = nodecg.Replicant('live_stadium');
             const live_currentTurn = nodecg.Replicant('live_currentTurn');
-            const settingsRep = nodecg.Replicant('ptcg-settings');
+            // settingsRep is declared earlier
             const firstMove = nodecg.Replicant('firstMove');
             const live_lostZoneL = nodecg.Replicant('live_lostZoneL');
             const live_lostZoneR = nodecg.Replicant('live_lostZoneR');
@@ -1423,7 +1442,7 @@
                     if (!targetEl) return resolve();
 
                     const isBattleSlot = targetEl.id.endsWith('0');
-                    const imageSelector = isBattleSlot ? '.battle-pokemon-image' : '.bench-pokemon-image';
+                    const imageSelector = '.pokemon-image';
                     const cardImage = targetEl.querySelector(imageSelector);
                     const targetRect = targetEl.getBoundingClientRect();
                     const videoContainer = document.createElement('div');
@@ -1622,7 +1641,7 @@
                         const side = animation.target.includes('-L') ? 'L' : 'R';
                         const isBattleSlot = animation.target.endsWith('0');
                         const videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active_ko.webm' : '/assets/ptcg-telop/fx/bench_ko.webm';
-                        const imageSelector = isBattleSlot ? '.battle-pokemon-image' : '.bench-pokemon-image';
+                        const imageSelector = '.pokemon-image';
 
                         const koVideo = document.createElement('video');
                         koVideo.src = videoSrc;
@@ -1765,7 +1784,7 @@
                                 if (!targetEl) return;
 
                                 const isBattleSlot = targetInfo.targetId.endsWith('0');
-                                const cardImageSelector = isBattleSlot ? '.battle-card-image-area' : '.bench-card-image-area';
+                                const cardImageSelector = '.card-image-area';
                                 const cardImageEl = targetEl.querySelector(cardImageSelector);
                                 if (!cardImageEl) return;
 

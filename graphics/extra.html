@@ -206,9 +206,9 @@
             }
             function updateAttachedTools(slotEl, newToolIds, oldToolIds, isBattleSlot, forceRedraw = false) {
                 const db = cardDatabase.value;
-                const wrapperSelector = '.bench-attached-tools-wrapper';
-                const itemClass = 'bench-attached-tool-item';
-                const wrapperEl = slotEl.querySelector('.bench-attached-tools-wrapper');
+                const wrapperSelector = '.attached-tools-wrapper';
+                const itemClass = 'attached-tool-item';
+                const wrapperEl = slotEl.querySelector('.attached-tools-wrapper');
                 if (!wrapperEl) return;
 
                 // If a forceRedraw is needed (because the parent DOM was wiped), skip diffing and just render the new state.
@@ -369,15 +369,14 @@
                 const text = isHeal ? `+${number}` : `${-number}`;
                 const isBattleSlot = targetSlotEl.classList.contains('active-slot');
                 const numberTypeClass = isHeal ? 'heal-number' : 'damage-number';
-                const numberSizeClass = (isHeal ? 'heal-number-bench' : 'damage-number-bench');
-                const cardImageSelector = isBattleSlot ? '.battle-card-image-area' : '.bench-card-image-area';
+                const cardImageSelector = '.card-image-area';
                 const cardImageEl = targetSlotEl.querySelector(cardImageSelector);
                 if (!cardImageEl) return;
                 requestAnimationFrame(() => {
                     const imageRect = cardImageEl.getBoundingClientRect();
                     if (imageRect.width === 0) return;
                     const numberEl = document.createElement('div');
-                    numberEl.className = `${numberTypeClass} ${numberSizeClass}`;
+                    numberEl.className = numberTypeClass;
                     numberEl.textContent = text;
                     numberEl.style.left = `${imageRect.left + imageRect.width / 2}px`;
                     numberEl.style.top = `${imageRect.top + imageRect.height / 2}px`;
@@ -529,26 +528,26 @@
                 if (forceRedraw) {
                     slotEl.innerHTML = `
                         <div class="bench-pokemon-wrapper">
-                            <div class="bench-card-image-area">
-                                <img class="bench-pokemon-image">
-                                <div class="bench-attached-energies"></div>
-                                <div class="bench-attached-tools-wrapper"></div>
+                            <div class="card-image-area">
+                                <img class="pokemon-image">
+                                <div class="attached-energies"></div>
+                                <div class="attached-tools-wrapper"></div>
                             </div>
                             <div class="bench-info-area">
-                                <div class="bench-pokemon-name">${cardData.name}</div>
+                                <div class="pokemon-name">${cardData.name}</div>
                                 <div class="bench-hp-gauge">
-                                    <div class="bench-hp-bar-container">
-                                        <div class="bench-hp-text"></div>
-                                        <div class="bench-hp-bar"></div>
+                                    <div class="hp-bar-container">
+                                        <div class="hp-text"></div>
+                                        <div class="hp-bar"></div>
                                     </div>
                                 </div>
-                                <div class="bench-skills-container"></div>
+                                <div class="skills-container"></div>
                             </div>
                         </div>`;
                     wrapper = slotEl.querySelector('.bench-pokemon-wrapper');
                     slotEl.dataset.cardId = slotData.cardId;
 
-                    const mainImg = wrapper.querySelector('.bench-pokemon-image');
+                    const mainImg = wrapper.querySelector('.pokemon-image');
 
                     // Pre-position the slot off-screen to prevent visual glitch during image loading
                     if (isNewCard || forceSlideIn) {
@@ -576,9 +575,9 @@
                 }
 
                 const hpUpdate = () => {
-                    const hpTextEl = wrapper.querySelector('.bench-hp-text');
+                    const hpTextEl = wrapper.querySelector('.hp-text');
                     animateHp(hpTextEl, startHp, currentHp, startMaxHp, maxHp, 500);
-                    const hpBarEl = wrapper.querySelector('.bench-hp-bar');
+                    const hpBarEl = wrapper.querySelector('.hp-bar');
                     hpBarEl.style.width = `${hpPercent}%`;
                     hpBarEl.style.backgroundColor = hpColor;
                     if (hpChangeToShow !== 0 && !isEvolution) {
@@ -588,7 +587,7 @@
 
                 if (isUnderAttack) { setTimeout(hpUpdate, 1100); } else { hpUpdate(); }
 
-                const skillsContainer = wrapper.querySelector('.bench-skills-container');
+                const skillsContainer = wrapper.querySelector('.skills-container');
                 const allSkills = [...(cardData.pokemon.abilities || []), ...(cardData.pokemon.attacks || [])];
                 let skillsHtml = '';
                 allSkills.slice(0, 2).forEach(skill => {
@@ -597,25 +596,25 @@
                     let tagHtml = '';
                     if (isAbility) {
                         const abilityIconSrc = resolveAssetPath('ability_jp.png', true);
-                        tagHtml = `<img src="${abilityIconSrc}" class="bench-skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
+                        tagHtml = `<img src="${abilityIconSrc}" class="skill-ability-tag ${abilityUsedClass}" alt="Ability">`;
                     } else {
                         const cost = skill.cost || [];
                         const iconsToRender = cost.length > 0 ? cost : [null];
                         const iconsHtml = iconsToRender.map(getEnergyIcon).join('');
-                        tagHtml = `<div class="bench-energy-cost-container">${iconsHtml}</div>`;
+                        tagHtml = `<div class="energy-cost-container">${iconsHtml}</div>`;
                     }
                     skillsHtml += `
-                        <div class="bench-skill-row-wrapper">
+                        <div class="skill-row-wrapper">
                             ${tagHtml}
-                            <div class="bench-skill">
-                                <div class="bench-skill-name-wrapper"><span class="bench-skill-name ${isAbility ? 'is-ability' : ''} ${abilityUsedClass}">${skill.name}</span></div>
-                                <div class="bench-skill-damage">${sanitizeDamage(skill.damage) || ''}</div>
+                            <div class="skill">
+                                <div class="skill-name-wrapper"><span class="skill-name ${isAbility ? 'is-ability' : ''} ${abilityUsedClass}">${skill.name}</span></div>
+                                <div class="skill-damage">${sanitizeDamage(skill.damage) || ''}</div>
                             </div>
                         </div>`;
                 });
                 skillsContainer.innerHTML = skillsHtml;
 
-                const energyContainer = wrapper.querySelector('.bench-attached-energies');
+                const energyContainer = wrapper.querySelector('.attached-energies');
                 renderAttachedEnergies(energyContainer, slotData.attachedEnergy, getEnergyIcon);
 
                 updateAttachedTools(slotEl, newToolIds, oldToolIds, false, forceRedraw); // isBattleSlot is always false here
@@ -663,7 +662,7 @@
             }
 
             function playVideoOnSlot(targetEl, videoSrc) {
-                const imageSelector = '.bench-pokemon-image';
+                const imageSelector = '.pokemon-image';
                 const cardImage = targetEl.querySelector(imageSelector);
                 const targetRect = targetEl.getBoundingClientRect();
                 const videoContainer = document.createElement('div');
@@ -751,7 +750,7 @@
                 applyToSide('R');
 
                 const abilityIconSrc = resolveAssetPath('ability_jp.png', true);
-                document.querySelectorAll('.bench-skill-ability-tag').forEach(img => {
+                document.querySelectorAll('.skill-ability-tag').forEach(img => {
                     if (img.src !== abilityIconSrc) img.src = abilityIconSrc;
                 });
             }
@@ -918,7 +917,7 @@
                                 return;
                             }
 
-                            const cardImageSelector = '.bench-card-image-area';
+                            const cardImageSelector = '.card-image-area';
                             const cardImageEl = targetEl.querySelector(cardImageSelector);
                             if (cardImageEl) {
                                 cardImageEl.classList.add('anim-shake', 'anim-flash-white');

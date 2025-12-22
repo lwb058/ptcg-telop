@@ -28,8 +28,8 @@
     --asset-side-taken: 'side_taken.png';
     --asset-weakness: 'weakness.png';
 
-    --main-color: #3db1ff;
-    --first-color: #0a406d;
+    --main-color: #0a406d;
+    --first-color: #3db1ff;
     --second-color: #3db1ffbd;
     --third-color: #1a59be83;
     --stroke-color: #ffffff;
@@ -89,7 +89,7 @@ html {
     gap: 4px;
 }
 
-.battle-pokemon-name {
+.pokemon-name {
     height: 35px;
     display: flex;
     align-items: center;
@@ -97,7 +97,7 @@ html {
     font-weight: 900;
 }
 
-.battle-card-image-area {
+.card-image-area {
     position: relative;
     width: 376px;
     height: 248px;
@@ -108,7 +108,7 @@ html {
     border: var(--image-border) solid var(--stroke-color);
 }
 
-.battle-pokemon-image {
+.pokemon-image {
     position: absolute;
     width: 447.0px;
     height: auto;
@@ -116,11 +116,11 @@ html {
     left: -36px;
 }
 
-.battle-pokemon-image.is-v {
+.pokemon-image.is-v {
     top: -99px;
 }
 
-.battle-status-ailment {
+.status-ailment {
     position: absolute;
     top: 5px;
     left: 5px;
@@ -130,26 +130,21 @@ html {
 }
 
 .status-icon-wrapper {
-    /* This is the div container */
     width: 45px;
     height: 45px;
     border-radius: 50%;
-    /* The container handles border and shadow */
     border: 3px solid white;
     box-shadow: 3px 3px 4px rgba(0, 0, 0, 0.7);
-    /* Clip the overflowing inner image part */
     overflow: hidden;
 }
 
 .status-icon {
-    /* This is the img tag */
     width: 100%;
     height: 100%;
-    /* Key: Scale up the image to fill the container and eliminate gaps */
     transform: scale(1.15);
 }
 
-.battle-attached-energies {
+.attached-energies {
     position: absolute;
     bottom: -1px;
     left: -1px;
@@ -158,7 +153,7 @@ html {
     z-index: 10;
 }
 
-.battle-attached-energies:not(:empty) {
+.attached-energies:not(:empty) {
     background-color: var(--stroke-color);
     border-radius: 0px 17px 0px 0px;
     padding: 3px;
@@ -166,7 +161,7 @@ html {
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
 }
 
-.battle-attached-tool-item {
+.attached-tool-item {
     width: 80px;
     height: 50px;
     z-index: 10;
@@ -177,7 +172,7 @@ html {
     position: relative;
 }
 
-.battle-attached-tool-item img {
+.attached-tool-item img {
     position: absolute;
     width: 95.25px;
     height: auto;
@@ -187,26 +182,24 @@ html {
     /* Flip the item content back to normal */
 }
 
-.battle-attached-tools-wrapper {
+.attached-tools-wrapper {
     position: absolute;
     bottom: 5px;
     right: 5px;
     z-index: 10;
     display: grid;
-    /* Revert to column-based template */
     grid-template-columns: repeat(2, 80px);
-    /* End revert */
     justify-items: start;
     gap: 3px 6px;
     transform: rotate(180deg);
 }
 
-.battle-hp-gauge {
+.hp-gauge {
     display: flex;
     align-items: center;
 }
 
-.battle-hp-text {
+.hp-text {
     position: absolute;
     top: 0;
     left: 0;
@@ -224,7 +217,7 @@ html {
     z-index: 2;
 }
 
-.battle-hp-bar-container {
+.hp-bar-container {
     position: relative;
     flex-grow: 1;
     height: 24px;
@@ -234,13 +227,13 @@ html {
     border: var(--hp-border) solid var(--stroke-color);
 }
 
-.battle-hp-bar {
+.hp-bar {
     height: 100%;
     background-color: var(--hp-high);
     transition: width 0.5s ease-in-out, background-color 0.5s ease;
 }
 
-.battle-skills-container {
+.skills-container {
     height: 54px;
     flex-grow: 0;
     display: flex;
@@ -260,7 +253,7 @@ html {
     height: 20px;
 }
 
-.battle-skill {
+.skill {
     display: flex;
     align-items: center;
     width: 100%;
@@ -271,7 +264,7 @@ html {
 }
 
 .energy-cost-container,
-.battle-skill-ability-tag {
+.skill-ability-tag {
     position: absolute;
     left: 0;
     top: 0;
@@ -279,13 +272,13 @@ html {
 }
 
 .energy-cost-container .energy-icon {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
 }
 
 .energy-cost-container {
     background-color: rgba(255, 255, 255, 0.8);
-    border-radius: 4px 11px 11px 4px;
+    border-radius: 4px 10.5px 10px 4px;
     height: 100%;
     display: inline-flex;
     align-items: center;
@@ -294,7 +287,7 @@ html {
     gap: 1px;
 }
 
-.battle-skill-name-wrapper {
+.skill-name-wrapper {
     flex-grow: 1;
     display: flex;
     align-items: center;
@@ -303,19 +296,16 @@ html {
     padding-left: 115px;
 }
 
-.battle-skill-ability-tag {
-    /* background-color, color, font-size, font-weight, etc. are no longer needed for an image tag */
+.skill-ability-tag {
     width: 110px;
     height: 100%;
     left: -2px;
     object-fit: contain;
-    /* Ensure the image scales correctly within the dimensions */
     transition: filter 0.3s ease;
     filter: grayscale(0);
-    /* The parent .skill-row-wrapper already handles positioning */
 }
 
-.battle-skill-name {
+.skill-name {
     font-size: 16px;
     font-weight: 900;
     display: flex;
@@ -325,12 +315,12 @@ html {
     text-overflow: ellipsis;
 }
 
-.battle-skill-name.is-ability {
+.skill-name.is-ability {
     color: var(--ability-tag-color);
     top: 0px;
 }
 
-.battle-skill-damage {
+.skill-damage {
     font-family: var(--font-numeric);
     font-size: 20px;
     width: 50px;
@@ -377,47 +367,35 @@ html {
     height: 100%;
 }
 
-.bench-card-image-area {
-    position: relative;
+.bench-slot .card-image-area {
     width: 142px;
     height: 88px;
-    margin: 0 auto;
     display: flex;
-    flex-shrink: 0;
-    overflow: hidden;
     border-radius: 4px;
-    border: var(--image-border) solid var(--stroke-color);
 }
 
-.bench-pokemon-image {
-    position: absolute;
+.bench-slot .pokemon-image {
     width: 171.4px;
-    height: auto;
     top: -25.5px;
     left: -13.8px;
 }
 
-.bench-pokemon-image.is-v {
+.bench-slot .pokemon-image.is-v {
     top: -45.5px;
 }
 
-.bench-attached-energies {
-    position: absolute;
+.bench-slot .attached-energies {
     bottom: -2px;
     left: -2px;
-    display: flex;
     gap: 1px;
 }
 
-.bench-attached-energies:not(:empty) {
-    background-color: var(--stroke-color);
+.bench-slot .attached-energies:not(:empty) {
     border-radius: 0px 8px 0px 0px;
     padding: 1px;
-    border: 1px solid var(--stroke-color);
-    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
 }
 
-.bench-attached-energies .energy-icon {
+.bench-slot .attached-energies .energy-icon {
     width: 14px;
     height: 14px;
 }
@@ -428,15 +406,14 @@ html {
     background-size: 145%;
     background-position: center 30%;
     vertical-align: bottom;
-    /* Align with img tags */
 }
 
-.battle-attached-energies .attached-special-energy-icon {
+.attached-energies .attached-special-energy-icon {
     width: 28px;
     height: 28px;
 }
 
-.bench-attached-energies .attached-special-energy-icon {
+.bench-slot .attached-energies .attached-special-energy-icon {
     width: 14px;
     height: 14px;
 }
@@ -454,40 +431,28 @@ html {
     text-shadow: 0 0 2px white;
 }
 
-.bench-attached-energies .energy-count-number {
+.bench-slot .attached-energies .energy-count-number {
     font-size: 14px;
     padding-right: 4px;
 }
 
-.bench-attached-tools-wrapper {
-    position: absolute;
+.bench-slot .attached-tools-wrapper {
     bottom: 2px;
     right: 2px;
-    z-index: 10;
-    display: grid;
     grid-template-columns: repeat(2, 36px);
-    justify-items: start;
     gap: 2px 6px;
-    transform: rotate(180deg);
 }
 
-.bench-attached-tool-item {
+.bench-slot .attached-tool-item {
     width: 36px;
     height: 23px;
-    overflow: hidden;
     border-radius: 3px;
-    border: var(--module-border) solid var(--stroke-color);
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
-    position: relative;
 }
 
-.bench-attached-tool-item img {
-    position: absolute;
+.bench-slot .attached-tool-item img {
     width: 42.63px;
-    height: auto;
     left: -3.79px;
     top: -28.44px;
-    transform: rotate(180deg);
 }
 
 .bench-info-area {
@@ -499,145 +464,69 @@ html {
     overflow: hidden;
 }
 
-.bench-pokemon-name {
+.bench-slot .pokemon-name {
     font-size: 16px;
     font-weight: bold;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     height: 21px;
-    display: flex;
-    align-items: center;
 }
 
-.bench-hp-gauge {
-    display: flex;
-    align-items: center;
-}
-
-.bench-hp-text {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
+.bench-slot .hp-text {
     padding-right: 5px;
-    font-family: var(--font-numeric);
     font-size: 11px;
-    font-weight: bold;
-    color: white;
     text-shadow: 1px 1px 1px black;
-    z-index: 2;
 }
 
-.bench-hp-bar-container {
-    position: relative;
-    flex-grow: 1;
+.bench-slot .hp-bar-container {
     height: 16px;
-    background-color: rgba(0, 0, 0, 0.5);
     border-radius: 8px;
-    overflow: hidden;
-    border: var(--hp-border) solid var(--stroke-color);
 }
 
-.bench-hp-bar {
-    height: 100%;
-    transition: width 0.5s ease-in-out, background-color 0.5s ease;
-}
-
-.bench-skills-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    flex-grow: 0;
-    overflow: hidden;
+.bench-slot .skills-container {
     height: 44px;
+    overflow: hidden;
 }
 
-.bench-skill-row-wrapper {
-    position: relative;
+.bench-slot .skill-row-wrapper {
     height: 18px;
 }
 
-.bench-skill {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    background-color: var(--third-color);
+.bench-slot .skill {
     border-radius: 6px;
     gap: 4px;
 }
 
-.bench-energy-cost-container,
-.bench-skill-ability-tag {
-    position: absolute;
-    left: 0;
-    top: 0;
-    z-index: 1;
-}
-
-.bench-energy-cost-container {
+.bench-slot .energy-cost-container {
     background-color: rgb(201, 201, 201);
     border-radius: 3px 9px 9px 3px;
-    height: 100%;
-    display: inline-flex;
-    align-items: center;
-    padding: 0 2px;
-    box-sizing: border-box;
-    gap: 1px;
 }
 
-.bench-energy-cost-container .energy-icon {
+.bench-slot .energy-cost-container .energy-icon {
     width: 14px;
     height: 14px;
     margin-left: 0px;
 }
 
-.bench-skill-ability-tag {
+.bench-slot .skill-ability-tag {
     width: 79px;
-    height: 100%;
     left: -1px;
-    object-fit: contain;
-    transition: filter 0.3s ease;
-    filter: grayscale(0);
 }
 
-.bench-skill-name-wrapper {
-    flex-grow: 1;
-    display: flex;
-    align-items: center;
+.bench-slot .skill-name-wrapper {
     gap: 4px;
-    overflow: hidden;
     padding-left: 80px;
 }
 
-.bench-skill-name {
+.bench-slot .skill-name {
     font-size: 12px;
-    font-weight: 900;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: flex;
-    align-items: center;
 }
 
-.bench-skill-name.is-ability {
-    color: var(--ability-tag-color);
-}
-
-.bench-skill-damage {
-    font-family: var(--font-numeric);
+.bench-slot .skill-damage {
     font-size: 14px;
-    font-weight: bold;
-    text-align: right;
     padding-right: 8px;
-    white-space: nowrap;
     width: 40px;
-    flex-shrink: 0;
 }
 
 /* --- Common Animation Wrapper --- */
@@ -645,7 +534,6 @@ html {
 .animation-wrapper {
     position: absolute;
     width: 406px;
-    /* Corresponds to the width of the player-area in main.html */
     height: 100%;
     /* This was missing a semicolon */
     pointer-events: none;
@@ -663,13 +551,11 @@ html {
 }
 
 /* --- Common Utility Classes --- */
-.battle-skill-ability-tag.used,
-.bench-skill-ability-tag.used {
+.skill-ability-tag.used {
     filter: grayscale(1) brightness(0.7);
 }
 
-.battle-skill-name.is-ability.used,
-.bench-skill-name.is-ability.used {
+.skill-name.is-ability.used {
     color: #9e9e9e;
 }
 
@@ -918,6 +804,8 @@ html {
     /* Clip the background to the text shape for webkit browsers */
     background-clip: text;
     color: transparent;
+    font-size: 80px;
+    filter: url(#text-stroke-shadow-battle);
 }
 
 .heal-number {
@@ -925,24 +813,16 @@ html {
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-}
-
-.damage-number-battle {
     font-size: 80px;
     filter: url(#text-stroke-shadow-battle);
 }
 
-.heal-number-battle {
-    font-size: 80px;
-    filter: url(#text-stroke-shadow-battle);
-}
-
-.damage-number-bench {
+.bench-slot .damage-number {
     font-size: 40px;
     filter: url(#text-stroke-shadow-bench);
 }
 
-.heal-number-bench {
+.bench-slot .heal-number {
     font-size: 40px;
     filter: url(#text-stroke-shadow-bench);
 }
@@ -971,12 +851,8 @@ html {
     height: 70px;
     letter-spacing: 2px;
     flex-shrink: 0;
-    /* background-color: var(--first-color); 
-    border: var(--module-border) solid var(--stroke-color); 
-    border-radius: var(--module-border-radius); */
     box-sizing: border-box;
     padding: 0 10px;
-    /* Adjusted padding */
     color: var(--stroke-color);
     margin-bottom: 5px;
     display: flex;
@@ -1044,7 +920,7 @@ html {
     justify-content: space-between;
     padding: 4px;
     box-sizing: border-box;
-    background-color: var(--first-color);
+    background-color: var(--main-color);
     border: var(--module-border) solid var(--stroke-color);
     border-radius: var(--module-border-radius);
 }
@@ -1136,9 +1012,7 @@ html {
     height: 100%;
     border-radius: 20px;
     background-size: 120%;
-    /* Crop the card art to better fit the container */
     background-position: center 25%;
-    /* border: 2px solid var(--stroke-color); Removed solid border */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
@@ -1239,11 +1113,8 @@ html {
     width: 120%;
     height: 150px;
     z-index: 1000;
-    /* The rotation angle is now dynamically controlled by the --direction variable. */
     transform: rotate(calc(-6deg * var(--direction, 1)));
     pointer-events: none;
-    /* overflow: hidden; */
-    /* Removed to allow video to show above/below the bar */
     display: none;
     /* Start hidden */
 }
