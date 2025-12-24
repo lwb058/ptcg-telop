@@ -1252,11 +1252,20 @@
                     activeTheme = settings.activeTheme || 'Default';
                 }
 
-                const potentialPath = assetName.replace(/url\((['\"]?)(.*?)\1\)/, '$2');
+                const potentialPath = assetName.replace(/url\((['"]?)(.*?)\1\)/, '$2');
                 const cleanAssetName = potentialPath.split('/').pop();
 
-                if (activeTheme !== 'Default' && assets[activeTheme] && assets[activeTheme].includes(cleanAssetName)) {
+                // 1. Check for exact match in theme
+                if (assets[activeTheme] && assets[activeTheme].includes(cleanAssetName)) {
                     return `${basePath}${activeTheme}/${cleanAssetName}`;
+                }
+
+                // 2. Check for base filename (non-language specific) in theme if applicable
+                if (isLangSpecific && assets[activeTheme]) {
+                    const genericFileName = cleanAssetName.replace(/_jp\.png$/, '.png');
+                    if (assets[activeTheme].includes(genericFileName)) {
+                        return `${basePath}${activeTheme}/${genericFileName}`;
+                    }
                 }
 
                 if (isLangSpecific) {

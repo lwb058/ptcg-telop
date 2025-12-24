@@ -1569,7 +1569,7 @@ body.deck-viewer-body {
 
 .deck-viewer-body .card-grid .card-item {
     position: relative;
-    width: 10vh;
+    width: max(10vh, 90px);
     text-align: center;
 }
 
