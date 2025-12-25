@@ -801,7 +801,6 @@ html {
 .damage-number {
     background: linear-gradient(to bottom, #e26d6d 20%, #ffffff 100%);
     -webkit-background-clip: text;
-    /* Clip the background to the text shape for webkit browsers */
     background-clip: text;
     color: transparent;
     font-size: 80px;

@@ -286,13 +286,17 @@
 
                     requestAnimationFrame(() => {
                         const imageRect = cardImageEl.getBoundingClientRect();
+                        const slotRect = targetSlotEl.getBoundingClientRect();
                         if (imageRect.width === 0) return resolve();
                         const numberEl = document.createElement('div');
                         numberEl.className = numberTypeClass;
                         numberEl.textContent = text;
-                        numberEl.style.left = `${imageRect.left + imageRect.width / 2}px`;
-                        numberEl.style.top = `${imageRect.top + imageRect.height / 2}px`;
-                        document.body.appendChild(numberEl);
+                        // Calculate position relative to parent slot
+                        const relativeLeft = imageRect.left - slotRect.left + imageRect.width / 2;
+                        const relativeTop = imageRect.top - slotRect.top + imageRect.height / 2;
+                        numberEl.style.left = `${relativeLeft}px`;
+                        numberEl.style.top = `${relativeTop}px`;
+                        targetSlotEl.appendChild(numberEl);
 
                         if (isBattleSlot && activeAnimations.has(targetSlotEl.id)) {
                             const animationData = activeAnimations.get(targetSlotEl.id);
@@ -1453,27 +1457,27 @@
                     const isBattleSlot = targetEl.id.endsWith('0');
                     const imageSelector = '.pokemon-image';
                     const cardImage = targetEl.querySelector(imageSelector);
-                    const targetRect = targetEl.getBoundingClientRect();
-                    const videoContainer = document.createElement('div');
-                    videoContainer.style.position = 'absolute';
-                    videoContainer.style.left = `${targetRect.left}px`;
-                    videoContainer.style.top = `${targetRect.top}px`;
-                    videoContainer.style.width = `${targetRect.width}px`;
-                    videoContainer.style.height = `${targetRect.height}px`;
-                    videoContainer.style.zIndex = '300';
-                    videoContainer.style.overflow = 'hidden';
+
+                    // Create video element and add directly to slot
                     const video = document.createElement('video');
                     video.src = videoSrc;
                     video.muted = true;
+                    video.style.position = 'absolute';
                     video.style.width = '100%';
                     video.style.height = '100%';
-                    videoContainer.appendChild(video);
-                    document.body.appendChild(videoContainer);
+                    video.style.left = '0';
+                    video.style.top = '0';
+                    video.style.zIndex = '300';
+                    video.style.objectFit = 'cover';
+
+                    targetEl.appendChild(video);
                     video.play();
+
                     setTimeout(() => { if (cardImage) cardImage.style.visibility = 'hidden'; }, REPLACE_ANIMATION_HIDE_MS);
                     setTimeout(() => { if (cardImage) cardImage.style.visibility = 'visible'; }, REPLACE_ANIMATION_SHOW_MS);
+
                     video.addEventListener('ended', () => {
-                        videoContainer.remove();
+                        video.remove();
                         resolve();
                     });
                 });
@@ -1798,6 +1802,7 @@
                                 if (!cardImageEl) return;
 
                                 const imageRect = cardImageEl.getBoundingClientRect();
+                                const slotRect = targetEl.getBoundingClientRect();
                                 const causedDamage = targetInfo.damage > 0;
                                 const isOpponent = data.attackerSide !== targetInfo.targetSide;
 
@@ -1824,9 +1829,12 @@
                                         hitVideo.autoplay = true;
                                         hitVideo.style.width = `${videoSize}px`;
                                         hitVideo.style.height = `${videoSize}px`;
-                                        hitVideo.style.left = `${imageRect.left + (imageRect.width / 2) - (videoSize / 2)}px`;
-                                        hitVideo.style.top = `${imageRect.top + (imageRect.height / 2) - (videoSize / 2)}px`;
-                                        document.body.appendChild(hitVideo);
+                                        // Calculate position relative to parent slot
+                                        const relativeLeft = imageRect.left - slotRect.left + (imageRect.width / 2) - (videoSize / 2);
+                                        const relativeTop = imageRect.top - slotRect.top + (imageRect.height / 2) - (videoSize / 2);
+                                        hitVideo.style.left = `${relativeLeft}px`;
+                                        hitVideo.style.top = `${relativeTop}px`;
+                                        targetEl.appendChild(hitVideo);
                                         hitVideo.addEventListener('ended', () => {
                                             hitVideo.remove();
                                             res();
