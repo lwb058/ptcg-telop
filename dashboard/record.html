@@ -1203,10 +1203,52 @@
                     });
 
                     const seekBtn = item.querySelector('.seek-btn');
-                    seekBtn.addEventListener('click', () => {
-                        if (confirm(`Restore to timestamp ${pack.timestamp}? This will reset the board and fast-forward.`)) {
-                            nodecg.sendMessage('seekTimeline', index);
+                    let seekConfirmTimer = null;
+                    let isAwaitingConfirm = false;
+                    const originalSeekText = getI18nText('record_seek');
+
+                    const resetSeekButton = () => {
+                        if (seekConfirmTimer) {
+                            clearTimeout(seekConfirmTimer);
+                            seekConfirmTimer = null;
                         }
+                        isAwaitingConfirm = false;
+                        seekBtn.textContent = originalSeekText;
+                        seekBtn.classList.remove('btn-warning');
+                        seekBtn.classList.add('btn-primary');
+                    };
+
+                    seekBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+
+                        if (isAwaitingConfirm) {
+                            // Second click - execute seek
+                            resetSeekButton();
+                            nodecg.sendMessage('seekTimeline', index);
+                        } else {
+                            // First click - show confirmation state
+                            isAwaitingConfirm = true;
+                            seekBtn.textContent = getI18nText('record_sure') || 'Sure?';
+                            seekBtn.classList.remove('btn-primary');
+                            seekBtn.classList.add('btn-warning');
+
+                            // Auto-reset after 3 seconds
+                            seekConfirmTimer = setTimeout(resetSeekButton, 3000);
+                        }
+                    });
+
+                    // Reset on click outside
+                    const clickOutsideHandler = (e) => {
+                        if (isAwaitingConfirm && !seekBtn.contains(e.target)) {
+                            resetSeekButton();
+                        }
+                    };
+                    document.addEventListener('click', clickOutsideHandler);
+
+                    // Cleanup when item is removed
+                    item.addEventListener('DOMNodeRemovedFromDocument', () => {
+                        resetSeekButton();
+                        document.removeEventListener('click', clickOutsideHandler);
                     });
 
                     timelineList.appendChild(item);
@@ -1443,11 +1485,53 @@
                     });
 
                     const restoreBtn = item.querySelector('.seek-btn');
-                    restoreBtn.addEventListener('click', () => {
-                        const targetTime = op.timestamp;
-                        if (confirm(`Restore to timestamp ${targetTime}? This will reset the board and fast-forward.`)) {
-                            nodecg.sendMessage('seekToTimestamp', targetTime);
+                    let seekConfirmTimer = null;
+                    let isAwaitingConfirm = false;
+                    const originalSeekText = getI18nText('record_seek');
+
+                    const resetSeekButton = () => {
+                        if (seekConfirmTimer) {
+                            clearTimeout(seekConfirmTimer);
+                            seekConfirmTimer = null;
                         }
+                        isAwaitingConfirm = false;
+                        restoreBtn.textContent = originalSeekText;
+                        restoreBtn.classList.remove('btn-warning');
+                        restoreBtn.classList.add('btn-primary');
+                    };
+
+                    restoreBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+
+                        if (isAwaitingConfirm) {
+                            // Second click - execute seek
+                            resetSeekButton();
+                            const targetTime = op.timestamp;
+                            nodecg.sendMessage('seekToTimestamp', targetTime);
+                        } else {
+                            // First click - show confirmation state
+                            isAwaitingConfirm = true;
+                            restoreBtn.textContent = getI18nText('record_sure') || 'Sure?';
+                            restoreBtn.classList.remove('btn-primary');
+                            restoreBtn.classList.add('btn-warning');
+
+                            // Auto-reset after 3 seconds
+                            seekConfirmTimer = setTimeout(resetSeekButton, 3000);
+                        }
+                    });
+
+                    // Reset on click outside
+                    const clickOutsideHandler = (e) => {
+                        if (isAwaitingConfirm && !restoreBtn.contains(e.target)) {
+                            resetSeekButton();
+                        }
+                    };
+                    document.addEventListener('click', clickOutsideHandler);
+
+                    // Cleanup when item is removed
+                    item.addEventListener('DOMNodeRemovedFromDocument', () => {
+                        resetSeekButton();
+                        document.removeEventListener('click', clickOutsideHandler);
                     });
 
                     timelineDisplayList.appendChild(item);

@@ -455,6 +455,12 @@
     "cht": "跳轉",
     "en": "Seek"
   },
+  "record_sure": {
+    "jp": "確認",
+    "chs": "确定",
+    "cht": "確定",
+    "en": "Sure"
+  },
   "record_round": {
     "jp": "ラウンド",
     "chs": "回合",
