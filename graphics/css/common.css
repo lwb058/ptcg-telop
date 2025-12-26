@@ -944,16 +944,14 @@ html {
 .lost-zone-counter {
     position: absolute;
     top: 195px;
-    /* Position it below the side area */
     width: 36px;
     display: none;
-    /* Hidden by default */
     flex-direction: column;
     align-items: center;
     gap: 2px;
     padding: 4px;
     box-sizing: border-box;
-    background-color: var(--first-color);
+    background-color: var(--main-color);
     border: var(--module-border) solid var(--stroke-color);
     border-radius: var(--module-border-radius);
 }

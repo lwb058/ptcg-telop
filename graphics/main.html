@@ -433,13 +433,17 @@
                 const updateSideClass = (side, themeName) => {
                     const playerArea = document.getElementById(`player-${side}-area`);
                     const sideArea = document.getElementById(`side-${side}-area`);
+                    const lostZoneArea = document.getElementById(`lost-zone-${side}-area`);
 
                     if (playerArea) {
                         playerArea.className = `player-area ${themeName}`;
                     }
                     if (sideArea) {
-                        // Assuming side-area also needs the base class 'side-area'
                         sideArea.className = `side-area ${themeName}`;
+                    }
+                    if (lostZoneArea) {
+                        const isVisible = lostZoneArea.classList.contains('visible');
+                        lostZoneArea.className = `lost-zone-counter ${themeName}${isVisible ? ' visible' : ''}`;
                     }
                 };
 
