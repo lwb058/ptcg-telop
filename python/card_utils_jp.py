@@ -304,6 +304,13 @@ def get_card_details(card_id, html_content=None):
                         name_parts = [c.strip() for c in current_element.contents if isinstance(c, str)]
                         name = "".join(name_parts).strip()
                         text = parse_energy_icons(current_element.find_next_sibling('p'))
+                        
+                        # Fallback: Extract damage from text effects if explicit damage is missing
+                        if not damage:
+                            damage_match = re.search(r'(\d+)ダメージ', text)
+                            if damage_match:
+                                damage = damage_match.group(1)
+
                         attacks_list.append({"name": name, "cost": costs, "damage": damage, "text": text})
                     current_element = current_element.next_sibling
         
