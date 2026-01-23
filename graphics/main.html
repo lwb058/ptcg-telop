@@ -1404,11 +1404,45 @@
                     setLink('theme-css-R', null);
                 }
 
-                // Apply active theme class to body
-                const settings = settingsRep.value || {};
-                const themeName = settings.activeTheme || 'Default';
-                document.body.className = document.body.className.replace(/theme-[\w-]+/g, '').trim(); // Remove old theme classes if any
-                document.body.classList.add(themeName); // Add simple theme name class (e.g. "Neon")
+                // Apply active theme class to specific player areas
+                // We extract the theme name directly from the CSS path to ensure 1:1 mapping with the loaded styles.
+                const setSideTheme = (side, cssPath) => {
+                    const areaId = side === 'L' ? 'player-L-area' : 'player-R-area';
+                    const areaEl = document.getElementById(areaId);
+                    if (!areaEl) return;
+
+                    let newTheme = 'Default';
+                    if (cssPath) {
+                        try {
+                            const parts = cssPath.split('/');
+                            if (parts.length >= 2) {
+                                newTheme = parts[parts.length - 2];
+                            }
+                        } catch (e) {
+                            console.error('Error parsing theme path:', cssPath, e);
+                        }
+                    }
+
+                    // Remove old theme class if present
+                    const oldTheme = areaEl.dataset.currentTheme;
+                    if (oldTheme && oldTheme !== newTheme) {
+                        areaEl.classList.remove(oldTheme);
+                    }
+
+                    // Add new theme class
+                    if (newTheme !== 'Default') {
+                        areaEl.classList.add(newTheme);
+                        areaEl.dataset.currentTheme = newTheme;
+                    } else {
+                        areaEl.dataset.currentTheme = '';
+                    }
+                };
+
+                const cssL = (newVal && typeof newVal === 'object') ? newVal.left : null;
+                const cssR = (newVal && typeof newVal === 'object') ? newVal.right : null;
+
+                setSideTheme('L', cssL);
+                setSideTheme('R', cssR);
 
                 // Update assets which might be overridden by the theme
                 updateCustomizableAssets();

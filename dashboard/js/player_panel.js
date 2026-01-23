@@ -469,11 +469,11 @@ function setupPlayerPanel(side) {
             slotEl.querySelector('.empty-pokemon-select').addEventListener('change', (e) => {
                 const newCardId = e.target.value;
                 if (newCardId) {
-                    if (db && db[newCardId]) {
+                    if (cardDatabase.value && cardDatabase.value[newCardId]) {
                         queueOperation('SET_POKEMON', {
                             target: slotId,
                             cardId: newCardId,
-                            cardName: db[newCardId].name
+                            cardName: cardDatabase.value[newCardId].name
                         });
                     } else {
                         queueOperation('SET_POKEMON', { target: slotId, cardId: newCardId });
