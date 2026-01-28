@@ -1082,9 +1082,7 @@ body.dragging-energy .manual-attach-zone {
     display: none;
     /* Hidden by default */
     padding: 10px;
-    margin-top: 10px;
     border: 2px dashed #fbc02d;
-    border-radius: 10px;
     text-align: center;
     color: #fbc02d;
     font-weight: bold;
