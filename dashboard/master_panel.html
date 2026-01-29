@@ -172,6 +172,8 @@
                 <button id="select-with-rule-btn" class="btn select-btn" data-i18n="select_with_rule">ルール持ち</button>
                 <button id="select-opponent-all-btn" class="btn select-btn"
                     data-i18n="select_opponent_all">相手全体</button>
+                <button id="select-freezing-shroud-btn" class="btn btn-water" data-i18n="freezing_shroud">Freezing
+                    Shroud</button>
             </div>
             <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
             <div id="extrahp-shortcuts">
@@ -266,6 +268,7 @@
             const btnSelectWithAbility = document.getElementById('select-with-ability-btn');
             const btnSelectWithRule = document.getElementById('select-with-rule-btn');
             const btnSelectOpponentAll = document.getElementById('select-opponent-all-btn');
+            const btnSelectFreezingShroud = document.getElementById('select-freezing-shroud-btn');
             const btnKo0hp = document.getElementById('ko-0hp-btn');
             const damageShortcutsContainer = document.getElementById('damage-shortcuts');
             const selectBasicBtn = document.getElementById('select-basic-btn');
@@ -842,6 +845,31 @@
                 const opponentSlots = getOccupiedSlots().filter(slotId => slotId.startsWith(opponentPrefix));
                 selections.value = opponentSlots;
             });
+
+            if (btnSelectFreezingShroud) {
+                btnSelectFreezingShroud.addEventListener('click', () => {
+                    const db = cardDatabase.value;
+                    if (!db) return;
+
+                    const froslassName = getI18nText('card_name_froslass');
+
+                    slots.forEach(slot => {
+                        if (slot.value && slot.value.cardId) {
+                            const card = db[slot.value.cardId];
+                            // Check: Not Froslass AND Has Ability
+                            if (card && card.name !== froslassName && card.pokemon && card.pokemon.abilities && card.pokemon.abilities.length > 0) {
+                                const targetId = slot.name.replace('draft_', '');
+                                const currentDamage = slot.value.damage || 0;
+                                queueOrUpdateOperation('SET_DAMAGE', {
+                                    target: targetId,
+                                    value: currentDamage + 10,
+                                    targetName: getCardName(targetId)
+                                });
+                            }
+                        }
+                    });
+                });
+            }
 
             btnKo0hp.addEventListener('click', () => {
                 slots.forEach(slot => {

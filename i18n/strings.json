@@ -490,5 +490,17 @@
     "chs": "OpsPack将被保留以便恢复。",
     "cht": "OpsPack將被保留以便恢復。",
     "en": "The OpsPack will be kept for potential restoration."
+  },
+  "card_name_froslass": {
+    "jp": "ユキメノコ",
+    "en": "Froslass",
+    "chs": "雪妖女",
+    "cht": "雪妖女"
+  },
+  "freezing_shroud": {
+    "jp": "いてつくとばり",
+    "en": "Freezing Shroud",
+    "chs": "冻结帷幕",
+    "cht": "冰冷之帳"
   }
 }
