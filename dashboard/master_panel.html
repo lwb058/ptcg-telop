@@ -107,7 +107,7 @@
                     style="padding:5px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 4px 4px 0px 0px; background: lightgrey">
                     <label for="damage-transfer-amount" data-i18n="DC-Transfer">Damage Transfer:</label>
                     <input type="number" id="damage-transfer-amount" class="compact-input" value="30" min="10" step="10"
-                        style="width: 60px;">
+                        style="width: 4em;">
                     <span style="border-left: 1px solid #303157; margin-left: 5px; padding-left: 15px;">Damage:</span>
                     <div id="damage-pool" style="display: flex; gap: 5px;">
                         <div class="damage-counter pool-item" draggable="true" data-damage-amount="10">10</div>
@@ -117,10 +117,29 @@
                         <div class="damage-counter pool-item" draggable="true" data-damage-amount="130">130</div>
                     </div>
                 </div>
-                <div id="batch-damage-drop-zone" data-i18n="batch_damage_drop_zone_text">
+                <div id="batch-counter-drop-zone" data-i18n="batch_counter_drop_zone_text">
                 </div>
                 <div id="battle-field" class="battle-field-container">
                     <!-- Battle field will be rendered here by JavaScript -->
+                </div>
+                <div id="extrahp-transfer-control"
+                    style="padding:5px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 0px 0px 4px 4px; background: lightgrey; border-top: 1px solid white;">
+                    <label for="extrahp-transfer-amount">ExtraHP Transfer:</label>
+                    <input type="number" id="extrahp-transfer-amount" class="compact-input" value="100" min="10"
+                        step="10" style="width: 4em;">
+                    <span style="border-left: 1px solid #303157; margin-left: 5px; padding-left: 15px;">ExtraHP:</span>
+                    <div id="extrahp-pool" style="display: flex; gap: 5px;">
+                        <div class="damage-counter is-extrahp pool-item" draggable="true" data-damage-amount="-30"
+                            data-counter-type="extrahp">-30</div>
+                        <div class="damage-counter is-extrahp pool-item" draggable="true" data-damage-amount="30"
+                            data-counter-type="extrahp">30</div>
+                        <div class="damage-counter is-extrahp pool-item" draggable="true" data-damage-amount="50"
+                            data-counter-type="extrahp">50</div>
+                        <div class="damage-counter is-extrahp pool-item" draggable="true" data-damage-amount="60"
+                            data-counter-type="extrahp">60</div>
+                        <div class="damage-counter is-extrahp pool-item" draggable="true" data-damage-amount="100"
+                            data-counter-type="extrahp">100</div>
+                    </div>
                 </div>
             </div>
             <div id="attack-zone-flex-container" class="flex-container">
@@ -286,7 +305,7 @@
             const stadiumList = document.getElementById('stadium-list');
             const stadiumUsedCheckbox = document.getElementById('stadium-used-checkbox');
             const damagePool = document.getElementById('damage-pool');
-            const batchDamageDropZone = document.getElementById('batch-damage-drop-zone');
+            const batchCounterDropZone = document.getElementById('batch-counter-drop-zone');
             const pokemonActionDropZones = document.getElementById('pokemon-action-drop-zones');
             const pokemonRemoveDropZone = document.getElementById('pokemon-remove-drop-zone');
             const pokemonKoDropZone = document.getElementById('pokemon-ko-drop-zone');
@@ -298,7 +317,7 @@
             // --- Global Drag Handlers for Batch Damage Zone ---
             document.body.addEventListener('dragstart', (e) => {
                 if (e.target.classList.contains('pool-item')) {
-                    batchDamageDropZone.classList.add('show');
+                    setTimeout(() => batchCounterDropZone.classList.add('show'), 0); // Use setTimeout to avoid interfering with the drag start event itself
                 }
                 // Show Pokemon action drop zones when dragging from pokemon-drop-target
                 const pokemonCard = e.target.closest('.pokemon-drop-target');
@@ -307,26 +326,34 @@
                 }
             });
             document.body.addEventListener('dragend', () => {
-                batchDamageDropZone.classList.remove('show');
+                batchCounterDropZone.classList.remove('show');
                 pokemonActionDropZones.classList.remove('show');
                 document.body.classList.remove('dragging-energy');
             });
 
-
             // --- Batch Damage Drop Zone Logic ---
-            batchDamageDropZone.addEventListener('dragover', (e) => {
+            batchCounterDropZone.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 e.currentTarget.classList.add('over');
             });
-            batchDamageDropZone.addEventListener('dragleave', (e) => {
+            batchCounterDropZone.addEventListener('dragleave', (e) => {
                 e.currentTarget.classList.remove('over');
             });
-            batchDamageDropZone.addEventListener('drop', (e) => {
+            batchCounterDropZone.addEventListener('drop', (e) => {
                 e.preventDefault();
                 e.currentTarget.classList.remove('over');
 
                 const isDamageAdd = e.dataTransfer.types.includes('application/ptcg-damage-add');
-                if (!isDamageAdd) return;
+                const isExtraHpAdd = e.dataTransfer.types.includes('application/ptcg-extrahp-add');
+
+                let type = null;
+                if (isDamageAdd) type = 'damage';
+                else if (isExtraHpAdd) type = 'extrahp';
+
+                if (!type) return;
+
+                const config = getCounterConfig(type);
+                if (!config) return;
 
                 const amountToAdd = parseInt(e.dataTransfer.getData('text/plain'), 10);
                 const currentSelections = selections.value || [];
@@ -338,11 +365,11 @@
                 currentSelections.forEach(slotId => {
                     const slotReplicant = slots.find(s => s.name === `draft_${slotId}`);
                     if (slotReplicant && slotReplicant.value && slotReplicant.value.cardId) {
-                        const currentDamage = slotReplicant.value.damage || 0;
-                        const newDamage = currentDamage + amountToAdd;
-                        queueOrUpdateOperation('SET_DAMAGE', {
+                        const currentValue = slotReplicant.value[config.propName] || 0;
+                        const newValue = currentValue + amountToAdd;
+                        queueOrUpdateOperation(config.opName, {
                             target: slotId,
-                            value: newDamage,
+                            value: newValue,
                             targetName: getCardName(slotId)
                         });
                     }
@@ -406,13 +433,24 @@
                 }
             });
 
-            damagePool.addEventListener('dragstart', (e) => {
+            // Generic Pool Drag Handler
+            const handlePoolDragStart = (e) => {
                 if (e.target.classList.contains('pool-item')) {
-                    e.dataTransfer.setData('application/ptcg-damage-add', 'true');
-                    e.dataTransfer.setData('text/plain', e.target.dataset.damageAmount);
-                    e.dataTransfer.effectAllowed = 'copy';
+                    const type = e.target.dataset.counterType || 'damage'; // Default to damage for backward compatibility
+                    const config = getCounterConfig(type);
+                    if (config) {
+                        e.dataTransfer.setData(config.mimeAdd, 'true');
+                        e.dataTransfer.setData('text/plain', e.target.dataset.damageAmount);
+                        e.dataTransfer.effectAllowed = 'copy';
+                    }
                 }
-            });
+            };
+
+            damagePool.addEventListener('dragstart', handlePoolDragStart);
+            const extrahpPool = document.getElementById('extrahp-pool');
+            if (extrahpPool) {
+                extrahpPool.addEventListener('dragstart', handlePoolDragStart);
+            }
 
             function updateUIStrings() {
                 document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -1390,6 +1428,28 @@
                 });
             }
 
+            // --- Counter Configuration (Unified Logic) ---
+            const counterConfig = {
+                damage: {
+                    propName: 'damage',
+                    opName: 'SET_DAMAGE',
+                    amountInputId: 'damage-transfer-amount',
+                    mimeTransfer: 'application/ptcg-damage-transfer',
+                    mimeAdd: 'application/ptcg-damage-add',
+                    className: 'damage-counter'
+                },
+                extrahp: {
+                    propName: 'extraHp',
+                    opName: 'SET_EXTRA_HP',
+                    amountInputId: 'extrahp-transfer-amount',
+                    mimeTransfer: 'application/ptcg-extrahp-transfer',
+                    mimeAdd: 'application/ptcg-extrahp-add',
+                    className: 'damage-counter is-extrahp'
+                }
+            };
+
+            const getCounterConfig = (type) => counterConfig[type];
+
             /**
              * Creates a DOM element for a Pokémon card in the targeting view.
              * @param {string} slotId - The ID of the slot (e.g., 'slotL0').
@@ -1411,22 +1471,30 @@
                     img.src = getCardImageUrl(slotValue.cardId);
                     cardEl.appendChild(img);
 
-                    const damage = slotValue.damage || 0;
-                    if (damage > 0) {
-                        const damageCounter = document.createElement('div');
-                        damageCounter.className = 'damage-counter on-pokemon';
-                        damageCounter.textContent = damage;
-                        damageCounter.draggable = true;
+                    const renderCounter = (type) => {
+                        const config = getCounterConfig(type);
+                        const value = slotValue[config.propName] || 0;
+                        if (value != 0) {
+                            const counter = document.createElement('div');
+                            counter.className = `${config.className} on-pokemon`;
+                            counter.textContent = value;
+                            counter.draggable = true;
+                            counter.dataset.counterType = type;
 
-                        damageCounter.addEventListener('dragstart', (e) => {
-                            e.stopPropagation(); // Prevent card drag when dragging counter
-                            e.dataTransfer.setData('application/ptcg-damage-transfer', 'true');
-                            e.dataTransfer.setData('text/plain', slotId);
-                            e.dataTransfer.effectAllowed = 'move';
-                        });
+                            counter.addEventListener('dragstart', (e) => {
+                                e.stopPropagation(); // Prevent card drag
+                                e.dataTransfer.setData(config.mimeTransfer, 'true');
+                                e.dataTransfer.setData('text/plain', slotId);
+                                e.dataTransfer.effectAllowed = 'move';
+                            });
 
-                        cardEl.appendChild(damageCounter);
-                    }
+                            cardEl.appendChild(counter);
+                        }
+                    };
+
+                    renderCounter('damage');
+                    renderCounter('extrahp');
+
                 } else {
                     cardEl.classList.add('empty-target-slot');
                 }
@@ -1545,20 +1613,22 @@
             battleField.addEventListener('dragover', e => {
                 const isDamageTransfer = e.dataTransfer.types.includes('application/ptcg-damage-transfer');
                 const isDamageAdd = e.dataTransfer.types.includes('application/ptcg-damage-add');
+                const isExtraHpTransfer = e.dataTransfer.types.includes('application/ptcg-extrahp-transfer');
+                const isExtraHpAdd = e.dataTransfer.types.includes('application/ptcg-extrahp-add');
                 const isPokemonSwap = e.dataTransfer.types.includes('application/ptcg-pokemon-swap');
                 const targetCard = e.target.closest('.pokemon-target-card');
 
                 if (targetCard) { // Dragging over a Pokémon card
-                    if (isDamageTransfer || isDamageAdd || isPokemonSwap) {
+                    if (isDamageTransfer || isDamageAdd || isExtraHpTransfer || isExtraHpAdd || isPokemonSwap) {
                         e.preventDefault();
-                        if ((isDamageTransfer || isDamageAdd) && !targetCard.classList.contains('empty-target-slot')) {
+                        if ((isDamageTransfer || isDamageAdd || isExtraHpTransfer || isExtraHpAdd) && !targetCard.classList.contains('empty-target-slot')) {
                             targetCard.classList.add('over');
                         }
                         if (isPokemonSwap) {
                             targetCard.style.boxShadow = '0 0 10px 3px #3498db';
                         }
                     }
-                } else if ((isDamageTransfer || isDamageAdd) && e.currentTarget.contains(e.target)) { // Dragging over an empty area within battleField
+                } else if ((isDamageTransfer || isDamageAdd || isExtraHpTransfer || isExtraHpAdd) && e.currentTarget.contains(e.target)) { // Dragging over an empty area within battleField
                     e.preventDefault();
                     e.currentTarget.classList.add('over'); // Highlight the field itself
                 }
@@ -1574,6 +1644,86 @@
                 }
             });
 
+            const handleCounterDrop = (configType, e, dropTarget) => {
+                const config = getCounterConfig(configType);
+                if (!config) return;
+
+                const isTransfer = e.dataTransfer.types.includes(config.mimeTransfer);
+                const isAdd = e.dataTransfer.types.includes(config.mimeAdd);
+
+                if (!dropTarget) {
+                    // Dropped on empty field -> Remove/Reduce (Transfer only)
+                    if (isTransfer) {
+                        const sourceSlotId = e.dataTransfer.getData('text/plain');
+                        const sourceReplicant = slots.find(s => s.name === `draft_${sourceSlotId}`);
+                        if (sourceReplicant) {
+                            const currentValue = sourceReplicant.value[config.propName] || 0;
+                            const inputEl = document.getElementById(config.amountInputId);
+                            const transferAmount = parseInt(inputEl ? inputEl.value : 0, 10);
+                            const newValue = Math.max(0, currentValue - transferAmount);
+
+                            queueOrUpdateOperation(config.opName, {
+                                target: sourceSlotId,
+                                value: newValue,
+                                targetName: getCardName(sourceSlotId)
+                            });
+                        }
+                    }
+                } else {
+                    // Dropped on a Pokemon
+                    const destinationSlotId = dropTarget.dataset.slotId;
+                    // Check if dropping on same slot
+                    if (isTransfer) {
+                        const sourceSlotId = e.dataTransfer.getData('text/plain');
+                        if (sourceSlotId === destinationSlotId) return; // Dropped on self
+                    }
+
+                    const destReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
+                    if (!destReplicant || !destReplicant.value || !destReplicant.value.cardId) return;
+
+                    let amountChange = 0;
+                    if (isAdd) {
+                        amountChange = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                    } else if (isTransfer) {
+                        const inputEl = document.getElementById(config.amountInputId);
+                        let requestedAmount = parseInt(inputEl ? inputEl.value : 0, 10);
+
+                        // Handle Source Reduction
+                        const sourceSlotId = e.dataTransfer.getData('text/plain');
+                        const sourceReplicant = slots.find(s => s.name === `draft_${sourceSlotId}`);
+                        if (sourceReplicant) {
+                            const sourceCurrentValue = sourceReplicant.value[config.propName] || 0;
+
+                            // but based on user request "damage less than transfer amount", we assume standard positive logic.
+                            let actualTransfer = requestedAmount;
+                            if (sourceCurrentValue != 0) {
+                                actualTransfer = Math.min(requestedAmount, Math.abs(sourceCurrentValue));
+                            }
+
+                            amountChange = actualTransfer;
+
+                            const sourceNewValue = Math.max(0, sourceCurrentValue - amountChange);
+
+                            queueOrUpdateOperation(config.opName, {
+                                target: sourceSlotId,
+                                value: sourceNewValue,
+                                targetName: getCardName(sourceSlotId)
+                            });
+                        }
+                    }
+
+                    // Handle Destination Increase
+                    const destCurrentValue = destReplicant.value[config.propName] || 0;
+                    const destNewValue = destCurrentValue + amountChange;
+
+                    queueOrUpdateOperation(config.opName, {
+                        target: destinationSlotId,
+                        value: destNewValue,
+                        targetName: getCardName(destinationSlotId)
+                    });
+                }
+            };
+
             battleField.addEventListener('drop', e => {
                 e.preventDefault();
                 const dropTarget = e.target.closest('.pokemon-target-card');
@@ -1584,72 +1734,23 @@
                     dropTarget.style.boxShadow = '';
                 }
 
-                const isDamageTransfer = e.dataTransfer.types.includes('application/ptcg-damage-transfer');
-                const isDamageAdd = e.dataTransfer.types.includes('application/ptcg-damage-add');
+                const checkTypeAndHandle = (type) => {
+                    const config = getCounterConfig(type);
+                    if (e.dataTransfer.types.includes(config.mimeTransfer) || e.dataTransfer.types.includes(config.mimeAdd)) {
+                        handleCounterDrop(type, e, dropTarget);
+                        return true;
+                    }
+                    return false;
+                };
+
+                if (checkTypeAndHandle('damage')) return;
+                if (checkTypeAndHandle('extrahp')) return;
+
                 const isPokemonSwap = e.dataTransfer.types.includes('application/ptcg-pokemon-swap');
 
-                if (!dropTarget) {
-                    if (isDamageTransfer) {
-                        const sourceSlotId = e.dataTransfer.getData('text/plain');
-                        const sourceReplicant = slots.find(s => s.name === `draft_${sourceSlotId}`);
-                        if (sourceReplicant) {
-                            const currentDamage = sourceReplicant.value.damage || 0;
-                            const transferAmount = parseInt(document.getElementById('damage-transfer-amount').value, 10);
-                            const newDamage = Math.max(0, currentDamage - transferAmount);
-
-                            queueOrUpdateOperation('SET_DAMAGE', {
-                                target: sourceSlotId,
-                                value: newDamage
-                            });
-                        }
-                    }
-                    return;
-                }
-
-                const destinationSlotId = dropTarget.dataset.slotId;
-
-                if (isDamageTransfer) {
+                if (isPokemonSwap && dropTarget) {
                     const sourceSlotId = e.dataTransfer.getData('text/plain');
-
-                    if (sourceSlotId && destinationSlotId && sourceSlotId !== destinationSlotId && !dropTarget.classList.contains('empty-target-slot')) {
-                        const sourceReplicant = slots.find(s => s.name === `draft_${sourceSlotId}`);
-                        const destReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
-
-                        if (sourceReplicant && destReplicant) {
-                            const sourceDamage = sourceReplicant.value.damage || 0;
-                            const destDamage = destReplicant.value.damage || 0;
-                            const transferAmount = parseInt(document.getElementById('damage-transfer-amount').value, 10);
-
-                            const actualTransfer = Math.min(sourceDamage, transferAmount);
-
-                            if (actualTransfer > 0) {
-                                queueOrUpdateOperation('SET_DAMAGE', {
-                                    target: sourceSlotId,
-                                    value: sourceDamage - actualTransfer
-                                });
-                                queueOrUpdateOperation('SET_DAMAGE', {
-                                    target: destinationSlotId,
-                                    value: destDamage + actualTransfer
-                                });
-                            }
-                        }
-                    }
-                } else if (isDamageAdd) {
-                    const amountToAdd = parseInt(e.dataTransfer.getData('text/plain'), 10);
-
-                    if (destinationSlotId && !isNaN(amountToAdd) && !dropTarget.classList.contains('empty-target-slot')) {
-                        const destReplicant = slots.find(s => s.name === `draft_${destinationSlotId}`);
-                        if (destReplicant) {
-                            const destDamage = destReplicant.value.damage || 0;
-                            queueOrUpdateOperation('SET_DAMAGE', {
-                                target: destinationSlotId,
-                                value: destDamage + amountToAdd
-                            });
-                        }
-                    }
-                } else if (isPokemonSwap) {
-                    const sourceSlotId = e.dataTransfer.getData('text/plain');
-                    handleUnifiedPokemonSwitch(sourceSlotId, destinationSlotId);
+                    handleUnifiedPokemonSwitch(sourceSlotId, dropTarget.dataset.slotId);
                 }
             });
 

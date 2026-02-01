@@ -1074,11 +1074,22 @@ body.dragging-energy .manual-attach-zone {
     z-index: 10;
 }
 
+.damage-counter.is-extrahp {
+    background-color: #28a745;
+    border-color: white;
+}
+
+.damage-counter.on-pokemon.is-extrahp {
+    top: auto;
+    right: -5px;
+    bottom: -5px;
+}
+
 .pool-item {
     position: relative;
 }
 
-#batch-damage-drop-zone {
+#batch-counter-drop-zone {
     display: none;
     /* Hidden by default */
     padding: 10px;
@@ -1089,12 +1100,12 @@ body.dragging-energy .manual-attach-zone {
     background-color: rgba(251, 192, 45, 0.1);
 }
 
-#batch-damage-drop-zone.show {
+#batch-counter-drop-zone.show {
     display: block;
     /* Shown when dragging from damage pool */
 }
 
-#batch-damage-drop-zone.over {
+#batch-counter-drop-zone.over {
     background-color: rgba(251, 192, 45, 0.3);
 }
 

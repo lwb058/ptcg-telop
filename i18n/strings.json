@@ -347,7 +347,7 @@
     "cht": "轉移量",
     "en": "Damage Transfer"
   },
-  "batch_damage_drop_zone_text": {
+  "batch_counter_drop_zone_text": {
     "jp": "ここにドロップすると、選択中の全員にダメカンをのせます",
     "chs": "拖到此处，对所有选中的宝可梦造成伤害",
     "cht": "拖到這裡，對所有選取的寶可夢造成傷害",
