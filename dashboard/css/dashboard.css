@@ -837,6 +837,7 @@ body.dragging-energy .manual-attach-zone {
 }
 
 .battle-field-container {
+    position: relative;
     padding: 2px;
     border: 1px solid #ccc;
     border-radius: 0px 0px 4px 4px;
@@ -1091,22 +1092,35 @@ body.dragging-energy .manual-attach-zone {
 
 #batch-counter-drop-zone {
     display: none;
-    /* Hidden by default */
+    position: absolute;
+    top: 50%;
+    right: -12%;
+    transform: translate(-50%, -50%);
+    width: 9em;
+    height: auto;
     padding: 10px;
-    border: 2px dashed #fbc02d;
+    border: 3px dashed #fbc02d;
+    border-radius: 10px;
     text-align: center;
-    color: #fbc02d;
+    color: white;
     font-weight: bold;
-    background-color: rgba(251, 192, 45, 0.1);
+    background-color: rgba(40, 40, 40, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 20;
+    transition: all 0.2s ease-in-out;
 }
 
 #batch-counter-drop-zone.show {
-    display: block;
-    /* Shown when dragging from damage pool */
+    display: flex;
+    /* Use flex to center content */
+    align-items: center;
+    justify-content: center;
 }
 
 #batch-counter-drop-zone.over {
-    background-color: rgba(251, 192, 45, 0.3);
+    background-color: rgba(251, 192, 45, 0.5);
+    transform: translate(-50%, -50%) scale(1.05);
+    /* Add some feedback */
 }
 
 /* Pokemon Action Drop Zones (Remove & K.O.) */

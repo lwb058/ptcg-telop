@@ -185,30 +185,11 @@
                 <button id="select-reverse-btn" class="btn btn-lightning" data-i18n="reverse">Reverse</button>
                 <button id="select-basic-btn" class="btn btn-grass" data-i18n="select_basic">Basic</button>
                 <button id="select-stage2-btn" class="btn btn-grass" data-i18n="select_stage2">Stage 2</button>
-                <button id="select-with-energy-btn" class="btn select-btn" data-i18n="select_with_energy">エネ付き</button>
-                <button id="select-with-ability-btn" class="btn select-btn"
-                    data-i18n="select_with_ability">特性あり</button>
-                <button id="select-with-rule-btn" class="btn select-btn" data-i18n="select_with_rule">ルール持ち</button>
                 <button id="select-opponent-all-btn" class="btn select-btn"
                     data-i18n="select_opponent_all">相手全体</button>
+                <button id="no-extrahp-btn" class="btn btn-black">No ExtraHP</button>
                 <button id="select-freezing-shroud-btn" class="btn btn-water" data-i18n="freezing_shroud">Freezing
                     Shroud</button>
-            </div>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
-            <div id="extrahp-shortcuts">
-                <h4
-                    style="text-align:center; margin-top: 10px; margin-bottom: 5px; font-size: 12px; font-weight: bold; color: #555;">
-                    ↓↓↓ ExtraHP Adjust ↓↓↓</h4>
-                <div class="grid-container"
-                    style="grid-template-columns: repeat(2, 1fr); gap: 5px; margin-bottom: 10px;">
-                </div>
-                <div class="grid-container" style="grid-template-columns: repeat(5, 1fr); gap: 5px;">
-                    <button class="btn btn-grass" data-extrahp-adj="+30">+30 MaxHP</button>
-                    <button class="btn btn-grass" data-extrahp-adj="+50">+50 MaxHP</button>
-                    <button class="btn btn-grass" data-extrahp-adj="+100">+100 MaxHP</button>
-                    <button class="btn btn-fire" data-extrahp-adj="-30">-30 MaxHP</button>
-                    <button class="btn btn-black" data-extrahp-set="0">No ExtraHP</button>
-                </div>
             </div>
         </div>
     </div>
@@ -283,16 +264,13 @@
             const pokemonSourceContainer = document.getElementById('pokemon-source-grid');
             const btnSelectClear = document.getElementById('select-clear-btn');
             const btnSelectReverse = document.getElementById('select-reverse-btn');
-            const btnSelectWithEnergy = document.getElementById('select-with-energy-btn');
-            const btnSelectWithAbility = document.getElementById('select-with-ability-btn');
-            const btnSelectWithRule = document.getElementById('select-with-rule-btn');
             const btnSelectOpponentAll = document.getElementById('select-opponent-all-btn');
             const btnSelectFreezingShroud = document.getElementById('select-freezing-shroud-btn');
             const btnKo0hp = document.getElementById('ko-0hp-btn');
             const damageShortcutsContainer = document.getElementById('damage-shortcuts');
             const selectBasicBtn = document.getElementById('select-basic-btn');
             const selectStage2Btn = document.getElementById('select-stage2-btn');
-            const extrahpShortcutsContainer = document.getElementById('extrahp-shortcuts');
+            const noExtraHpBtn = document.getElementById('no-extrahp-btn');
             const energyToolsContainer = document.getElementById('energy-tool-buttons');
             const battleField = document.getElementById('battle-field');
             const toggleFieldHeightBtn = document.getElementById('toggle-field-height-btn');
@@ -836,40 +814,6 @@
                 const current = selections.value || [];
                 selections.value = allSlots.filter(id => !current.includes(id));
             });
-            btnSelectWithEnergy.addEventListener('click', () => {
-                const selected = [];
-                slots.forEach(slot => {
-                    if (slot.value && slot.value.cardId && slot.value.attachedEnergy && slot.value.attachedEnergy.length > 0) {
-                        selected.push(slot.name.replace('draft_', ''));
-                    }
-                });
-                selections.value = selected;
-            });
-            btnSelectWithAbility.addEventListener('click', () => {
-                const db = cardDatabase.value;
-                if (!db) return;
-                const selected = [];
-                slots.forEach(slot => {
-                    const card = slot.value && slot.value.cardId ? db[slot.value.cardId] : null;
-                    if (card && card.pokemon && card.pokemon.abilities && card.pokemon.abilities.length > 0) {
-                        selected.push(slot.name.replace('draft_', ''));
-                    }
-                });
-                selections.value = selected;
-            });
-            btnSelectWithRule.addEventListener('click', () => {
-                const db = cardDatabase.value;
-                if (!db) return;
-                const ruleSubtypes = ['ex', 'VSTAR', 'VMAX', 'V-UNION', 'V', 'GX', 'EX', 'BREAK'];
-                const selected = [];
-                slots.forEach(slot => {
-                    const card = slot.value && slot.value.cardId ? db[slot.value.cardId] : null;
-                    if (card && card.subtype && ruleSubtypes.includes(card.subtype)) {
-                        selected.push(slot.name.replace('draft_', ''));
-                    }
-                });
-                selections.value = selected;
-            });
 
             btnSelectOpponentAll.addEventListener('click', () => {
                 const currentTurn = draft_currentTurn.value;
@@ -948,43 +892,22 @@
                 selectStage2Btn.addEventListener('click', createEvoSelectHandler('2 進化'));
             }
 
-            // --- Extra HP Shortcut Module Logic ---
-            extrahpShortcutsContainer.addEventListener('click', (e) => {
-                const target = e.target.closest('button');
-                if (!target) return;
-
-                const currentSelections = selections.value;
-                if (!currentSelections || currentSelections.length === 0) {
-                    console.log('No Pokémon selected for Extra HP adjustment.');
-                    return;
-                }
-
-                const adjValue = parseInt(target.dataset.extrahpAdj, 10);
-                const setValue = target.dataset.extrahpSet !== undefined ? parseInt(target.dataset.extrahpSet, 10) : NaN;
-
-                currentSelections.forEach(slotId => {
-                    const slotReplicant = slots.find(s => s.name === `draft_${slotId}`);
-                    if (slotReplicant && slotReplicant.value && slotReplicant.value.cardId) {
-                        let newExtraHp;
-                        if (!isNaN(setValue)) {
-                            // Handle "Set to" logic
-                            newExtraHp = setValue;
-                        } else if (!isNaN(adjValue)) {
-                            // Handle adjustment logic
-                            const currentExtraHp = parseInt(slotReplicant.value.extraHp || 0, 10);
-                            newExtraHp = currentExtraHp + adjValue;
+            if (noExtraHpBtn) {
+                noExtraHpBtn.addEventListener('click', () => {
+                    slots.forEach(slot => {
+                        if (slot.value && slot.value.cardId) {
+                            const slotId = slot.name.replace('draft_', '');
+                            if (slot.value.extraHp && slot.value.extraHp !== 0) {
+                                queueOrUpdateOperation('SET_EXTRA_HP', {
+                                    target: slotId,
+                                    value: 0,
+                                    targetName: getCardName(slotId)
+                                });
+                            }
                         }
-
-                        if (newExtraHp !== undefined) {
-                            queueOrUpdateOperation('SET_EXTRA_HP', {
-                                target: slotId,
-                                value: newExtraHp,
-                                targetName: getCardName(slotId)
-                            });
-                        }
-                    }
+                    });
                 });
-            });
+            }
 
             // --- Energy & Tool Module Logic (Drag and Drop) ---
             // 1. DRAG START: Set data when dragging an energy or tool
@@ -1521,7 +1444,8 @@
              */
             function renderTargetingField() {
                 if (!battleField) return;
-                battleField.innerHTML = ''; // Clear view
+                battleField.innerHTML = '';
+                battleField.appendChild(batchCounterDropZone);
 
                 const turn = draft_currentTurn.value;
                 if (!turn) return;

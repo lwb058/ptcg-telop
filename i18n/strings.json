@@ -221,24 +221,6 @@
     "cht": "感謝您對這個專案的支持！",
     "en": "Thank you for your support!"
   },
-  "select_with_energy": {
-    "jp": "エネ付き",
-    "en": "w/Energy",
-    "chs": "有能量",
-    "cht": "有能量"
-  },
-  "select_with_ability": {
-    "jp": "特性あり",
-    "en": "w/Ability",
-    "chs": "带特性",
-    "cht": "有特性"
-  },
-  "select_with_rule": {
-    "jp": "ルール持ち",
-    "en": "w/Rule",
-    "chs": "带规则",
-    "cht": "有規則"
-  },
   "select_opponent_all": {
     "jp": "相手全体",
     "en": "Opponent All",
@@ -348,10 +330,10 @@
     "en": "Damage Transfer"
   },
   "batch_counter_drop_zone_text": {
-    "jp": "ここにドロップすると、選択中の全員にダメカンをのせます",
-    "chs": "拖到此处，对所有选中的宝可梦造成伤害",
-    "cht": "拖到這裡，對所有選取的寶可夢造成傷害",
-    "en": "Drop here to apply damage to all selected Pokémon"
+    "jp": "選択中へ一括適用",
+    "chs": "批量应用于选中项",
+    "cht": "批量應用於選取項",
+    "en": "Apply to all selected"
   },
   "retreat": {
     "jp": "逃げる",
