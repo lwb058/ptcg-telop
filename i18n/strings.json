@@ -484,5 +484,17 @@
     "en": "Freezing Shroud",
     "chs": "冻结帷幕",
     "cht": "冰冷之帳"
+  },
+  "rondo": {
+    "jp": "ロンドダメージ",
+    "en": "Rondo Damage",
+    "chs": "回旋曲伤害",
+    "cht": "迴旋曲傷害"
+  },
+  "myriad_leaf_shower": {
+    "jp": "まんようしぐれ",
+    "en": "Myriad Leaf Shower",
+    "chs": "万叶阵雨",
+    "cht": "萬葉陣雨"
   }
 }
