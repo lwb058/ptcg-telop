@@ -43,7 +43,8 @@ module.exports = function (nodecg) {
 				discard: 'Escape',
 				apply: 'Shift+S',
 				clearSelection: 'Delete',
-				clearCard: 'Space'
+				clearCard: 'Space',
+				attackDrag: 'Shift'
 			},
 			lostZoneEnabled: false,
 			reverseCardDisplay: false,

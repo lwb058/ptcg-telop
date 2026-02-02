@@ -229,6 +229,7 @@ class HotkeyManager {
         this.callbacks = {};
         this.eventListeners = {};
         this.peekOpponentActive = false;
+        this.attackDragActive = false;
 
         // Initialize hotkeys from settings
         this._updateHotkeys(this.settingsReplicant.value);
@@ -268,6 +269,7 @@ class HotkeyManager {
             this.hotkeys.clearSelection = settings.hotkeys.clearSelection || 'Delete';
             this.hotkeys.clearCard = settings.hotkeys.clearCard || ' ';
             this.hotkeys.peekOpponent = settings.hotkeys.peekOpponent || 'Tab';
+            this.hotkeys.attackDrag = settings.hotkeys.attackDrag || 'Shift';
         } else {
             // Defaults
             this.hotkeys = {
@@ -275,9 +277,28 @@ class HotkeyManager {
                 apply: 'Shift+S',
                 clearSelection: 'Delete',
                 clearCard: 'Space',
-                peekOpponent: 'Tab'
+                peekOpponent: 'Tab',
+                attackDrag: 'Shift'
             };
         }
+    }
+
+    /**
+     * Checks if the drag event modifier matches the configured attack-drag key.
+     * Note: This is for DragEvent, not KeyboardEvent, so we only check modifier keys.
+     * @param {DragEvent} e - The drag/drop event
+     * @returns {boolean} True if the modifier key is pressed
+     */
+    checkAttackDragKey(e) {
+        const configKey = (this.hotkeys.attackDrag || 'Shift').toLowerCase();
+
+        // For drag events, we can only check modifier keys (shift, ctrl, alt, meta)
+        if (configKey === 'shift') return e.shiftKey;
+        if (configKey === 'ctrl' || configKey === 'control') return e.ctrlKey;
+        if (configKey === 'alt' || configKey === 'option') return e.altKey;
+        if (configKey === 'meta' || configKey === 'win' || configKey === 'command') return e.metaKey;
+
+        return false;
     }
 
     _handleKeydown(e) {
@@ -310,6 +331,12 @@ class HotkeyManager {
                 this.peekOpponentActive = true;
                 this._triggerAction('peekOpponent', true);
             }
+        } else if (this.checkAttackDragKey(e)) {
+            // attackDrag uses modifier-only check, not checkHotkey
+            if (!this.attackDragActive) {
+                this.attackDragActive = true;
+                this._triggerAction('attackDrag', true);
+            }
         }
     }
 
@@ -318,6 +345,23 @@ class HotkeyManager {
             if (this.peekOpponentActive) {
                 this.peekOpponentActive = false;
                 this._triggerAction('peekOpponent', false);
+            }
+        }
+
+        // Check attackDrag key release by examining e.key
+        if (this.attackDragActive) {
+            const configKey = (this.hotkeys.attackDrag || 'Shift').toLowerCase();
+            const keyPressed = e.key.toLowerCase();
+
+            const isMatchingKey =
+                (configKey === 'shift' && keyPressed === 'shift') ||
+                (configKey === 'ctrl' && (keyPressed === 'control' || keyPressed === 'ctrl')) ||
+                (configKey === 'alt' && keyPressed === 'alt') ||
+                ((configKey === 'meta' || configKey === 'win') && (keyPressed === 'meta' || keyPressed === 'os'));
+
+            if (isMatchingKey) {
+                this.attackDragActive = false;
+                this._triggerAction('attackDrag', false);
             }
         }
     }

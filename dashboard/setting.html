@@ -121,6 +121,12 @@
 								placeholder="None">
 						</div>
 					</div>
+					<div class="form-group-hotkey">
+						<label for="attack-drag-hotkey-mod">Drag for Attack Damage</label>
+						<div style="display: flex; gap: 5px; justify-self: end;">
+							<select id="attack-drag-hotkey-mod" class="hotkey-mod-select"></select>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -254,12 +260,13 @@
 			const timeLimitInput = document.getElementById('time-limit-input');
 
 			// Hotkey Elements
-			const hotkeyIds = ['discard', 'apply', 'clear-card', 'clear-selection', 'peek-opponent'];
+			const hotkeyIds = ['discard', 'apply', 'clear-card', 'clear-selection', 'peek-opponent', 'attack-drag'];
 			const hotkeyElements = {};
 			hotkeyIds.forEach(id => {
 				hotkeyElements[id] = {
 					mod: document.getElementById(`${id}-hotkey-mod`),
-					key: document.getElementById(`${id}-hotkey-key`)
+					// attack-drag doesn't use the key input part, so it might be null or we ignore it
+					key: document.getElementById(`${id}-hotkey-key`) || { value: '' }
 				};
 			});
 
@@ -457,6 +464,9 @@
 					hotkeyIds.forEach(id => {
 						const select = hotkeyElements[id].mod;
 						const input = hotkeyElements[id].key;
+						// Skip if not found (e.g. key input for attack-drag)
+						if (!select) return;
+
 						select.innerHTML = '';
 						options.forEach(opt => {
 							const el = document.createElement('option');
@@ -508,14 +518,15 @@
 						'discard': hotkeys.discard || 'Escape',
 						'apply': hotkeys.apply || 'Shift+S',
 						'clear-card': hotkeys.clearCard || 'Space',
-						'clear-selection': hotkeys.clearSelection || 'Escape',
-						'peek-opponent': hotkeys.peekOpponent || 'Tab'
+						'clear-selection': hotkeys.clearSelection || 'Delete',
+						'peek-opponent': hotkeys.peekOpponent || 'Tab',
+						'attack-drag': hotkeys.attackDrag || 'Shift'
 					};
 
 					hotkeyIds.forEach(id => {
 						const parsed = parseHotkey(mappings[id]);
-						hotkeyElements[id].mod.value = parsed.mod;
-						hotkeyElements[id].key.value = parsed.key;
+						if (hotkeyElements[id].mod) hotkeyElements[id].mod.value = parsed.mod;
+						if (hotkeyElements[id].key && hotkeyElements[id].key.tagName === 'INPUT') hotkeyElements[id].key.value = parsed.key;
 					});
 				}
 
@@ -553,8 +564,8 @@
 				});
 
 				function getHotkeyString(id) {
-					const mod = hotkeyElements[id].mod.value;
-					const key = hotkeyElements[id].key.value.trim();
+					const mod = hotkeyElements[id].mod ? hotkeyElements[id].mod.value : 'none';
+					const key = (hotkeyElements[id].key && hotkeyElements[id].key.value) ? hotkeyElements[id].key.value.trim() : '';
 
 					// Case 4: None + Empty -> No Hotkey
 					if (mod === 'none' && !key) {
@@ -582,7 +593,8 @@
 					apply: getHotkeyString('apply'),
 					clearCard: getHotkeyString('clear-card'),
 					clearSelection: getHotkeyString('clear-selection'),
-					peekOpponent: getHotkeyString('peek-opponent')
+					peekOpponent: getHotkeyString('peek-opponent'),
+					attackDrag: getHotkeyString('attack-drag')
 				};
 
 				const newVstarEnabled = vstarToggle.checked;

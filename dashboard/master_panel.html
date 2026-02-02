@@ -1659,7 +1659,7 @@
                 }
 
                 // --- SHIFT + DRAG ATTACK LOGIC ---
-                if (e.shiftKey && dropTarget) {
+                if (hotkeyManager && hotkeyManager.checkAttackDragKey(e) && dropTarget) {
                     // Start by checking if it's a damage ADD (from pool)
                     const config = getCounterConfig('damage');
                     if (e.dataTransfer.types.includes(config.mimeAdd)) {
@@ -2245,6 +2245,18 @@
             hotkeyManager.on('peekOpponent', (isActive) => {
                 isTabPressed = isActive;
                 updateDevelopModuleState();
+            });
+
+            // Visual feedback for attack drag mode
+            hotkeyManager.on('attackDrag', (isActive) => {
+                const damageCounters = damagePool.querySelectorAll('.damage-counter');
+                damageCounters.forEach(counter => {
+                    if (isActive) {
+                        counter.classList.add('attack-mode');
+                    } else {
+                        counter.classList.remove('attack-mode');
+                    }
+                });
             });
 
             // --- Event Listeners for UI Updates ---

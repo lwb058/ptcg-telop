@@ -1086,6 +1086,22 @@ body.dragging-energy .manual-attach-zone {
     bottom: -5px;
 }
 
+/* Attack Mode - Visual feedback when attackDrag key is held */
+.damage-counter.attack-mode {
+    background-color: #ff4444;
+    animation: pulse-attack 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-attack {
+    from {
+        box-shadow: 0 0 5px rgba(255, 68, 68, 0.8);
+    }
+
+    to {
+        box-shadow: 0 0 15px rgba(255, 68, 68, 1);
+    }
+}
+
 .pool-item {
     position: relative;
 }
