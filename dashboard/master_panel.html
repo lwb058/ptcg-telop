@@ -194,7 +194,7 @@
                 <button id="select-freezing-shroud-btn" class="btn btn-water" data-i18n="freezing_shroud">Freezing
                     Shroud</button>
                 <button id="select-rondo-btn" class="btn btn-metal">Rondo Damage</button>
-                <button id="select-myriad-btn" class="btn btn-grass">Myriad: 30</button>
+                <button id="select-myriad-btn" class="btn btn-grass">Myriad Damage</button>
             </div>
         </div>
     </div>
@@ -397,7 +397,6 @@
                 if (isPokemonSwap) {
                     const sourceSlotId = e.dataTransfer.getData('text/plain');
                     if (sourceSlotId) {
-                        // Use REMOVE_POKEMON operation to match the Remove button behavior
                         queueOperation('REMOVE_POKEMON', {
                             target: sourceSlotId,
                             cardName: getCardName(sourceSlotId) // Enrich payload
@@ -517,10 +516,7 @@
                 }
             }
 
-            /**
-             * Renders both players' fields and updates visibility.
-             */
-            function renderCurrentPlayerField() {
+            function renderCurrentPlayerField() { // Renders both players' fields and updates visibility.
                 renderField('L', fieldContainerL);
                 renderField('R', fieldContainerR);
                 updateDevelopModuleState();
@@ -2222,9 +2218,6 @@
                 queueOrUpdateOperation('SET_STADIUM_USED', { used: isUsed });
             });
 
-
-
-
             // --- Main Action Buttons & Global Handlers ---
             function handleDiscard() {
                 nodecg.sendMessage('discardQueue').catch(e => console.error("Failed to discard queue", e));
@@ -2257,8 +2250,6 @@
                 });
             });
 
-            // --- Event Listeners for UI Updates ---
-
             // Core state changes that trigger wide UI updates
             draft_currentTurn.on('change', (newValue) => {
                 renderCurrentPlayerField();
@@ -2276,18 +2267,16 @@
 
             cardDatabase.on('change', () => {
                 console.log('Listener Fired: cardDatabase');
-                // Re-render everything that uses card data
                 renderCurrentPlayerField();
                 updateBattleEnergyCounts();
                 updateAttackerDropdown();
                 renderTargetingField();
                 updateWeaknessAndResistanceChecks();
-
                 updateStadiumButtons();
                 updateEnergyAndToolButtons();
                 updatePokemonSourceGrid();
-                updateRondoButton(); // Update Rondo button when card database changes
-                updateMyriadButton(); // Update Myriad button when card database changes
+                updateRondoButton();
+                updateMyriadButton();
             });
 
             selections.on('change', () => {
@@ -2390,7 +2379,7 @@
             // Initial UI Update ---
             updateUIStrings();
             updateTotalPokemons(); // Keep this
-            updateBattleEnergyCounts(); // New
+            updateBattleEnergyCounts();
             updateTurnCount();
             updateAttackerDropdown();
             renderTargetingField();
