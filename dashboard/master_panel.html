@@ -1658,6 +1658,55 @@
                     dropTarget.style.boxShadow = '';
                 }
 
+                // --- SHIFT + DRAG ATTACK LOGIC ---
+                if (e.shiftKey && dropTarget) {
+                    // Start by checking if it's a damage ADD (from pool)
+                    const config = getCounterConfig('damage');
+                    if (e.dataTransfer.types.includes(config.mimeAdd)) {
+                        const damage = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                        const attackerSlotId = attackerSelect.value;
+                        const attackName = attackSelect.value;
+                        const isWeakness = weaknessCheck.checked;
+                        const targetSlotId = dropTarget.dataset.slotId;
+
+                        // Validation
+                        if (!attackerSlotId) {
+                            alert('No attacker selected (Shift+Drag Attack)!');
+                            return; // Stop processing
+                        }
+                        if (!attackName) {
+                            alert('No attack selected (Shift+Drag Attack)!');
+                            return; // Stop processing
+                        }
+                        if (isNaN(damage) || damage < 0) {
+                            // Should not happen with valid pool items, but good to check
+                            return;
+                        }
+
+                        const attackerSlotReplicant = slots.find(s => s.name === `draft_${attackerSlotId}`);
+                        const attackerCardId = attackerSlotReplicant ? attackerSlotReplicant.value.cardId : null;
+
+                        if (!attackerCardId) {
+                            alert('Attacker slot is empty or invalid data.');
+                            return;
+                        }
+
+                        // Queue the ATTACK operation
+                        queueOperation('ATTACK', {
+                            attackerSlotId: attackerSlotId,
+                            attackerCardId: attackerCardId,
+                            attackName: attackName,
+                            targets: [targetSlotId],
+                            damage: damage,
+                            isWeakness: isWeakness,
+                            attackerName: getCardName(attackerSlotId),
+                            targetNames: [getCardName(targetSlotId)]
+                        });
+
+                        return; // Successfully handled as attack, exit drop handler
+                    }
+                }
+
                 const checkTypeAndHandle = (type) => {
                     const config = getCounterConfig(type);
                     if (e.dataTransfer.types.includes(config.mimeTransfer) || e.dataTransfer.types.includes(config.mimeAdd)) {
@@ -2108,8 +2157,8 @@
                     targets: targets || [],
                     damage: damage,
                     isWeakness: isWeakness,
-                    attackerName: getCardName(attackerSlotId), // Enrich
-                    targetNames: (targets || []).map(getCardName) // Enrich
+                    attackerName: getCardName(attackerSlotId),
+                    targetNames: (targets || []).map(getCardName)
                 });
             });
 
@@ -2327,8 +2376,6 @@
             updatePokemonSourceGrid();
             renderCurrentPlayerField();
             updateStadiumBackground();
-
-
         });
     </script>
 </body>
