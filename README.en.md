@@ -28,9 +28,19 @@ The following software must be installed to run this bundle.
 ## Installation
 
 ---
-### 🔰 Easy Install (Recommended)
+### 🐳 Docker Deployment (Recommended / Easiest)
 
-For new users, the easiest way to get started is by using the "All-in-One Package".
+This is the easiest way to launch and run without any environment setup.
+
+1. Install and run [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+2. Download `Docker_Deploy.zip` from the [Releases](https://github.com/lwb058/ptcg-telop/releases) page and unzip it into an empty folder.
+3. Double-click `start_docker.bat` (Windows) or `start_docker.command` (Mac) inside the folder to run it.
+4. Once started, access `http://localhost:9090` in your browser.
+
+---
+### 🔰 Direct Install (Without Docker)
+
+This method sets up Node.js and Python environments directly on your PC.
 
 1.  Go to the [**Releases**](https://github.com/lwb058/ptcg-telop/releases) page of this repository.
 2.  From the `Assets` section of the latest release, download `NodeCG_PTCG_vX.X.X.zip` and unzip it.

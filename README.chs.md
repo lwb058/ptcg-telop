@@ -33,9 +33,19 @@
 ## 安装方法
 
 ---
-### 🔰 轻松上手（推荐）
+### 🐳 Docker 部署（推荐 / 最简单）
 
-如果您是初次使用，推荐使用包含所有必需文件的“懒人包”。
+最简单的启动和运行方式，无需配置任何环境。
+
+1. 安装并启动 [Docker Desktop](https://www.docker.com/products/docker-desktop/)。
+2. 从 [Releases](https://github.com/lwb058/ptcg-telop/releases) 页面下载 `Docker_Deploy.zip` 并解压到任意空文件夹。
+3. 双击运行文件夹中的 `start_docker.bat` (Windows) 或 `start_docker.command` (Mac)。
+4. 启动后，在浏览器中访问 `http://localhost:9090`。
+
+---
+### 🔰 直接安装 (不使用 Docker)
+
+直接在电脑上安装和配置 Node.js 和 Python 环境的方法。
 
 1.  访问本仓库的 [**Releases**](https://github.com/lwb058/ptcg-telop/releases) 页面。
 2.  从最新版本的`Assets`中，下载`NodeCG_PTCG_vX.X.X.zip`并解压。
