@@ -26,7 +26,6 @@
 要运行此 bundle，需要安装以下软件：
 
 -   [Node.js](https://nodejs.org/) (已在 v22.19.0 LTS 测试)
--   [NodeCG](https://www.nodecg.dev/docs/installing) (包括 `nodecg-cli`)
 -   [Python](https://www.python.org/) (已在 v3.13 测试)
 -   [Git](https://git-scm.com/) (可选，用于项目更新)
 
@@ -72,33 +71,33 @@
 
 适用于开发者或希望手动配置环境的用户。
 
-1.  **设置 NodeCG** (如果尚未安装):
+1.  **创建宿主目录并安装 NodeCG**:
+    在任意位置创建宿主目录，将 NodeCG 作为 npm 依赖安装。
     ```bash
-    # 在任意位置安装 NodeCG
-    git clone https://github.com/nodecg/nodecg.git
-    cd nodecg
-    npm install
+    mkdir nodecg && cd nodecg
+    npm init -y
+    npm install nodecg@2.6.4
     ```
 
 2.  **克隆 PTCG-Telop bundle**:
-    将此仓库克隆到 NodeCG 根目录下的 `bundles` 文件夹中。
+    在宿主目录内创建 `bundles` 文件夹，并克隆此仓库。
     ```bash
-    cd bundles
+    mkdir bundles && cd bundles
     git clone https://github.com/lwb058/ptcg-telop.git
     ```
 
-3.  **安装依赖**:
-    返回 NodeCG 根目录，使用 `nodecg-cli` 安装 bundle 的依赖。
+3.  **安装 bundle 依赖**:
+    在 bundle 目录中安装依赖。
     ```bash
-    cd ..
-    nodecg-cli install ptcg-telop
+    cd ptcg-telop
+    npm install
     ```
 
 4.  **放置资源文件（图像、视频素材）**:
     此 bundle 使用图像和视频文件来显示背景、进化动画等。这些文件不包含在仓库中，需要单独下载。
     1.  访问本仓库的 [**Releases**](https://github.com/lwb058/ptcg-telop/releases) 页面。
     2.  从最新的 release 下载资源包（例如 `assets_v1.0-beta.zip`）。
-    3.  解压下载的文件，并将其中的所有文件放置到 `nodecg/assets/ptcg-telop/` 目录下。（如果 `assets/ptcg-telop` 目录不存在，请创建它）
+    3.  解压下载的文件，并将其中的所有文件放置到宿主目录的 `assets/ptcg-telop/` 下。（如果 `assets/ptcg-telop` 目录不存在，请创建它）
 
 5.  **设置 Python 环境**:
     进入 bundle 的 `python` 目录，并安装所需的库。
@@ -113,34 +112,39 @@
 这个项目设计为放置在 NodeCG 的`bundles`目录下。主要文件和目录的功能如下。
 
 ```
-nodecg/
+nodecg/                            (宿主运行目录)
+├── package.json                   (宿主 package.json)
+├── node_modules/
+│   └── nodecg/                    (NodeCG 核心，通过 npm install 安装)
 ├── assets/
 │   └── ptcg-telop/
-│       ├── element/        (UI元素文件夹)
-│       ├── icons/          (能量、异常状态等图标的文件夹)
-│       ├── fx/             (特效视频文件夹)
-│       ├── font/           (字体文件夹)
-│       ├── card_img_*/     (自动创建的卡图文件夹)
-│       └── database_*.json (自动创建的卡牌数据库文件)
+│       ├── element/               (UI元素文件夹)
+│       ├── icons/                 (能量、异常状态等图标的文件夹)
+│       ├── fx/                    (特效视频文件夹)
+│       ├── font/                  (字体文件夹)
+│       ├── card_img_*/            (自动创建的卡图文件夹)
+│       └── database_*.json        (自动创建的卡牌数据库文件)
 ├── bundles/
 │   └── ptcg-telop/
-│       ├── dashboard/      (后台管理面板)
-│       ├── graphics/       (在直播中显示的画面)
-│       ├── extension/      (服务器端逻辑)
-│       ├── python/         (卡牌信息的爬虫脚本)
-│       ├── i18n/           (多语言支持文件)
-│       ├── package.json    (Bundle的配置文件)
+│       ├── dashboard/             (后台管理面板)
+│       ├── graphics/              (在直播中显示的画面)
+│       ├── extension/             (服务器端逻辑)
+│       ├── python/                (卡牌信息的爬虫脚本)
+│       ├── i18n/                  (多语言支持文件)
+│       ├── package.json           (Bundle的配置文件)
 │       └── 其他文件
-└── ... (NodeCG的其他文件)
+├── cfg/                           (配置文件)
+├── db/                            (数据库)
+└── logs/                          (日志文件)
 ```
 
 ## 使用方法
 
 1.  **启动系统**:
-    -   **“懒人包”用户**: 双击 `start.bat` 即可启动。
-    -   **手动安装用户**: 在 NodeCG 根目录中执行以下命令。
+    -   **”懒人包”用户**: 双击 `start.bat` 即可启动。
+    -   **手动安装用户**: 在宿主目录中执行以下命令。
     ```bash
-    nodecg start
+    node node_modules/nodecg/index.js
     ```
 
 2.  **访问仪表板**:
@@ -167,7 +171,7 @@ nodecg/
 
 ## 注意事项
 
--   **执行目录**: `nodecg` 命令必须在 NodeCG 的**根目录**下执行。
+-   **执行目录**: 启动命令必须在 NodeCG 的**宿主目录**（包含 `package.json` 的目录）下执行。
 -   **数据库**: 数据库是通过在玩家面板中设置卡组代码自动生成的。无需手动操作。
 -   **操作流程**: 此系统的基本操作流程是“在玩家面板设置个别状态”→“在主控面板选择并批量操作”→“在主控面板应用/放弃”。
 

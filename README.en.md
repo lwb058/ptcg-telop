@@ -21,7 +21,6 @@ It allows for real-time management of player board states (HP, damage, energy, t
 The following software must be installed to run this bundle.
 
 -   [Node.js](https://nodejs.org/) (Tested on v22.19.0 LTS)
--   [NodeCG](https://www.nodecg.dev/docs/installing) (including `nodecg-cli`)
 -   [Python](https://www.python.org/) (Tested on v3.13)
 -   [Git](https://git-scm.com/) (Optional. Used for project updates)
 
@@ -67,33 +66,33 @@ If you are already using an older version, you can easily update using the "Patc
 
 For developers or those who prefer to set up the environment manually.
 
-1.  **Set up NodeCG** (if not already installed):
+1.  **Create Host Directory and Install NodeCG**:
+    Create a host directory in a location of your choice and install NodeCG as an npm dependency.
     ```bash
-    # Install NodeCG in a location of your choice
-    git clone https://github.com/nodecg/nodecg.git
-    cd nodecg
-    npm install
+    mkdir nodecg && cd nodecg
+    npm init -y
+    npm install nodecg@2.6.4
     ```
 
 2.  **Clone the PTCG-Telop Bundle**:
-    Clone this repository into the `bundles` folder in your NodeCG root directory.
+    Create a `bundles` folder inside the host directory and clone this repository.
     ```bash
-    cd bundles
+    mkdir bundles && cd bundles
     git clone https://github.com/lwb058/ptcg-telop.git
     ```
 
-3.  **Install Dependencies**:
-    Return to the NodeCG root directory and use `nodecg-cli` to install the bundle's dependencies.
+3.  **Install Bundle Dependencies**:
+    Install dependencies inside the bundle directory.
     ```bash
-    cd ..
-    nodecg-cli install ptcg-telop
+    cd ptcg-telop
+    npm install
     ```
 
 4.  **Place Assets (Image/Video Files)**:
     This bundle uses image and video files for backgrounds, evolution animations, etc. These are not included in the repository and must be downloaded separately.
     1.  Go to the [**Releases**](https://github.com/lwb058/ptcg-telop/releases) page of this repository.
     2.  Download the asset package (e.g., `assets_v1.0-beta.zip`) from the latest release.
-    3.  Unzip the downloaded file and place all its contents into the `nodecg/assets/ptcg-telop/` directory. (If the `assets/ptcg-telop` directory does not exist, please create it).
+    3.  Unzip the downloaded file and place all its contents into the `assets/ptcg-telop/` directory under the host directory. (If the `assets/ptcg-telop` directory does not exist, please create it).
 
 5.  **Set up Python Environment**:
     Navigate to the bundle's `python` directory and install the required libraries.
@@ -108,25 +107,30 @@ For developers or those who prefer to set up the environment manually.
 This project is intended to be placed within NodeCG's `bundles` directory. The roles of the main files and directories are as follows.
 
 ```
-nodecg/
+nodecg/                            (Host runtime directory)
+├── package.json                   (Host package.json)
+├── node_modules/
+│   └── nodecg/                    (NodeCG core, installed via npm)
 ├── assets/
 │   └── ptcg-telop/
-│       ├── element/        (Folder for UI elements)
-│       ├── icons/          (Folder for energy, condition icons, etc.)
-│       ├── fx/             (Folder for effect videos)
-│       ├── font/           (Folder for fonts)
-│       ├── card_img_*/     (Auto-created folder for card images)
-│       └── database_*.json (Auto-created file for the card database)
+│       ├── element/               (Folder for UI elements)
+│       ├── icons/                 (Folder for energy, condition icons, etc.)
+│       ├── fx/                    (Folder for effect videos)
+│       ├── font/                  (Folder for fonts)
+│       ├── card_img_*/            (Auto-created folder for card images)
+│       └── database_*.json        (Auto-created file for the card database)
 ├── bundles/
 │   └── ptcg-telop/
-│       ├── dashboard/      (Panels for the dashboard)
-│       ├── graphics/       (Graphics to be displayed on stream)
-│       ├── extension/      (Server-side logic)
-│       ├── python/         (Scripts for fetching card information)
-│       ├── i18n/           (Files for multi-language support)
-│       ├── package.json    (Bundle configuration file)
+│       ├── dashboard/             (Panels for the dashboard)
+│       ├── graphics/              (Graphics to be displayed on stream)
+│       ├── extension/             (Server-side logic)
+│       ├── python/                (Scripts for fetching card information)
+│       ├── i18n/                  (Files for multi-language support)
+│       ├── package.json           (Bundle configuration file)
 │       └── Other files
-└── ... (Other NodeCG files)
+├── cfg/                           (Configuration files)
+├── db/                            (Database)
+└── logs/                          (Log files)
 ```
 
 -   **`assets/ptcg-telop/`**: A place to put background images, videos, etc., used in the stream.
@@ -138,9 +142,9 @@ nodecg/
 
 1.  **Start the System**:
     -   **For Easy Install Package Users**: Double-click `start.bat` to launch.
-    -   **For Manual Installers**: Run the following command in the NodeCG root directory.
+    -   **For Manual Installers**: Run the following command in the host directory.
     ```bash
-    nodecg start
+    node node_modules/nodecg/index.js
     ```
 
 2.  **Access the Dashboard**:
@@ -167,7 +171,7 @@ nodecg/
 
 ## Notes
 
--   **Execution Directory**: The `nodecg` command must be run from the NodeCG **root directory**.
+-   **Execution Directory**: The start command must be run from the NodeCG **host directory** (the directory containing `package.json`).
 -   **Database**: The database is generated automatically by setting a deck code in the Player Panel. No manual operation is needed.
 -   **Operational Flow**: The basic workflow of this system is: "Set individual states in the Player Panel" -> "Select and perform batch operations in the Master Panel" -> "Apply/Discard in the Master Panel".
 
