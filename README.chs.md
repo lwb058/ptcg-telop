@@ -25,7 +25,7 @@
 
 要运行此 bundle，需要安装以下软件：
 
--   [Node.js](https://nodejs.org/) (已在 v22.19.0 LTS 测试)
+-   [Node.js](https://nodejs.org/) (必须 v22.12.0 或以上，已在 v22.19.0 LTS 测试)
 -   [Python](https://www.python.org/) (已在 v3.13 测试)
 -   [Git](https://git-scm.com/) (可选，用于项目更新)
 

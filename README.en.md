@@ -20,7 +20,7 @@ It allows for real-time management of player board states (HP, damage, energy, t
 
 The following software must be installed to run this bundle.
 
--   [Node.js](https://nodejs.org/) (Tested on v22.19.0 LTS)
+-   [Node.js](https://nodejs.org/) (Requires v22.12.0 or higher, tested on v22.19.0 LTS)
 -   [Python](https://www.python.org/) (Tested on v3.13)
 -   [Git](https://git-scm.com/) (Optional. Used for project updates)
 
