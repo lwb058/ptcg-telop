@@ -953,22 +953,7 @@ module.exports = function (nodecg) {
 		lastOpSignature = opSignature;
 
 		// Apply the logic to the DRAFT state for immediate feedback
-		if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
-			const draftRep = nodecg.Replicant(`draft_${op.payload.target}`);
-			applyOperationLogic(draftRep, op, 'draft');
-		} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
-			applyOperationLogic(draft_stadium, op, 'draft');
-		} else if (op.type === 'SWITCH_POKEMON') {
-			// For draft purposes, we treat the original SWITCH op as an APPLY_SWITCH to get immediate UI feedback.
-			const draftOp = { ...op, type: 'APPLY_SWITCH' };
-			applyOperationLogic(null, draftOp, 'draft');
-		} else if (op.payload.target && op.payload.target.startsWith('slot')) {
-			const draftRep = nodecg.Replicant(op.payload.target.replace('slot', 'draft_slot'));
-			applyOperationLogic(draftRep, op, 'draft');
-		} else {
-			// Handle other non-slot-based operations like ATTACK
-			applyOperationLogic(null, op, 'draft');
-		}
+		applyOpToDraft(op);
 
 		// If the operation is a switch, split it into two separate operations for the LIVE queue
 		if (op.type === 'SWITCH_POKEMON') {
@@ -1065,32 +1050,10 @@ module.exports = function (nodecg) {
 
 		if (newQueue.length !== originalLength) {
 			operationQueue.value = newQueue;
-			syncLiveToDraft(); // Revert draft state to match new queue (or lack thereof)
-
-			try {
-				// Re-apply the remaining queue to DRAFT
-				newQueue.forEach(op => {
-					if (op.type === 'SWITCH_POKEMON') return; // Skip original switch if present (shouldn't be in queue usually)
-
-					if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
-						const draftRep = nodecg.Replicant(`draft_${op.payload.target}`);
-						applyOperationLogic(draftRep, op, 'draft');
-					} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
-						applyOperationLogic(draft_stadium, op, 'draft');
-					} else if (op.payload.target && op.payload.target.startsWith('slot')) {
-						const draftRep = nodecg.Replicant(op.payload.target.replace('slot', 'draft_slot'));
-						applyOperationLogic(draftRep, op, 'draft');
-					} else {
-						applyOperationLogic(null, op, 'draft');
-					}
-				});
-				nodecg.log.info(`Removed ${originalLength - newQueue.length} operations by ID.`);
-				if (callback) callback(null, 'Operations removed.');
-			} catch (e) {
-				nodecg.log.error('Error re-applying queue after deletion:', e);
-				if (callback) callback(e);
-			}
-
+			// syncLiveToDraft now includes catch-up replay of operationQueue (newQueue)
+			syncLiveToDraft();
+			nodecg.log.info(`Removed ${originalLength - newQueue.length} operations by ID.`);
+			if (callback) callback(null, 'Operations removed.');
 		} else {
 			nodecg.log.warn('Attempted to remove operations by ID, but none were found.');
 			if (callback) callback(new Error('Operations not found.'));
@@ -1159,22 +1122,7 @@ module.exports = function (nodecg) {
 
 
 			// 4. Re-apply the entire new queue to the DRAFT states
-			newQueue.forEach(op => {
-				// Skip PROMOTE operations as they should not affect the draft state until applied.
-				if (op.type === 'SWITCH_POKEMON') return;
-
-				if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
-					const draftRep = nodecg.Replicant(`draft_${op.payload.target}`);
-					applyOperationLogic(draftRep, op, 'draft');
-				} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
-					applyOperationLogic(draft_stadium, op, 'draft');
-				} else if (op.payload.target && op.payload.target.startsWith('slot')) {
-					const draftRep = nodecg.Replicant(op.payload.target.replace('slot', 'draft_slot'));
-					applyOperationLogic(draftRep, op, 'draft');
-				} else {
-					applyOperationLogic(null, op, 'draft');
-				}
-			});
+			newQueue.forEach(op => applyOpToDraft(op));
 
 			nodecg.log.info(`Operation at index ${index} updated and queue re-applied to draft.`);
 			if (callback) callback(null, `Operation at index ${index} updated.`);
@@ -1184,6 +1132,27 @@ module.exports = function (nodecg) {
 			if (callback) callback(e);
 		}
 	});
+
+	/**
+	 * Applies a single operation to the DRAFT state.
+	 * Centralizes the draft routing logic used by queueOperation, removeOperationById, and updateOperation.
+	 */
+	function applyOpToDraft(op) {
+		if (op.type === 'SWITCH_POKEMON') {
+			const draftOp = { ...op, type: 'APPLY_SWITCH' };
+			applyOperationLogic(null, draftOp, 'draft');
+			return;
+		}
+		if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
+			applyOperationLogic(nodecg.Replicant(`draft_${op.payload.target}`), op, 'draft');
+		} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
+			applyOperationLogic(draft_stadium, op, 'draft');
+		} else if (op.payload.target && op.payload.target.startsWith('slot')) {
+			applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'draft_slot')), op, 'draft');
+		} else {
+			applyOperationLogic(null, op, 'draft');
+		}
+	}
 
 	/**
 	 * Helper function to sync all LIVE replicant values to their DRAFT counterparts.
@@ -1214,6 +1183,12 @@ module.exports = function (nodecg) {
 		draft_lostZoneR.value = live_lostZoneR.value;
 		// Critical fix: Must use a deep copy for objects to avoid Replicant ownership conflicts
 		draft_stadium.value = JSON.parse(JSON.stringify(live_stadium.value));
+
+		// Catch-up: replay any pending ops in operationQueue onto draft
+		if (operationQueue.value && operationQueue.value.length > 0) {
+			operationQueue.value.forEach(op => applyOpToDraft(op));
+			nodecg.log.info(`syncLiveToDraft: replayed ${operationQueue.value.length} pending ops onto draft.`);
+		}
 	}
 
 	/**
@@ -1238,7 +1213,7 @@ module.exports = function (nodecg) {
 		]; return batch.some(op => animationHeavyTypes.includes(op.type));
 	}
 
-	let processorStatus = 'IDLE'; // IDLE, PROCESSING
+	const processorStatus = nodecg.Replicant('processorStatus', { defaultValue: 'IDLE' });
 	let pendingOperations = [];
 	let ackTimeout = null; // Timeout for waiting for animation acknowledgement
 
@@ -1262,39 +1237,41 @@ module.exports = function (nodecg) {
 			clearTimeout(ackTimeout);
 			ackTimeout = null;
 		}
-		if (processorStatus !== 'PROCESSING') return; // Avoid multiple triggers
+		if (processorStatus.value !== 'PROCESSING') return; // Avoid multiple triggers
 
 		nodecg.log.info('Animation batch complete. Processing next batch.');
-		processorStatus = 'IDLE';
+		processorStatus.value = 'IDLE';
 		processQueue();
 	}
 
-	function processQueue(callback) {
-		if (processorStatus === 'PROCESSING') {
+	function processQueue(callback, isInitialApply = false) {
+		if (processorStatus.value === 'PROCESSING') {
 			nodecg.log.info('Queue processor is busy.');
 			if (callback) callback(null, 'Processor is busy.');
 			return;
 		}
 
 		if (pendingOperations.length === 0) {
-			if (!operationQueue.value || operationQueue.value.length === 0) {
-				if (callback) callback(null, 'Queue is empty.');
+			if (isInitialApply) {
+				// Explicit Apply: snapshot operationQueue → pendingOperations
+				if (!operationQueue.value || operationQueue.value.length === 0) {
+					if (callback) callback(null, 'Queue is empty.');
+					return;
+				}
+				const sortedQueue = [...operationQueue.value].sort((a, b) => a.priority - b.priority);
+				pendingOperations = sortedQueue;
+				operationQueue.value = [];
+			} else {
+				// Recursive call (from handleAnimationComplete): all batches done
+				processorStatus.value = 'IDLE';
+				nodecg.log.info('All operation batches processed.');
+				syncLiveToDraft();
+				if (callback) callback(null, 'All batches processed.');
 				return;
 			}
-			const sortedQueue = [...operationQueue.value].sort((a, b) => a.priority - b.priority);
-			pendingOperations = sortedQueue;
-			operationQueue.value = [];
 		}
 
-		if (pendingOperations.length === 0) {
-			processorStatus = 'IDLE';
-			nodecg.log.info('All operation batches processed.');
-			syncLiveToDraft();
-			if (callback) callback(null, 'All batches processed.');
-			return;
-		}
-
-		processorStatus = 'PROCESSING';
+		processorStatus.value = 'PROCESSING';
 
 		const currentPriority = pendingOperations[0].priority;
 		const batchToProcess = pendingOperations.filter(op => op.priority === currentPriority);
@@ -1383,13 +1360,13 @@ module.exports = function (nodecg) {
 			}, timeoutDuration);
 		} else {
 			nodecg.log.info(`Batch (Prio ${currentPriority}) was data-only. Proceeding to next batch immediately.`);
-			processorStatus = 'IDLE';
+			processorStatus.value = 'IDLE';
 			processQueue(); // Trigger next cycle immediately
 		}
 	}
 
 	nodecg.listenFor('applyQueue', (data, callback) => {
-		processQueue(callback);
+		processQueue(callback, true);
 	});
 
 	nodecg.listenFor('animationBatchComplete', (data, callback) => {
@@ -1804,6 +1781,7 @@ module.exports = function (nodecg) {
 		resetBoardState,
 		executeResetSystem,
 		applyOperationLogic,
+		applyOpToDraft,
 		processQueue,
 		syncLiveToDraft,
 		processDeckImport,

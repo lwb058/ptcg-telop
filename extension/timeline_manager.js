@@ -319,7 +319,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			} else {
 				if (callback) callback(null, 'OpsPack applied and recorded.');
 			}
-		});
+		}, true);
 	});
 
 	nodecg.listenFor('recordDisplayOp', (data, callback) => {

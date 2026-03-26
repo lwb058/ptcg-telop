@@ -165,6 +165,7 @@
             nodecg.Replicant('firstMove'),
             nodecg.Replicant('matchTimer'),
             nodecg.Replicant('gameTimeSettings'),
+            nodecg.Replicant('processorStatus'),
             ...Array(18).fill(0).map((_, i) => {
                 const side = i < 9 ? 'L' : 'R';
                 const index = i % 9;
@@ -173,6 +174,7 @@
         ).then(() => {
             // --- Replicant Setup ---
             const operationQueue = nodecg.Replicant('operationQueue');
+            const processorStatus = nodecg.Replicant('processorStatus');
             const draft_currentTurn = nodecg.Replicant('draft_currentTurn');
             const settingsRep = nodecg.Replicant('ptcg-settings');
             const playerL_name = nodecg.Replicant('playerL_name');
@@ -337,19 +339,11 @@
 
             discardOpBtn.addEventListener('click', () => nodecg.sendMessage('discardQueue'));
 
-            // Updated Apply Button Logic
+            // Apply Button Logic — disabled/enabled via processorStatus Replicant + queue state
             applyOpBtn.addEventListener('click', () => {
-                // Use applyOpsPack instead of applyQueue
                 nodecg.sendMessage('applyOpsPack');
-
-                // Cooldown UI
                 applyOpBtn.disabled = true;
-                applyOpBtn.textContent = 'Applying...';
-                setTimeout(() => {
-                    applyOpBtn.disabled = false;
-                    const currentHotkeys = hotkeyManager.hotkeys;
-                    applyOpBtn.textContent = `Apply (${currentHotkeys.apply})`;
-                }, 2000);
+                applyOpBtn.textContent = 'Processing...';
             });
 
             resetSystemBtn.addEventListener('click', () => {
@@ -464,7 +458,30 @@
             // --- Replicant Listeners ---
             const hotkeyManager = new HotkeyManager(nodecg, settingsRep);
 
-            operationQueue.on('change', renderQueue);
+            function updateApplyButton() {
+                const isProcessing = processorStatus.value === 'PROCESSING';
+                const isEmpty = !operationQueue.value || operationQueue.value.length === 0;
+                applyOpBtn.disabled = isProcessing || isEmpty;
+                if (isProcessing) {
+                    applyOpBtn.textContent = 'Processing...';
+                } else {
+                    const currentHotkeys = hotkeyManager.hotkeys;
+                    applyOpBtn.textContent = `Apply (${currentHotkeys.apply})`;
+                }
+            }
+
+            operationQueue.on('change', () => {
+                renderQueue();
+                updateApplyButton();
+            });
+
+            processorStatus.on('change', (newVal) => {
+                if (newVal === 'IDLE') {
+                    setTimeout(updateApplyButton, 500);
+                } else if (newVal === 'PROCESSING') {
+                    updateApplyButton();
+                }
+            });
 
             firstMove.on('change', (newValue) => {
                 firstPlayerSelect.value = newValue;
@@ -511,14 +528,17 @@
 
             // Initial setup
             renderQueue();
+            updateApplyButton();
 
             // --- Hotkey Logic ---
             hotkeyManager.on('discard', () => discardOpBtn.click());
-            hotkeyManager.on('apply', () => applyOpBtn.click());
+            hotkeyManager.on('apply', () => {
+                if (!applyOpBtn.disabled) applyOpBtn.click();
+            });
 
             // Listen for the trigger from master_panel
             nodecg.listenFor('triggerApplyButton', () => {
-                applyOpBtn.click();
+                if (!applyOpBtn.disabled) applyOpBtn.click();
             });
 
             hotkeyManager.on('hotkeysChanged', (newHotkeys) => {
