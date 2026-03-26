@@ -1572,8 +1572,10 @@ body.deck-viewer-body {
     transition: transform 0.1s ease-in-out;
 }
 
-.deck-viewer-body .deck-table img:hover {
-    transform: scale(1.1);
+@media (hover: hover) {
+    .deck-viewer-body .deck-table img:hover {
+        transform: scale(1.1);
+    }
 }
 
 .deck-viewer-body h2,
@@ -1619,7 +1621,14 @@ body.deck-viewer-body {
     border-radius: 5px;
 }
 
-.deck-viewer-body .card-grid .card-item img:hover {
+@media (hover: hover) {
+    .deck-viewer-body .card-grid .card-item img:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 10px #a9c0e0;
+    }
+}
+
+.deck-viewer-body .card-grid .card-item.active img {
     transform: scale(1.05);
     box-shadow: 0 0 10px #a9c0e0;
 }
@@ -1646,7 +1655,14 @@ body.deck-viewer-body {
     z-index: 1;
 }
 
-.deck-viewer-body .card-item:hover .delete-btn {
+@media (hover: hover) {
+    .deck-viewer-body .card-item:hover .delete-btn {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.deck-viewer-body .card-item.active .delete-btn {
     opacity: 1;
     transform: scale(1);
 }

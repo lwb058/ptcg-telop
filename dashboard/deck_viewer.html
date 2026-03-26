@@ -137,6 +137,37 @@
         // Global State
         let deckViews = { L: 'icon', R: 'icon' };
 
+        // Long-press support for touch devices (shows delete button)
+        const LONG_PRESS_MS = 500;
+        let longPressTimer = null;
+
+        function clearActiveCards() {
+            document.querySelectorAll('.card-item.active').forEach(el => el.classList.remove('active'));
+        }
+
+        function setupLongPress(cardItemDiv) {
+            cardItemDiv.addEventListener('touchstart', (e) => {
+                longPressTimer = setTimeout(() => {
+                    clearActiveCards();
+                    cardItemDiv.classList.add('active');
+                }, LONG_PRESS_MS);
+            }, { passive: true });
+
+            cardItemDiv.addEventListener('touchend', () => {
+                clearTimeout(longPressTimer);
+            });
+
+            cardItemDiv.addEventListener('touchmove', () => {
+                clearTimeout(longPressTimer);
+            });
+        }
+
+        document.addEventListener('touchstart', (e) => {
+            if (!e.target.closest('.card-item.active')) {
+                clearActiveCards();
+            }
+        }, { passive: true });
+
         // --- Hotkey Handling ---
         const hotkeyManager = new HotkeyManager(nodecg, settingsRep);
 
@@ -464,6 +495,7 @@
                         }
                     };
                     cardItemDiv.appendChild(deleteButton);
+                    setupLongPress(cardItemDiv);
                     gridDiv.appendChild(cardItemDiv);
                 }
                 categoryDiv.appendChild(gridDiv);
