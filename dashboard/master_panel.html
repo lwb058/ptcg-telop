@@ -114,6 +114,7 @@
                         <div class="damage-counter pool-item" draggable="true" data-damage-amount="20">20</div>
                         <div class="damage-counter pool-item" draggable="true" data-damage-amount="30">30</div>
                         <div class="damage-counter pool-item" draggable="true" data-damage-amount="50">50</div>
+                        <div class="damage-counter pool-item" draggable="true" data-damage-amount="60">60</div>
                         <div class="damage-counter pool-item" draggable="true" data-damage-amount="130">130</div>
                     </div>
                 </div>
@@ -142,35 +143,47 @@
                     </div>
                 </div>
             </div>
-            <div id="attack-zone-flex-container" class="flex-container">
-                <div class="form-group" style="flex-grow: 3;">
-                    <label for="attacker" data-i18n="attacker">Attacker</label>
-                    <select id="attacker" class="truncate-select"></select>
+            <div class="attack-module">
+                <div id="attack-zone-flex-container" class="flex-container">
+                    <div class="form-group" style="flex-grow: 3;">
+                        <label for="attacker" data-i18n="attacker">Attacker</label>
+                        <select id="attacker" class="truncate-select"></select>
+                    </div>
                 </div>
-                <div class="form-group" style="flex-grow: 3;">
-                    <label for="attack-select" style="flex: none;" data-i18n="waza">Move</label>
-                    <select id="attack-select" class="truncate-select"></select>
+                <div style="margin-bottom: 8px;">
+                    <label style="font-weight: bold; margin-bottom: 4px; display: block;" data-i18n="waza">Move</label>
+                    <div id="attack-visual-list" class="attack-visual-list"></div>
                 </div>
-                <div class="form-group" style="flex-grow: 2; margin-bottom: 0;">
-                    <label for="damage" style="min-width: 60px; margin-right: 5px;" data-i18n="damage">Damage</label>
-                    <input type="number" id="damage" class="compact-input" value="0" min="0" step="10">
+                <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                    <div style="flex: 5;">
+                        <label style="font-weight: bold; margin-bottom: 4px; display: block;">Effect</label>
+                        <textarea id="attack-effect-text" class="attack-effect-text" readonly></textarea>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="damage" style="font-weight: bold; margin-bottom: 2px; display: block;"
+                            data-i18n="damage">Damage</label>
+                        <input type="number" id="damage" class="compact-input" value="0" min="0" step="10"
+                            style="font-weight: bold; height: 40px; font-size: 2.5em">
+                    </div>
                 </div>
-            </div>
-            <div class="flex-container" style="align-items: center; gap: 15px;">
-                <button id="aim-btn" class="btn btn-info" style="flex-grow: 1; height: fit-content;">Aim</button>
-                <div class="form-group"
-                    style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
-                    <label for="weakness-check" style="margin-right: 5px;" data-i18n="weakness">Weakness</label>
-                    <input type="checkbox" id="weakness-check" style="transform: scale(1.2);">
+                <div class="flex-container" style="align-items: center; gap: 15px;">
+                    <button id="aim-btn" class="btn btn-info" style="flex-grow: 1; height: fit-content;">Aim</button>
+                    <div class="form-group"
+                        style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
+                        <label for="weakness-check" style="margin-right: 5px;" data-i18n="weakness">Weakness</label>
+                        <input type="checkbox" id="weakness-check" style="transform: scale(1.2);">
+                    </div>
+                    <div class="form-group"
+                        style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
+                        <label for="resistance-check" style="margin-right: 5px;"
+                            data-i18n="resistance">Resistance</label>
+                        <input type="checkbox" id="resistance-check" style="transform: scale(1.2);">
+                    </div>
+                    <button id="attack-btn" class="btn btn-lightning"
+                        style="flex-grow: 1; height: fit-content;">Attack</button>
+                    <button id="ko-0hp-btn" class="btn btn-danger"
+                        style="flex-grow: 1; height: fit-content;">K.O</button>
                 </div>
-                <div class="form-group"
-                    style="flex-grow: 1; margin-bottom: 0; justify-content: center; align-items: center;">
-                    <label for="resistance-check" style="margin-right: 5px;" data-i18n="resistance">Resistance</label>
-                    <input type="checkbox" id="resistance-check" style="transform: scale(1.2);">
-                </div>
-                <button id="attack-btn" class="btn btn-lightning"
-                    style="flex-grow: 1; height: fit-content;">Attack</button>
-                <button id="ko-0hp-btn" class="btn btn-danger" style="flex-grow: 1; height: fit-content;">K.O</button>
             </div>
         </div>
 
@@ -222,6 +235,7 @@
             nodecg.Replicant('cardToShowR'),
             nodecg.Replicant('operationQueue'),
             nodecg.Replicant('turnCount'),
+            nodecg.Replicant('draft_currentTurn'),
             ...Array(18).fill(0).map((_, i) => { // Changed from 12 to 18
                 const side = i < 9 ? 'L' : 'R';
                 const index = i % 9;
@@ -283,8 +297,54 @@
             const battleField = document.getElementById('battle-field');
             const toggleFieldHeightBtn = document.getElementById('toggle-field-height-btn');
             const attackerSelect = document.getElementById('attacker');
-            const attackSelect = document.getElementById('attack-select');
+            const attackVisualList = document.getElementById('attack-visual-list');
+            const attackEffectText = document.getElementById('attack-effect-text');
+            let selectedAttackState = { name: null, data: null };
             const damageInput = document.getElementById('damage');
+
+            const sanitizeDamage = (damage) => {
+                if (typeof damage !== 'string') return damage || '';
+                return damage.replace(/＋/g, '+').replace(/－/g, '-').replace(/×/g, '×');
+            };
+
+            const ENERGY_MAP = {
+                '草': '草', '炎': '炎', '水': '水', '雷': '雷', '超': '超',
+                '闘': '闘', '悪': '悪', '鋼': '鋼', '竜': '竜', '無色': '無色',
+                '無': '無', '全': '全', '妖': '妖',
+            };
+
+            function getEnergyIconHtml(type) {
+                const mapped = ENERGY_MAP[type] || 'エネなし';
+                return `<img class="energy-icon" src="/assets/ptcg-telop/icons/${mapped}.png" alt="${mapped}">`;
+            }
+
+            function setEffectText(text) {
+                attackEffectText.value = text;
+                attackEffectText.style.height = 'auto';
+                attackEffectText.style.height = attackEffectText.scrollHeight + 'px';
+            }
+
+            function selectAttack(attackData, rowElement) {
+                attackVisualList.querySelectorAll('.attack-skill-row.selected').forEach(el => el.classList.remove('selected'));
+                if (rowElement) rowElement.classList.add('selected');
+                selectedAttackState = { name: attackData.name, data: attackData };
+                setEffectText(attackData.text || '');
+                recalculateFinalDamage();
+            }
+
+            /**
+             * Resolves the attacker dropdown value to an actual slot ID.
+             * "auto" → current turn's battle slot (slot{L|R}0), or "" if empty.
+             */
+            function getResolvedAttackerSlotId() {
+                const raw = attackerSelect.value;
+                if (raw !== 'auto') return raw;
+                const turn = draft_currentTurn.value;
+                if (!turn) return '';
+                const battleSlotId = `slot${turn}0`;
+                const occupied = getOccupiedSlots();
+                return occupied.includes(battleSlotId) ? battleSlotId : '';
+            }
             const weaknessCheck = document.getElementById('weakness-check');
             const attackBtn = document.getElementById('attack-btn');
             const aimBtn = document.getElementById('aim-btn');
@@ -1658,8 +1718,8 @@
                     const config = getCounterConfig('damage');
                     if (e.dataTransfer.types.includes(config.mimeAdd)) {
                         const damage = parseInt(e.dataTransfer.getData('text/plain'), 10);
-                        const attackerSlotId = attackerSelect.value;
-                        const attackName = attackSelect.value;
+                        const attackerSlotId = getResolvedAttackerSlotId();
+                        const attackName = selectedAttackState.name;
                         const isWeakness = weaknessCheck.checked;
                         const targetSlotId = dropTarget.dataset.slotId;
 
@@ -1729,8 +1789,8 @@
              */
             function recalculateFinalDamage() {
                 const db = cardDatabase.value;
-                const attackerSlotId = attackerSelect.value;
-                const attackName = attackSelect.value;
+                const attackerSlotId = getResolvedAttackerSlotId();
+                const attackName = selectedAttackState.name;
 
                 // 1. Determine Base Damage from the selected attack
                 let baseDamage = 0;
@@ -1804,7 +1864,7 @@
                 }
 
                 // Get info for the selected attacker
-                const attackerSlotId = attackerSelect.value;
+                const attackerSlotId = getResolvedAttackerSlotId();
                 if (!attackerSlotId) {
                     weaknessCheck.checked = false;
                     resistanceCheck.checked = false;
@@ -1932,13 +1992,15 @@
             }
 
 
-            function updateAttackDropdown() {
-                attackSelect.innerHTML = ''; // Clear it
+            function updateAttackVisualList() {
+                attackVisualList.innerHTML = '';
+                setEffectText('');
+                selectedAttackState = { name: null, data: null };
                 const TM_SOURCE_ID = '-TM-';
 
-                const attackerSlotId = attackerSelect.value;
+                const attackerSlotId = getResolvedAttackerSlotId();
                 if (!attackerSlotId) {
-                    damageInput.value = 0; // Also clear damage if no attacker
+                    damageInput.value = 0;
                     return;
                 }
 
@@ -1955,93 +2017,139 @@
                 if (!attackerCardData) return;
                 const attackerName = attackerCardData.name;
 
-                // Combine cards from both decks for an efficient search scope.
+                // --- Abilities ---
+                const abilities = attackerCardData.pokemon?.abilities || [];
+                const addHoverPreview = (row, text) => {
+                    row.addEventListener('mouseenter', () => {
+                        setEffectText(text || '');
+                    });
+                    row.addEventListener('mouseleave', () => {
+                        setEffectText(selectedAttackState.data?.text || '');
+                    });
+                };
+
+                abilities.forEach(ability => {
+                    const row = document.createElement('div');
+                    row.className = 'attack-skill-row is-ability';
+                    row.innerHTML = `
+                        <span class="attack-ability-tag">${getI18nText('ability')}</span>
+                        <span class="attack-skill-name is-ability">${ability.name}</span>
+                        <span class="attack-skill-damage"></span>
+                    `;
+                    addHoverPreview(row, ability.text);
+                    attackVisualList.appendChild(row);
+                });
+
+                // --- Gather all attacks ---
                 const deckLIds = deckL.value?.cards || [];
                 const deckRIds = deckR.value?.cards || [];
                 const combinedDeckIds = [...new Set([...deckLIds, ...deckRIds])];
 
-                // Use the new function to get all attacks from the evolution line
                 let allAttacks = getAllAttacksForPokemon(attackerCardId, db, combinedDeckIds);
 
-                // Check for tool cards that grant attacks
                 attachedToolIds.forEach(toolId => {
-                    if (db[toolId]) {
-                        const toolData = db[toolId];
-                        // Check if the tool is a "Technical Machine" and has attacks
-                        if (toolData.trainer?.attacks) {
-                            const toolAttacks = toolData.trainer.attacks.map(attack => ({
-                                ...attack,
-                                source: TM_SOURCE_ID
-                            }));
-                            allAttacks.push(...toolAttacks);
-                        }
+                    if (db[toolId]?.trainer?.attacks) {
+                        const toolAttacks = db[toolId].trainer.attacks.map(attack => ({
+                            ...attack,
+                            source: TM_SOURCE_ID
+                        }));
+                        allAttacks.push(...toolAttacks);
                     }
                 });
 
-                if (allAttacks.length > 0) {
-                    const uniqueAttackNames = new Set();
-                    const uniqueAttacks = allAttacks.filter(attack => {
-                        if (attack.name && !uniqueAttackNames.has(attack.name)) {
-                            uniqueAttackNames.add(attack.name);
-                            return true;
-                        }
-                        return false;
+                // Dedup
+                const uniqueAttackNames = new Set();
+                const uniqueAttacks = allAttacks.filter(attack => {
+                    if (attack.name && !uniqueAttackNames.has(attack.name)) {
+                        uniqueAttackNames.add(attack.name);
+                        return true;
+                    }
+                    return false;
+                });
+
+                // Group by source
+                const groupedAttacks = uniqueAttacks.reduce((acc, attack) => {
+                    const source = attack.source;
+                    if (!acc[source]) acc[source] = [];
+                    acc[source].push(attack);
+                    return acc;
+                }, {});
+
+                let firstClickableRow = null;
+                let firstClickableAttack = null;
+
+                const renderAttackRow = (attack, extraClass = '') => {
+                    const row = document.createElement('div');
+                    row.className = `attack-skill-row ${extraClass}`.trim();
+
+                    const cost = attack.cost || [];
+                    const iconsToRender = cost.length > 0 ? cost : [];
+                    const iconsHtml = iconsToRender.map(getEnergyIconHtml).join('');
+                    const tagHtml = iconsHtml ? `<div class="attack-energy-cost">${iconsHtml}</div>` : '';
+
+                    row.innerHTML = `
+                        ${tagHtml}
+                        <span class="attack-skill-name">${attack.name}</span>
+                        <span class="attack-skill-damage">${sanitizeDamage(attack.damage)}</span>
+                    `;
+                    row.addEventListener('click', () => selectAttack(attack, row));
+                    addHoverPreview(row, attack.text);
+
+                    if (!firstClickableRow) {
+                        firstClickableRow = row;
+                        firstClickableAttack = attack;
+                    }
+                    return row;
+                };
+
+                // 1. Current Pokémon attacks
+                if (groupedAttacks[attackerName]) {
+                    groupedAttacks[attackerName].forEach(attack => {
+                        attackVisualList.appendChild(renderAttackRow(attack));
                     });
-
-                    // Group attacks by their source for the dropdown
-                    const groupedAttacks = uniqueAttacks.reduce((acc, attack) => {
-                        const source = attack.source;
-                        if (!acc[source]) {
-                            acc[source] = [];
-                        }
-                        acc[source].push(attack);
-                        return acc;
-                    }, {});
-
-                    // 1. Add attacks from the current Pokémon (no group)
-                    if (groupedAttacks[attackerName]) {
-                        groupedAttacks[attackerName].forEach(attack => {
-                            const option = document.createElement('option');
-                            option.value = attack.name;
-                            option.textContent = attack.name;
-                            attackSelect.appendChild(option);
-                        });
-                        delete groupedAttacks[attackerName]; // Remove from map to avoid re-processing
-                    }
-
-                    // 2. Add attacks from Technical Machine
-                    if (groupedAttacks[TM_SOURCE_ID]) {
-                        const optgroup = document.createElement('optgroup');
-                        optgroup.label = TM_SOURCE_ID;
-                        groupedAttacks[TM_SOURCE_ID].forEach(attack => {
-                            const option = document.createElement('option');
-                            option.value = attack.name;
-                            option.textContent = attack.name;
-                            optgroup.appendChild(option);
-                        });
-                        attackSelect.appendChild(optgroup);
-                        delete groupedAttacks[TM_SOURCE_ID]; // Remove from map to avoid re-processing
-                    }
-
-                    // 3. Add attacks from other sources (pre-evolutions) in optgroups
-                    Object.keys(groupedAttacks).forEach(sourceName => {
-                        const optgroup = document.createElement('optgroup');
-                        optgroup.label = sourceName;
-                        groupedAttacks[sourceName].forEach(attack => {
-                            const option = document.createElement('option');
-                            option.value = attack.name;
-                            option.textContent = attack.name;
-                            optgroup.appendChild(option);
-                        });
-                        attackSelect.appendChild(optgroup);
-                    });
-
-                    if (attackSelect.options.length > 0) {
-                        attackSelect.selectedIndex = 0;
-                    }
+                    delete groupedAttacks[attackerName];
                 }
-                // After updating attacks, also update the damage input
-                recalculateFinalDamage();
+
+                // 2. TM attacks
+                if (groupedAttacks[TM_SOURCE_ID]) {
+                    const header = document.createElement('div');
+                    header.className = 'attack-section-header';
+                    header.textContent = getI18nText('tm');
+                    attackVisualList.appendChild(header);
+                    groupedAttacks[TM_SOURCE_ID].forEach(attack => {
+                        attackVisualList.appendChild(renderAttackRow(attack));
+                    });
+                    delete groupedAttacks[TM_SOURCE_ID];
+                }
+
+                // 3. Pre-evolution attacks (collapsible)
+                Object.keys(groupedAttacks).forEach(sourceName => {
+                    const header = document.createElement('div');
+                    header.className = 'attack-section-header collapsible';
+                    header.textContent = `▶ ${sourceName}`;
+                    let collapsed = true;
+                    const rows = [];
+
+                    attackVisualList.appendChild(header);
+                    groupedAttacks[sourceName].forEach(attack => {
+                        const row = renderAttackRow(attack, 'attack-preevo-row collapsed');
+                        rows.push(row);
+                        attackVisualList.appendChild(row);
+                    });
+
+                    header.addEventListener('click', () => {
+                        collapsed = !collapsed;
+                        header.textContent = `${collapsed ? '▶' : '▼'} ${sourceName}`;
+                        rows.forEach(r => r.classList.toggle('collapsed', collapsed));
+                    });
+                });
+
+                // Auto-select first clickable attack
+                if (firstClickableRow && firstClickableAttack) {
+                    selectAttack(firstClickableAttack, firstClickableRow);
+                } else {
+                    recalculateFinalDamage();
+                }
             }
 
             function updateAttackerDropdown() {
@@ -2050,55 +2158,48 @@
                 if (!db || !turn) return;
 
                 const currentValue = attackerSelect.value;
-                attackerSelect.innerHTML = '<option value="">Select Attacker</option>';
-
                 const availableAttackers = getOccupiedSlots().filter(slotId => slotId.startsWith(`slot${turn}`));
-
                 const battleSlotId = `slot${turn}0`;
                 const battlePokemon = availableAttackers.find(id => id === battleSlotId);
-                const benchPokemon = availableAttackers.filter(id => id !== battleSlotId).sort(); // Sort bench for consistency
+                const benchPokemon = availableAttackers.filter(id => id !== battleSlotId).sort();
 
-                // Add Battle Pokémon first
-                if (battlePokemon) {
-                    const option = document.createElement('option');
-                    option.value = battlePokemon;
-                    option.textContent = getCardName(battlePokemon);
-                    attackerSelect.appendChild(option);
-                }
+                // Build the "Auto" label: shows battle Pokémon name or "Empty"
+                const autoLabel = battlePokemon ? `Auto (${getCardName(battlePokemon)})` : 'Auto (Empty)';
+                attackerSelect.innerHTML = '';
 
-                // Add separator if there are both battle and bench Pokémon
-                if (battlePokemon && benchPokemon.length > 0) {
+                const autoOption = document.createElement('option');
+                autoOption.value = 'auto';
+                autoOption.textContent = autoLabel;
+                attackerSelect.appendChild(autoOption);
+
+                // Add Bench Pokémon only (battle slot is covered by Auto)
+                if (benchPokemon.length > 0) {
                     const separator = document.createElement('option');
                     separator.disabled = true;
                     separator.textContent = '──── Bench ────';
                     attackerSelect.appendChild(separator);
+
+                    benchPokemon.forEach(slotId => {
+                        const option = document.createElement('option');
+                        option.value = slotId;
+                        option.textContent = getCardName(slotId);
+                        attackerSelect.appendChild(option);
+                    });
                 }
 
-                // Add Bench Pokémon
-                benchPokemon.forEach(slotId => {
-                    const option = document.createElement('option');
-                    option.value = slotId;
-                    option.textContent = getCardName(slotId);
-                    attackerSelect.appendChild(option);
-                });
-
-                // Reselect the correct value
-                if (availableAttackers.includes(currentValue)) {
+                // Reselect logic: keep manual selection if still valid, otherwise revert to Auto
+                if (currentValue !== 'auto' && availableAttackers.includes(currentValue)) {
                     attackerSelect.value = currentValue;
-                } else if (battlePokemon) {
-                    attackerSelect.value = battleSlotId;
-                } else if (benchPokemon.length > 0) {
-                    attackerSelect.value = benchPokemon[0];
+                } else {
+                    attackerSelect.value = 'auto';
                 }
 
-                // After updating the dropdown, the attack list and weakness should also be updated
-                // based on the new state of the attacker dropdown.
-                updateAttackDropdown();
+                updateAttackVisualList();
                 updateWeaknessAndResistanceChecks();
             }
 
             attackerSelect.addEventListener('change', () => {
-                updateAttackDropdown();
+                updateAttackVisualList();
                 updateWeaknessAndResistanceChecks();
             });
 
@@ -2112,11 +2213,9 @@
                 }
             });
 
-            attackSelect.addEventListener('change', recalculateFinalDamage);
-
             attackBtn.addEventListener('click', () => {
-                const attackerSlotId = attackerSelect.value;
-                const attackName = attackSelect.value;
+                const attackerSlotId = getResolvedAttackerSlotId();
+                const attackName = selectedAttackState.name;
                 const targets = selections.value;
                 const damage = parseInt(damageInput.value, 10);
                 const isWeakness = weaknessCheck.checked;
@@ -2289,7 +2388,10 @@
             // A single, consolidated listener for all slot changes
             slots.forEach(slot => {
                 slot.on('change', () => {
-                    // Using a timeout to batch updates that might come in rapid succession
+                    // Attack module updates immediately (no debounce) for responsive UX
+                    updateAttackerDropdown();
+
+                    // Batch remaining expensive rendering updates
                     clearTimeout(slot._updateTimeout);
                     slot._updateTimeout = setTimeout(() => {
                         console.log(`Listener Fired: ${slot.name}`);
@@ -2297,11 +2399,10 @@
                         updateBattleEnergyCounts();
                         renderCurrentPlayerField();
                         renderTargetingField();
-                        updateAttackerDropdown();
                         updateWeaknessAndResistanceChecks();
-                        updateRondoButton(); // Update Rondo button when slots change
-                        updateMyriadButton(); // Update Myriad button when slots change
-                    }, 50); // 50ms delay to batch updates
+                        updateRondoButton();
+                        updateMyriadButton();
+                    }, 50);
                 });
             });
 

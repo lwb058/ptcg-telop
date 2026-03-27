@@ -1746,3 +1746,144 @@ body.deck-viewer-body {
     font-size: 1.2em;
     pointer-events: none;
 }
+
+/* ── Attack Visual List ── */
+.attack-visual-list {
+    display: flex;
+    flex-direction: column;
+    background-color: #e8eaf0;
+    border-radius: 6px;
+    padding: 3px;
+    gap: 3px;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 8px;
+}
+
+.attack-skill-row {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: 28px;
+    background-color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    flex-shrink: 0;
+}
+
+.attack-skill-row:hover {
+    background-color: #e3edff;
+}
+
+.attack-skill-row.selected {
+    background-color: #c5daff;
+    outline: 2px solid #4a69bd;
+    outline-offset: -1px;
+}
+
+.attack-skill-row.is-ability {
+    cursor: default;
+    background-color: #f9f0f0;
+}
+
+.attack-skill-row.is-ability:hover {
+    background-color: #f9f0f0;
+}
+
+.attack-energy-cost {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 3px;
+    gap: 1px;
+    background-color: rgba(255, 255, 255, 0.85);
+    border-radius: 4px 14px 14px 4px;
+    box-sizing: border-box;
+}
+
+.attack-energy-cost .energy-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.attack-ability-tag {
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #c0392b;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.attack-skill-name {
+    flex-grow: 1;
+    padding-left: 8em;
+    font-size: 1em;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.attack-skill-name.is-ability {
+    color: #c0392b;
+}
+
+.attack-skill-damage {
+    width: 45px;
+    flex-shrink: 0;
+    font-weight: bold;
+    text-align: right;
+    padding-right: 8px;
+    font-size: 1.2em;
+    white-space: nowrap;
+}
+
+.attack-section-header {
+    font-size: 10px;
+    font-weight: 700;
+    color: #888;
+    padding: 2px 6px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    cursor: default;
+}
+
+.attack-section-header.collapsible {
+    cursor: pointer;
+    user-select: none;
+}
+
+.attack-section-header.collapsible:hover {
+    color: #555;
+}
+
+.attack-preevo-row.collapsed {
+    display: none;
+}
+
+.attack-effect-text {
+    width: 100%;
+    resize: none;
+    overflow: hidden;
+    min-height: 2.8em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.4;
+    background-color: #fafafa;
+    color: #333;
+    box-sizing: border-box;
+}
