@@ -84,8 +84,9 @@
             <h3>
                 <div style="display: flex; justify-content: space-between; align-items: center; ">
                     Field Module
-                    <button id="toggle-field-height-btn" class="btn" style="padding: 2px 8px; font-size: 12px;">
-                        Collapse Field</button>
+                    <button id="toggle-spectator-view-btn" class="btn" style="padding: 2px 8px; font-size: 12px;"
+                        data-i18n="spectator_view_btn">
+                        Spectator View</button>
                 </div>
             </h3>
             <div style="justify-content: space-between; align-items: center; margin-bottom: 5px;">
@@ -120,8 +121,10 @@
                 </div>
                 <div id="batch-counter-drop-zone" data-i18n="batch_counter_drop_zone_text">
                 </div>
-                <div id="battle-field" class="battle-field-container">
-                    <!-- Battle field will be rendered here by JavaScript -->
+                <div id="battle-field-wrapper">
+                    <div id="battle-field" class="battle-field-container">
+                        <!-- Battle field will be rendered here by JavaScript -->
+                    </div>
                 </div>
                 <div id="extrahp-transfer-control"
                     style="padding:5px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 0px 0px 4px 4px; background: lightgrey; border-top: 1px solid white;">
@@ -297,7 +300,10 @@
             const noExtraHpBtn = document.getElementById('no-extrahp-btn');
             const energyToolsContainer = document.getElementById('energy-tool-buttons');
             const battleField = document.getElementById('battle-field');
-            const toggleFieldHeightBtn = document.getElementById('toggle-field-height-btn');
+            const toggleSpectatorViewBtn = document.getElementById('toggle-spectator-view-btn');
+            const battleFieldWrapper = document.getElementById('battle-field-wrapper');
+            const SPECTATOR_MODE_KEY = 'ptcg-telop-spectator-mode';
+            let isSpectatorMode = false;
             const attackerSelect = document.getElementById('attacker');
             const attackVisualList = document.getElementById('attack-visual-list');
             const attackEffectText = document.getElementById('attack-effect-text');
@@ -347,6 +353,24 @@
                 const occupied = getOccupiedSlots();
                 return occupied.includes(battleSlotId) ? battleSlotId : '';
             }
+
+            // Returns the slot to highlight as attacker — always resolves to battle slot in auto mode, even if empty.
+            function getAttackerSlotIdForHighlight() {
+                const raw = attackerSelect.value;
+                if (raw !== 'auto') return raw;
+                const turn = draft_currentTurn.value;
+                if (!turn) return '';
+                return `slot${turn}0`;
+            }
+
+            function highlightAttackerCard() {
+                battleField.querySelectorAll('.pokemon-target-card.is-attacker').forEach(el => el.classList.remove('is-attacker'));
+                const slotId = getAttackerSlotIdForHighlight();
+                if (!slotId) return;
+                const card = battleField.querySelector(`.pokemon-target-card[data-slot-id="${slotId}"]`);
+                if (card) card.classList.add('is-attacker');
+            }
+
             const weaknessCheck = document.getElementById('weakness-check');
             const attackBtn = document.getElementById('attack-btn');
             const aimBtn = document.getElementById('aim-btn');
@@ -1393,18 +1417,53 @@
 
 
 
-            // --- Targeting View Logic ---
-            if (toggleFieldHeightBtn) {
-                toggleFieldHeightBtn.addEventListener('click', () => {
-                    const currentHeight = battleField.style.height;
-                    if (currentHeight === '215px') {
-                        battleField.style.height = '430px';
-                        toggleFieldHeightBtn.textContent = 'Collapse';
-                    } else {
-                        battleField.style.height = '215px';
-                        toggleFieldHeightBtn.textContent = 'Expand';
-                    }
-                });
+            // --- Spectator View Rotation Logic ---
+            function applySpectatorMode(enabled) {
+                if (enabled) {
+                    const W = battleField.offsetWidth;
+
+                    battleFieldWrapper.style.height = W + 'px';
+                    battleFieldWrapper.classList.add('spectator-mode');
+
+                    battleField.style.width = '100%';
+                    battleField.style.height = '100%';
+                    battleField.style.transform = 'translate(-50%, -50%) rotate(90deg)';
+                    battleField.style.transformOrigin = 'center center';
+                    battleField.style.overflow = 'auto';
+                    battleField.style.display = 'flex';
+                    battleField.style.flexDirection = 'column';
+                    battleField.style.justifyContent = 'center';
+
+                    toggleSpectatorViewBtn.dataset.i18n = 'player_view_btn';
+                    toggleSpectatorViewBtn.textContent = getI18nText('player_view_btn');
+                    isSpectatorMode = true;
+                } else {
+                    battleFieldWrapper.style.height = '';
+                    battleFieldWrapper.classList.remove('spectator-mode');
+
+                    battleField.style.width = '';
+                    battleField.style.height = '430px';
+                    battleField.style.transform = '';
+                    battleField.style.transformOrigin = '';
+                    battleField.style.overflow = '';
+                    battleField.style.display = '';
+                    battleField.style.flexDirection = '';
+                    battleField.style.justifyContent = '';
+
+                    toggleSpectatorViewBtn.dataset.i18n = 'spectator_view_btn';
+                    toggleSpectatorViewBtn.textContent = getI18nText('spectator_view_btn');
+                    isSpectatorMode = false;
+                }
+                localStorage.setItem(SPECTATOR_MODE_KEY, enabled ? '1' : '0');
+                renderTargetingField();
+            }
+
+            if (toggleSpectatorViewBtn) {
+                toggleSpectatorViewBtn.addEventListener('click', () => applySpectatorMode(!isSpectatorMode));
+            }
+
+            if (localStorage.getItem(SPECTATOR_MODE_KEY) !== '0') {
+                requestAnimationFrame(() => applySpectatorMode(true));
             }
 
             // --- Counter Configuration (Unified Logic) ---
@@ -1506,8 +1565,8 @@
                 const turn = draft_currentTurn.value;
                 if (!turn) return;
 
-                const currentPlayerId = turn;
-                const opponentPlayerId = turn === 'L' ? 'R' : 'L';
+                const currentPlayerId = isSpectatorMode ? 'L' : turn;
+                const opponentPlayerId = isSpectatorMode ? 'R' : (turn === 'L' ? 'R' : 'L');
                 const currentSelections = selections.value || [];
 
                 // Helper to create a row container
@@ -1574,6 +1633,8 @@
                 // Player side
                 battleField.appendChild(playerBattleRow);
                 battleField.appendChild(playerBenchRow);
+
+                highlightAttackerCard();
             }
 
             // --- Logic for dragging and dropping to swap Pokémon in the targeting view --- 
@@ -2203,6 +2264,7 @@
             attackerSelect.addEventListener('change', () => {
                 updateAttackVisualList();
                 updateWeaknessAndResistanceChecks();
+                highlightAttackerCard();
             });
 
             // Aim at opponent's battle pokemon

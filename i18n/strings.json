@@ -502,5 +502,17 @@
     "en": "TM",
     "chs": "招式学习器",
     "cht": "招式學習器"
+  },
+  "spectator_view_btn": {
+    "jp": "観戦視点",
+    "en": "Spectator View",
+    "chs": "观赛视角",
+    "cht": "觀賽視角"
+  },
+  "player_view_btn": {
+    "jp": "プレイヤー視点",
+    "en": "Player View",
+    "chs": "玩家视角",
+    "cht": "玩家視角"
   }
 }

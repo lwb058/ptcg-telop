@@ -872,6 +872,63 @@ body.dragging-energy .manual-attach-zone {
     border-radius: 4px;
 }
 
+/* === Spectator View Rotation === */
+#battle-field-wrapper {
+    position: relative;
+}
+
+#battle-field-wrapper.spectator-mode {
+    overflow: hidden;
+    /* height set dynamically by JS */
+}
+
+#battle-field-wrapper.spectator-mode>#battle-field {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    /* width, height, transform set dynamically by JS */
+}
+
+/* L player cards face center (180° flip): L is on visual right after +90° CW */
+#battle-field-wrapper.spectator-mode .opponent-row .pokemon-target-card {
+    transform: rotate(180deg);
+}
+
+/* Fix counter positions on L cards: 180° flip moves top-right → bottom-left */
+#battle-field-wrapper.spectator-mode .opponent-row .on-pokemon:not(.is-extrahp) {
+    top: auto;
+    bottom: -3px;
+    right: auto;
+    left: -5px;
+}
+
+#battle-field-wrapper.spectator-mode .opponent-row .on-pokemon.is-extrahp {
+    top: -5px;
+    right: auto;
+    bottom: auto;
+    left: -5px;
+}
+
+/* Counter-rotate on-card counters so text is readable on screen */
+/* L cards: container +90° + card +180° = 270° → need +90° to reach 360°=0° */
+#battle-field-wrapper.spectator-mode .opponent-row .on-pokemon {
+    transform: rotate(90deg);
+}
+
+/* R cards: container +90°, no card rotation → need -90° to reach 0° */
+#battle-field-wrapper.spectator-mode .player-row .on-pokemon {
+    transform: rotate(-90deg);
+}
+
+/* batch-counter-drop-zone: preserve translate, add -90° rotation */
+#battle-field-wrapper.spectator-mode #batch-counter-drop-zone {
+    transform: translate(-50%, -50%) rotate(-90deg);
+}
+
+#battle-field-wrapper.spectator-mode #batch-counter-drop-zone.over {
+    transform: translate(-50%, -50%) rotate(-90deg) scale(1.05);
+}
+
 .targeting-row {
     display: flex;
     justify-content: center;
@@ -966,6 +1023,17 @@ body.dragging-energy .manual-attach-zone {
     bottom: 30%;
     width: 12%;
     transform: translateX(-50%);
+}
+
+.pokemon-target-card.is-attacker {
+    border-color: #ffe70a;
+    box-shadow: 0 0 8px 2px #fffb1a94;
+}
+
+.pokemon-target-card.empty-target-slot.is-attacker {
+    border-color: #ffe70a;
+    border-style: dashed;
+    box-shadow: 0 0 8px 2px #fffb1a94;
 }
 
 .pokemon-target-card.over {
