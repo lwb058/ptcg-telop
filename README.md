@@ -48,6 +48,7 @@ PCに直接Node.jsやPython環境を構築する方法です。
 2.  最新リリースの`Assets`欄から、`NodeCG_PTCG_vX.X.X.zip` をダウンロードし、解凍します。
 3.  （もし未導入の場合）[Node.js](https://nodejs.org/) と [Python](https://www.python.org/) をインストールします。**【重要】Pythonをインストールする際は、インストーラーの最初の画面で`Add Python to PATH`のチェックボックスを必ずオンにしてください。**
 4.  解凍したフォルダの中にある `install.bat` (Windows) または `install.command` (Mac) をダブルクリックして実行します。必要なコンポーネントが自動でインストールされます。
+    *※Macのみ: 初回インストール時にXcodeライセンスの同意プロセスが自動で実行され、Macのログインパスワードの入力を求められる場合があります。*
 5.  インストール完了後、`start.bat` (Windows) または `start_MacOS.command` (Mac) をダブルクリックするとシステムが起動します。
 
 ---

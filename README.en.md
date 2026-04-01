@@ -45,6 +45,7 @@ This method sets up Node.js and Python environments directly on your PC.
 2.  From the `Assets` section of the latest release, download `NodeCG_PTCG_vX.X.X.zip` and unzip it.
 3.  (If you haven't already) Install [Node.js](https://nodejs.org/) and [Python](https://www.python.org/). **[Important] When installing Python, make sure to check the `Add Python to PATH` checkbox on the first screen of the installer.**
 4.  Double-click `install.bat` (Windows) or `install.command` (Mac) inside the unzipped folder to run it. This will automatically install all necessary components.
+    *※Mac Only: During the initial installation, the Xcode license agreement process may run automatically, at which point the prompt may ask for your Mac login password.*
 5.  After the installation is complete, double-click `start.bat` (Windows) or `start_MacOS.command` (Mac) to launch the system.
 
 ---

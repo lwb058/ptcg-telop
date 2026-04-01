@@ -50,6 +50,7 @@
 2.  从最新版本的`Assets`中，下载`NodeCG_PTCG_vX.X.X.zip`并解压。
 3.  (如果尚未安装) 请安装 [Node.js](https://nodejs.org/) 和 [Python](https://www.python.org/)。**【重要】安装Python时，请务必在安装程序的第一个界面勾选`Add Python to PATH`复选框。**
 4.  双击解压后文件夹中的 `install.bat` (Windows) 或 `install.command` (Mac) 来执行。所需的组件将会被自动安装。
+    *※Mac专用：首次安装时可能会自动执行 Xcode 许可协议的同意流程，此时系统会要求您输入 Mac 的开机密码。*
 5.  安装完成后，双击 `start.bat` (Windows) 或 `start_MacOS.command` (Mac) 即可启动系统。
 
 ---
