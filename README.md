@@ -47,8 +47,8 @@ PCに直接Node.jsやPython環境を構築する方法です。
 1.  本リポジトリの [**Releases**](https://github.com/lwb058/ptcg-telop/releases) ページにアクセスします。
 2.  最新リリースの`Assets`欄から、`NodeCG_PTCG_vX.X.X.zip` をダウンロードし、解凍します。
 3.  （もし未導入の場合）[Node.js](https://nodejs.org/) と [Python](https://www.python.org/) をインストールします。**【重要】Pythonをインストールする際は、インストーラーの最初の画面で`Add Python to PATH`のチェックボックスを必ずオンにしてください。**
-4.  解凍したフォルダの中にある `install.bat` をダブルクリックして実行します。必要なコンポーネントが自動でインストールされます。
-5.  インストール完了後、`start.bat` をダブルクリックするとシステムが起動します。
+4.  解凍したフォルダの中にある `install.bat` (Windows) または `install.command` (Mac) をダブルクリックして実行します。必要なコンポーネントが自動でインストールされます。
+5.  インストール完了後、`start.bat` (Windows) または `start_MacOS.command` (Mac) をダブルクリックするとシステムが起動します。
 
 ---
 ### 🚀 アップデート方法
@@ -144,7 +144,7 @@ nodecg/                            (ホストランタイムディレクトリ)
 ## 使用方法
 
 1.  **システムの起動**:
-    -   **かんたん導入パッケージ利用者**: `start.bat`をダブルクリックして起動します。
+    -   **かんたん導入パッケージ利用者**: `start.bat` (Windows) または `start_MacOS.command` (Mac) をダブルクリックして起動します。
     -   **手動インストーラー**: ホストディレクトリで、以下のコマンドを実行します。
     ```bash
     node node_modules/nodecg/index.js

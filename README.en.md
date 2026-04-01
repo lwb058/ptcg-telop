@@ -44,8 +44,8 @@ This method sets up Node.js and Python environments directly on your PC.
 1.  Go to the [**Releases**](https://github.com/lwb058/ptcg-telop/releases) page of this repository.
 2.  From the `Assets` section of the latest release, download `NodeCG_PTCG_vX.X.X.zip` and unzip it.
 3.  (If you haven't already) Install [Node.js](https://nodejs.org/) and [Python](https://www.python.org/). **[Important] When installing Python, make sure to check the `Add Python to PATH` checkbox on the first screen of the installer.**
-4.  Double-click `install.bat` inside the unzipped folder to run it. This will automatically install all necessary components.
-5.  After the installation is complete, double-click `start.bat` to launch the system.
+4.  Double-click `install.bat` (Windows) or `install.command` (Mac) inside the unzipped folder to run it. This will automatically install all necessary components.
+5.  After the installation is complete, double-click `start.bat` (Windows) or `start_MacOS.command` (Mac) to launch the system.
 
 ---
 ### 🚀 How to Update
@@ -141,7 +141,7 @@ nodecg/                            (Host runtime directory)
 ## Usage
 
 1.  **Start the System**:
-    -   **For Easy Install Package Users**: Double-click `start.bat` to launch.
+    -   **For Easy Install Package Users**: Double-click `start.bat` (Windows) or `start_MacOS.command` (Mac) to launch.
     -   **For Manual Installers**: Run the following command in the host directory.
     ```bash
     node node_modules/nodecg/index.js
