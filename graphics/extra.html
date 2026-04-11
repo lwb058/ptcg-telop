@@ -459,6 +459,7 @@
                 const forceSlideIn = slotData && slotData.forceSlideIn;
                 const skipSlideIn = slotData && slotData.evolutionSelect;
                 const isNewCard = hasCard && (!oldSlotData || slotData.cardId !== oldSlotData.cardId);
+                if (forceSlideIn) oldSlotData = null;
 
                 const oldToolIds = oldSlotData ? (oldSlotData.attachedToolIds || []) : [];
                 const newToolIds = slotData ? slotData.attachedToolIds || [] : [];

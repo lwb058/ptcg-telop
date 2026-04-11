@@ -839,7 +839,7 @@
                     const forceSlideIn = slotData && slotData.forceSlideIn;
                     const skipSlideIn = slotData && slotData.evolutionSelect;
                     const isNewCard = hasCard && (!oldSlotData || slotData.cardId !== oldSlotData.cardId);
-                    const isCardChanged = !oldSlotData || (slotData && oldSlotData.cardId !== slotData.cardId);
+                    const isCardChanged = !oldSlotData || (slotData && oldSlotData.cardId !== slotData.cardId) || forceSlideIn;
 
                     const sanitizeDamage = (damage) => {
                         if (typeof damage !== 'string') return damage || '';
@@ -864,6 +864,10 @@
                                 if (energyWrapper) energyWrapper.innerHTML = '';
                                 const ailmentsWrapper = activeWrapper.querySelector('.status-ailment');
                                 if (ailmentsWrapper) ailmentsWrapper.innerHTML = '';
+                                const hpBar = activeWrapper.querySelector('.hp-bar');
+                                if (hpBar) { hpBar.style.transition = 'none'; hpBar.style.width = '100%'; hpBar.offsetHeight; hpBar.style.transition = ''; }
+                                const hpText = activeWrapper.querySelector('.hp-text');
+                                if (hpText) hpText.textContent = '';
                             }
                             if (benchWrapper) {
                                 slotEl.innerHTML = '';
