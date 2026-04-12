@@ -932,6 +932,7 @@ module.exports = function (nodecg) {
 	 */
 	let lastOpTime = 0;
 	let lastOpSignature = '';
+	let queueCounter = 0;
 
 	nodecg.listenFor('queueOperation', (op, callback) => {
 		if (!op || !op.type || !op.payload) {
@@ -958,6 +959,7 @@ module.exports = function (nodecg) {
 		// If the operation is a switch, split it into two separate operations for the LIVE queue
 		if (op.type === 'SWITCH_POKEMON') {
 			const opsToPush = [];
+			const switchQueueIndex = queueCounter++;
 
 			// --- Auto Retreat Logic ---
 			const autoRetreat = ptcgSettings.value && ptcgSettings.value.autoRetreatToggle;
@@ -983,7 +985,8 @@ module.exports = function (nodecg) {
 							type: 'SET_ACTION_STATUS',
 							payload: { target: targetAction, status: true, playerName: playerName || `[${side}]` },
 							priority: 1, // State change (High priority)
-							id: `${Date.now()}-retreat-${Math.random().toString(36).substring(2, 9)}`
+							id: `${Date.now()}-retreat-${Math.random().toString(36).substring(2, 9)}`,
+							queueIndex: switchQueueIndex
 						});
 					} else {
 						// Found existing op. Check its status.
@@ -1007,25 +1010,28 @@ module.exports = function (nodecg) {
 				type: 'SLIDE_OUT',
 				payload: op.payload,
 				priority: 5,
-				id: `${Date.now()}-slideout-${Math.random().toString(36).substring(2, 9)}`
+				id: `${Date.now()}-slideout-${Math.random().toString(36).substring(2, 9)}`,
+				queueIndex: switchQueueIndex
 			};
 			const applySwitchOp = {
 				type: 'APPLY_SWITCH',
 				payload: op.payload,
 				priority: 6,
-				id: `${Date.now()}-applyswitch-${Math.random().toString(36).substring(2, 9)}`
+				id: `${Date.now()}-applyswitch-${Math.random().toString(36).substring(2, 9)}`,
+				queueIndex: switchQueueIndex
 			};
 
 			opsToPush.push(slideOutOp, applySwitchOp);
 			operationQueue.value.push(...opsToPush);
 
-			nodecg.log.info(`Split SWITCH_POKEMON into [${opsToPush.map(o => o.type).join(', ')}]`);
+			nodecg.log.info(`Split SWITCH_POKEMON into [${opsToPush.map(o => o.type).join(', ')}] (queueIndex: ${switchQueueIndex})`);
 		} else {
 			// For all other operations, add them to the queue as usual
 			op.id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 			op.priority = getPriorityForOperation(op.type);
+			op.queueIndex = queueCounter++;
 			operationQueue.value.push(op);
-			nodecg.log.info(`Operation queued: ${op.type} with priority ${op.priority}`);
+			nodecg.log.info(`Operation queued: ${op.type} with priority ${op.priority} (queueIndex: ${op.queueIndex})`);
 		}
 
 		// If auto-apply is on, try to process the queue.
@@ -1231,6 +1237,52 @@ module.exports = function (nodecg) {
 		}
 	}
 
+	/**
+	 * Remap targets for ops that were queued AFTER a swap but execute BEFORE it (lower priority).
+	 * This corrects the mismatch between draft state (swap applied immediately) and live state
+	 * (swap applied at priority 6, after state changes at priority 2).
+	 */
+	function remapTargetsForSwaps(sortedOps) {
+		const switchOps = sortedOps.filter(op => op.type === 'APPLY_SWITCH');
+		if (switchOps.length === 0) return sortedOps;
+
+		return sortedOps.map(op => {
+			if (op.type === 'APPLY_SWITCH' || op.type === 'SLIDE_OUT') return op;
+
+			for (const switchOp of switchOps) {
+				// Only remap ops queued AFTER the swap AND processed BEFORE it
+				if (op.queueIndex <= switchOp.queueIndex) continue;
+				if (op.priority >= switchOp.priority) continue;
+
+				const { source, target } = switchOp.payload;
+
+				// Remap payload.target (most ops)
+				if (op.payload.target === source) {
+					op = { ...op, payload: { ...op.payload, target: target } };
+				} else if (op.payload.target === target) {
+					op = { ...op, payload: { ...op.payload, target: source } };
+				}
+
+				// Remap ATTACK targets array and attackerSlotId
+				if (op.payload.targets) {
+					op = { ...op, payload: { ...op.payload, targets: op.payload.targets.map(t => {
+						if (t === source) return target;
+						if (t === target) return source;
+						return t;
+					})}};
+				}
+				if (op.payload.attackerSlotId) {
+					if (op.payload.attackerSlotId === source) {
+						op = { ...op, payload: { ...op.payload, attackerSlotId: target } };
+					} else if (op.payload.attackerSlotId === target) {
+						op = { ...op, payload: { ...op.payload, attackerSlotId: source } };
+					}
+				}
+			}
+			return op;
+		});
+	}
+
 	// Shared logic for when an animation batch is considered complete (either by ACK or timeout)
 	function handleAnimationComplete() {
 		if (ackTimeout) {
@@ -1259,8 +1311,9 @@ module.exports = function (nodecg) {
 					return;
 				}
 				const sortedQueue = [...operationQueue.value].sort((a, b) => a.priority - b.priority);
-				pendingOperations = sortedQueue;
+				pendingOperations = remapTargetsForSwaps(sortedQueue);
 				operationQueue.value = [];
+				queueCounter = 0;
 			} else {
 				// Recursive call (from handleAnimationComplete): all batches done
 				processorStatus.value = 'IDLE';
