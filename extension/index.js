@@ -1283,6 +1283,27 @@ module.exports = function (nodecg) {
 		});
 	}
 
+	// Defer low-priority ops that follow a SET_POKEMON/REPLACE_POKEMON on the same slot,
+	// so they execute in the same batch instead of being overwritten by the SET/REPLACE defaults.
+	function deferOpsForSetPokemon(sortedOps) {
+		const setOps = sortedOps.filter(op => op.type === 'SET_POKEMON' || op.type === 'REPLACE_POKEMON');
+		if (setOps.length === 0) return sortedOps;
+
+		return sortedOps.map(op => {
+			if (op.type === 'SET_POKEMON' || op.type === 'REPLACE_POKEMON') return op;
+
+			for (const setOp of setOps) {
+				if (op.queueIndex <= setOp.queueIndex) continue;
+				if (op.priority >= setOp.priority) continue;
+				if (op.payload.target !== setOp.payload.target) continue;
+
+				// Defer this op to run in the same batch as SET_POKEMON
+				op = { ...op, priority: setOp.priority };
+			}
+			return op;
+		});
+	}
+
 	// Shared logic for when an animation batch is considered complete (either by ACK or timeout)
 	function handleAnimationComplete() {
 		if (ackTimeout) {
@@ -1311,7 +1332,8 @@ module.exports = function (nodecg) {
 					return;
 				}
 				const sortedQueue = [...operationQueue.value].sort((a, b) => a.priority - b.priority);
-				pendingOperations = remapTargetsForSwaps(sortedQueue);
+				pendingOperations = deferOpsForSetPokemon(remapTargetsForSwaps(sortedQueue))
+				.sort((a, b) => a.priority - b.priority || a.queueIndex - b.queueIndex);
 				operationQueue.value = [];
 				queueCounter = 0;
 			} else {
