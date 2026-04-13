@@ -523,9 +523,12 @@
                         const delay = needsToWaitForSlideOut ? 500 : 0;
                         setTimeout(() => {
                             const side = slotEl.id.includes('-L') ? 'L' : 'R';
+                            slotEl.classList.remove('anim-slide-out-L', 'anim-slide-out-R');
                             slotEl.classList.add(`anim-slide-in-${side}`);
                             setTimeout(() => slotEl.classList.remove(`anim-slide-out-${side}`, `anim-slide-in-${side}`), 500);
                         }, delay);
+                    } else if (isNewCard || skipSlideIn) {
+                        slotEl.classList.remove('anim-slide-out-L', 'anim-slide-out-R', 'anim-slide-in-L', 'anim-slide-in-R');
                     }
                 };
 
