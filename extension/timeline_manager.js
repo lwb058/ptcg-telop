@@ -514,10 +514,11 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 					nodecg.sendMessage('playAnimation', { type: 'SWITCH_POKEMON', source: op.payload.source.replace('slot', 'slot-'), target: op.payload.target.replace('slot', 'slot-') });
 					break;
 				case 'REMOVE_POKEMON':
-					nodecg.sendMessage('playAnimation', { type: 'EXIT_POKEMON', target: op.payload.target.replace('slot', 'slot-') });
-					break;
-				case 'KO_POKEMON':
-					nodecg.sendMessage('playAnimation', { type: 'KO_POKEMON', target: op.payload.target.replace('slot', 'slot-') });
+					if (op.payload.actionType === 'KO') {
+						nodecg.sendMessage('playAnimation', { type: 'KO_POKEMON', target: op.payload.target.replace('slot', 'slot-') });
+					} else {
+						nodecg.sendMessage('playAnimation', { type: 'EXIT_POKEMON', target: op.payload.target.replace('slot', 'slot-') });
+					}
 					break;
 				case 'REPLACE_POKEMON':
 					let animationType = 'REPLACE_POKEMON';

@@ -563,11 +563,8 @@ function setupPlayerPanel(side) {
 
             pokemonView.querySelector('.remove-btn').addEventListener('click', () => {
                 const slotReplicant = nodecg.Replicant(`draft_${slotId}`);
-                if (slotReplicant.value && slotReplicant.value.isKO) {
-                    queueOperation('KO_POKEMON', { target: slotId, cardName: getCardName(slotId) });
-                } else {
-                    queueOperation('REMOVE_POKEMON', { target: slotId, cardName: getCardName(slotId) });
-                }
+                const actionType = (slotReplicant.value && slotReplicant.value.isKO) ? 'KO' : 'Remove';
+                queueOperation('REMOVE_POKEMON', { target: slotId, cardName: getCardName(slotId), actionType });
             });
 
             const koCheckbox = pokemonView.querySelector('.ko-checkbox');

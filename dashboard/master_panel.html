@@ -485,7 +485,8 @@
                     if (sourceSlotId) {
                         queueOperation('REMOVE_POKEMON', {
                             target: sourceSlotId,
-                            cardName: getCardName(sourceSlotId) // Enrich payload
+                            cardName: getCardName(sourceSlotId), // Enrich payload
+                            actionType: 'Remove'
                         });
                     }
                 }
@@ -511,9 +512,10 @@
                     const sourceSlotId = e.dataTransfer.getData('text/plain');
                     if (sourceSlotId) {
                         // K.O. the Pokemon
-                        queueOperation('KO_POKEMON', {
+                        queueOperation('REMOVE_POKEMON', {
                             target: sourceSlotId,
-                            cardName: getCardName(sourceSlotId) // Enrich payload
+                            cardName: getCardName(sourceSlotId), // Enrich payload
+                            actionType: 'KO'
                         });
                     }
                 }
@@ -937,9 +939,10 @@
                 slots.forEach(slot => {
                     if (slot.value && slot.value.cardId && slot.value.isKO) {
                         const targetId = slot.name.replace('draft_', '');
-                        queueOperation('KO_POKEMON', {
+                        queueOperation('REMOVE_POKEMON', {
                             target: targetId,
-                            cardName: getCardName(targetId) // Enrich payload
+                            cardName: getCardName(targetId), // Enrich payload
+                            actionType: 'KO'
                         });
                     }
                 });

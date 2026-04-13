@@ -435,13 +435,10 @@ function formatOperation(op, cardDb) {
     };
 
     switch (type) {
-        case 'REMOVE_POKEMON':
-            // Old REMOVE ops might not have cardName or cardId.
-            return `${side} Remove: ${getName(payload.cardName) === 'Card' ? 'Pokemon' : getName(payload.cardName)} (${getSlotName(payload.target)})`;
-
-        case 'KO_POKEMON':
-            // Old KO ops might not have cardName.
-            return `${side} KO: ${getName(payload.cardName) === 'Card' ? 'Pokemon' : getName(payload.cardName)} (${getSlotName(payload.target)})`;
+        case 'REMOVE_POKEMON': {
+            const removeAction = payload.actionType === 'KO' ? 'KO' : 'Remove';
+            return `${side} ${removeAction}: ${getName(payload.cardName) === 'Card' ? 'Pokemon' : getName(payload.cardName)} (${getSlotName(payload.target)})`;
+        }
 
         case 'REPLACE_POKEMON':
             const action = payload.actionType || 'Replace';

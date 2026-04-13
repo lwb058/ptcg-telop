@@ -570,13 +570,12 @@ module.exports = function (nodecg) {
 			case 'SET_EXTRA_HP':
 				return 2;
 
-			// Priority 3: K.O. Resolution
-			case 'KO_POKEMON': // This is the animation trigger
+			// Priority 3: Remove / K.O. Resolution
+			case 'REMOVE_POKEMON': // Includes both Remove and KO (via actionType)
 				return 3;
 
 			// Priority 4: Post-battle processing
 			case 'SET_SIDES': // Taking prize cards
-			case 'REMOVE_POKEMON': // Removing KO'd pokemon from field
 				return 4;
 
 			// Priority 5 & 6: Sequential animations
@@ -730,54 +729,47 @@ module.exports = function (nodecg) {
 				break;
 			}
 			case 'REMOVE_POKEMON': {
+				const prevCardId = replicant.value.cardId;
 				// Reset the slot to its default empty state
 				const isBattleSlot = replicant.name.endsWith('0');
 				replicant.value = {
 					cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [],
 					...(isBattleSlot && { ailments: [] })
 				};
-				break;
-			}
-			case 'KO_POKEMON': {
-				// First, save the cardId
-				const prevCardId = replicant.value.cardId;
-				// Reset the slot to its default empty state, preserving the structure
-				const isBattleSlot = replicant.name.endsWith('0');
-				replicant.value = {
-					cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [],
-					...(isBattleSlot && { ailments: [] })
-				};
-				// Auto-prize card logic
-				const autoPrizeTake = ptcgSettings.value && ptcgSettings.value.autoPrizeTake;
-				// This logic should only run when applying to DRAFT, to generate the follow-up op.
-				// When applying to LIVE, the generated op will be processed from the queue itself.
-				if (autoPrizeTake && mode === 'draft') {
-					// Determine which side was KO'd
-					const slotId = replicant.name.replace(/^draft_/, '').replace(/^live_/, '');
-					const side = slotId.charAt(4); // "slotL3" -> "L" or "R"
-					const isL = side === 'L';
 
-					// As long as a Pokémon is knocked out, the opponent takes prize cards (turn check removed).
-					let prizeCount = 1; // Default value
-					const cardData = prevCardId && cardDatabase.value[prevCardId];
-					if (cardData && cardData.pokemon && cardData.pokemon.prize) {
-						prizeCount = parseInt(cardData.pokemon.prize, 10);
+				// KO-specific: auto-prize card logic
+				if (payload.actionType === 'KO') {
+					const autoPrizeTake = ptcgSettings.value && ptcgSettings.value.autoPrizeTake;
+					// This logic should only run when applying to DRAFT, to generate the follow-up op.
+					// When applying to LIVE, the generated op will be processed from the queue itself.
+					if (autoPrizeTake && mode === 'draft') {
+						// Determine which side was KO'd
+						const slotId = replicant.name.replace(/^draft_/, '').replace(/^live_/, '');
+						const side = slotId.charAt(4); // "slotL3" -> "L" or "R"
+						const isL = side === 'L';
+
+						// As long as a Pokémon is knocked out, the opponent takes prize cards (turn check removed).
+						let prizeCount = 1; // Default value
+						const cardData = prevCardId && cardDatabase.value[prevCardId];
+						if (cardData && cardData.pokemon && cardData.pokemon.prize) {
+							prizeCount = parseInt(cardData.pokemon.prize, 10);
+						}
+						// draft_sideL/draft_sideR
+						const draftSideRep = isL ? draft_sideR : draft_sideL;
+						const sideKey = isL ? 'sideR' : 'sideL';
+						const newValue = Math.max(0, (draftSideRep.value || 0) - prizeCount);
+
+						// Assign immediately to ensure UI sync
+						draftSideRep.value = newValue;
+
+						// Automatically add operation to the queue
+						operationQueue.value.push({
+							type: 'SET_SIDES',
+							payload: { target: sideKey, value: newValue },
+							priority: 4, // Taking prize cards
+							id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+						});
 					}
-					// draft_sideL/draft_sideR
-					const draftSideRep = isL ? draft_sideR : draft_sideL;
-					const sideKey = isL ? 'sideR' : 'sideL';
-					const newValue = Math.max(0, (draftSideRep.value || 0) - prizeCount);
-
-					// Assign immediately to ensure UI sync
-					draftSideRep.value = newValue;
-
-					// Automatically add operation to the queue
-					operationQueue.value.push({
-						type: 'SET_SIDES',
-						payload: { target: sideKey, value: newValue },
-						priority: 4, // Taking prize cards
-						id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-					});
 				}
 				break;
 			}
@@ -1206,7 +1198,6 @@ module.exports = function (nodecg) {
 			'ATTACK',
 			'SET_DAMAGE',
 			'SET_AILMENTS',
-			'KO_POKEMON',
 			'SLIDE_OUT',
 			'APPLY_SWITCH',
 			'REPLACE_POKEMON',
@@ -1398,10 +1389,11 @@ module.exports = function (nodecg) {
 					nodecg.sendMessage('playAnimation', { type: 'SWITCH_POKEMON', source: op.payload.source.replace('slot', 'slot-'), target: op.payload.target.replace('slot', 'slot-') });
 					break;
 				case 'REMOVE_POKEMON':
-					nodecg.sendMessage('playAnimation', { type: 'EXIT_POKEMON', target: op.payload.target.replace('slot', 'slot-') });
-					break;
-				case 'KO_POKEMON':
-					nodecg.sendMessage('playAnimation', { type: 'KO_POKEMON', target: op.payload.target.replace('slot', 'slot-') });
+					if (op.payload.actionType === 'KO') {
+						nodecg.sendMessage('playAnimation', { type: 'KO_POKEMON', target: op.payload.target.replace('slot', 'slot-') });
+					} else {
+						nodecg.sendMessage('playAnimation', { type: 'EXIT_POKEMON', target: op.payload.target.replace('slot', 'slot-') });
+					}
 					break;
 				case 'REPLACE_POKEMON':
 					let animationType = 'REPLACE_POKEMON';
@@ -1824,7 +1816,6 @@ module.exports = function (nodecg) {
 			'ATTACK',
 			'SET_DAMAGE',
 			'SET_AILMENTS',
-			'KO_POKEMON',
 			'SLIDE_OUT',
 			'APPLY_SWITCH',
 			'REPLACE_POKEMON',
