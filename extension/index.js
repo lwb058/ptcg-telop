@@ -807,42 +807,49 @@ module.exports = function (nodecg) {
 				replicant.value.attachedEnergy = [...payload.energies];
 				break;
 			case 'APPLY_SWITCH': {
-				const { source, target } = payload;
-				if (!source || !target) {
-					nodecg.log.error('Invalid PROMOTE operation: source or target missing.', payload);
-					return;
-				}
+				let mapping = payload.mapping;
+				let side = payload.side;
 
-				const side = source.charAt(4); // "slotL1" -> "L"
-				const sourceRep = nodecg.Replicant(`${prefix}${source}`);
-				const targetRep = nodecg.Replicant(`${prefix}${target}`);
-
-				// Directly get deep copies of the values
-				const sourceVal = JSON.parse(JSON.stringify(sourceRep.value || {}));
-				const targetVal = JSON.parse(JSON.stringify(targetRep.value || {}));
-
-				// Force slide-in animation for both source and target
-				sourceVal.forceSlideIn = true;
-				targetVal.forceSlideIn = true;
-
-
-				// When a Pokémon moves into a battle slot (or swaps with it), its ailments are cleared.
-				if (target.endsWith('0')) {
-					if (sourceVal.cardId) {
-						sourceVal.ailments = [];
+				if (!mapping) {
+					const { source, target } = payload;
+					if (!source || !target) {
+						nodecg.log.error('Invalid APPLY_SWITCH operation: no mapping, source, or target.', payload);
+						return;
 					}
+					side = source.charAt(4); // "slotL1" -> "L"
+					const sourceIdx = source.substring(5);
+					const targetIdx = target.substring(5);
+					mapping = {
+						[sourceIdx]: targetIdx,
+						[targetIdx]: sourceIdx
+					};
 				}
-				if (source.endsWith('0') && !target.endsWith('0')) {
-					if (targetVal.cardId) {
-						targetVal.ailments = [];
+
+				// 1. Snapshot all involved slots
+				const snapshot = {};
+				const involvedSlots = new Set([
+					...Object.keys(mapping),
+					...Object.values(mapping).map(String)
+				]);
+				for (const idx of involvedSlots) {
+					const slotKey = `slot${side}${idx}`;
+					let slotRep = nodecg.Replicant(`${prefix}${slotKey}`);
+					snapshot[idx] = JSON.parse(JSON.stringify(slotRep.value || {}));
+				}
+
+				// 2. Write the final states
+				for (const [targetIdx, sourceIdx] of Object.entries(mapping)) {
+					const targetKey = `slot${side}${targetIdx}`;
+					let targetRep = nodecg.Replicant(`${prefix}${targetKey}`);
+					const data = snapshot[sourceIdx] ? JSON.parse(JSON.stringify(snapshot[sourceIdx])) : {};
+
+					data.forceSlideIn = true;
+					// When moving to or from the active slot (index 0), clear ailments
+					if ((targetIdx === '0' || sourceIdx === '0') && data.cardId) {
+						data.ailments = [];
 					}
+					targetRep.value = data;
 				}
-
-				// Perform the swap
-				sourceRep.value = targetVal;
-				targetRep.value = sourceVal;
-
-				// --- Auto Retreat Logic Moved to queueOperation ---
 				break;
 			}
 			case 'ATTACK': {
@@ -990,14 +997,46 @@ module.exports = function (nodecg) {
 			const opsToPush = [];
 			const switchQueueIndex = queueCounter++;
 
+			// Normalization: Ensure we have mapping and side
+			if (!op.payload.mapping && op.payload.source && op.payload.target) {
+				op.payload.side = op.payload.source.charAt(4);
+				const sIdx = op.payload.source.substring(5);
+				const tIdx = op.payload.target.substring(5);
+				op.payload.mapping = { [sIdx]: tIdx, [tIdx]: sIdx };
+			}
+			
+			// Setup involvedSlots array if not explicitly provided
+			if (!op.payload.involvedSlots && op.payload.mapping) {
+				op.payload.involvedSlots = [...new Set([
+					...Object.keys(op.payload.mapping),
+					...Object.values(op.payload.mapping).map(String)
+				])].map(idx => `slot${op.payload.side}${idx}`);
+			}
+
 			// --- Auto Retreat Logic ---
 			const autoRetreat = ptcgSettings.value && ptcgSettings.value.autoRetreatToggle;
-			const { source } = op.payload;
+			
+			// Use original source if available, otherwise check if mapping involves '0' as source
+			const legacySource = op.payload.source;
+			let isRetreat = false;
+			let retreatSide = '';
+			
+			if (legacySource === 'slotL0' || legacySource === 'slotR0') {
+				isRetreat = true;
+				retreatSide = legacySource === 'slotL0' ? 'L' : 'R';
+			} else if (op.payload.mapping) {
+				// If mapping says someone else is getting what was in 0, 0 is moving
+				const activeSourceMoves = Object.values(op.payload.mapping).map(String).includes('0');
+				if (activeSourceMoves) {
+					isRetreat = true;
+					retreatSide = op.payload.side;
+				}
+			}
 
-			if (autoRetreat) {
-				// Check if it involves the Active Spot (source only)
-				if (source === 'slotL0' || source === 'slotR0') {
-					const side = source === 'slotL0' ? 'L' : 'R';
+			if (autoRetreat && isRetreat) {
+				// Check if it involves the Active Spot
+				if (true) {
+					const side = retreatSide;
 					const targetAction = `action_retreat_${side}`;
 
 					// Update draft immediately for responsiveness
@@ -1267,11 +1306,11 @@ module.exports = function (nodecg) {
 	}
 
 	/**
-	 * Remap targets for ops that were queued AFTER a swap but execute BEFORE it (lower priority).
-	 * This corrects the mismatch between draft state (swap applied immediately) and live state
-	 * (swap applied at priority 6, after state changes at priority 2).
+	 * Defer ops that were queued AFTER a swap but hit the slots involved in the swap.
+	 * By changing their priority to 7, they are executed naturally AFTER the swap completes,
+	 * ensuring both correct data hitting and visual animation sequences.
 	 */
-	function remapTargetsForSwaps(sortedOps) {
+	function delayOpsDependentOnSwaps(sortedOps) {
 		const switchOps = sortedOps.filter(op => op.type === 'APPLY_SWITCH');
 		if (switchOps.length === 0) return sortedOps;
 
@@ -1279,33 +1318,40 @@ module.exports = function (nodecg) {
 			if (op.type === 'APPLY_SWITCH' || op.type === 'SLIDE_OUT') return op;
 
 			for (const switchOp of switchOps) {
-				// Only remap ops queued AFTER the swap AND processed BEFORE it
+				// Only affect ops queued AFTER the swap
 				if (op.queueIndex <= switchOp.queueIndex) continue;
-				if (op.priority >= switchOp.priority) continue;
 
-				const { source, target } = switchOp.payload;
+				let mapping = switchOp.payload.mapping;
+				let side = switchOp.payload.side;
 
-				// Remap payload.target (most ops)
-				if (op.payload.target === source) {
-					op = { ...op, payload: { ...op.payload, target: target } };
-				} else if (op.payload.target === target) {
-					op = { ...op, payload: { ...op.payload, target: source } };
+				if (!mapping && switchOp.payload.source && switchOp.payload.target) {
+					side = switchOp.payload.source.charAt(4);
+					const sIdx = switchOp.payload.source.substring(5);
+					const tIdx = switchOp.payload.target.substring(5);
+					mapping = { [sIdx]: tIdx, [tIdx]: sIdx };
 				}
 
-				// Remap ATTACK targets array and attackerSlotId
-				if (op.payload.targets) {
-					op = { ...op, payload: { ...op.payload, targets: op.payload.targets.map(t => {
-						if (t === source) return target;
-						if (t === target) return source;
-						return t;
-					})}};
-				}
-				if (op.payload.attackerSlotId) {
-					if (op.payload.attackerSlotId === source) {
-						op = { ...op, payload: { ...op.payload, attackerSlotId: target } };
-					} else if (op.payload.attackerSlotId === target) {
-						op = { ...op, payload: { ...op.payload, attackerSlotId: source } };
+				if (!mapping) continue;
+
+				const hitsInvolvedSlot = (targetStr) => {
+					if (!targetStr) return false;
+					if (targetStr.startsWith('slot' + side)) {
+						const targetIdx = targetStr.substring(5);
+						// Whether the operation hits a slot that is being modified by this swap
+						return mapping[targetIdx] !== undefined || Object.values(mapping).includes(targetIdx);
 					}
+					return false;
+				};
+
+				let shouldDelay = false;
+				if (hitsInvolvedSlot(op.payload.target)) shouldDelay = true;
+				if (hitsInvolvedSlot(op.payload.attackerSlotId)) shouldDelay = true;
+				if (op.payload.targets && op.payload.targets.some(hitsInvolvedSlot)) shouldDelay = true;
+
+				if (shouldDelay) {
+					// Post-swap executions happen at priority 7 to strictly follow the swap's animation
+					op = { ...op, priority: 7 };
+					break; // Once delayed, no need to check other older swaps
 				}
 			}
 			return op;
@@ -1370,7 +1416,7 @@ module.exports = function (nodecg) {
 					return;
 				}
 				const sortedQueue = [...operationQueue.value].sort((a, b) => a.priority - b.priority);
-				pendingOperations = reorderForSameSlotConflicts(remapTargetsForSwaps(sortedQueue))
+				pendingOperations = reorderForSameSlotConflicts(delayOpsDependentOnSwaps(sortedQueue))
 				.sort((a, b) => a.priority - b.priority || a.queueIndex - b.queueIndex);
 				operationQueue.value = [];
 				queueCounter = 0;
@@ -1433,7 +1479,11 @@ module.exports = function (nodecg) {
 		batchToProcess.forEach(op => {
 			switch (op.type) {
 				case 'SLIDE_OUT': // New operation for switch animation
-					nodecg.sendMessage('playAnimation', { type: 'SWITCH_POKEMON', source: op.payload.source.replace('slot', 'slot-'), target: op.payload.target.replace('slot', 'slot-') });
+					const slots = op.payload.involvedSlots || [op.payload.source, op.payload.target];
+					nodecg.sendMessage('playAnimation', { 
+						type: 'SWITCH_POKEMON', 
+						involvedSlots: slots.map(s => s ? s.replace('slot', 'slot-') : s).filter(Boolean)
+					});
 					break;
 				case 'REMOVE_POKEMON': {
 					// Safety: skip animation if instance was already replaced by a SET in an earlier batch

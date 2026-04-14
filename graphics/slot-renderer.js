@@ -791,36 +791,31 @@
 
     function handleSwitchAnimation(animation) {
         return new Promise(resolve => {
-            if (!animation.source || !animation.target) {
+            let slotsToAnimate = [];
+            if (animation.involvedSlots) {
+                slotsToAnimate = animation.involvedSlots;
+            } else if (animation.source && animation.target) {
+                slotsToAnimate = [animation.source, animation.target];
+            } else {
                 console.error('Invalid SWITCH_POKEMON animation data:', animation);
                 return resolve();
             }
-            const sourceEl = document.getElementById(animation.source);
-            const targetEl = document.getElementById(animation.target);
-            const promises = [];
 
-            if (sourceEl && !sourceEl.classList.contains('is-empty')) {
-                const side = animation.source.includes('-L') ? 'L' : 'R';
-                const p = new Promise(res => {
-                    let isResolved = false;
-                    const done = () => { if (!isResolved) { isResolved = true; sourceEl.removeEventListener('animationend', done); res(); } };
-                    sourceEl.addEventListener('animationend', done, { once: true });
-                    setTimeout(done, 1000);
-                });
-                promises.push(p);
-                sourceEl.classList.add(`anim-slide-out-${side}`);
-            }
-            if (targetEl && !targetEl.classList.contains('is-empty')) {
-                const side = animation.target.includes('-L') ? 'L' : 'R';
-                const p = new Promise(res => {
-                    let isResolved = false;
-                    const done = () => { if (!isResolved) { isResolved = true; targetEl.removeEventListener('animationend', done); res(); } };
-                    targetEl.addEventListener('animationend', done, { once: true });
-                    setTimeout(done, 1000);
-                });
-                promises.push(p);
-                targetEl.classList.add(`anim-slide-out-${side}`);
-            }
+            const promises = [];
+            slotsToAnimate.forEach(slotId => {
+                const el = document.getElementById(slotId);
+                if (el && !el.classList.contains('is-empty')) {
+                    const side = slotId.includes('-L') ? 'L' : 'R';
+                    const p = new Promise(res => {
+                        let isResolved = false;
+                        const done = () => { if (!isResolved) { isResolved = true; el.removeEventListener('animationend', done); res(); } };
+                        el.addEventListener('animationend', done, { once: true });
+                        setTimeout(done, 1000);
+                    });
+                    promises.push(p);
+                    el.classList.add(`anim-slide-out-${side}`);
+                }
+            });
 
             if (promises.length > 0) {
                 Promise.all(promises).then(resolve);

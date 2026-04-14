@@ -487,11 +487,11 @@
 
                 nodecg.listenFor('playAnimation', (animation) => {
                     if (!animation || !animation.type) return;
-                    // For SWITCH, check both source and target
+                    // For SWITCH, check if any involvedSlots exist in this document
                     if (animation.type === 'SWITCH_POKEMON') {
-                        const hasSource = animation.source && document.getElementById(animation.source);
-                        const hasTarget = animation.target && document.getElementById(animation.target);
-                        if (!hasSource && !hasTarget) return;
+                        const slots = animation.involvedSlots || [animation.source, animation.target].filter(Boolean);
+                        const hasLocalSlot = slots.some(id => document.getElementById(id));
+                        if (!hasLocalSlot) return;
                     } else {
                         if (!animation.target || !document.getElementById(animation.target)) return;
                     }
