@@ -1293,7 +1293,8 @@ module.exports = function (nodecg) {
 
 	// Gets a timeout duration based on priority. Higher priority (lower number) = longer animation.
 	function getTimeoutForPriority(priority) {
-		switch (priority) {
+		const basePriority = priority % 10;
+		switch (basePriority) {
 			case 0: return 3000; // Attack animations (+ reordered KO for same-slot conflicts)
 			case 1: return 1500;
 			case 2: return 1500;
@@ -1349,8 +1350,11 @@ module.exports = function (nodecg) {
 				if (op.payload.targets && op.payload.targets.some(hitsInvolvedSlot)) shouldDelay = true;
 
 				if (shouldDelay) {
-					// Post-swap executions happen at priority 7 to strictly follow the swap's animation
-					op = { ...op, priority: 7 };
+					// Add an epoch offset (+10) to the original priority.
+					// This kicks the entire chain of dependent operations into a new logical batch frame,
+					// perfectly preserving their native relative execution order (e.g. Pri 1 before Pri 2) 
+					// while ensuring they all execute AFTER the APPLY_SWITCH (Pri 6).
+					op = { ...op, priority: op.priority + 10 };
 					break; // Once delayed, no need to check other older swaps
 				}
 			}
@@ -1380,8 +1384,10 @@ module.exports = function (nodecg) {
 			if (op.type === 'REMOVE_POKEMON' && op.payload.instanceId && op.payload.target) {
 				const newInstanceId = setSlots.get(op.payload.target);
 				if (newInstanceId && newInstanceId !== op.payload.instanceId) {
-					// Old instance is being replaced — process exit animation before entrance
-					return { ...op, priority: 0 };
+					// Old instance is being replaced — process exit animation before entrance.
+					// Maintain its current Epoch scale but assign priority 0
+					const epoch = Math.floor(op.priority / 10) * 10;
+					return { ...op, priority: epoch + 0 };
 				}
 			}
 			return op;
