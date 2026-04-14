@@ -257,10 +257,20 @@ module.exports = function (nodecg) {
 	const prizeCardsL = nodecg.Replicant('prizeCardsL', { defaultValue: Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false })) });
 	const prizeCardsR = nodecg.Replicant('prizeCardsR', { defaultValue: Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false })) });
 
+	// Instance ID counters for unique Pokémon identity
+	let instanceCounterL = 0;
+	let instanceCounterR = 0;
+
+	function generateInstanceId(side) {
+		const counter = side === 'L' ? ++instanceCounterL : ++instanceCounterR;
+		return `${side}_${String(counter).padStart(3, '0')}`;
+	}
+
 	// Player Slots
 	for (let i = 0; i < 9; i++) {
 		const slotDefault = {
 			cardId: null,
+			instanceId: null,
 			damage: 0,
 			extraHp: 0,
 			attachedEnergy: [],
@@ -554,7 +564,8 @@ module.exports = function (nodecg) {
 			case 'ATTACK':
 				return 0;
 
-			// Priority 1: State & Attachment Changes
+			// Priority 1: State & Attachment Changes + New Pokémon Placement
+			case 'SET_POKEMON':
 			case 'SET_AILMENTS':
 			case 'SET_ENERGIES':
 			case 'SET_TOOLS':
@@ -574,18 +585,19 @@ module.exports = function (nodecg) {
 			case 'REMOVE_POKEMON': // Includes both Remove and KO (via actionType)
 				return 3;
 
-			// Priority 4: Post-battle processing
+			// Priority 4: Post-battle processing + Evolution
 			case 'SET_SIDES': // Taking prize cards
+			case 'REPLACE_POKEMON': // Evolution (must complete before SLIDE_OUT)
 				return 4;
 
-			// Priority 5 & 6: Sequential animations
+			// Priority 5: Exit animations
 			case 'SLIDE_OUT':
-			case 'SET_POKEMON':
-			case 'REPLACE_POKEMON': // Evolution
 			case 'EXIT_POKEMON': // Animation for REMOVE_POKEMON
 			case 'SET_TURN':
 			case 'SET_LOST_ZONE':
 				return 5;
+
+			// Priority 6: Entrance animations
 			case 'APPLY_SWITCH':
 				return 6;
 
@@ -645,6 +657,13 @@ module.exports = function (nodecg) {
 			return;
 		}
 
+		// instanceId guard for slot state-change operations: skip if the instance has changed
+		const guardedTypes = ['SET_DAMAGE', 'SET_EXTRA_HP', 'SET_ENERGIES', 'SET_TOOLS', 'SET_AILMENTS', 'SET_ABILITY_USED'];
+		if (guardedTypes.includes(type) && payload.instanceId && replicant && replicant.value && replicant.value.instanceId !== payload.instanceId) {
+			nodecg.log.info(`${type} skipped: instanceId mismatch (op=${payload.instanceId}, slot=${replicant.value.instanceId})`);
+			return;
+		}
+
 		switch (type) {
 			case 'SLIDE_OUT':
 				// This is an animation-only operation, no data logic needed.
@@ -681,7 +700,8 @@ module.exports = function (nodecg) {
 				break;
 			case 'SET_POKEMON':
 				replicant.value = {
-					cardId: cardId, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [],
+					cardId: cardId, instanceId: payload.instanceId || null,
+					damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [],
 					ailments: (payload.target && payload.target.endsWith('0')) ? [] : undefined
 				};
 				// Clean up undefined properties
@@ -729,11 +749,16 @@ module.exports = function (nodecg) {
 				break;
 			}
 			case 'REMOVE_POKEMON': {
+				// instanceId guard: skip if the slot's instance no longer matches
+				if (payload.instanceId && replicant.value.instanceId !== payload.instanceId) {
+					nodecg.log.info(`REMOVE_POKEMON skipped: instanceId mismatch (expected ${payload.instanceId}, got ${replicant.value.instanceId})`);
+					break;
+				}
 				const prevCardId = replicant.value.cardId;
 				// Reset the slot to its default empty state
 				const isBattleSlot = replicant.name.endsWith('0');
 				replicant.value = {
-					cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [],
+					cardId: null, instanceId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [],
 					...(isBattleSlot && { ailments: [] })
 				};
 
@@ -945,6 +970,18 @@ module.exports = function (nodecg) {
 		lastOpTime = now;
 		lastOpSignature = opSignature;
 
+		// Prepare instanceId BEFORE applying to draft, so both draft and live get the same ID
+		if (op.type === 'SET_POKEMON' && op.payload.target) {
+			const side = op.payload.target.charAt(4); // "slotL0" -> "L"
+			op.payload.instanceId = generateInstanceId(side);
+		}
+		if (op.type === 'REMOVE_POKEMON' && op.payload.target) {
+			const draftSlot = nodecg.Replicant(`draft_${op.payload.target}`);
+			if (draftSlot && draftSlot.value) {
+				op.payload.instanceId = draftSlot.value.instanceId || null;
+			}
+		}
+
 		// Apply the logic to the DRAFT state for immediate feedback
 		applyOpToDraft(op);
 
@@ -1022,6 +1059,7 @@ module.exports = function (nodecg) {
 			op.id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 			op.priority = getPriorityForOperation(op.type);
 			op.queueIndex = queueCounter++;
+
 			operationQueue.value.push(op);
 			nodecg.log.info(`Operation queued: ${op.type} with priority ${op.priority} (queueIndex: ${op.queueIndex})`);
 		}
@@ -1217,13 +1255,13 @@ module.exports = function (nodecg) {
 	// Gets a timeout duration based on priority. Higher priority (lower number) = longer animation.
 	function getTimeoutForPriority(priority) {
 		switch (priority) {
-			case 0: return 3000; // Attack animations
+			case 0: return 3000; // Attack animations (+ reordered KO for same-slot conflicts)
 			case 1: return 1500;
 			case 2: return 1500;
 			case 3: return 2000; // KO animations
-			case 4: return 1500;
-			case 5: return 1500; // Switch/Evolve animations
-			case 6: return 1500;
+			case 4: return 2000; // Evolution animations (Mega/Tera webm up to 1.5s + startup)
+			case 5: return 1500; // Switch slide-out animations
+			case 6: return 1500; // Switch slide-in animations
 			default: return 1500;
 		}
 	}
@@ -1274,22 +1312,31 @@ module.exports = function (nodecg) {
 		});
 	}
 
-	// Defer low-priority ops that follow a SET_POKEMON/REPLACE_POKEMON on the same slot,
-	// so they execute in the same batch instead of being overwritten by the SET/REPLACE defaults.
-	function deferOpsForSetPokemon(sortedOps) {
-		const setOps = sortedOps.filter(op => op.type === 'SET_POKEMON' || op.type === 'REPLACE_POKEMON');
+
+
+	/**
+	 * When REMOVE(old instance) and SET(new instance) target the same slot,
+	 * move REMOVE to priority 0 so its exit/KO animation plays BEFORE SET's slide-in.
+	 * Without this, SET(pri1) would trigger slide-in first, then REMOVE(pri3) would
+	 * send an exit animation on the already-replaced card.
+	 */
+	function reorderForSameSlotConflicts(sortedOps) {
+		const setOps = sortedOps.filter(op => op.type === 'SET_POKEMON' && op.payload.instanceId);
 		if (setOps.length === 0) return sortedOps;
 
+		// Map: slotId -> new instanceId from SET ops
+		const setSlots = new Map();
+		setOps.forEach(op => {
+			if (op.payload.target) setSlots.set(op.payload.target, op.payload.instanceId);
+		});
+
 		return sortedOps.map(op => {
-			if (op.type === 'SET_POKEMON' || op.type === 'REPLACE_POKEMON') return op;
-
-			for (const setOp of setOps) {
-				if (op.queueIndex <= setOp.queueIndex) continue;
-				if (op.priority >= setOp.priority) continue;
-				if (op.payload.target !== setOp.payload.target) continue;
-
-				// Defer this op to run in the same batch as SET_POKEMON
-				op = { ...op, priority: setOp.priority };
+			if (op.type === 'REMOVE_POKEMON' && op.payload.instanceId && op.payload.target) {
+				const newInstanceId = setSlots.get(op.payload.target);
+				if (newInstanceId && newInstanceId !== op.payload.instanceId) {
+					// Old instance is being replaced — process exit animation before entrance
+					return { ...op, priority: 0 };
+				}
 			}
 			return op;
 		});
@@ -1323,7 +1370,7 @@ module.exports = function (nodecg) {
 					return;
 				}
 				const sortedQueue = [...operationQueue.value].sort((a, b) => a.priority - b.priority);
-				pendingOperations = deferOpsForSetPokemon(remapTargetsForSwaps(sortedQueue))
+				pendingOperations = reorderForSameSlotConflicts(remapTargetsForSwaps(sortedQueue))
 				.sort((a, b) => a.priority - b.priority || a.queueIndex - b.queueIndex);
 				operationQueue.value = [];
 				queueCounter = 0;
@@ -1388,13 +1435,22 @@ module.exports = function (nodecg) {
 				case 'SLIDE_OUT': // New operation for switch animation
 					nodecg.sendMessage('playAnimation', { type: 'SWITCH_POKEMON', source: op.payload.source.replace('slot', 'slot-'), target: op.payload.target.replace('slot', 'slot-') });
 					break;
-				case 'REMOVE_POKEMON':
+				case 'REMOVE_POKEMON': {
+					// Safety: skip animation if instance was already replaced by a SET in an earlier batch
+					if (op.payload.instanceId) {
+						const liveSlot = nodecg.Replicant(op.payload.target.replace('slot', 'live_slot'));
+						if (liveSlot.value && liveSlot.value.instanceId !== op.payload.instanceId) {
+							nodecg.log.info(`REMOVE animation skipped: instance already replaced (${op.payload.instanceId} → ${liveSlot.value.instanceId})`);
+							break;
+						}
+					}
 					if (op.payload.actionType === 'KO') {
 						nodecg.sendMessage('playAnimation', { type: 'KO_POKEMON', target: op.payload.target.replace('slot', 'slot-') });
 					} else {
 						nodecg.sendMessage('playAnimation', { type: 'EXIT_POKEMON', target: op.payload.target.replace('slot', 'slot-') });
 					}
 					break;
+				}
 				case 'REPLACE_POKEMON':
 					let animationType = 'REPLACE_POKEMON';
 					if (op.payload.actionType === 'Evolve') animationType = 'EVOLVE_POKEMON';
@@ -1509,10 +1565,14 @@ module.exports = function (nodecg) {
 		// Reset Selections
 		selections.value = [];
 
+		// Reset instance ID counters
+		instanceCounterL = 0;
+		instanceCounterR = 0;
+
 		// Reset all player slots (both LIVE and DRAFT)
 		for (let i = 0; i < 9; i++) {
 			const slotDefault = {
-				cardId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [], abilityUsed: false,
+				cardId: null, instanceId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [], abilityUsed: false,
 			};
 			if (i === 0) {
 				slotDefault.ailments = [];

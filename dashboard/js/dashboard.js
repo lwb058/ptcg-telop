@@ -40,6 +40,13 @@ const getCardImageUrl = (cardId, isBgImage = false) => {
  * Sends an operation to the backend to be added to the queue.
  */
 function queueOperation(type, payload) {
+    // Auto-attach instanceId from draft slot for identity validation
+    if (payload.target && payload.target.startsWith('slot') && !payload.instanceId) {
+        const draftRep = nodecg.Replicant(`draft_${payload.target}`);
+        if (draftRep && draftRep.value && draftRep.value.instanceId) {
+            payload.instanceId = draftRep.value.instanceId;
+        }
+    }
     nodecg.sendMessage('queueOperation', { type, payload })
         .catch(e => console.error(`Failed to queue operation ${type}`, e));
 }

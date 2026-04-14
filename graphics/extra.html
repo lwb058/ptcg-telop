@@ -137,6 +137,8 @@
                 right: { isVisible: false, isAnimating: false }
             };
 
+            const evolvingSlots = new Set();
+
             function onAnimationEnd(element) {
                 return new Promise(resolve => {
                     element.addEventListener('animationend', resolve, { once: true });
@@ -452,14 +454,27 @@
 
             function renderSlot(side, index, slotData, oldSlotData) {
                 const slotEl = document.getElementById(`slot-${side}${index}`);
+                if (slotEl && evolvingSlots.has(slotEl.id)) {
+                    evolvingSlots.delete(slotEl.id);
+                    setTimeout(() => renderSlotActual(side, index, slotData, oldSlotData), 500);
+                    return;
+                }
+                renderSlotActual(side, index, slotData, oldSlotData);
+            }
+
+            function renderSlotActual(side, index, slotData, oldSlotData) {
+                const slotEl = document.getElementById(`slot-${side}${index}`);
                 const db = cardDatabase.value;
                 const settings = settingsRep.value || {};
 
                 const hasCard = slotData && slotData.cardId;
                 const forceSlideIn = slotData && slotData.forceSlideIn;
                 const skipSlideIn = slotData && slotData.evolutionSelect;
-                const isNewCard = hasCard && (!oldSlotData || slotData.cardId !== oldSlotData.cardId);
-                if (forceSlideIn) oldSlotData = null;
+                const isNewCard = hasCard && (!oldSlotData || slotData.instanceId !== oldSlotData.instanceId || slotData.cardId !== oldSlotData.cardId);
+
+                if (isNewCard) {
+                    oldSlotData = null;
+                }
 
                 const oldToolIds = oldSlotData ? (oldSlotData.attachedToolIds || []) : [];
                 const newToolIds = slotData ? slotData.attachedToolIds || [] : [];
@@ -473,8 +488,9 @@
                     const isSlidingOut = slotEl.classList.contains('anim-slide-out-L') || slotEl.classList.contains('anim-slide-out-R');
 
                     const clearSlot = () => {
-                        slotEl.innerHTML = '';
-                        slotEl.dataset.cardId = '';
+                        let benchWrapper = slotEl.querySelector('.bench-pokemon-wrapper');
+                        if (benchWrapper) benchWrapper.remove();
+                        slotEl.dataset.instanceId = '';
                         slotEl.classList.add('is-empty');
                         slotEl.classList.remove('anim-slide-out-L', 'anim-slide-out-R', 'anim-slide-in-L', 'anim-slide-in-R');
                     };
@@ -498,14 +514,21 @@
                 const currentHp = Math.max(0, maxHp - damage);
                 const hpPercent = maxHp > 0 ? (currentHp / maxHp) * 100 : 0;
 
+                let hpChangeToShow = 0;
                 let startHp = currentHp, startMaxHp = maxHp;
                 if (oldSlotData) {
-                    const oldBaseHp = oldSlotData.cardId && db[oldSlotData.cardId] ? parseInt(db[oldSlotData.cardId].pokemon.hp || 0, 10) : 0;
+                    const oldDamage = parseInt(oldSlotData.damage || 0, 10);
                     const oldExtraHp = parseInt(oldSlotData.extraHp || 0, 10);
-                    startMaxHp = oldBaseHp + oldExtraHp;
-                    startHp = Math.max(0, startMaxHp - (parseInt(oldSlotData.damage || 0, 10)));
+                    startMaxHp = baseHp + oldExtraHp;
+                    startHp = Math.max(0, startMaxHp - oldDamage);
+
+                    const damageDiff = damage - oldDamage;
+                    if (damageDiff !== 0) {
+                        hpChangeToShow = -damageDiff;
+                    } else if (extraHp !== oldExtraHp) {
+                        hpChangeToShow = currentHp - startHp;
+                    }
                 }
-                const hpChangeToShow = currentHp - startHp;
                 const isUnderAttack = g_attackAnimationTargets.has(slotEl.id);
                 const isEvolution = slotData && slotData.evolutionSelect;
 
@@ -532,9 +555,9 @@
                     }
                 };
 
-                const forceRedraw = !oldSlotData || !wrapper || slotEl.dataset.cardId !== slotData.cardId;
+                const forceRedraw = !oldSlotData || !wrapper || slotEl.dataset.instanceId !== slotData.instanceId || slotData.cardId !== oldSlotData.cardId;
                 if (forceRedraw) {
-                    slotEl.innerHTML = `
+                    const newWrapperHtml = `
                         <div class="bench-pokemon-wrapper">
                             <div class="card-image-area">
                                 <img class="pokemon-image">
@@ -552,8 +575,13 @@
                                 <div class="skills-container"></div>
                             </div>
                         </div>`;
+                    if (wrapper) {
+                        wrapper.outerHTML = newWrapperHtml;
+                    } else {
+                        slotEl.insertAdjacentHTML('beforeend', newWrapperHtml);
+                    }
                     wrapper = slotEl.querySelector('.bench-pokemon-wrapper');
-                    slotEl.dataset.cardId = slotData.cardId;
+                    slotEl.dataset.instanceId = slotData.instanceId;
 
                     const mainImg = wrapper.querySelector('.pokemon-image');
 
@@ -997,6 +1025,7 @@
                     targetEl.classList.remove(`anim-slide-in-${side}`, `anim-slide-out-${side}`);
 
                     if (animation.type === 'EVOLVE_POKEMON') {
+                        evolvingSlots.add(animation.target);
                         const db = cardDatabase.value;
                         // All slots in extra.html are bench slots.
                         let videoSrc = '/assets/ptcg-telop/fx/bench-evolve.webm';
@@ -1015,9 +1044,11 @@
                         }
                         playVideoOnSlot(targetEl, videoSrc);
                     } else if (animation.type === 'DEVOLVE_POKEMON') {
+                        evolvingSlots.add(animation.target);
                         const videoSrc = '/assets/ptcg-telop/fx/bench-devolve.webm';
                         playVideoOnSlot(targetEl, videoSrc);
                     } else if (animation.type === 'REPLACE_POKEMON') {
+                        evolvingSlots.add(animation.target);
                         const videoSrc = '/assets/ptcg-telop/fx/bench-replace.webm';
                         playVideoOnSlot(targetEl, videoSrc);
                     } else if (animation.type === 'KO_POKEMON') {

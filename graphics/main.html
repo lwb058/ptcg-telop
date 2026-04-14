@@ -838,8 +838,8 @@
                     const hasCard = slotData && slotData.cardId;
                     const forceSlideIn = slotData && slotData.forceSlideIn;
                     const skipSlideIn = slotData && slotData.evolutionSelect;
-                    const isNewCard = hasCard && (!oldSlotData || slotData.cardId !== oldSlotData.cardId);
-                    const isCardChanged = !oldSlotData || (slotData && oldSlotData.cardId !== slotData.cardId) || forceSlideIn;
+                    const isNewCard = hasCard && (!oldSlotData || slotData.instanceId !== oldSlotData.instanceId);
+                    const isCardChanged = !oldSlotData || (slotData && (oldSlotData.instanceId !== slotData.instanceId || oldSlotData.cardId !== slotData.cardId));
 
                     const sanitizeDamage = (damage) => {
                         if (typeof damage !== 'string') return damage || '';
@@ -870,10 +870,10 @@
                                 if (hpText) hpText.textContent = '';
                             }
                             if (benchWrapper) {
-                                slotEl.innerHTML = '';
+                                benchWrapper.remove();
                             }
 
-                            slotEl.dataset.cardId = '';
+                            slotEl.dataset.instanceId = '';
                             slotEl.classList.add('is-empty');
                             slotEl.classList.remove('anim-slide-out-L', 'anim-slide-out-R', 'anim-slide-in-L', 'anim-slide-in-R');
                         };
@@ -1028,10 +1028,10 @@
                         });
                     } else {
                         let wrapper = slotEl.querySelector('.bench-pokemon-wrapper');
-                        const forceRedraw = !oldSlotData || !wrapper || slotEl.dataset.cardId !== slotData.cardId;
+                        const forceRedraw = !oldSlotData || !wrapper || slotEl.dataset.instanceId !== slotData.instanceId || slotData.cardId !== oldSlotData.cardId;
 
                         if (forceRedraw) {
-                            slotEl.innerHTML = `
+                            const newWrapperHtml = `
                             <div class="bench-pokemon-wrapper">
                                 <div class="card-image-area">
                                     <img class="pokemon-image">
@@ -1049,8 +1049,13 @@
                                     <div class="skills-container"></div>
                                 </div>
                             </div>`;
+                            if (wrapper) {
+                                wrapper.outerHTML = newWrapperHtml;
+                            } else {
+                                slotEl.insertAdjacentHTML('beforeend', newWrapperHtml);
+                            }
                             wrapper = slotEl.querySelector('.bench-pokemon-wrapper');
-                            slotEl.dataset.cardId = slotData.cardId;
+                            slotEl.dataset.instanceId = slotData.instanceId;
 
                             const mainImg = wrapper.querySelector('.pokemon-image');
 
@@ -1742,8 +1747,8 @@
                             const activeWrapper = targetEl.querySelector('.active-pokemon-wrapper');
                             const benchWrapper = targetEl.querySelector('.bench-pokemon-wrapper');
                             if (activeWrapper) { activeWrapper.classList.add('hidden'); }
-                            if (benchWrapper) { targetEl.innerHTML = ''; }
-                            targetEl.dataset.cardId = '';
+                            if (benchWrapper) { benchWrapper.remove(); }
+                            targetEl.dataset.instanceId = '';
                             targetEl.classList.add('is-empty');
 
                             removingSlots.delete(animation.target); // Clean up the flag
