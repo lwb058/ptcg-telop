@@ -1322,14 +1322,20 @@ module.exports = function (nodecg) {
 		const byQueueIndex = [...sortedOps].sort((a, b) => a.queueIndex - b.queueIndex);
 		let globalEpoch = 0;
 		const epochMap = new Map();
+		let previousOpType = null;
 
 		for (const op of byQueueIndex) {
 			if (op.type === 'SET_POKEMON' || op.type === 'SET_TURN' || op.type === 'ATTACK') {
-				globalEpoch += 100;
+				// Optimization: Consecutive SET_POKEMON operations can share the same epoch
+				// allowing them to animate concurrently instead of strictly serially.
+				if (!(op.type === 'SET_POKEMON' && previousOpType === 'SET_POKEMON')) {
+					globalEpoch += 100;
+				}
 			}
 			if (!epochMap.has(op.queueIndex)) {
 				epochMap.set(op.queueIndex, globalEpoch);
 			}
+			previousOpType = op.type;
 		}
 
 		return sortedOps.map(op => {
