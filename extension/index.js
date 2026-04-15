@@ -1313,7 +1313,7 @@ module.exports = function (nodecg) {
 
 	/**
 	 * Assigns epoch offsets (+100) to operations based on temporal causality.
-	 * Each SET_POKEMON or SET_TURN advances the global epoch, ensuring operations
+	 * Each SET_POKEMON, SET_TURN, or ATTACK advances the global epoch, ensuring operations
 	 * queued after an epoch trigger execute in a later batch frame.
 	 * This replaces both delayOpsDependentOnSwaps and reorderForSameSlotConflicts
 	 * with a single principled mechanism.
@@ -1324,7 +1324,7 @@ module.exports = function (nodecg) {
 		const epochMap = new Map();
 
 		for (const op of byQueueIndex) {
-			if (op.type === 'SET_POKEMON' || op.type === 'SET_TURN') {
+			if (op.type === 'SET_POKEMON' || op.type === 'SET_TURN' || op.type === 'ATTACK') {
 				globalEpoch += 100;
 			}
 			if (!epochMap.has(op.queueIndex)) {
@@ -1966,6 +1966,7 @@ module.exports = function (nodecg) {
 		doesBatchRequireAck,
 		getTimeoutForPriority,
 		resolveSlotByInstanceId,
+		assignEpochs,
 	};
 
 	// --- Timeline & Time Manager ---

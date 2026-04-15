@@ -624,8 +624,15 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 		while (playbackQueue.length > 0) {
 			const pack = playbackQueue.shift();
 
-			// Sort ops by priority
-			const sortedOps = [...pack.ops].sort((a, b) => a.priority - b.priority);
+			// Assign Epochs based on causal queueIndex, then sort by priority
+			let sortedOps;
+			if (gameLogic.assignEpochs) {
+				const baseSortedOps = [...pack.ops].sort((a, b) => a.queueIndex - b.queueIndex);
+				sortedOps = gameLogic.assignEpochs(baseSortedOps).sort((a, b) => a.priority - b.priority || a.queueIndex - b.queueIndex);
+			} else {
+				// Fallback if assignEpochs is not available
+				sortedOps = [...pack.ops].sort((a, b) => a.priority - b.priority);
+			}
 
 			// Group by priority
 			const opsByPriority = new Map();
