@@ -1323,19 +1323,42 @@ module.exports = function (nodecg) {
 		let globalEpoch = 0;
 		const epochMap = new Map();
 		let previousOpType = null;
+		let previousAttackerKey = null;
 
 		for (const op of byQueueIndex) {
 			if (op.type === 'SET_POKEMON' || op.type === 'SET_TURN' || op.type === 'ATTACK') {
-				// Optimization: Consecutive SET_POKEMON operations can share the same epoch
-				// allowing them to animate concurrently instead of strictly serially.
-				if (!(op.type === 'SET_POKEMON' && previousOpType === 'SET_POKEMON')) {
+				// Optimization: Group perfectly contiguous triggers to avoid redundant animations
+				let shouldIncrement = true;
+
+				if (op.type === 'SET_POKEMON' && previousOpType === 'SET_POKEMON') {
+					// Merge consecutive pokemon deployments for concurrent animation
+					shouldIncrement = false;
+				} else if (op.type === 'SET_TURN' && previousOpType === 'SET_TURN') {
+					// Merge consecutive turn settlements (often caused by misclicks)
+					shouldIncrement = false;
+				} else if (op.type === 'ATTACK' && previousOpType === 'ATTACK') {
+					// Merge identical attacks against multiple targets into a single AoE
+					const currentKey = `${op.payload.attackerSlotId}_${op.payload.attackName}`;
+					if (currentKey === previousAttackerKey) {
+						shouldIncrement = false;
+					}
+				}
+
+				if (shouldIncrement) {
 					globalEpoch += 100;
 				}
 			}
+			
 			if (!epochMap.has(op.queueIndex)) {
 				epochMap.set(op.queueIndex, globalEpoch);
 			}
+			
 			previousOpType = op.type;
+			if (op.type === 'ATTACK') {
+				previousAttackerKey = `${op.payload.attackerSlotId}_${op.payload.attackName}`;
+			} else {
+				previousAttackerKey = null; // Reset if the chain is broken
+			}
 		}
 
 		return sortedOps.map(op => {
