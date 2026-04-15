@@ -1019,7 +1019,9 @@ module.exports = function (nodecg) {
 			// --- Auto Retreat Logic ---
 			const autoRetreat = ptcgSettings.value && ptcgSettings.value.autoRetreatToggle;
 			
-			// Use original source if available, otherwise check if mapping involves '0' as source
+			// Retreat = the battle zone Pokémon (slot0) is the INITIATOR of the move.
+			// op.payload.source is always set by the client to the slot the user acted on.
+			// Bench-to-battle moves (source=bench) must NOT trigger retreat.
 			const legacySource = op.payload.source;
 			let isRetreat = false;
 			let retreatSide = '';
@@ -1027,18 +1029,14 @@ module.exports = function (nodecg) {
 			if (legacySource === 'slotL0' || legacySource === 'slotR0') {
 				isRetreat = true;
 				retreatSide = legacySource === 'slotL0' ? 'L' : 'R';
-			} else if (op.payload.mapping) {
-				// If mapping says someone else is getting what was in 0, 0 is moving
-				const activeSourceMoves = Object.values(op.payload.mapping).map(String).includes('0');
-				if (activeSourceMoves) {
-					isRetreat = true;
-					retreatSide = op.payload.side;
-				}
 			}
+			// Note: mapping-only ops (no source) are not treated as retreat,
+			// since we cannot determine the initiator from a symmetric mapping.
 
 			if (autoRetreat && isRetreat) {
-				// Check if it involves the Active Spot
-				if (true) {
+				// Only auto-mark retreat for the current turn player
+				const currentTurn = draft_currentTurn.value;
+				if (retreatSide === currentTurn) {
 					const side = retreatSide;
 					const targetAction = `action_retreat_${side}`;
 
