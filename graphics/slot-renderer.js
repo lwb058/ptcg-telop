@@ -359,7 +359,15 @@
         return new Promise(resolve => {
             if (!containerEl) return resolve();
 
-            const currentIcons = new Set(Array.from(containerEl.children).map(el => el.dataset.ailment));
+            // Exclude icons currently playing the disappear animation — they are about to be
+            // removed from the DOM and must not block re-adding an icon of the same name in the
+            // very next render (see Bug_Summary: SET_AILMENTS A → SWITCH A↔B → SET_AILMENTS B
+            // with the same status was lost because the stale icon hid the new one).
+            const currentIcons = new Set(
+                Array.from(containerEl.children)
+                    .filter(el => !el.classList.contains('anim-status-disappear'))
+                    .map(el => el.dataset.ailment)
+            );
             const newIcons = new Set(newAilments);
             const oldIcons = new Set(oldAilments);
             const animationPromises = [];
@@ -403,7 +411,7 @@
 
     function handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn) {
         return new Promise(resolve => {
-            if ((isNewCard || forceSlideIn) && !skipSlideIn) {
+            if (isNewCard && !skipSlideIn) {
                 // The backend ensures that SLIDE_OUT animations are fully completed (via ACK)
                 // before sending the SLIDE_IN batch. Thus, there is no need to wait here.
                 const side = slotEl.id.includes('-L') ? 'L' : 'R';
@@ -411,15 +419,19 @@
                 slotEl.classList.add(`anim-slide-in-${side}`);
 
                 let isResolved = false;
-                const animationEndHandler = () => {
+                const animationEndHandler = (event) => {
+                    // animationend bubbles — ignore events from descendants (e.g. status-icon
+                    // anim-status-appear), otherwise they prematurely strip anim-slide-in-${side}
+                    // mid-animation and the slot snaps to its final position.
+                    if (event && event.target !== slotEl) return;
                     if (isResolved) return;
                     isResolved = true;
                     slotEl.classList.remove(`anim-slide-out-${side}`, `anim-slide-in-${side}`);
                     slotEl.removeEventListener('animationend', animationEndHandler);
                     resolve();
                 };
-                slotEl.addEventListener('animationend', animationEndHandler, { once: true });
-                setTimeout(animationEndHandler, 1000); // safety fallback
+                slotEl.addEventListener('animationend', animationEndHandler);
+                setTimeout(() => animationEndHandler(null), 1000); // safety fallback
 
             } else {
                 if (isNewCard || skipSlideIn) {
@@ -544,7 +556,7 @@
                 wrapper.querySelector('.pokemon-name').textContent = cardData.name;
                 const img = wrapper.querySelector('.pokemon-image');
 
-                if (isNewCard || forceSlideIn) {
+                if (isNewCard) {
                     const slotSide = slotEl.id.includes('-L') ? 'L' : 'R';
                     const offScreenTransform = slotSide === 'L' ? 'translateX(-120%)' : 'translateX(120%)';
                     slotEl.style.transform = offScreenTransform;
@@ -657,7 +669,7 @@
 
                     const mainImg = wrapper.querySelector('.pokemon-image');
 
-                    if (isNewCard || forceSlideIn) {
+                    if (isNewCard) {
                         const slotSide = slotEl.id.includes('-L') ? 'L' : 'R';
                         const offScreenTransform = slotSide === 'L' ? 'translateX(-120%)' : 'translateX(120%)';
                         slotEl.style.transform = offScreenTransform;
@@ -667,7 +679,7 @@
                     mainImg.style.visibility = 'hidden';
                     mainImg.onload = () => {
                         mainImg.style.visibility = 'visible';
-                        if (isNewCard || forceSlideIn) {
+                        if (isNewCard) {
                             slotEl.style.transform = '';
                             slotEl.style.opacity = '';
                         }

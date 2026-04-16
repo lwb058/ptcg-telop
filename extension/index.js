@@ -570,7 +570,6 @@ module.exports = function (nodecg) {
 				return 1;
 
 			// Priority 2: State & Attachment Changes
-			case 'SET_AILMENTS':
 			case 'SET_ENERGIES':
 			case 'SET_TOOLS':
 			case 'SET_ACTION_STATUS':
@@ -603,6 +602,10 @@ module.exports = function (nodecg) {
 			// Priority 7: Entrance animations
 			case 'APPLY_SWITCH':
 				return 7;
+
+			// Priority 8: Post-Movement State (applied after SWITCH/REPLACE/REMOVE settle)
+			case 'SET_AILMENTS':
+				return 8;
 
 			default:
 				nodecg.log.warn(`Unknown operation type for priority assignment: ${type}`);
