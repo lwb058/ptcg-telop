@@ -176,6 +176,11 @@
 							style="width: auto; height: auto; justify-self: end;">
 					</div>
 					<div class="form-group-hotkey">
+						<label for="developer-mode-toggle" id="label-developer-mode">Developer Mode</label>
+						<input type="checkbox" id="developer-mode-toggle"
+							style="width: auto; height: auto; justify-self: end;">
+					</div>
+					<div class="form-group-hotkey">
 						<label for="tool-limit-input" id="label-tool-carry-limit">Tool Carry Limit</label>
 						<input type="number" id="tool-limit-input" min="1" max="10" step="1"
 							style="width: 60px; justify-self: end;">
@@ -277,6 +282,7 @@
 			const saveBtn = document.getElementById('save-settings-btn');
 			const clearDbBtn = document.getElementById('clear-database-btn');
 			const forceRefetchDeckToggle = document.getElementById('force-refetch-deck-toggle');
+			const developerModeToggle = document.getElementById('developer-mode-toggle');
 
 			const getI18nText = (key) => {
 				const lang = settingsRep.value ? settingsRep.value.language : 'jp';
@@ -311,6 +317,7 @@
 				document.getElementById('label-language').textContent = getI18nText('settings_language');
 				document.getElementById('clear-database-btn').textContent = getI18nText('settings_clear_database');
 				document.getElementById('label-force-refetch-deck').textContent = getI18nText('settings_force_refetch_data');
+				document.getElementById('label-developer-mode').textContent = getI18nText('settings_developer_mode');
 				if (document.getElementById('support-developer-btn')) {
 					document.getElementById('support-developer-btn').textContent = getI18nText('settings_support_button');
 				}
@@ -426,6 +433,7 @@
 				autoCheckSupporterToggle.checked = !!(settings && settings.autoCheckSupporter);
 				autoTrashTmToggle.checked = !!(settings && settings.autoTrashTM);
 				forceRefetchDeckToggle.checked = !!(settings && settings.forceRefetchDeck);
+				developerModeToggle.checked = !!(settings && settings.developerMode);
 				weaknessDamageToggle.checked = !!(settings && settings.weaknessDamage);
 				hideAttackNameToggle.checked = !!(settings && settings.hideAttackName);
 				toolLimitInput.value = (settings && settings.toolLimit) ? settings.toolLimit : 4;
@@ -607,6 +615,7 @@
 				const newAutoTrashTM = autoTrashTmToggle.checked;
 				const newWeaknessDamage = weaknessDamageToggle.checked;
 				const newForceRefetchDeck = forceRefetchDeckToggle.checked;
+				const newDeveloperMode = developerModeToggle.checked;
 				const newActiveTheme = themeSelect.value;
 				const newActiveThemeR = themeSelectR.value;
 				const newToolLimit = parseInt(toolLimitInput.value, 10) || 4;
@@ -635,6 +644,7 @@
 					toolLimit: newToolLimit,
 					language: newLanguage,
 					forceRefetchDeck: newForceRefetchDeck,
+					developerMode: newDeveloperMode,
 					hideAttackName: newHideAttackName
 				};
 

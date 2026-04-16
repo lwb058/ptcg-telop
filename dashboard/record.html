@@ -567,6 +567,8 @@
             }
 
             // Initialize static UI text
+            let isDevMode = false;
+
             updateStaticUI();
             updateInsertModeUI();
 
@@ -723,7 +725,7 @@
             function formatOpSummary(op) {
                 // Use shared formatting logic
                 if (window.formatOperation) {
-                    return window.formatOperation(op, cardDatabase.value);
+                    return window.formatOperation(op, cardDatabase.value, isDevMode);
                 }
                 // Fallback if not loaded
                 const { type, payload } = op;
@@ -1539,6 +1541,13 @@
             }
             timelineGameplay.on('change', renderTimeline);
             timelineDisplay.on('change', renderDisplayTimeline);
+            settingsRep.on('change', (newValue) => {
+                const currentDevMode = !!newValue.developerMode;
+                if (currentDevMode !== isDevMode) {
+                    isDevMode = currentDevMode;
+                    renderTimeline();
+                }
+            });
             nodecg.listenFor('timelineRefreshed', () => {
                 renderTimeline();
                 renderDisplayTimeline();

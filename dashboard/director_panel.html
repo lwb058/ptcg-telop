@@ -182,6 +182,7 @@
             const cardDatabase = nodecg.Replicant('cardDatabase');
             const firstMove = nodecg.Replicant('firstMove');
             const matchTimer = nodecg.Replicant('matchTimer');
+            let isDevMode = false;
             const gameTimeSettings = nodecg.Replicant('gameTimeSettings');
             const slots = [];
             for (let i = 0; i < 9; i++) {
@@ -263,7 +264,7 @@
                     // Content
                     const contentDiv = document.createElement('div');
                     contentDiv.style.flex = '1';
-                    contentDiv.innerHTML = formatOperation(op, cardDatabase.value);
+                    contentDiv.innerHTML = formatOperation(op, cardDatabase.value, isDevMode);
                     item.appendChild(contentDiv);
 
                     // Delete Button
@@ -499,6 +500,13 @@
                 const currentHotkeys = hotkeyManager.hotkeys;
                 discardOpBtn.textContent = `Discard (${currentHotkeys.discard})`;
                 applyOpBtn.textContent = `Apply (${currentHotkeys.apply})`;
+
+                // Developer Mode toggle
+                const currentDevMode = !!newValue.developerMode;
+                if (currentDevMode !== isDevMode) {
+                    isDevMode = currentDevMode;
+                    renderQueue();
+                }
             });
 
             playerL_name.on('change', (newName) => {

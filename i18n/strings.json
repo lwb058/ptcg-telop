@@ -185,6 +185,12 @@
     "cht": "強制重新獲取資料",
     "en": "Force Re-fetch Data"
   },
+  "settings_developer_mode": {
+    "jp": "開発者モード",
+    "chs": "开发者模式",
+    "cht": "開發者模式",
+    "en": "Developer Mode"
+  },
   "settings_language": {
     "jp": "言語",
     "chs": "语言",

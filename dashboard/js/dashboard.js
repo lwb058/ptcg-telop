@@ -411,9 +411,13 @@ class HotkeyManager {
  * @param {object} cardDb - The card database object (e.g. cardDatabase.value).
  * @returns {string} The formatted string.
  */
-function formatOperation(op, cardDb) {
+function formatOperation(op, cardDb, isDevMode) {
     const { type, payload } = op;
     if (!payload) return type;
+
+    if (isDevMode) {
+        return `<strong>[${type}]</strong> <span style="font-family: monospace; font-size: 0.9em; color:#751515;">${JSON.stringify(payload)}</span>`;
+    }
 
     const side = payload.target && payload.target.includes('L') ? '[L]' :
         payload.target && payload.target.includes('R') ? '[R]' :
