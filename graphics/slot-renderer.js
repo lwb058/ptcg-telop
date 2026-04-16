@@ -878,6 +878,10 @@
                 koVideo.remove();
                 targetEl.classList.add(`anim-slide-out-${side}`);
                 targetEl.addEventListener('animationend', () => {
+                    if (isBattleSlot) {
+                        const ailmentsWrapper = targetEl.querySelector('.status-ailment');
+                        if (ailmentsWrapper) ailmentsWrapper.innerHTML = '';
+                    }
                     koSlots.delete(animation.target);
                     resolve();
                 }, { once: true });
@@ -901,7 +905,11 @@
                 isResolved = true;
                 const activeWrapper = targetEl.querySelector('.active-pokemon-wrapper');
                 const benchWrapper = targetEl.querySelector('.bench-pokemon-wrapper');
-                if (activeWrapper) { activeWrapper.classList.add('hidden'); }
+                if (activeWrapper) {
+                    activeWrapper.classList.add('hidden');
+                    const ailmentsWrapper = activeWrapper.querySelector('.status-ailment');
+                    if (ailmentsWrapper) ailmentsWrapper.innerHTML = '';
+                }
                 if (benchWrapper) { benchWrapper.remove(); }
                 targetEl.dataset.instanceId = '';
                 targetEl.classList.add('is-empty');
