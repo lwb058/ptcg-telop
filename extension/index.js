@@ -71,6 +71,7 @@ module.exports = function (nodecg) {
 	const matchInfo = nodecg.Replicant('matchInfo', { defaultValue: { round: '决赛' } });
 	const operationQueue = nodecg.Replicant('operationQueue', { defaultValue: [] });
 	const firstMove = nodecg.Replicant('firstMove', { defaultValue: '' });
+	const camMode = nodecg.Replicant('camMode', { defaultValue: { L: false, R: false } });
 	const gameSetup = nodecg.Replicant('gameSetup', { defaultValue: null }); // Stores initial state
 	const cardToShowL = nodecg.Replicant('cardToShowL', { defaultValue: '' });
 	const cardToShowR = nodecg.Replicant('cardToShowR', { defaultValue: '' });

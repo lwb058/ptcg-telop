@@ -146,6 +146,14 @@
     </div>
 
     <div class="panel-section">
+        <h3>Cam Mode</h3>
+        <div class="flex-container" style="align-items: center;">
+            <button id="cam-toggle-L" class="btn btn-secondary" style="flex: 1;">L: OFF</button>
+            <button id="cam-toggle-R" class="btn btn-secondary" style="flex: 1;">R: OFF</button>
+        </div>
+    </div>
+
+    <div class="panel-section">
         <h3>Danger Zone</h3>
         <div class="flex-container" style="align-items: center;">
             <button id="restart-btn" class="btn btn-danger" style="flex: 1;">Restart Game</button>
@@ -166,6 +174,7 @@
             nodecg.Replicant('matchTimer'),
             nodecg.Replicant('gameTimeSettings'),
             nodecg.Replicant('processorStatus'),
+            nodecg.Replicant('camMode'),
             ...Array(18).fill(0).map((_, i) => {
                 const side = i < 9 ? 'L' : 'R';
                 const index = i % 9;
@@ -184,6 +193,7 @@
             const matchTimer = nodecg.Replicant('matchTimer');
             let isDevMode = false;
             const gameTimeSettings = nodecg.Replicant('gameTimeSettings');
+            const camMode = nodecg.Replicant('camMode');
             const slots = [];
             for (let i = 0; i < 9; i++) {
                 slots.push(nodecg.Replicant(`draft_slotL${i}`));
@@ -199,6 +209,28 @@
             const autoApplyCheckbox = document.getElementById('auto-apply-checkbox');
             const resetSystemBtn = document.getElementById('reset-system-btn');
             const restartBtn = document.getElementById('restart-btn');
+
+            // Cam Mode DOM + Logic
+            const camToggleL = document.getElementById('cam-toggle-L');
+            const camToggleR = document.getElementById('cam-toggle-R');
+
+            function updateCamButtons(val) {
+                const update = (btn, side, isOn) => {
+                    btn.textContent = `${side}: ${isOn ? 'ON' : 'OFF'}`;
+                    btn.classList.toggle('btn-primary', isOn);
+                    btn.classList.toggle('btn-secondary', !isOn);
+                };
+                update(camToggleL, 'L', val && val.L);
+                update(camToggleR, 'R', val && val.R);
+            }
+
+            camToggleL.addEventListener('click', () => {
+                camMode.value = { ...camMode.value, L: !camMode.value.L };
+            });
+            camToggleR.addEventListener('click', () => {
+                camMode.value = { ...camMode.value, R: !camMode.value.R };
+            });
+            camMode.on('change', updateCamButtons);
 
             // Timer DOM
             const timerDisplay = document.getElementById('timer-display');

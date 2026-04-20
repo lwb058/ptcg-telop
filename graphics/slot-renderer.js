@@ -624,7 +624,7 @@
                         tagHtml = `<div class="energy-cost-container">${iconsHtml}</div>`;
                     }
                     skillsContainer.innerHTML += `
-                    <div class="skill-row-wrapper">
+                    <div class="skill-row-wrapper${isAbility ? ' is-ability-row' : ''}">
                         ${tagHtml}
                         <div class="skill">
                             <div class="skill-name-wrapper">
@@ -711,7 +711,7 @@
                         tagHtml = `<div class="energy-cost-container">${iconsHtml}</div>`;
                     }
                     skillsHtml += `
-                    <div class="skill-row-wrapper">
+                    <div class="skill-row-wrapper${isAbility ? ' is-ability-row' : ''}">
                         ${tagHtml}
                         <div class="skill">
                             <div class="skill-name-wrapper"><span class="skill-name ${isAbility ? 'is-ability' : ''} ${abilityUsedClass}">${skill.name}</span></div>

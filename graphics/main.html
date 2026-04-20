@@ -73,10 +73,13 @@
         <!-- Player L Area -->
         <div class="player-area" id="player-L-area">
             <div class="player-info" id="player-L-info">
-                <img class="first-move-icon hidden" id="first-move-L"
-                    src="/assets/ptcg-telop/element/first_move_jp.png">
-                <span class="player-name" id="player-L-name"></span>
-                <img src="/assets/ptcg-telop/element/VSTAR.webp" class="vstar-icon" id="vstar-L-icon">
+                <div class="player-status">
+                    <img class="first-move-icon hidden" id="first-move-L"
+                        src="/assets/ptcg-telop/element/first_move_jp.png">
+                    <span class="player-name" id="player-L-name"></span>
+                    <img src="/assets/ptcg-telop/element/VSTAR.webp" class="vstar-icon" id="vstar-L-icon">
+                </div>
+                <div class="camera-frame" id="camera-frame-L"></div>
             </div>
             <div class="active-slot" id="slot-L0">
                 <div class="active-pokemon-wrapper hidden">
@@ -96,13 +99,14 @@
                     <div class="skills-container"></div>
                 </div>
             </div>
-            <div class="bench-slots">
+            <div class="bench-slots" id="bench-slots-L">
                 <div class="bench-slot" id="slot-L1"></div>
                 <div class="bench-slot" id="slot-L2"></div>
                 <div class="bench-slot" id="slot-L3"></div>
                 <div class="bench-slot" id="slot-L4"></div>
                 <div class="bench-slot" id="slot-L5"></div>
             </div>
+            <div class="tiny-slots hidden" id="tiny-slots-L"></div>
             <div class="player-action">
                 <img class="action-icon" id="action-L-energy" src="/assets/ptcg-telop/element/action-energy.png"
                     title="Energy Action">
@@ -115,10 +119,13 @@
         <!-- Player R Area -->
         <div class="player-area" id="player-R-area">
             <div class="player-info" id="player-R-info">
-                <img class="first-move-icon hidden" id="first-move-R"
-                    src="/assets/ptcg-telop/element/first_move_jp.png">
-                <span class="player-name" id="player-R-name"></span>
-                <img src="/assets/ptcg-telop/element/VSTAR.webp" class="vstar-icon" id="vstar-R-icon">
+                <div class="player-status">
+                    <img class="first-move-icon hidden" id="first-move-R"
+                        src="/assets/ptcg-telop/element/first_move_jp.png">
+                    <span class="player-name" id="player-R-name"></span>
+                    <img src="/assets/ptcg-telop/element/VSTAR.webp" class="vstar-icon" id="vstar-R-icon">
+                </div>
+                <div class="camera-frame" id="camera-frame-R"></div>
             </div>
             <div class="active-slot" id="slot-R0">
                 <div class="active-pokemon-wrapper hidden">
@@ -138,13 +145,14 @@
                     <div class="skills-container"></div>
                 </div>
             </div>
-            <div class="bench-slots">
+            <div class="bench-slots" id="bench-slots-R">
                 <div class="bench-slot" id="slot-R1"></div>
                 <div class="bench-slot" id="slot-R2"></div>
                 <div class="bench-slot" id="slot-R3"></div>
                 <div class="bench-slot" id="slot-R4"></div>
                 <div class="bench-slot" id="slot-R5"></div>
             </div>
+            <div class="tiny-slots hidden" id="tiny-slots-R"></div>
             <div class="player-action">
                 <img class="action-icon" id="action-R-energy" src="/assets/ptcg-telop/element/action-energy.png"
                     title="Energy Action">
@@ -319,7 +327,8 @@
                     const lostZoneArea = document.getElementById(`lost-zone-${side}-area`);
 
                     if (playerArea) {
-                        playerArea.className = `player-area ${themeName}`;
+                        const hasCamMode = playerArea.classList.contains('cam-mode');
+                        playerArea.className = `player-area ${themeName}${hasCamMode ? ' cam-mode' : ''}`;
                     }
                     if (sideArea) {
                         sideArea.className = `side-area ${themeName}`;
@@ -574,8 +583,9 @@
                     const areaEl = document.getElementById(areaId);
                     if (!areaEl) return;
 
-                    // Apply to the specific player area element
+                    // Apply both background layers (normal + cam) for crossfade
                     areaEl.style.setProperty('--bg-player-area', `url(${resolveAssetPath(getFile('--asset-panel-bg'), false, side)})`);
+                    areaEl.style.setProperty('--bg-player-area-cam', `url(${resolveAssetPath(getFile('--asset-panel-bg-cam'), false, side)})`);
                     areaEl.style.setProperty('--bg-active-slot', `url(${resolveAssetPath(getFile('--asset-active-bg'), false, side)})`);
                     areaEl.style.setProperty('--bg-bench-slot', `url(${resolveAssetPath(getFile('--asset-bench-bg'), false, side)})`);
                     areaEl.style.setProperty('--bg-current-turn', `url(${resolveAssetPath(getFile('--asset-current-turn'), false, side)})`);
@@ -739,6 +749,7 @@
             const live_lostZoneR = nodecg.Replicant('live_lostZoneR');
             const deckL = nodecg.Replicant('deckL');
             const deckR = nodecg.Replicant('deckR');
+            const camMode = nodecg.Replicant('camMode');
             const actionTypes = ['energy', 'supporter', 'retreat'];
             const sides = ['L', 'R'];
             const live_slotReplicants = {};
@@ -748,7 +759,7 @@
                 live_sideL, live_sideR, live_stadium, live_currentTurn, settingsRep, firstMove,
                 live_lostZoneL, live_lostZoneR,
                 deckL, deckR, language,
-                i18nStrings, themeAssets
+                i18nStrings, themeAssets, camMode
             ];
             sides.forEach(side => {
                 actionTypes.forEach(action => {
@@ -824,6 +835,32 @@
                 updateLostZoneCounter('R', live_lostZoneR.value);
                 live_lostZoneL.on('change', (val) => updateLostZoneCounter('L', val));
                 live_lostZoneR.on('change', (val) => updateLostZoneCounter('R', val));
+
+                // Cam Mode listener
+                camMode.on('change', (newVal) => {
+                    ['L', 'R'].forEach(side => {
+                        const playerArea = document.getElementById(`player-${side}-area`);
+                        if (!playerArea) return;
+                        const isCam = !!(newVal && newVal[side]);
+                        playerArea.classList.toggle('cam-mode', isCam);
+
+                        // Reparent bench-slot divs between bench-slots and tiny-slots containers
+                        const benchSlotsEl = document.getElementById(`bench-slots-${side}`);
+                        const tinySlotsEl = document.getElementById(`tiny-slots-${side}`);
+                        if (!benchSlotsEl || !tinySlotsEl) return;
+
+                        const targetContainer = isCam ? tinySlotsEl : benchSlotsEl;
+                        const sourceContainer = isCam ? benchSlotsEl : tinySlotsEl;
+
+                        // Move all bench-slot children to the target container
+                        while (sourceContainer.firstChild) {
+                            targetContainer.appendChild(sourceContainer.firstChild);
+                        }
+
+                        benchSlotsEl.classList.toggle('hidden', isCam);
+                        tinySlotsEl.classList.toggle('hidden', !isCam);
+                    });
+                });
 
                 const preloaderContainer = document.getElementById('video-preloader');
                 function preloadDeckImages(deck) {
