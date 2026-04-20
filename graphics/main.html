@@ -837,6 +837,7 @@
                 live_lostZoneR.on('change', (val) => updateLostZoneCounter('R', val));
 
                 // Cam Mode listener
+                let camModeInitialized = false;
                 camMode.on('change', (newVal) => {
                     ['L', 'R'].forEach(side => {
                         const playerArea = document.getElementById(`player-${side}-area`);
@@ -844,22 +845,66 @@
                         const isCam = !!(newVal && newVal[side]);
                         playerArea.classList.toggle('cam-mode', isCam);
 
-                        // Reparent bench-slot divs between bench-slots and tiny-slots containers
                         const benchSlotsEl = document.getElementById(`bench-slots-${side}`);
                         const tinySlotsEl = document.getElementById(`tiny-slots-${side}`);
                         if (!benchSlotsEl || !tinySlotsEl) return;
 
-                        const targetContainer = isCam ? tinySlotsEl : benchSlotsEl;
-                        const sourceContainer = isCam ? benchSlotsEl : tinySlotsEl;
-
-                        // Move all bench-slot children to the target container
-                        while (sourceContainer.firstChild) {
-                            targetContainer.appendChild(sourceContainer.firstChild);
+                        // On first load, just set state without animation
+                        if (!camModeInitialized) {
+                            if (isCam) {
+                                while (benchSlotsEl.firstChild) {
+                                    tinySlotsEl.appendChild(benchSlotsEl.firstChild);
+                                }
+                                benchSlotsEl.classList.add('hidden');
+                                tinySlotsEl.classList.remove('hidden');
+                            } else {
+                                while (tinySlotsEl.firstChild) {
+                                    benchSlotsEl.appendChild(tinySlotsEl.firstChild);
+                                }
+                                tinySlotsEl.classList.add('hidden');
+                                benchSlotsEl.classList.remove('hidden');
+                            }
+                            return;
                         }
 
-                        benchSlotsEl.classList.toggle('hidden', isCam);
-                        tinySlotsEl.classList.toggle('hidden', !isCam);
+                        // Animated reparent: bench-slots <-> tiny-slots
+                        const exitEl = isCam ? benchSlotsEl : tinySlotsEl;
+                        const enterEl = isCam ? tinySlotsEl : benchSlotsEl;
+
+                        // Clean up any previous animation classes
+                        benchSlotsEl.classList.remove('anim-cam-exit', 'anim-cam-enter');
+                        tinySlotsEl.classList.remove('anim-cam-exit', 'anim-cam-enter');
+
+                        // Step 1: Slide out the current container
+                        exitEl.classList.add('anim-cam-exit');
+
+                        const onExitEnd = (e) => {
+                            if (e && e.target !== exitEl) return;
+                            exitEl.removeEventListener('animationend', onExitEnd);
+                            exitEl.classList.remove('anim-cam-exit');
+                            exitEl.classList.add('hidden');
+
+                            // Step 2: Reparent bench-slot children
+                            while (exitEl.firstChild) {
+                                enterEl.appendChild(exitEl.firstChild);
+                            }
+
+                            // Step 3: Show and slide in the target container
+                            enterEl.classList.remove('hidden');
+                            enterEl.classList.add('anim-cam-enter');
+
+                            const onEnterEnd = (e) => {
+                                if (e && e.target !== enterEl) return;
+                                enterEl.removeEventListener('animationend', onEnterEnd);
+                                enterEl.classList.remove('anim-cam-enter');
+                            };
+                            enterEl.addEventListener('animationend', onEnterEnd);
+                            setTimeout(() => onEnterEnd(null), 600);
+                        };
+                        exitEl.addEventListener('animationend', onExitEnd);
+                        setTimeout(() => onExitEnd(null), 600);
                     });
+                    camModeInitialized = true;
                 });
 
                 const preloaderContainer = document.getElementById('video-preloader');

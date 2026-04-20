@@ -1621,3 +1621,76 @@ html {
     left: -3px;
     top: -22px;
 }
+
+/* === Tiny Slots: vertical slide for card swap (reuse for cam-mode too) === */
+@keyframes slide-out-down {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateY(120%);
+        opacity: 0;
+    }
+}
+
+@keyframes slide-in-down {
+
+    0%,
+    15% {
+        transform: translateY(120%);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.tiny-slots .anim-slide-out-L,
+.tiny-slots .anim-slide-out-R {
+    animation-name: slide-out-down;
+}
+
+.tiny-slots .anim-slide-in-L,
+.tiny-slots .anim-slide-in-R {
+    animation-name: slide-in-down;
+}
+
+.bench-slots.anim-cam-exit,
+.bench-slots.anim-cam-enter,
+.tiny-slots.anim-cam-exit,
+.tiny-slots.anim-cam-enter {
+    animation-duration: 0.4s;
+    animation-fill-mode: forwards;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* L side: bench exits left, enters from left */
+#player-L-area .bench-slots.anim-cam-exit {
+    animation-name: slide-out-left;
+}
+
+#player-L-area .bench-slots.anim-cam-enter {
+    animation-name: slide-in-left;
+}
+
+/* R side: bench exits right, enters from right */
+#player-R-area .bench-slots.anim-cam-exit {
+    animation-name: slide-out-right;
+}
+
+#player-R-area .bench-slots.anim-cam-enter {
+    animation-name: slide-in-right;
+}
+
+/* Tiny-slots: vertical (same as card swap direction) */
+.tiny-slots.anim-cam-enter {
+    animation-name: slide-in-down;
+}
+
+.tiny-slots.anim-cam-exit {
+    animation-name: slide-out-down;
+}
