@@ -119,9 +119,9 @@
                         weaknessIcon.className = 'weakness-icon-fx';
 
                         const appendAndAnimate = () => {
-                            weaknessIcon.style.left = `${imageRect.left + imageRect.width / 2}px`;
-                            weaknessIcon.style.top = `${imageRect.top + imageRect.height / 2}px`;
-                            document.body.appendChild(weaknessIcon);
+                            weaknessIcon.style.left = `${relativeLeft}px`;
+                            weaknessIcon.style.top = `${relativeTop}px`;
+                            targetSlotEl.appendChild(weaknessIcon);
                             setTimeout(() => weaknessIcon.remove(), 1500);
                         };
 

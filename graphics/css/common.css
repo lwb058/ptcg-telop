@@ -1108,7 +1108,7 @@ html {
     width: 240px;
     height: 160px;
     z-index: 490;
-    /* Above damage number text */
+    /* Below damage number text */
     pointer-events: none;
     animation: show-and-fade-up 1.5s ease-out forwards;
 }
