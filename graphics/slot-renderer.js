@@ -53,8 +53,10 @@
     function animateHp(element, startHp, endHp, startMaxHp, endMaxHp, duration) {
         return new Promise(resolve => {
             if (!element) return resolve();
+            const compact = !!element.closest('.tiny-slots');
+            const fmt = (hp, maxHp) => compact ? `${hp}` : `${hp}/${maxHp}`;
             if (startHp === endHp && startMaxHp === endMaxHp) {
-                element.textContent = `${endHp}/${endMaxHp}`;
+                element.textContent = fmt(endHp, endMaxHp);
                 return resolve();
             }
             let startTimestamp = null;
@@ -71,7 +73,7 @@
                     displayHp = endHp;
                     displayMaxHp = endMaxHp;
                 }
-                element.textContent = `${displayHp}/${displayMaxHp}`;
+                element.textContent = fmt(displayHp, displayMaxHp);
                 if (progress < 1) {
                     window.requestAnimationFrame(step);
                 } else {
@@ -208,8 +210,9 @@
         video.style.zIndex = '400';
         video.style.pointerEvents = 'none';
 
-        const videoWidth = isBattleSlot ? 150 : 70;
-        const videoHeight = isBattleSlot ? 120 : 56;
+        const isTinySlot = !!targetEl.closest('.tiny-slots');
+        const videoWidth = isBattleSlot ? 150 : (isTinySlot ? 100 : 70);
+        const videoHeight = isBattleSlot ? 120 : (isTinySlot ? 80 : 56);
         video.style.width = `${videoWidth}px`;
         video.style.height = `${videoHeight}px`;
 
@@ -629,8 +632,8 @@
                         <div class="skill">
                             <div class="skill-name-wrapper">
                                 <span class="skill-name ${isAbility ? 'is-ability' : ''} ${abilityUsedClass}">${skill.name}</span>
+                                <div class="skill-damage">${sanitizeDamage(skill.damage)}</div>
                             </div>
-                            <div class="skill-damage">${sanitizeDamage(skill.damage)}</div>
                         </div>
                     </div>
                     `;
@@ -643,13 +646,13 @@
                 if (forceRedraw) {
                     const newWrapperHtml = `
                     <div class="bench-pokemon-wrapper">
+                        <div class="pokemon-name">${cardData.name}</div>
                         <div class="card-image-area">
                             <img class="pokemon-image">
                             <div class="attached-energies"></div>
                             <div class="attached-tools-wrapper"></div>
                         </div>
                         <div class="bench-info-area">
-                            <div class="pokemon-name">${cardData.name}</div>
                             <div class="hp-gauge">
                                 <div class="hp-bar-container">
                                     <div class="hp-text"></div>
@@ -714,8 +717,10 @@
                     <div class="skill-row-wrapper${isAbility ? ' is-ability-row' : ''}">
                         ${tagHtml}
                         <div class="skill">
-                            <div class="skill-name-wrapper"><span class="skill-name ${isAbility ? 'is-ability' : ''} ${abilityUsedClass}">${skill.name}</span></div>
-                            <div class="skill-damage">${sanitizeDamage(skill.damage)}</div>
+                            <div class="skill-name-wrapper">
+                                <span class="skill-name ${isAbility ? 'is-ability' : ''} ${abilityUsedClass}">${skill.name}</span>
+                                <div class="skill-damage">${sanitizeDamage(skill.damage)}</div>
+                            </div>
                         </div>
                     </div>`;
                 });
@@ -841,16 +846,19 @@
         evolvingSlots.add(animation.target);
         const db = _cardDatabase.value;
         const isBattleSlot = animation.target.endsWith('0');
-        let videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active-evolve.webm' : '/assets/ptcg-telop/fx/bench-evolve.webm';
+        const targetEl = document.getElementById(animation.target);
+        const isTinySlot = targetEl && !!targetEl.closest('.tiny-slots');
+        const useActive = isBattleSlot || isTinySlot;
+        let videoSrc = useActive ? '/assets/ptcg-telop/fx/active-evolve.webm' : '/assets/ptcg-telop/fx/bench-evolve.webm';
 
         if (animation.cardId && db && db[animation.cardId]) {
             const cardData = db[animation.cardId];
             if (cardData.pokemon && cardData.pokemon.option) {
                 const option = cardData.pokemon.option.toLowerCase();
                 if (option === 'mega') {
-                    videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active-mega-evolve.webm' : '/assets/ptcg-telop/fx/bench-mega-evolve.webm';
+                    videoSrc = useActive ? '/assets/ptcg-telop/fx/active-mega-evolve.webm' : '/assets/ptcg-telop/fx/bench-mega-evolve.webm';
                 } else if (option === 'terastal') {
-                    videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active-tera-evolve.webm' : '/assets/ptcg-telop/fx/bench-tera-evolve.webm';
+                    videoSrc = useActive ? '/assets/ptcg-telop/fx/active-tera-evolve.webm' : '/assets/ptcg-telop/fx/bench-tera-evolve.webm';
                 }
             }
         }
@@ -972,13 +980,17 @@
             case 'DEVOLVE_POKEMON': {
                 evolvingSlots.add(animation.target);
                 const isBattleSlot = animation.target.endsWith('0');
-                const videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active-devolve.webm' : '/assets/ptcg-telop/fx/bench-devolve.webm';
+                const targetEl = document.getElementById(animation.target);
+                const isTinySlot = targetEl && !!targetEl.closest('.tiny-slots');
+                const videoSrc = (isBattleSlot || isTinySlot) ? '/assets/ptcg-telop/fx/active-devolve.webm' : '/assets/ptcg-telop/fx/bench-devolve.webm';
                 return playVideoOnSlot(animation.target, videoSrc);
             }
             case 'REPLACE_POKEMON': {
                 evolvingSlots.add(animation.target);
                 const isBattleSlot = animation.target.endsWith('0');
-                const videoSrc = isBattleSlot ? '/assets/ptcg-telop/fx/active-replace.webm' : '/assets/ptcg-telop/fx/bench-replace.webm';
+                const targetEl = document.getElementById(animation.target);
+                const isTinySlot = targetEl && !!targetEl.closest('.tiny-slots');
+                const videoSrc = (isBattleSlot || isTinySlot) ? '/assets/ptcg-telop/fx/active-replace.webm' : '/assets/ptcg-telop/fx/bench-replace.webm';
                 return playVideoOnSlot(animation.target, videoSrc);
             }
             case 'KO_POKEMON':

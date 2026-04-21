@@ -335,6 +335,7 @@ html {
     position: relative;
     top: 0.5px;
     white-space: nowrap;
+    margin-left: auto;
 }
 
 /* --- Common Bench Styles --- */
@@ -360,11 +361,27 @@ html {
 }
 
 .bench-pokemon-wrapper {
-    display: flex;
-    align-items: flex-start;
-    gap: 5px;
+    display: grid;
+    grid-template-columns: 142px 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 0px 5px;
     width: 100%;
     height: 100%;
+}
+
+.bench-pokemon-wrapper>.pokemon-name {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.bench-pokemon-wrapper>.card-image-area {
+    grid-column: 1;
+    grid-row: 1 / -1;
+}
+
+.bench-pokemon-wrapper>.bench-info-area {
+    grid-column: 2;
+    grid-row: 2;
 }
 
 .bench-slot .card-image-area {
@@ -1496,7 +1513,8 @@ html {
     height: calc(var(--cam-info-height) - 70px - 10px);
     opacity: 1;
     margin: 5px auto;
-    border-width: 3px;
+    border-width: 2px;
+    border-radius: 4px;
 }
 
 /* Tiny Slots container — 5-column grid */
@@ -1509,12 +1527,14 @@ html {
 
 /* === Tiny Slots: bench-slot overrides when reparented === */
 .tiny-slots .bench-slot {
+    --module-border-radius: 3px;
     height: auto;
-    padding: 3px;
+    padding: 2px;
     overflow: hidden;
 }
 
 .tiny-slots .bench-pokemon-wrapper {
+    display: flex;
     flex-direction: column;
     gap: 2px;
 }
@@ -1524,71 +1544,47 @@ html {
     overflow: visible;
 }
 
+/* --- pokemon-name: compact single line --- */
+.tiny-slots .pokemon-name {
+    height: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 10px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- card-image-area: 97px tall, clip card art --- */
 .tiny-slots .card-image-area {
-    width: 100%;
-    height: 55px;
-    flex-shrink: 1;
-    min-height: 30px;
+    width: 61px;
+    height: 86px;
+    flex-shrink: 0;
+    border: 2px solid var(--stroke-color);
     border-radius: 3px;
 }
 
 .tiny-slots .pokemon-image {
-    width: 100%;
-    top: -10px;
-    left: 0;
-}
-
-.tiny-slots .pokemon-name {
-    display: none;
-}
-
-.tiny-slots .hp-bar-container {
-    height: 6px;
-    border-radius: 3px;
-    flex-shrink: 0;
-}
-
-.tiny-slots .hp-text {
-    display: none;
-}
-
-.tiny-slots .skills-container {
+    position: absolute;
+    width: 118%;
     height: auto;
-    max-height: 20px;
-    flex-shrink: 0;
-    overflow: hidden;
+    top: -9px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
-.tiny-slots .skill-row-wrapper:not(.is-ability-row) {
-    display: none;
-}
-
-.tiny-slots .skill-row-wrapper.is-ability-row {
-    height: 16px;
-}
-
-.tiny-slots .skill-name-wrapper {
-    display: none;
-}
-
-.tiny-slots .skill-damage {
-    display: none;
-}
-
-.tiny-slots .skill-ability-tag {
-    width: 100%;
-    height: 16px;
-}
-
-.tiny-slots .energy-cost-container {
-    display: none;
+/* --- attached-energies: overlay on card image, top-left --- */
+.tiny-slots .attached-energies:not(:empty) {
+    border-radius: 0px 0px 8px 0px;
+    padding: 1px;
 }
 
 .tiny-slots .attached-energies {
-    position: static;
-    flex-shrink: 0;
+    top: -1px;
+    left: -1px;
+    bottom: auto;
     gap: 1px;
-    justify-content: center;
 }
 
 .tiny-slots .attached-energies .energy-icon {
@@ -1601,25 +1597,89 @@ html {
     height: 10px;
 }
 
+/* --- tools-wrapper: overlay on card image, bottom --- */
 .tiny-slots .attached-tools-wrapper {
-    position: static;
-    transform: none;
-    flex-shrink: 0;
+    bottom: 1px;
+    width: 100%;
     grid-template-columns: repeat(2, 1fr);
     gap: 1px;
     justify-items: center;
+    transform: rotate(180deg);
 }
 
 .tiny-slots .attached-tool-item {
-    width: 28px;
-    height: 18px;
+    width: 52px;
+    height: 32px;
     border-radius: 2px;
 }
 
 .tiny-slots .attached-tool-item img {
-    width: 34px;
-    left: -3px;
-    top: -22px;
+    position: absolute;
+    width: 116%;
+    top: -40px;
+}
+
+/* --- hp-gauge: bar with text visible --- */
+.tiny-slots .hp-bar-container {
+    height: 18px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.tiny-slots .hp-text {
+    font-size: 14px;
+    padding-right: 4px;
+}
+
+/* --- skills-container: show all rows, compact --- */
+.tiny-slots .skills-container {
+    height: 28px;
+    flex-shrink: 0;
+    overflow: hidden;
+    gap: 2px;
+    padding: 1px;
+}
+
+.tiny-slots .skill-row-wrapper {
+    height: 13px;
+}
+
+.tiny-slots .skill-name-wrapper {
+    padding-left: 0;
+}
+
+.tiny-slots .skill-name {
+    display: none;
+}
+
+.tiny-slots .skill-damage {
+    width: 25px;
+    font-size: 10px;
+    padding-right: 2px;
+    top: 0;
+}
+
+.tiny-slots .skill-damage:empty::after {
+    content: '-';
+}
+
+.tiny-slots .skill-ability-tag {
+    width: auto;
+    height: 13px;
+}
+
+.tiny-slots .energy-cost-container {
+    border-radius: 2px 6px 6px 2px;
+}
+
+.tiny-slots .energy-cost-container .energy-icon {
+    width: 8px;
+    height: 8px;
+}
+
+.tiny-slots .damage-number,
+.tiny-slots .heal-number {
+    font-size: 32px;
 }
 
 /* === Tiny Slots: vertical slide for card swap (reuse for cam-mode too) === */
