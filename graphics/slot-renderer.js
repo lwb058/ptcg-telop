@@ -53,10 +53,11 @@
     function animateHp(element, startHp, endHp, startMaxHp, endMaxHp, duration) {
         return new Promise(resolve => {
             if (!element) return resolve();
-            const compact = !!element.closest('.tiny-slots');
-            const fmt = (hp, maxHp) => compact ? `${hp}` : `${hp}/${maxHp}`;
+            const setHp = (hp, maxHp) => {
+                element.innerHTML = `<span class="hp-current">${hp}</span><span class="hp-max">/${maxHp}</span>`;
+            };
             if (startHp === endHp && startMaxHp === endMaxHp) {
-                element.textContent = fmt(endHp, endMaxHp);
+                setHp(endHp, endMaxHp);
                 return resolve();
             }
             let startTimestamp = null;
@@ -73,7 +74,7 @@
                     displayHp = endHp;
                     displayMaxHp = endMaxHp;
                 }
-                element.textContent = fmt(displayHp, displayMaxHp);
+                setHp(displayHp, displayMaxHp);
                 if (progress < 1) {
                     window.requestAnimationFrame(step);
                 } else {

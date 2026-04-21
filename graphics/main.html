@@ -837,6 +837,7 @@
                 live_lostZoneR.on('change', (val) => updateLostZoneCounter('R', val));
 
                 // Cam Mode listener
+                const camState = { L: false, R: false };
                 let camModeInitialized = false;
                 camMode.on('change', (newVal) => {
                     ['L', 'R'].forEach(side => {
@@ -844,6 +845,10 @@
                         if (!playerArea) return;
                         const isCam = !!(newVal && newVal[side]);
                         playerArea.classList.toggle('cam-mode', isCam);
+
+                        // Skip if this side's state didn't change
+                        if (camModeInitialized && camState[side] === isCam) return;
+                        camState[side] = isCam;
 
                         const benchSlotsEl = document.getElementById(`bench-slots-${side}`);
                         const tinySlotsEl = document.getElementById(`tiny-slots-${side}`);

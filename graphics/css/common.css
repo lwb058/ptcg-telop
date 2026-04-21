@@ -481,6 +481,10 @@ html {
     overflow: hidden;
 }
 
+.bench-slot .bench-info-area {
+    margin-left: 5px;
+}
+
 .bench-slot .pokemon-name {
     font-size: 16px;
     font-weight: bold;
@@ -488,6 +492,7 @@ html {
     overflow: hidden;
     text-overflow: ellipsis;
     height: 21px;
+    margin-left: 5px;
 }
 
 .bench-slot .hp-text {
@@ -854,7 +859,7 @@ html {
     box-sizing: border-box;
     position: relative;
     isolation: isolate;
-    background-color: var(--main-color);
+    /* background-color: var(--main-color); */
     background-image: var(--bg-player-area-cam);
     background-size: cover;
     background-repeat: no-repeat;
@@ -1455,7 +1460,7 @@ html {
     --cam-frame-width: 384px;
     --cam-info-height: 465px;
     --cam-tiny-slot-height: 164px;
-    --asset-panel-bg-cam: 'panel_bg_2.png';
+    --asset-panel-bg-cam: 'cam_panel.png';
 }
 
 /* Player Info: transition for cam-mode height change */
@@ -1542,6 +1547,7 @@ html {
 .tiny-slots .bench-info-area {
     gap: 2px;
     overflow: visible;
+    margin-left: 0px;
 }
 
 /* --- pokemon-name: compact single line --- */
@@ -1552,6 +1558,7 @@ html {
     line-height: 10px;
     flex-shrink: 0;
     white-space: nowrap;
+    margin-left: 0px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -1629,6 +1636,10 @@ html {
 .tiny-slots .hp-text {
     font-size: 14px;
     padding-right: 4px;
+}
+
+.tiny-slots .hp-max {
+    display: none;
 }
 
 /* --- skills-container: show all rows, compact --- */
