@@ -1,4 +1,5 @@
 import sys, os, argparse
+sys.stdout.reconfigure(encoding='utf-8')
 
 # Get the absolute path of the directory where the script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
