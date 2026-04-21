@@ -12,6 +12,7 @@
     --asset-panel-bg: 'panel-bg.png';
     --asset-active-bg: 'active-bg.png';
     --asset-bench-bg: 'bench-bg.png';
+    --asset-tiny-bg: 'tiny-bg.png';
     --asset-card-bg: 'card-bg.png';
     --asset-side-bg: 'side-bg.png';
     --asset-extra-bg: 'extra-bg.png';
@@ -1536,6 +1537,7 @@ html {
     height: auto;
     padding: 2px;
     overflow: hidden;
+    background-image: var(--bg-tiny-slot);
 }
 
 .tiny-slots .bench-pokemon-wrapper {
