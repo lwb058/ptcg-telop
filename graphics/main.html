@@ -74,8 +74,11 @@
         <div class="player-area" id="player-L-area">
             <div class="player-info" id="player-L-info">
                 <div class="player-status">
-                    <img class="first-move-icon hidden" id="first-move-L"
-                        src="/assets/ptcg-telop/element/first_move_jp.png">
+                    <div class="turn-badge hidden" id="turn-badge-L">
+                        <img class="first-move-icon" id="first-move-L"
+                            src="/assets/ptcg-telop/element/first_move_jp.png">
+                        <span class="turn-label" id="turn-label-L"></span>
+                    </div>
                     <span class="player-name" id="player-L-name"></span>
                     <img src="/assets/ptcg-telop/element/VSTAR.webp" class="vstar-icon" id="vstar-L-icon">
                 </div>
@@ -120,8 +123,11 @@
         <div class="player-area" id="player-R-area">
             <div class="player-info" id="player-R-info">
                 <div class="player-status">
-                    <img class="first-move-icon hidden" id="first-move-R"
-                        src="/assets/ptcg-telop/element/first_move_jp.png">
+                    <div class="turn-badge hidden" id="turn-badge-R">
+                        <img class="first-move-icon" id="first-move-R"
+                            src="/assets/ptcg-telop/element/first_move_jp.png">
+                        <span class="turn-label" id="turn-label-R"></span>
+                    </div>
                     <span class="player-name" id="player-R-name"></span>
                     <img src="/assets/ptcg-telop/element/VSTAR.webp" class="vstar-icon" id="vstar-R-icon">
                 </div>
@@ -356,6 +362,8 @@
             function updateFirstMoveIcon(firstMoveValue) {
                 const iconL = document.getElementById('first-move-L');
                 const iconR = document.getElementById('first-move-R');
+                const badgeL = document.getElementById('turn-badge-L');
+                const badgeR = document.getElementById('turn-badge-R');
 
                 const style = getComputedStyle(document.documentElement);
                 const firstMoveFile = style.getPropertyValue('--asset-first-move').trim().replace(/['\"]/g, '');
@@ -370,16 +378,35 @@
                 if (firstMoveValue === 'L') {
                     iconL.src = firstMoveIconSrc_L;
                     iconR.src = secondMoveIconSrc_R;
-                    iconL.classList.remove('hidden');
-                    iconR.classList.remove('hidden');
+                    badgeL.classList.remove('hidden');
+                    badgeR.classList.remove('hidden');
                 } else if (firstMoveValue === 'R') {
                     iconL.src = secondMoveIconSrc_L;
                     iconR.src = firstMoveIconSrc_R;
-                    iconL.classList.remove('hidden');
-                    iconR.classList.remove('hidden');
+                    badgeL.classList.remove('hidden');
+                    badgeR.classList.remove('hidden');
                 } else {
-                    iconL.classList.add('hidden');
-                    iconR.classList.add('hidden');
+                    badgeL.classList.add('hidden');
+                    badgeR.classList.add('hidden');
+                }
+            }
+
+            function updateTurnLabel() {
+                const labelL = document.getElementById('turn-label-L');
+                const labelR = document.getElementById('turn-label-R');
+                const fm = firstMove.value;
+                const tc = turnCount.value || 1;
+                if (!fm) return;
+                // 先1→后1→先2→后2→先3→后3…
+                const fmRound = Math.ceil(tc / 2);
+                const smRound = Math.max(1, Math.floor(tc / 2));
+
+                if (fm === 'L') {
+                    labelL.textContent = fmRound;
+                    labelR.textContent = smRound;
+                } else {
+                    labelR.textContent = fmRound;
+                    labelL.textContent = smRound;
                 }
             }
 
@@ -751,6 +778,7 @@
             const deckL = nodecg.Replicant('deckL');
             const deckR = nodecg.Replicant('deckR');
             const camMode = nodecg.Replicant('camMode');
+            const turnCount = nodecg.Replicant('turnCount');
             const actionTypes = ['energy', 'supporter', 'retreat'];
             const sides = ['L', 'R'];
             const live_slotReplicants = {};
@@ -760,7 +788,7 @@
                 live_sideL, live_sideR, live_stadium, live_currentTurn, settingsRep, firstMove,
                 live_lostZoneL, live_lostZoneR,
                 deckL, deckR, language,
-                i18nStrings, themeAssets, camMode
+                i18nStrings, themeAssets, camMode, turnCount
             ];
             sides.forEach(side => {
                 actionTypes.forEach(action => {
@@ -831,7 +859,9 @@
                 live_stadium.on('change', (newVal, oldVal) => renderStadium(newVal, oldVal || { cardId: null }));
                 live_currentTurn.on('change', (val) => updateCurrentTurnBorder(val));
                 updateFirstMoveIcon(firstMove.value);
-                firstMove.on('change', (val) => updateFirstMoveIcon(val));
+                firstMove.on('change', (val) => { updateFirstMoveIcon(val); updateTurnLabel(); });
+                updateTurnLabel();
+                turnCount.on('change', () => updateTurnLabel());
                 updateLostZoneCounter('L', live_lostZoneL.value);
                 updateLostZoneCounter('R', live_lostZoneR.value);
                 live_lostZoneL.on('change', (val) => updateLostZoneCounter('L', val));

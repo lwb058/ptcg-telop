@@ -878,25 +878,25 @@ html {
 }
 
 .player-status {
-    font-family: var(--font-player-lang), sans-serif;
-    font-size: 28px;
     font-weight: 800;
-    font-style: normal;
     height: 70px;
     flex-shrink: 0;
-    letter-spacing: 2px;
     box-sizing: border-box;
     padding: 10px 5px;
     color: var(--stroke-color);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    text-shadow: 2px 2px 4px #000;
 }
 
 .player-name {
+    font-family: var(--font-player-lang), sans-serif;
+    font-style: normal;
+    font-size: 28px;
+    letter-spacing: 2px;
     flex-grow: 1;
     text-align: left;
+    text-shadow: 2px 2px 4px #000;
 }
 
 .vstar-icon {
@@ -914,11 +914,30 @@ html {
     filter: grayscale(0) brightness(1);
 }
 
+.turn-badge {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-right: 8px;
+    padding-right: 3px;
+    background-color: var(--stroke-color);
+    border: var(--module-border) solid var(--stroke-color);
+    border-radius: 6px;
+}
+
 .first-move-icon {
     width: 25px;
     height: 50px;
-    margin-right: 10px;
     transition: opacity 0.3s ease;
+}
+
+.turn-label {
+    font-family: var(--font-numeric);
+    color: var(--first-color);
+    font-size: 36px;
+    margin-left: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 /* --- Action Area --- */
