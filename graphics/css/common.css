@@ -933,7 +933,7 @@ html {
 
 .turn-label {
     font-family: var(--font-numeric);
-    color: var(--first-color);
+    color: var(--main-color);
     font-size: 36px;
     margin-left: 4px;
     white-space: nowrap;
