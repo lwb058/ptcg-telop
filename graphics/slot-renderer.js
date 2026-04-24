@@ -749,12 +749,6 @@
                 const energyContainer = wrapper.querySelector('.attached-energies');
                 renderAttachedEnergies(energyContainer, slotData.attachedEnergy, getEnergyIcon);
             }
-            if (slotData && slotData.evolutionSelect) {
-                delete slotData.evolutionSelect;
-            }
-            if (slotData && slotData.forceSlideIn) {
-                delete slotData.forceSlideIn;
-            }
             return Promise.all(promises);
         };
 
@@ -826,9 +820,16 @@
                     const side = slotId.includes('-L') ? 'L' : 'R';
                     const p = new Promise(res => {
                         let isResolved = false;
-                        const done = () => { if (!isResolved) { isResolved = true; el.removeEventListener('animationend', done); res(); } };
-                        el.addEventListener('animationend', done, { once: true });
-                        setTimeout(done, 1000);
+                        const done = (event) => {
+                            if (event && event.target !== el) return;
+                            if (!isResolved) {
+                                isResolved = true;
+                                el.removeEventListener('animationend', done);
+                                res();
+                            }
+                        };
+                        el.addEventListener('animationend', done);
+                        setTimeout(() => done(null), 1000);
                     });
                     promises.push(p);
                     el.classList.add(`anim-slide-out-${side}`);
@@ -898,14 +899,21 @@
             koVideo.addEventListener('ended', () => {
                 koVideo.remove();
                 targetEl.classList.add(`anim-slide-out-${side}`);
-                targetEl.addEventListener('animationend', () => {
+                let isResolved = false;
+                const animationEndHandler = (event) => {
+                    if (event && event.target !== targetEl) return;
+                    if (isResolved) return;
+                    isResolved = true;
+                    targetEl.removeEventListener('animationend', animationEndHandler);
                     if (isBattleSlot) {
                         const ailmentsWrapper = targetEl.querySelector('.status-ailment');
                         if (ailmentsWrapper) ailmentsWrapper.innerHTML = '';
                     }
                     koSlots.delete(animation.target);
                     resolve();
-                }, { once: true });
+                };
+                targetEl.addEventListener('animationend', animationEndHandler);
+                setTimeout(() => animationEndHandler(null), 1000);
             });
         });
     }
@@ -921,7 +929,8 @@
             targetEl.classList.add(`anim-slide-out-${side}`);
 
             let isResolved = false;
-            const animationEndHandler = () => {
+            const animationEndHandler = (event) => {
+                if (event && event.target !== targetEl) return;
                 if (isResolved) return;
                 isResolved = true;
                 const activeWrapper = targetEl.querySelector('.active-pokemon-wrapper');
@@ -939,8 +948,8 @@
                 targetEl.removeEventListener('animationend', animationEndHandler);
                 resolve();
             };
-            targetEl.addEventListener('animationend', animationEndHandler, { once: true });
-            setTimeout(animationEndHandler, 1000);
+            targetEl.addEventListener('animationend', animationEndHandler);
+            setTimeout(() => animationEndHandler(null), 1000);
         });
     }
 
@@ -953,15 +962,16 @@
             const animationClass = `anim-slide-in-${side}`;
             targetEl.classList.add(animationClass);
             let isResolved = false;
-            const animationEndHandler = () => {
+            const animationEndHandler = (event) => {
+                if (event && event.target !== targetEl) return;
                 if (isResolved) return;
                 isResolved = true;
                 targetEl.classList.remove(animationClass);
                 targetEl.removeEventListener('animationend', animationEndHandler);
                 resolve();
             };
-            targetEl.addEventListener('animationend', animationEndHandler, { once: true });
-            setTimeout(animationEndHandler, 1000);
+            targetEl.addEventListener('animationend', animationEndHandler);
+            setTimeout(() => animationEndHandler(null), 1000);
         });
     }
 

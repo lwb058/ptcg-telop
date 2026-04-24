@@ -1301,15 +1301,15 @@ module.exports = function (nodecg) {
 	function getTimeoutForPriority(priority) {
 		const basePriority = priority % 100;
 		switch (basePriority) {
-			case 0: return 3000; // Attack animations
-			case 1: return 1500; // Epoch triggers (SET_POKEMON, SET_TURN)
-			case 2: return 1500; // State & attachment changes
-			case 3: return 1500; // Damage / extra HP
-			case 4: return 2000; // KO animations
-			case 5: return 2000; // Evolution animations (Mega/Tera webm up to 1.5s + startup)
-			case 6: return 1500; // Switch slide-out animations
-			case 7: return 1500; // Switch slide-in animations
-			default: return 1500;
+			case 0: return 5000; // Attack animations
+			case 1: return 2500; // Epoch triggers (SET_POKEMON, SET_TURN)
+			case 2: return 2500; // State & attachment changes
+			case 3: return 3500; // Damage / extra HP
+			case 4: return 3000; // KO animations
+			case 5: return 3000; // Evolution animations (Mega/Tera webm up to 1.5s + startup)
+			case 6: return 2500; // Switch slide-out animations
+			case 7: return 2500; // Switch slide-in animations
+			default: return 2500;
 		}
 	}
 
@@ -1955,15 +1955,15 @@ module.exports = function (nodecg) {
 	function getTimeoutForPriority(priority) {
 		const basePriority = priority % 100;
 		switch (basePriority) {
-			case 0: return 3000; // Attack animations
-			case 1: return 1500; // Epoch triggers (SET_POKEMON, SET_TURN)
-			case 2: return 1500; // State & attachment changes
-			case 3: return 1500; // Damage / extra HP
-			case 4: return 2000; // KO animations
-			case 5: return 2000; // Evolution animations (Mega/Tera webm up to 1.5s + startup)
-			case 6: return 1500; // Switch slide-out animations
-			case 7: return 1500; // Switch slide-in animations
-			default: return 1500;
+			case 0: return 5000; // Attack animations
+			case 1: return 2500; // Epoch triggers (SET_POKEMON, SET_TURN)
+			case 2: return 2500; // State & attachment changes
+			case 3: return 3500; // Damage / extra HP
+			case 4: return 3000; // KO animations
+			case 5: return 3000; // Evolution animations (Mega/Tera webm up to 1.5s + startup)
+			case 6: return 2500; // Switch slide-out animations
+			case 7: return 2500; // Switch slide-in animations
+			default: return 2500;
 		}
 	}
 
