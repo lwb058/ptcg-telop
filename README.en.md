@@ -11,6 +11,8 @@ It allows for real-time management of player board states (HP, damage, energy, t
 -   **Safe Broadcasting**: A two-step "draft" and "live" update system prevents operational mistakes from being immediately reflected on the live broadcast.
 -   **Card Database Generation via Python Scripts**: Automatically extracts necessary card information from deck lists to build a database.
 -   **Flexible State Management**: Flexibly set damage, extra HP, energy, tools, and special conditions (like Poison, Burn, Sleep, etc.).
+-   **Camera-Mode Layout**: Reserves camera-frame areas on both player sides and switches Bench display to a compact layout for OBS compositions.
+-   **Turn Count Display**: Shows the current turn count beside the first/second marker in Player Info.
 
 ## Screenshots
 
