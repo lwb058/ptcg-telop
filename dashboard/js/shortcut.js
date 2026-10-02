@@ -1,4 +1,19 @@
 /**
+ * Input: None
+ * Output: None
+ * Pos: Application code
+ *
+ * 🔄 Self-reference: When this file changes, update this header
+ */
+
+/**
+ * [INPUT]: master_panel.html から渡される盤面・選択・カード DB、操作送信関数とショートカット DOM に依存する。
+ * [OUTPUT]: window.initShortcutModule で個別カード用の対象選択・打点計算を接続し、表示更新関数を返す。
+ * [POS]: dashboard/js の個別カード用入力補助。共通操作経路を利用し、状態の適用は extension に委ねる。
+ * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+ */
+
+/**
  * Initializes the Shortcut Module logic.
  * Decouples logic from master_panel.html.
  * 

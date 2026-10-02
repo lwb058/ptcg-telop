@@ -5,6 +5,12 @@
     "chs": "特性",
     "cht": "特性"
   },
+  "bench_attacks": {
+    "jp": "ベンチ",
+    "en": "Bench",
+    "chs": "备战区",
+    "cht": "備戰區"
+  },
   "used": {
     "jp": "使用済",
     "chs": "已使用",
@@ -208,6 +214,132 @@
     "chs": "保存所有设置",
     "cht": "儲存所有設定",
     "en": "Save All Settings"
+  },
+  "diagnostics_export_button": {
+    "jp": "診断パッケージを保存",
+    "en": "Export Diagnostics",
+    "chs": "导出诊断包",
+    "cht": "匯出診斷包"
+  },
+  "diagnostics_export_generating": {
+    "jp": "診断 ZIP を作成中…",
+    "en": "Preparing diagnostics…",
+    "chs": "正在生成诊断包…",
+    "cht": "正在產生診斷包…"
+  },
+  "diagnostics_export_success": {
+    "jp": "ダウンロードを開始しました。",
+    "en": "Download started.",
+    "chs": "已开始下载。",
+    "cht": "已開始下載。"
+  },
+  "diagnostics_export_empty": {
+    "jp": "ダウンロードを開始しました（診断記録はありません）。",
+    "en": "Download started (no diagnostic records).",
+    "chs": "已开始下载（暂无诊断记录）。",
+    "cht": "已開始下載（暫無診斷記錄）。"
+  },
+  "diagnostics_export_failed": {
+    "jp": "保存に失敗しました。もう一度お試しください。",
+    "en": "Export failed. Please try again.",
+    "chs": "导出失败，请重试。",
+    "cht": "匯出失敗，請重試。"
+  },
+  "import_input_required": {
+    "jp": "デッキ ID またはカード ID を入力してください。",
+    "en": "Please enter a Deck ID or Card ID.",
+    "chs": "请输入卡组码或卡牌 ID。",
+    "cht": "請輸入牌組編碼或卡牌 ID。"
+  },
+  "import_failed": {
+    "jp": "取り込みに失敗しました",
+    "en": "Failed to import",
+    "chs": "导入失败",
+    "cht": "匯入失敗"
+  },
+  "import_with_warnings": {
+    "jp": "取り込みは完了しましたが、次の問題があります",
+    "en": "Import completed with warnings",
+    "chs": "导入已完成，但存在以下问题",
+    "cht": "匯入已完成，但存在以下問題"
+  },
+  "import_missing_images": {
+    "jp": "画像が未取得のカード",
+    "en": "Cards with missing images",
+    "chs": "卡图未取得的卡牌",
+    "cht": "尚未取得卡圖的卡牌"
+  },
+  "import_diagnostic_id": {
+    "jp": "診断番号",
+    "en": "Diagnostic ID",
+    "chs": "诊断编号",
+    "cht": "診斷編號"
+  },
+  "import_diagnostics_help": {
+    "jp": "問題が続く場合は、Settings の「診断パッケージを保存」で取得した ZIP を開発者へ送ってください。",
+    "en": "If the issue continues, use Export Diagnostics in Settings and send the ZIP to the developer.",
+    "chs": "如需排查，请在 Settings 的「导出诊断包」下载 ZIP 并发送给开发者。",
+    "cht": "如需排查，請在 Settings 的「匯出診斷包」下載 ZIP 並傳送給開發者。"
+  },
+  "import_diagnostics_unavailable": {
+    "jp": "一部の診断記録を保存できませんでした。",
+    "en": "Some diagnostic records could not be saved.",
+    "chs": "部分诊断记录未能保存。",
+    "cht": "部分診斷記錄未能儲存。"
+  },
+  "import_unknown_error": {
+    "jp": "原因不明のエラー",
+    "en": "Unknown error",
+    "chs": "未知错误",
+    "cht": "未知錯誤"
+  },
+  "import_stage_input": {
+    "jp": "入力の確認",
+    "en": "Input validation",
+    "chs": "输入检查",
+    "cht": "輸入檢查"
+  },
+  "import_stage_deck": {
+    "jp": "デッキの取得・解析",
+    "en": "Deck retrieval / parsing",
+    "chs": "卡组获取／解析",
+    "cht": "牌組取得／解析"
+  },
+  "import_stage_card": {
+    "jp": "カード情報の取得・解析",
+    "en": "Card retrieval / parsing",
+    "chs": "卡牌资料获取／解析",
+    "cht": "卡牌資料取得／解析"
+  },
+  "import_stage_packs": {
+    "jp": "カードパックの取得・解析",
+    "en": "Card pack retrieval / parsing",
+    "chs": "卡包获取／解析",
+    "cht": "卡包取得／解析"
+  },
+  "import_stage_image": {
+    "jp": "カード画像の確認・取得",
+    "en": "Card image check / download",
+    "chs": "卡图检查／下载",
+    "cht": "卡圖檢查／下載"
+  },
+  "import_stage_database": {
+    "jp": "カード DB の保存・読込",
+    "en": "Card database save / reload",
+    "chs": "卡牌数据库保存／重载",
+    "cht": "卡牌資料庫儲存／重新載入"
+  },
+  "import_stage_commit": {
+    "jp": "取り込み結果の反映",
+    "en": "Applying import results",
+    "chs": "提交导入结果",
+    "cht": "套用匯入結果"
+  },
+  "import_stage_process": {
+    "jp": "取得処理の実行",
+    "en": "Retrieval process",
+    "chs": "执行获取程序",
+    "cht": "執行取得程式"
   },
   "settings_support_button": {
     "jp": "開発を応援",

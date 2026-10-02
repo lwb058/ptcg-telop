@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!--
+[INPUT]: NodeCG の cardToShowL / cardToShowR・カード DB・素材パス・デッキ・設定・テーマ・言語 Replicant、showPrizeCards / clearCard 通知、css/fonts.css と css/common.css に依存。
+[OUTPUT]: 1920×1080 の透明画面で単一カードとサイドカード一覧を左右別に表示し、取得済み表示・入退場・reverseCardDisplay による左右反転を制御。
+[POS]: OBS 用のカード紹介画面。盤面スロットの描画とは独立し、左右の表示モードとアニメーション状態を管理する。
+[PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+-->
 <html lang="en">
 
 <head>

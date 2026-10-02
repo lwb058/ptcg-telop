@@ -1,3 +1,18 @@
+/**
+ * Input: None
+ * Output: None
+ * Pos: Application code
+ *
+ * 🔄 Self-reference: When this file changes, update this header
+ */
+
+/**
+ * [INPUT]: NodeCG の Replicant・メッセージ・logger と、index.js から注入される盤面操作・キュー処理・デッキ取得の gameLogic に依存する。
+ * [OUTPUT]: 時系列管理の初期化関数を提供し、試合時計、対戦／表示の記録、履歴編集、シーク・再生、JSON 入出力を管理する。
+ * [POS]: extension の記録・再構築層。盤面ルールは index.js に委ね、二系統のタイムラインを同じ対戦ロジックへ接続する。
+ * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+ */
+
 'use strict';
 
 module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic

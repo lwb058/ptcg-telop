@@ -1,3 +1,9 @@
+/**
+ * [INPUT]: main.html / extra.html / card.html と SlotRenderer が構成する DOM・クラス、fonts.css の書体、各画面が設定する素材変数とテーマ CSS に依存。
+ * [OUTPUT]: 1920×1080 の透明画面、バトル場・通常 / 縮小ベンチ・選手情報の共通配置、配色と素材の CSS 変数、入替・攻撃・HP 変化のアニメーションを定義。
+ * [POS]: 3 つの配信画面の共通スタイル基盤。各 HTML の個別配置と左右別テーマが上書きできる既定値を持つ。
+ * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+ */
 /* 
   PTCG Telop Shared Graphic Styles
   Contains common styles used by main.html, extra.html, etc.

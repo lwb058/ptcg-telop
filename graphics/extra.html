@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!--
+[INPUT]: NodeCG の live_slotL6–L8 / live_slotR6–R8・extraBenchVisible・デッキ・設定・テーマ・言語 Replicant、攻撃と入替の通知、slot-renderer.js と共通 CSS に依存。
+[OUTPUT]: 1920×1080 の透明画面に左右の追加ベンチ 6–8 を描画し、表示切替、対象スロットの入替・被弾演出を再生。
+[POS]: main.html に重ねる独立した拡張ベンチ画面。描画は SlotRenderer と共有し、この画面に存在するスロットへの通知だけを演出へ渡す。
+[PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+-->
 <html lang="en">
 
 <head>

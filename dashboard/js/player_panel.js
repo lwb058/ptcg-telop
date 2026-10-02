@@ -1,3 +1,18 @@
+/**
+ * Input: None
+ * Output: None
+ * Pos: Application code
+ *
+ * 🔄 Self-reference: When this file changes, update this header
+ */
+
+/**
+ * [INPUT]: プレイヤーパネル DOM、NodeCG の draft・カード・選択・設定 Replicant、dashboard.js と deck_importer.js の共通ヘルパーに依存する。
+ * [OUTPUT]: setupPlayerPanel(side) とパネル用グローバル Replicant を提供し、左右の盤面編集・選択・対戦操作・カード表示と取り込み成功後のデッキ ID 更新を接続する。
+ * [POS]: dashboard/js の左右共通コントローラー。プレイヤー HTML が起動し、draft の即時表示と extension への操作依頼を協調させる。
+ * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+ */
+
 // --- Global Replicant Declarations ---
 var playerName, deckId, draft_side, draft_lostZone, deck, cardDatabase, selections,
     operationQueue, draft_currentTurn, draft_action_energy, draft_action_supporter,
@@ -81,7 +96,8 @@ function setupPlayerPanel(side) {
             side: upperCaseSide,
             inputId: `deck-id-${lowerCaseSide}`,
             buttonId: `set-deck-btn-${lowerCaseSide}`,
-            onDeckIdChange: (newDeckId) => {
+            onDeckIdChange: (newDeckId, result) => {
+                if (result && result.type === 'card') return;
                 deckId.value = newDeckId;
             }
         });

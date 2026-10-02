@@ -1,3 +1,18 @@
+/**
+ * Input: None
+ * Output: None
+ * Pos: Application code
+ *
+ * 🔄 Self-reference: When this file changes, update this header
+ */
+
+/**
+ * [INPUT]: パネル側のグローバル Replicant、NodeCG メッセージ、DOM とキーイベントに依存し、利用ページより先に読み込まれる。
+ * [OUTPUT]: 翻訳、カード画像／名称、操作の追加・更新、色変換、HotkeyManager と操作要約の共通ヘルパーを提供する。
+ * [POS]: dashboard/js の共有基盤。各パネルが持つ状態と extension の操作キューを接続し、共通表示と入力処理を揃える。
+ * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+ */
+
 // dashboard/js/dashboard.js
 
 /**

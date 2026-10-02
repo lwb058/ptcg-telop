@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!--
+[INPUT]: NodeCG の timelineGameplay・timelineDisplay・playbackConfig・playbackStatus・試合時計・カード DB Replicant と、js/dashboard.js の操作要約、css/dashboard.css に依存する。
+[OUTPUT]: 対戦操作と表示操作の履歴編集、シーク・再生制御、試合時計、対戦記録 JSON の読み込み・書き出し UI を提供する。
+[POS]: dashboard の記録編集パネル。インライン処理が二系統のタイムラインを描画し、編集・再生・入出力は extension のメッセージ処理へ委譲する。
+[PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+-->
 <html lang="en">
 
 <head>

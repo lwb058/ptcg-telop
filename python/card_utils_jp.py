@@ -1,4 +1,18 @@
+"""
+Input: sys, os, re, json, time, import_diagnostics, requests, bs4, bs4.BeautifulSoup
+Output: load_database, save_database, parse_energy_icons, get_pokemon_evolution_chain, get_card_details, download_card_image, add_card_to_database
+Pos: Application code
+
+🔄 Self-reference: When this file changes, update this header
+"""
+
+# [INPUT]: 標準ライブラリ、requests・BeautifulSoup、import_diagnostics、日本語公式 HTML と DB・画像保存先に依存し、同梱 libs を優先して読み込む。
+# [OUTPUT]: カード情報の解析・画像取得・DB 更新を提供し、捕捉した例外と資料欠落を段階・カード ID 付き stderr イベントとして親へ返す。
+# [POS]: 日本語取得処理の共通層。extract_deck_cards_jp.py の一括更新と get_single_card_jp.py の単体更新に同じカード形式を供給する。
+# [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+
 import sys, os, re, json,time, sys
+import import_diagnostics as diagnostics
 
 # Get the absolute path of the directory where the script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -61,19 +75,28 @@ def load_database(db_path=None):
     Loads the card database from a local JSON file.
     """
     target_path = db_path if db_path else DATABASE_FILE
-    if not os.path.exists(target_path) or os.path.getsize(target_path) == 0:
-        return {}
-    with open(target_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    since = diagnostics.started("database.read")
+    try:
+        if not os.path.exists(target_path) or os.path.getsize(target_path) == 0:
+            return {}
+        with open(target_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        diagnostics.completed("database.read", since)
+        return data
+    except Exception as error:
+        diagnostics.failed("database.read", error, since=since)
+        raise
 
 def save_database(data, db_path=None):
     """
     Saves the card database to a local JSON file.
     """
     target_path = db_path if db_path else DATABASE_FILE
+    since = diagnostics.started("database.save")
     print(f"DEBUG: save_database called. Data keys count: {len(data)}", file=sys.stderr)
     if not data:
         print("DEBUG: Data to be saved is empty!", file=sys.stderr)
+        diagnostics.warning("database.save", "Empty database was not saved")
         return # Avoid writing an empty file if data is unexpectedly empty
 
     # Use a temporary file for atomic writing
@@ -100,13 +123,18 @@ def save_database(data, db_path=None):
         print(f"DEBUG: Reloaded database immediately after save. Keys count: {len(reloaded_data)}", file=sys.stderr)
 
     except Exception as e:
+        diagnostics.failed("database.save", e, since=since)
         print(f"ERROR: Failed to save database to {target_path}: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc(file=sys.stderr)
     finally:
         # Ensure the temporary file is deleted, even if an error occurs
         if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
+            try:
+                os.remove(temp_file_path)
+            except OSError as error:
+                diagnostics.failed("database.cleanup", error)
+                raise
 
 
 def parse_energy_icons(element):
@@ -207,20 +235,31 @@ def get_card_details(card_id, html_content=None):
         "author": None
     }
     
-    soup = None
-    if html_content:
-        soup = BeautifulSoup(html_content, 'html.parser')
-    else:
+    if not html_content:
+        since = diagnostics.started("card.request", card_id=card_id)
         try:
             detail_url = f"https://www.pokemon-card.com/card-search/details.php/card/{card_id}"
             response = requests.get(detail_url)
             response.raise_for_status()
-            soup = BeautifulSoup(response.text, 'html.parser')
+            diagnostics.completed("card.request", since, card_id=card_id, httpStatus=response.status_code)
+            html_content = response.text
         except requests.exceptions.RequestException as e:
+            diagnostics.failed("card.request", e, card_id=card_id, since=since)
             print(f"Request error: {e}", file=sys.stderr)
             return None
+        except Exception as error:
+            diagnostics.failed("card.request", error, card_id=card_id, since=since)
+            raise
+
+    diagnostics.started("card.parse", card_id=card_id)
+    try:
+        soup = BeautifulSoup(html_content, 'html.parser')
+    except Exception as error:
+        diagnostics.failed("card.parse", error, card_id=card_id)
+        raise
 
     if not soup:
+        diagnostics.warning("card.parse", "Card HTML is empty", card_id=card_id)
         return None
 
     try:
@@ -416,34 +455,52 @@ def get_card_details(card_id, html_content=None):
         elif 'ACE SPEC' in (card_details.get('addRule') or ''):
             card_details['rarity'] = 'ACE'
 
+        if not card_details.get('name'):
+            diagnostics.warning("card.parse", "Card name was not found in HTML", card_id=card_id)
         return card_details
 
     except Exception as e:
+        diagnostics.failed("card.parse", e, card_id=card_id)
         print(f"An unexpected error occurred while parsing card {card_id}: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc(file=sys.stderr)
         return None
 
 def download_card_image(card_id, image_url, language='jp'):
-    if not image_url: return
+    if not image_url:
+        diagnostics.warning("image.download", "Card image URL is missing", card_id=card_id)
+        return
+    diagnostics.started("image.save", card_id=card_id)
     # Construct the language-specific directory name
     card_img_dir_name = f"card_img_{language}"
     target_dir = os.path.join(PROJECT_ROOT, 'nodecg', 'assets', 'ptcg-telop', card_img_dir_name)
 
-    os.makedirs(target_dir, exist_ok=True)
+    try:
+        os.makedirs(target_dir, exist_ok=True)
+    except OSError as error:
+        diagnostics.failed("image.save", error, card_id=card_id)
+        raise
     # Infer image format from server URL, default to .jpg as it's most common
     file_extension = os.path.splitext(image_url)[1] or '.jpg'
     image_path = os.path.join(target_dir, f"{card_id}{file_extension}")
     if not os.path.exists(image_path):
         try:
+            stage = "image.download"
+            since = diagnostics.started("image.download", card_id=card_id)
             response = requests.get(image_url, stream=True)
             response.raise_for_status()
+            diagnostics.started("image.save", card_id=card_id)
+            stage = "image.save"
             with open(image_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
             print(f"Downloaded card image: {os.path.basename(image_path)}", file=sys.stderr)
         except requests.exceptions.RequestException as e:
+            diagnostics.failed("image.download", e, card_id=card_id, since=since)
             print(f"Error downloading card image {card_id}: {e}", file=sys.stderr)
+        except Exception as error:
+            diagnostics.failed(stage, error, card_id=card_id)
+            raise
 
 def _core_process_card(card_id, card_database, overwrite=True, html_content=None, language='jp'):
     if not overwrite and card_id in card_database and card_database[card_id].get('name'):
@@ -451,12 +508,14 @@ def _core_process_card(card_id, card_database, overwrite=True, html_content=None
         return card_database[card_id], 'skipped'
 
     if card_id in card_database and not card_database[card_id].get('name'):
+        diagnostics.warning("card.cache", "Cached card data has no name; fetching again", card_id=card_id)
         print(f"Warning: Card ID {card_id} has corrupted data, forcing re-fetch...", file=sys.stderr)
     
     print(f"Processing card ID {card_id}...", file=sys.stderr)
     card_info = get_card_details(card_id, html_content=html_content)
     
     if not card_info or not card_info.get('name'):
+        diagnostics.warning("card.process", "Card data could not be retrieved or parsed", card_id=card_id)
         print(f"Could not retrieve or parse information for card ID {card_id}.", file=sys.stderr)
         return card_database.get(card_id), 'failed'
 

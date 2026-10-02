@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!--
+[INPUT]: NodeCG のデッキ・カード DB・サイドカード・表示状態 Replicant と、js/dashboard.js、js/deck_importer.js、css/dashboard.css に依存する。
+[OUTPUT]: 左右のデッキ一覧、カード追加・削除、サイドカード割当 UI を提供し、カード表示 Replicant と表示記録メッセージを更新する。
+[POS]: dashboard のデッキ閲覧・表示操作パネル。インライン処理が一覧とドラッグ操作を管理し、取り込みは共有インポーターから extension へ委譲する。
+[PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+-->
 <html lang="en">
 
 <head>

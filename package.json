@@ -1,6 +1,6 @@
 {
   "name": "ptcg-telop",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Pokemon TCG Telop System",
   "main": "extension/index.js",
   "nodecg": {
@@ -157,7 +157,8 @@
     ]
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test extension/*.test.js",
+    "test:python": "python -m unittest discover -s python -p test_*.py"
   },
   "author": "",
   "license": "ISC"

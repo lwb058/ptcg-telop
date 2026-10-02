@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!--
+[INPUT]: NodeCG の live_*・選手名・ターン・camMode・デッキ・設定・テーマ・言語 Replicant、playAnimation / attack-fx 通知、slot-renderer.js と共通 CSS に依存。
+[OUTPUT]: 1920×1080 の対戦盤面、選手・サイド・スタジアム・ロストゾーン・行動表示を描画し、収集した演出 Promise の完了時に animationBatchComplete を送信。
+[POS]: OBS 用のメイン画面。左右のバトル場 0 と通常ベンチ 1–5 を SlotRenderer へ渡し、カメラ表示時の縮小配置と画面全体の攻撃演出を担当する。
+[PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+-->
 <html lang="en">
 
 <head>

@@ -1,10 +1,27 @@
+/**
+ * Input: fs, path, os, https, ./import_diagnostics, ./chs_import, ./legacy_import, ../package.json, ./timeline_manager
+ * Output: None
+ * Pos: Application code
+ *
+ * 🔄 Self-reference: When this file changes, update this header
+ */
+
+/**
+ * [INPUT]: NodeCG の Replicant・メッセージ・logger、Node.js API、バンドル設定、chs_import・legacy_import・import_diagnostics・timeline_manager に依存する。
+ * [OUTPUT]: バンドル初期化関数を提供し、draft/live 盤面、操作キュー、カード取得、設定・資源の読込と更新確認を管理する。
+ * [POS]: extension の起動点と対戦ロジックの所有者。dashboard の指示を受け、graphics の演出完了と同期し、timeline_manager に同じ盤面操作を渡す。
+ * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+ */
+
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { exec, spawn } = require('child_process');
 const https = require('https');
+const { createImportDiagnostics } = require('./import_diagnostics');
+const { createChsImporter } = require('./chs_import');
+const { createLegacyImporter } = require('./legacy_import');
 
 module.exports = function (nodecg) {
 	nodecg.log.info('Bundle ptcg-telop starting up.');
@@ -351,182 +368,90 @@ module.exports = function (nodecg) {
 		}
 	}
 
-	// Helper function to process deck import
-	const processDeckImport = (side, code, callback, progressOptions = { scale: 1, offset: 0 }) => {
-		nodecg.log.info(`[Import Flow] Attempting to import "${code}" as a DECK for Player ${side}.`);
-
-		const pythonDir = path.join(__dirname, '..', 'python');
-		const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
-		const scriptMap = {
-			jp: 'extract_deck_cards_jp.py',
-			chs: 'extract_deck_cards_chs.py',
-			cht: 'extract_deck_cards_cht.py',
-			en: 'extract_deck_cards_en.py',
-		};
-		const pythonScriptFile = scriptMap[lang] || scriptMap.jp;
-		const pythonScriptPath = path.join(pythonDir, pythonScriptFile);
-		const dbFileName = `database_${lang}.json`;
-		const absoluteDbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
-		const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
-
-		const args = [pythonScriptPath, code, '--database-path', absoluteDbPath];
-		// Conditionally add --keep argument based on ptcgSettings.value.forceRefetchDeck
-		if (!(ptcgSettings.value && ptcgSettings.value.forceRefetchDeck)) {
-			args.push('--keep');
-		}
-		const child = spawn(pythonCommand, args, { cwd: pythonDir });
-
-		let stdoutData = '';
-		let stderrData = '';
-		const progressRegex = /--- Processing card (\d+)\/(\d+):/;
-
-		child.stdout.on('data', (data) => {
-			stdoutData += data.toString();
-		});
-
-		child.stderr.on('data', (data) => {
-			const dataStr = data.toString();
-			stderrData += dataStr;
-			const match = dataStr.match(progressRegex);
-			if (match) {
-				const current = parseInt(match[1], 10);
-				const total = parseInt(match[2], 10);
-				// Calculate scaled percentage
-				const rawPercentage = (current / total) * 100;
-				const scaledPercentage = Math.round((rawPercentage * progressOptions.scale) + progressOptions.offset);
-				const text = `${scaledPercentage}%`;
-				deckLoadingStatus.value = { loading: true, side: side, percentage: scaledPercentage, text: text };
-			}
-		});
-
-		child.on('close', (exitCode) => {
-			if (exitCode !== 0) {
-				nodecg.log.warn(`[Import Flow] Failed to import "${code}" as a deck (Exit Code: ${exitCode}).`);
-				if (callback) callback(new Error(`Exit Code: ${exitCode}`));
-				return;
-			}
-
+	// CHS の取得候補は全資料を検証してから既存の状態へ反映する。
+	const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
+	const importDiagnostics = createImportDiagnostics({
+		nodecg, bundleVersion: pjson.version, pythonCommand,
+		logDir: path.join(projectRoot, 'nodecg', 'logs', 'ptcg-telop-diagnostics')
+	});
+	const chsImporter = createChsImporter({
+		pythonDir: path.join(__dirname, '..', 'python'), pythonCommand,
+		databasePath: path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', 'database_chs.json'),
+		diagnostics: importDiagnostics,
+		getSettings: () => ptcgSettings.value || {},
+		onLoading: status => { deckLoadingStatus.value = status; },
+		commit: ({ side, type, code, cards, database }) => {
+			const deckRep = side === 'L' ? deckL : deckR;
+			const idRep = side === 'L' ? deckIdL : deckIdR;
+			const prizeRep = side === 'L' ? prizeCardsL : prizeCardsR;
+			const old = JSON.parse(JSON.stringify({ database: cardDatabase.value,
+				deck: deckRep.value, id: idRep.value, prizes: prizeRep.value }));
 			try {
-				const deckCards = JSON.parse(stdoutData);
-				const deckReplicant = side === 'L' ? deckL : deckR;
-				nodecg.log.info(`Deck for Player ${side} processed. Reloading database.`);
-				loadCardDatabase();
-				deckReplicant.value = { name: code, cards: deckCards.cards };
-
-				// Clear prize cards for this side when loading a new deck
-				const prizeRep = nodecg.Replicant(`prizeCards${side}`);
-				prizeRep.value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
-				nodecg.log.info(`Prize cards cleared for Player ${side} due to new deck load.`);
-
-				nodecg.log.info(`Database reloaded and deck for Player ${side} updated.`);
-				deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
-				if (callback) callback(null, `Deck for Player ${side} updated.`);
-			} catch (parseError) {
-				nodecg.log.warn(`[Import Flow] Failed to parse deck output for "${code}".`);
-				if (callback) callback(parseError);
-			}
-		});
-
-		child.on('error', (err) => {
-			nodecg.log.error(`[Import Flow] Failed to start subprocess for deck import: ${err.message}.`);
-			if (callback) callback(err);
-		});
-	};
-
-	// Listen for messages to process deck codes or single card IDs
-	nodecg.listenFor('importDeckOrCard', ({ side, code }, callback) => {
-		// Try to import as deck first
-		processDeckImport(side, code, (err, result) => {
-			if (!err) {
-				if (callback) callback(null, result);
-			} else {
-				// Fallback to single card import
-				nodecg.log.warn(`[Import Flow] Deck import failed, falling back to single card import. Error: ${err.message}`);
-				trySingleCardImport();
-			}
-		});
-
-		const trySingleCardImport = () => {
-			const sanitizedCardId = code.replace('/', '-');
-			nodecg.log.info(`[Import Flow] Attempting to import "${code}" (sanitized to ${sanitizedCardId}) as a SINGLE CARD for Player ${side}.`);
-
-			const deckReplicant = side === 'L' ? deckL : deckR;
-			const db = cardDatabase.value;
-
-			const addCardToDeck = (idToAdd) => {
-				if (!Array.isArray(deckReplicant.value.cards)) deckReplicant.value.cards = [];
-				if (!deckReplicant.value.cards.includes(idToAdd)) {
-					deckReplicant.value.cards = [...deckReplicant.value.cards, idToAdd];
-					nodecg.log.info(`Card ${idToAdd} added to Player ${side}'s deck.`);
+				cardDatabase.value = { ...old.database, ...database };
+				if (type === 'deck') {
+					deckRep.value = { name: code, cards };
+					idRep.value = code;
+					prizeRep.value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
 				} else {
-					nodecg.log.info(`Card ${idToAdd} is already in Player ${side}'s deck.`);
+					deckRep.value = { ...old.deck, cards: [...new Set([...(old.deck.cards || []), ...cards])] };
 				}
-				deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
-				if (callback) callback(null, 'Card added to deck.');
-			};
-
-			if (db && db[sanitizedCardId] && db[sanitizedCardId].name) {
-				nodecg.log.info(`Card ${sanitizedCardId} found in database. Adding to deck.`);
-				addCardToDeck(sanitizedCardId);
-			} else {
-				nodecg.log.info(`Card ${sanitizedCardId} not in database. Fetching with Python...`);
-				const pythonDir = path.join(__dirname, '..', 'python');
-				deckLoadingStatus.value = { loading: true, side: side, percentage: 0, text: 'Fetching...' };
-
-				const lang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
-				const scriptMap = {
-					jp: 'get_single_card_jp.py',
-					chs: 'get_single_card_chs.py',
-					cht: 'get_single_card_cht.py',
-					en: 'get_single_card_en.py',
-				};
-				const pythonScriptFile = scriptMap[lang] || scriptMap.jp;
-				const pythonScriptPath = path.join(pythonDir, pythonScriptFile);
-				const dbFileName = `database_${lang}.json`;
-				const absoluteDbPath = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', dbFileName);
-				const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
-
-				const args = [pythonScriptPath, sanitizedCardId, '--database-path', absoluteDbPath];
-				const child = spawn(pythonCommand, args, { cwd: pythonDir });
-
-				let stderrData = '';
-				child.stderr.on('data', (data) => {
-					stderrData += data.toString();
-				});
-
-				child.on('close', (exitCode) => {
-					if (exitCode !== 0) {
-						nodecg.log.error(`[Import Flow] Failed to fetch card ${sanitizedCardId} (Exit Code: ${exitCode}).`);
-						nodecg.log.error(`Stderr: ${stderrData}`);
-						deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
-						if (callback) callback(new Error(`Failed to fetch card. Exit code: ${exitCode}`));
-						return;
-					}
-
-					nodecg.log.info(`Python script for ${sanitizedCardId} finished. Reloading database.`);
-					loadCardDatabase();
-
-					setTimeout(() => {
-						if (cardDatabase.value && cardDatabase.value[sanitizedCardId] && cardDatabase.value[sanitizedCardId].name) {
-							addCardToDeck(sanitizedCardId);
-						} else {
-							nodecg.log.error(`[Import Flow] FINAL FAILURE: Script ran for "${sanitizedCardId}" but it was not added to the database.`);
-							deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
-							if (callback) callback(new Error(`Failed to fetch card ${sanitizedCardId}.`));
-						}
-					}, 200);
-				});
-
-				child.on('error', (err) => {
-					nodecg.log.error(`[Import Flow] Failed to start subprocess for single card import: ${err.message}`);
-					deckLoadingStatus.value = { loading: false, side: null, percentage: 0, text: '' };
-					if (callback) callback(err);
-				});
+			} catch (error) {
+				cardDatabase.value = old.database;
+				deckRep.value = old.deck;
+				idRep.value = old.id;
+				prizeRep.value = old.prizes;
+				throw error;
 			}
-		};
+		}
+	});
+	const replyChsImport = (request, callback) => chsImporter.run(request).then(
+		result => {
+			nodecg.log.info(`[CHS import ${result.diagnosticId}] ${result.type}: ${result.status}`);
+			if (callback) callback(null, result);
+		},
+		error => {
+			nodecg.log.warn(`[CHS import ${error.diagnosticId || 'busy'}] ${error.message}`);
+			if (callback) callback(error);
+		}
+	);
+	const legacyImporter = createLegacyImporter({
+		pythonDir: path.join(__dirname, '..', 'python'), pythonCommand,
+		diagnostics: importDiagnostics, getSettings: () => ptcgSettings.value || {},
+		databasePathFor: language => path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', `database_${language}.json`),
+		reloadDatabase: loadCardDatabase, getDatabase: () => cardDatabase.value,
+		getDeck: side => (side === 'L' ? deckL : deckR).value,
+		commitDeck: (side, code, cards) => {
+			(side === 'L' ? deckL : deckR).value = { name: code, cards };
+			(side === 'L' ? prizeCardsL : prizeCardsR).value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
+		},
+		onLoading: status => { deckLoadingStatus.value = status; }
+	});
+	const replyLegacyImport = (request, callback) => legacyImporter.run(request).then(
+		result => { if (callback) callback(null, result); },
+		error => { if (callback) callback(error); }
+	);
+	nodecg.listenFor('exportImportDiagnostics', (_data, callback) => {
+		importDiagnostics.exportArchive().then(
+			archive => { if (callback) callback(null, archive); },
+			error => { if (callback) callback({ error: '诊断包导出失败，请重试。', message: error.message }); }
+		);
 	});
 
+	// ---- 全 CLI の取得とタイムライン再取得を診断境界へ接続する ----
+	const replyImport = (request, callback) => {
+		const language = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
+		if (language === 'chs') return replyChsImport(request, callback);
+		if (chsImporter.isBusy()) {
+			const message = '已有导入正在进行，请等待完成后重试。';
+			if (callback) callback({ error: message, message });
+			return;
+		}
+		return replyLegacyImport(request, callback);
+	};
+	const processDeckImport = (side, code, callback, progressOptions = { scale: 1, offset: 0 }) =>
+		replyImport({ side, code, allowCardFallback: false, progressOptions }, callback);
 
+	nodecg.listenFor('importDeckOrCard', ({ side, code }, callback) => replyImport({ side, code }, callback));
 
 	nodecg.listenFor('removeCardFromDeck', ({ side, cardId }, callback) => {
 		nodecg.log.info(`Request to remove card ${cardId} from Player ${side}'s deck.`);

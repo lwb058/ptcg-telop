@@ -1,5 +1,19 @@
+"""
+Input: sys, os, argparse, import_diagnostics, card_utils_jp, card_utils_jp.add_card_to_database, card_utils_jp.get_card_details, card_utils_jp.save_database, card_utils_jp.load_database
+Output: main
+Pos: Application code
+
+🔄 Self-reference: When this file changes, update this header
+"""
+
+# [INPUT]: 標準 CLI・ファイル処理、import_diagnostics、card_utils_jp のカード解析・DB 更新に依存し、--file では保存済み HTML を受け取る。
+# [OUTPUT]: 従来の単体カード表示と DB 更新を保ち、入力ファイル障害と結果欠落を import_diagnostics の stderr イベントとして親へ返す。
+# [POS]: extension/index.js の日本語単体カード取得入口。デッキとして解釈できなかった入力を処理し、親プロセスは終了後に DB を再読込する。
+# [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+
 import sys, os, argparse
-sys.stdout.reconfigure(encoding='utf-8')
+import import_diagnostics as diagnostics
+diagnostics.configure_streams()
 
 # Get the absolute path of the directory where the script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -45,7 +59,9 @@ def main(card_id_arg=None):
     updated = False
 
     if args.file:
+        diagnostics.started("input.file")
         if not os.path.exists(args.file):
+            diagnostics.failed("input.file", FileNotFoundError(f"Input HTML file does not exist: {args.file}"))
             print(f"Error: File '{args.file}' does not exist.")
             sys.exit(1)
         
@@ -76,6 +92,7 @@ def main(card_id_arg=None):
         if not card_id:
             card_id = input("Please enter the Card ID: ")
             if not card_id:
+                diagnostics.warning("input", "No card ID was provided")
                 print("No Card ID entered, exiting.")
                 sys.exit(1)
         
@@ -93,6 +110,7 @@ def main(card_id_arg=None):
         print(json.dumps(card_info, indent=2, ensure_ascii=False))
 
     else:
+        diagnostics.warning("result", "Card could not be processed", card_id=card_id)
         print(f"Failed to process the card.")
         sys.exit(1)
 

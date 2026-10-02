@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!--
+[INPUT]: css/dashboard.css、Bootstrap 5.3.3、js/dashboard.js、js/deck_importer.js、js/player_panel.js と NodeCG のブラウザー環境に依存する。
+[OUTPUT]: 右プレイヤーの名前・デッキ・行動状態・サイド・場のカードを操作する DOM を提供し、DOMContentLoaded で setupPlayerPanel('R') を開始する。
+[POS]: dashboard の右側パネル入口。画面骨格を持ち、Replicant 同期と対戦操作は左側と共通の player_panel.js に集約する。
+[PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">

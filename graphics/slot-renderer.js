@@ -1,4 +1,12 @@
 /**
+ * Input: None
+ * Output: None
+ * Pos: Application code
+ *
+ * 🔄 Self-reference: When this file changes, update this header
+ */
+
+/**
  * SlotRenderer — Shared bench/slot rendering logic for main.html and extra.html.
  * Extracted from main.html (ground truth) to eliminate code divergence.
  *

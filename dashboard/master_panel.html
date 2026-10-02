@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!--
+[INPUT]: NodeCG の draft_*・selections・operationQueue・デッキ・カード DB・設定 Replicant と、js/dashboard.js、js/attack_sources.js、js/shortcut.js、css/dashboard.css に依存する。
+[OUTPUT]: 左右の盤面、特性によるベンチからの借用を含むワザ選択、ダメージ・エネルギー・どうぐ・スタジアムの操作 UI を提供し、編集を操作キューへ送る。
+[POS]: dashboard の盤面編集パネル。ワザの探索・重複排除は attack_sources.js に委ね、インライン処理は出所グループの描画・折り畳み・選択とドラッグ操作を統合する。スタジアム画像は非回転の外枠へ渡し、盤面の回転と分離する。
+[PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+-->
 <html lang="en">
 
 <head>
@@ -217,6 +223,7 @@
         </div>
     </div>
     <script src="js/dashboard.js"></script>
+    <script src="js/attack_sources.js"></script>
     <script src="js/shortcut.js"></script>
     <script>
         // --- Global Replicant Declarations ---
@@ -1854,44 +1861,16 @@
              * This is the single source of truth for damage calculation.
              */
             function recalculateFinalDamage() {
-                const db = cardDatabase.value;
-                const attackerSlotId = getResolvedAttackerSlotId();
-                const attackName = selectedAttackState.name;
-
-                // 1. Determine Base Damage from the selected attack
+                // ---- 選択したワザを唯一の基準とし、借用元や同名ワザを取り違えない ----
+                const selectedAttack = selectedAttackState.data;
                 let baseDamage = 0;
-                if (db && attackerSlotId && attackName) {
-                    const attackerSlotReplicant = slots.find(s => s.name === `draft_${attackerSlotId}`);
-                    const attackerCardId = attackerSlotReplicant?.value?.cardId;
-                    const attachedToolIds = attackerSlotReplicant?.value?.attachedToolIds || [];
-
-                    if (attackerCardId && db[attackerCardId]) {
-                        const cardData = db[attackerCardId];
-                        let allAttacks = [];
-                        if (cardData.pokemon?.attacks) {
-                            allAttacks.push(...cardData.pokemon.attacks);
-                        }
-                        attachedToolIds.forEach(toolId => {
-                            if (db[toolId]?.trainer?.attacks) {
-                                allAttacks.push(...db[toolId].trainer.attacks);
-                            }
-                        });
-
-                        const selectedAttack = allAttacks.find(attack => attack.name === attackName);
-
-                        if (selectedAttack) {
-                            if (selectedAttack.damage) {
-                                const damageString = String(selectedAttack.damage);
-                                const match = damageString.match(/\d+/);
-                                baseDamage = match ? parseInt(match[0], 10) : 0;
-                            } else if (selectedAttack.text) {
-                                const regex = /匹に、(?:それぞれ)?(\d+)ダメージ。/;
-                                const textMatch = selectedAttack.text.match(regex);
-                                if (textMatch && textMatch[1]) {
-                                    baseDamage = parseInt(textMatch[1], 10);
-                                }
-                            }
-                        }
+                if (selectedAttack) {
+                    if (selectedAttack.damage) {
+                        const match = String(selectedAttack.damage).match(/\d+/);
+                        baseDamage = match ? parseInt(match[0], 10) : 0;
+                    } else if (selectedAttack.text) {
+                        const textMatch = selectedAttack.text.match(/匹に、(?:それぞれ)?(\d+)ダメージ。/);
+                        if (textMatch) baseDamage = parseInt(textMatch[1], 10);
                     }
                 }
 
@@ -1984,89 +1963,14 @@
             weaknessCheck.addEventListener('change', recalculateFinalDamage);
             resistanceCheck.addEventListener('change', recalculateFinalDamage);
 
-            /**
-             * Finds all attacks for a Pokémon and its entire pre-evolution line by
-             * searching within the combined decks. This version correctly handles multiple
-             * cards with the same name (e.g., different Ralts cards).
-             * @param {string} cardId - The starting card ID from the slot.
-             * @param {object} db - The full card database.
-             * @param {Array<string>} deckCardIds - An array of all card IDs in both decks.
-             * @returns {Array} An array of attack objects.
-             */
-            function getAllAttacksForPokemon(cardId, db, deckCardIds) {
-                const startCardData = db[cardId];
-                if (!cardId || !db || !startCardData) {
-                    return [];
-                }
-
-                let allAttacks = [];
-                // 1. Add attacks from the starting Pokémon, tagging them with the source name.
-                if (startCardData.pokemon?.attacks) {
-                    const attacksWithSource = startCardData.pokemon.attacks.map(attack => ({
-                        ...attack,
-                        source: startCardData.name
-                    }));
-                    allAttacks.push(...attacksWithSource);
-                }
-
-                // 2. Prepare a queue to process the names of all pre-evolutions.
-                const namesToProcess = new Set();
-                if (startCardData.pokemon?.evolvesFrom) {
-                    startCardData.pokemon.evolvesFrom.forEach(name => namesToProcess.add(name));
-                }
-
-                const processedNames = new Set();
-
-                // 3. Iterate through the pre-evolution name queue, finding all matching cards in the deck.
-                while (namesToProcess.size > 0) {
-                    // Get the next name from the queue
-                    const currentName = namesToProcess.values().next().value;
-                    namesToProcess.delete(currentName);
-
-                    // If this name has already been processed, skip to prevent infinite loops.
-                    if (processedNames.has(currentName)) {
-                        continue;
-                    }
-                    processedNames.add(currentName);
-
-                    // Find all cards in the deck with the same name as the current pre-evolution.
-                    const matchingPreEvoIds = deckCardIds.filter(id => db[id] && db[id].name === currentName);
-
-                    matchingPreEvoIds.forEach(preEvoCardId => {
-                        const cardData = db[preEvoCardId];
-                        if (cardData) {
-                            // Add its attacks, tagging them with the source name.
-                            if (cardData.pokemon?.attacks) {
-                                const attacksWithSource = cardData.pokemon.attacks.map(attack => ({
-                                    ...attack,
-                                    source: cardData.name
-                                }));
-                                allAttacks.push(...attacksWithSource);
-                            }
-                            // Add its pre-evolution names to the queue for the next round of processing.
-                            if (cardData.pokemon?.evolvesFrom) {
-                                cardData.pokemon.evolvesFrom.forEach(name => {
-                                    if (!processedNames.has(name)) { // Optimization
-                                        namesToProcess.add(name);
-                                    }
-                                });
-                            }
-                        }
-                    });
-                }
-                return allAttacks;
-            }
-
-
             function updateAttackVisualList() {
                 attackVisualList.innerHTML = '';
                 setEffectText('');
                 selectedAttackState = { name: null, data: null };
-                const TM_SOURCE_ID = '-TM-';
+                damageInput.value = 0;
 
                 const attackerSlotId = getResolvedAttackerSlotId();
                 if (!attackerSlotId) {
-                    damageInput.value = 0;
                     return;
                 }
 
@@ -2075,13 +1979,11 @@
                 if (!attackerSlotReplicant || !attackerSlotReplicant.value) return;
 
                 const attackerCardId = attackerSlotReplicant.value.cardId;
-                const attachedToolIds = attackerSlotReplicant.value.attachedToolIds || [];
 
                 if (!attackerCardId || !db) return;
 
                 const attackerCardData = db[attackerCardId];
                 if (!attackerCardData) return;
-                const attackerName = attackerCardData.name;
 
                 // --- Abilities ---
                 const abilities = attackerCardData.pokemon?.abilities || [];
@@ -2106,40 +2008,10 @@
                     attackVisualList.appendChild(row);
                 });
 
-                // --- Gather all attacks ---
-                const deckLIds = deckL.value?.cards || [];
-                const deckRIds = deckR.value?.cards || [];
-                const combinedDeckIds = [...new Set([...deckLIds, ...deckRIds])];
-
-                let allAttacks = getAllAttacksForPokemon(attackerCardId, db, combinedDeckIds);
-
-                attachedToolIds.forEach(toolId => {
-                    if (db[toolId]?.trainer?.attacks) {
-                        const toolAttacks = db[toolId].trainer.attacks.map(attack => ({
-                            ...attack,
-                            source: TM_SOURCE_ID
-                        }));
-                        allAttacks.push(...toolAttacks);
-                    }
+                const attackGroups = getAttackGroups({
+                    attackerSlotId, slots, db,
+                    deckCardIds: [...(deckL.value?.cards || []), ...(deckR.value?.cards || [])]
                 });
-
-                // Dedup
-                const uniqueAttackNames = new Set();
-                const uniqueAttacks = allAttacks.filter(attack => {
-                    if (attack.name && !uniqueAttackNames.has(attack.name)) {
-                        uniqueAttackNames.add(attack.name);
-                        return true;
-                    }
-                    return false;
-                });
-
-                // Group by source
-                const groupedAttacks = uniqueAttacks.reduce((acc, attack) => {
-                    const source = attack.source;
-                    if (!acc[source]) acc[source] = [];
-                    acc[source].push(attack);
-                    return acc;
-                }, {});
 
                 let firstClickableRow = null;
                 let firstClickableAttack = null;
@@ -2168,46 +2040,41 @@
                     return row;
                 };
 
-                // 1. Current Pokémon attacks
-                if (groupedAttacks[attackerName]) {
-                    groupedAttacks[attackerName].forEach(attack => {
-                        attackVisualList.appendChild(renderAttackRow(attack));
-                    });
-                    delete groupedAttacks[attackerName];
-                }
-
-                // 2. TM attacks
-                if (groupedAttacks[TM_SOURCE_ID]) {
-                    const header = document.createElement('div');
-                    header.className = 'attack-section-header';
-                    header.textContent = getI18nText('tm');
-                    attackVisualList.appendChild(header);
-                    groupedAttacks[TM_SOURCE_ID].forEach(attack => {
-                        attackVisualList.appendChild(renderAttackRow(attack));
-                    });
-                    delete groupedAttacks[TM_SOURCE_ID];
-                }
-
-                // 3. Pre-evolution attacks (collapsible)
-                Object.keys(groupedAttacks).forEach(sourceName => {
-                    const header = document.createElement('div');
-                    header.className = 'attack-section-header collapsible';
-                    header.textContent = `▶ ${sourceName}`;
-                    let collapsed = true;
-                    const rows = [];
-
-                    attackVisualList.appendChild(header);
-                    groupedAttacks[sourceName].forEach(attack => {
-                        const row = renderAttackRow(attack, 'attack-preevo-row collapsed');
-                        rows.push(row);
+                // ---- 出所の種類に応じた見出しを作り、全グループで同じ行描画を使う ----
+                attackGroups.forEach(group => {
+                    const collapsible = group.type === 'preEvolution';
+                    let header;
+                    if (group.type !== 'own') {
+                        header = document.createElement('div');
+                        header.className = `attack-section-header${collapsible ? ' collapsible' : ''}`;
+                        if (collapsible) {
+                            header.textContent = `▶ ${group.name}`;
+                        } else {
+                            const label = document.createElement('span');
+                            label.dataset.i18n = group.type === 'tm' ? 'tm' : 'bench_attacks';
+                            label.textContent = getI18nText(label.dataset.i18n);
+                            header.appendChild(label);
+                            if (group.type === 'bench') {
+                                const source = document.createElement('span');
+                                source.textContent = ` ${group.slotId.slice(-1)} · ${group.name}`;
+                                header.appendChild(source);
+                            }
+                        }
+                        attackVisualList.appendChild(header);
+                    }
+                    const rows = group.attacks.map(attack => {
+                        const row = renderAttackRow(attack, collapsible ? 'attack-preevo-row collapsed' : '');
                         attackVisualList.appendChild(row);
+                        return row;
                     });
-
-                    header.addEventListener('click', () => {
-                        collapsed = !collapsed;
-                        header.textContent = `${collapsed ? '▶' : '▼'} ${sourceName}`;
-                        rows.forEach(r => r.classList.toggle('collapsed', collapsed));
-                    });
+                    if (collapsible) {
+                        let collapsed = true;
+                        header.addEventListener('click', () => {
+                            collapsed = !collapsed;
+                            header.textContent = `${collapsed ? '▶' : '▼'} ${group.name}`;
+                            rows.forEach(row => row.classList.toggle('collapsed', collapsed));
+                        });
+                    }
                 });
 
                 // Auto-select first clickable attack
@@ -2512,9 +2379,9 @@
                 const stadium = draft_stadium.value;
                 if (stadium && stadium.cardId) {
                     const imageUrl = getCardImageUrl(stadium.cardId);
-                    battleField.style.setProperty('--stadium-background-image', `url('${imageUrl}')`);
+                    battleFieldWrapper.style.setProperty('--stadium-background-image', `url('${imageUrl}')`);
                 } else {
-                    battleField.style.removeProperty('--stadium-background-image');
+                    battleFieldWrapper.style.removeProperty('--stadium-background-image');
                 }
             }
 

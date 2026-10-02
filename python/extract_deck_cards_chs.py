@@ -1,163 +1,132 @@
-import sys, json, re, os, time, argparse
+"""
+Input: argparse, re, sys, time, import_diagnostics, card_utils_chs, card_utils_chs.(add_card_to_database, card_utils_chs.card_data_available, card_utils_chs.
+Output: fetch_deck_by_code, fetch_deck_by_id, main
+Pos: Application code
 
-# Get the absolute path of the directory where the script is located
-script_dir = os.path.dirname(os.path.abspath(__file__))
-# Construct the absolute path to the 'libs' directory
-libs_dir = os.path.join(script_dir, 'libs')
+🔄 Self-reference: When this file changes, update this header
+"""
 
-# Add the 'libs' directory to the Python path
-if libs_dir not in sys.path:
-    sys.path.insert(0, libs_dir)
+# [INPUT]: CLI 引数、card_utils_chs の API・キャッシュ・原子的保存、import_diagnostics の stderr イベントに依存する。
+# [OUTPUT]: デッキコード／数値 ID／URL と --overwrite/--keep を受け、cards・missingCards・missingImages・warnings・databaseSaved・status の単一 JSON を返す。
+# [POS]: extension が起動する CHS デッキ入口。カード資料不足でも有効キャッシュは保存し、読み込み状態の確定は親側へ委ねる。
+# [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
 
-# -*- coding: utf-8 -*-
-import requests
-from card_utils_chs import add_card_to_database, load_database, save_database
+import argparse
+import re
+import sys
+import time
+
+import import_diagnostics as diagnostics
+from card_utils_chs import (add_card_to_database, card_data_available,
+                            card_image_available, load_database, normalize_card_id,
+                            request_json, save_database)
+
 
 def _identifier_type(identifier):
-    """Determines if the identifier is a deckCode, deckId, or a URL."""
     if identifier.startswith('http'):
         return 'url'
-    if re.match(r'^[0-9]+$', identifier):
+    if re.fullmatch(r'[0-9]+', identifier):
         return 'deckId'
     return 'deckCode'
 
+
 def fetch_deck_by_code(deck_code):
-    """
-    Fetches a deck list from the tcg.mik.moe API using a deck code.
-    """
-    print(f"Fetching deck with code: {deck_code}...", file=sys.stderr)
-    url = "https://tcg.mik.moe/api/v3/deck/export-miniapp"
-    payload = {"deckCode": deck_code}
-    return _fetch_deck_data(url, payload, deck_code)
+    return _fetch_deck_data("https://tcg.mik.moe/api/v3/deck/export-miniapp",
+                            {"deckCode": deck_code}, deck_code)
+
 
 def fetch_deck_by_id(deck_id):
-    """
-    Fetches a deck list from the tcg.mik.moe API using a numeric deck ID.
-    """
-    print(f"Fetching deck with ID: {deck_id}...", file=sys.stderr)
-    url = "https://tcg.mik.moe/api/v3/deck/detail"
-    payload = {"deckId": int(deck_id)}
-    return _fetch_deck_data(url, payload, deck_id)
+    return _fetch_deck_data("https://tcg.mik.moe/api/v3/deck/detail",
+                            {"deckId": int(deck_id)}, deck_id)
+
 
 def _fetch_deck_data(url, payload, identifier):
-    """Generic function to fetch deck data from a given API endpoint."""
-    headers = {
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
-    }
     try:
-        response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        response.encoding = 'utf-8'
-        api_response = response.json()
-
-        if api_response and api_response.get("code") == 200:
-            card_list = api_response.get("data", {}).get("cards", [])
-            if card_list:
-                print(f"Successfully fetched {len(card_list)} unique cards from the deck.", file=sys.stderr)
-                return card_list
-            else:
-                print("API response successful, but the deck contains no cards.", file=sys.stderr)
-                return []
-        else:
-            print(f"API returned an error: {api_response.get('msg')}", file=sys.stderr)
-            return None
-
-    except requests.exceptions.RequestException as e:
-        print(f"API request error for identifier {identifier}: {e}", file=sys.stderr)
-        return None
-    except json.JSONDecodeError:
-        print(f"Failed to decode JSON from API response for identifier {identifier}.", file=sys.stderr)
+        response = request_json(url, payload, "deck")
+        cards = response['data'].get('cards')
+        if not isinstance(cards, list) or not cards:
+            raise ValueError("Deck response contains no cards or an invalid card list")
+        return cards
+    except Exception as error:
+        if not getattr(error, '_ptcg_recorded_stage', None):
+            diagnostics.failed("deck.parse", error)
         return None
 
-def main(identifier_arg=None):
-    """
-    Main function to run the script.
-    """
+
+def _expected_cards(card_list):
+    """繰り返し行は維持し、明示された枚数だけを展開する。"""
+    expected = []
+    for card in card_list:
+        if not isinstance(card, dict) or not card.get('setCode') or not card.get('cardIndex'):
+            raise ValueError("Deck entry is missing setCode or cardIndex")
+        card_id = normalize_card_id(f"{card['setCode']}-{card['cardIndex']}")
+        quantity = card.get('quantity', card.get('count', 1))
+        if isinstance(quantity, bool) or str(quantity) != str(int(quantity)) or not 1 <= int(quantity) <= 1000:
+            raise ValueError("Deck entry contains an invalid card quantity")
+        expected.extend([card_id] * int(quantity))
+        if len(expected) > 1000:
+            raise ValueError("Deck response exceeds the supported card count")
+    return expected
+
+
+def main(identifier_arg=None, argv=None):
     parser = argparse.ArgumentParser(description="Extract deck data from tcg.mik.moe.")
-    parser.add_argument("identifier", nargs='?', default=identifier_arg, help="The deck code, deck ID, or URL.")
-    parser.add_argument("--database-path", type=str, default=None, help="Path to the database JSON file.")
-    
-    overwrite_group = parser.add_mutually_exclusive_group()
-    overwrite_group.add_argument("--overwrite", dest="overwrite", action="store_true", help="Force overwrite if card exists in the database (default behavior).")
-    overwrite_group.add_argument("--keep", dest="overwrite", action="store_false", help="Skip writing if card exists in the database.")
+    parser.add_argument("identifier", nargs='?', default=identifier_arg,
+                        help="The deck code, deck ID, or URL.")
+    parser.add_argument("--database-path", type=str, default=None,
+                        help="Path to the database JSON file.")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--overwrite", dest="overwrite", action="store_true")
+    group.add_argument("--keep", dest="overwrite", action="store_false")
     parser.set_defaults(overwrite=True)
-    
-    args = parser.parse_args()
-
-    identifier = args.identifier
-    if not identifier:
-        if identifier_arg:
-            identifier = identifier_arg
+    args = parser.parse_args(argv)
+    expected, missing_cards, missing_images = [], [], []
+    diagnostics.emit("input", "started", input=args.identifier)
+    stage = "input"
+    try:
+        if not args.identifier:
+            raise ValueError("No deck code, deck ID, or URL provided")
+        kind = _identifier_type(args.identifier)
+        diagnostics.emit("input", "completed", inputType=kind)
+        if kind == 'url':
+            match = re.search(r'/decks/(\d+)', args.identifier)
+            if not match:
+                raise ValueError("Could not extract a valid deck ID from the URL")
+            card_list = fetch_deck_by_id(match.group(1))
+        elif kind == 'deckId':
+            card_list = fetch_deck_by_id(args.identifier)
         else:
-            print("Usage: python extract_deck_cards_chs.py <deck_code|deck_id|url> [--overwrite]", file=sys.stderr)
-            sys.exit(1)
+            card_list = fetch_deck_by_code(args.identifier)
+        if card_list is None:
+            return diagnostics.result(fatal=True)
+        stage = "deck.parse"
+        expected = _expected_cards(card_list)
+    except Exception as error:
+        diagnostics.failed(stage, error)
+        return diagnostics.result(cards=expected, fatal=True)
+    try:
+        database = load_database(db_path=args.database_path)
+    except Exception:
+        return diagnostics.result(cards=expected, fatal=True)
+    changed = False
+    unique_cards = list(dict.fromkeys(expected))
+    for index, card_id in enumerate(unique_cards):
+        print(f"--- Processing card {index + 1}/{len(unique_cards)}: {card_id} ---", file=sys.stderr, flush=True)
+        try:
+            info, status = add_card_to_database(card_id, overwrite=args.overwrite, db_instance=database)
+            changed = changed or status == 'updated'
+            if not card_data_available(info):
+                missing_cards.append(card_id)
+            elif not card_image_available(card_id, info):
+                missing_images.append(card_id)
+        except Exception as error:
+            diagnostics.failed("card.process", error, card_id=card_id)
+            missing_cards.append(card_id)
+        if index + 1 < len(unique_cards):
+            time.sleep(0.5)
+    saved = save_database(database, db_path=args.database_path) if changed else True
+    return diagnostics.result(expected, missing_cards, missing_images, saved)
 
-    overwrite = args.overwrite
-    
-    id_type = _identifier_type(identifier)
-    card_list_from_api = None
-
-    if id_type == 'url':
-        match = re.search(r'/decks/(\d+)', identifier)
-        if match:
-            deck_id = match.group(1)
-            card_list_from_api = fetch_deck_by_id(deck_id)
-        else:
-            print(f"Could not extract a valid deck ID from the URL: {identifier}", file=sys.stderr)
-    elif id_type == 'deckId':
-        card_list_from_api = fetch_deck_by_id(identifier)
-    elif id_type == 'deckCode':
-        card_list_from_api = fetch_deck_by_code(identifier)
-    else:
-        print(f"Unknown identifier format: {identifier}", file=sys.stderr)
-
-    if card_list_from_api is None:
-        print("Could not fetch deck data. Exiting.", file=sys.stderr)
-        sys.exit(1)
-
-    if not card_list_from_api:
-        print("No cards to process. Exiting.", file=sys.stderr)
-        sys.exit(1)
-
-    # --- Database Update Logic ---
-    card_database = load_database(db_path=args.database_path)
-    db_changed = False
-    for i, card in enumerate(card_list_from_api):
-        set_code = card.get('setCode')
-        card_index = card.get('cardIndex')
-        
-        if not set_code or not card_index:
-            print(f"Skipping a card due to missing setCode or cardIndex: {card}", file=sys.stderr)
-            continue
-
-        card_id = f"{set_code}-{card_index}"
-        print(f"--- Processing card {i+1}/{len(card_list_from_api)}: {card_id} ---", file=sys.stderr)
-
-        card_info, status = add_card_to_database(card_id, overwrite=overwrite, db_instance=card_database)
-        
-        if status == 'updated':
-            db_changed = True
-        
-        time.sleep(0.5)
-
-    if db_changed:
-        print("\nSaving updated database to file...", file=sys.stderr)
-        save_database(card_database, db_path=args.database_path)
-        print("Database save complete.", file=sys.stderr)
-    else:
-        print("\nNo changes to the database were made.", file=sys.stderr)
-
-    # --- Deck Data JSON Output Logic ---
-    final_deck_card_ids = [
-        f"{card.get('setCode')}-{card.get('cardIndex')}"
-        for card in card_list_from_api
-        if card.get('setCode') and card.get('cardIndex')
-    ]
-    deck_output = {"cards": final_deck_card_ids}
-    
-    # Print the final JSON object to stdout for Node.js to capture
-    print(json.dumps(deck_output, ensure_ascii=False))
 
 if __name__ == "__main__":
-    main()
+    diagnostics.run_cli(main)

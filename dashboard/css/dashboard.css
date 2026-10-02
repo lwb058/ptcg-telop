@@ -1,3 +1,9 @@
+/**
+ * [INPUT]: dashboard の 7 HTML と各パネル処理が生成する DOM、状態クラス、カード・操作・設定用のセレクターに依存する。
+ * [OUTPUT]: パネル共通のフォーム・ボタンと、盤面・操作履歴・デッキ一覧・サイドカード・設定画面のレイアウトおよび状態表示を提供する。
+ * [POS]: dashboard/css の共有スタイルシート。各 HTML から直接読み込まれ、操作側の状態を見た目へ反映する。スタジアム背景は回転しない外枠に描画し、盤面の視点から分離する。
+ * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+ */
 /* Basic styling for the panel */
 body {
     font-family: sans-serif;
@@ -841,7 +847,6 @@ body.dragging-energy .manual-attach-zone {
     padding: 2px;
     border: 1px solid #ccc;
     border-radius: 0px 0px 4px 4px;
-    background-color: #255bc0;
     flex-grow: 1;
     height: 430px;
     overflow-y: auto;
@@ -849,7 +854,10 @@ body.dragging-energy .manual-attach-zone {
     scrollbar-color: #ccc #f0f2f5;
 }
 
-#battle-field {
+#battle-field-wrapper {
+    position: relative;
+    border-radius: 0px 0px 4px 4px;
+    background-color: #255bc0;
     background-image:
         linear-gradient(#255bc0de, #255bc0de),
         var(--stadium-background-image);
@@ -873,10 +881,6 @@ body.dragging-energy .manual-attach-zone {
 }
 
 /* === Spectator View Rotation === */
-#battle-field-wrapper {
-    position: relative;
-}
-
 #battle-field-wrapper.spectator-mode {
     overflow: hidden;
     /* height set dynamically by JS */

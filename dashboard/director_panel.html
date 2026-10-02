@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!--
+[INPUT]: NodeCG の operationQueue・processorStatus・draft_*・matchTimer・gameTimeSettings・camMode と、js/dashboard.js、css/dashboard.css に依存する。
+[OUTPUT]: 操作キューの確認・適用・破棄、先攻とカメラ表示の切替、試合リセットとタイマー操作 UI を提供する。
+[POS]: dashboard の進行管理パネル。インライン処理が extension への確定指示を送り、processorStatus に従って二重適用を防ぐボタン状態を表示する。
+[PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+-->
 <html lang="en">
 
 <head>

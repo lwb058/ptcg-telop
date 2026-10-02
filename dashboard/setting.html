@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!--
+[INPUT]: NodeCG の設定・翻訳・テーマ・時計・バージョン Replicant と bundleConfig.donation_links、css/dashboard.css、js/diagnostic_export.js に依存する。
+[OUTPUT]: 表示・対戦補助・ホットキー・言語・テーマ・時計設定、DB 初期化、更新通知、支援リンクと CHS 診断 ZIP のダウンロード UI を提供する。
+[POS]: dashboard の設定パネル。設定 Replicant と DB 初期化を操作し、診断の取得・ダウンロードは専用アダプターへ委譲する。支援と診断のボタンを隣接させ、診断の結果は操作後に表示する。
+[PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+-->
 <html lang="en">
 
 <head>
@@ -207,7 +213,7 @@
 	</div>
 
 	<div class="panel-section"
-		style="display: flex; justify-content: space-between; align-items: center; width: 15%; min-width: 350px; background-color: #f8f9fa;">
+		style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; width: 15%; min-width: 350px; background-color: #f8f9fa;">
 		<p style="margin: 0; font-size: 12px; color: #6c757d; text-align: left;">
 			ptcg-telop Ver <span id="bundle-version">114.514</span></br>
 			Developed by ヤドリン </br>
@@ -216,7 +222,12 @@
 			<a href="https://x.com/i/user/437555697" target="_blank">X (Twitter)</a> |
 			<a href="https://space.bilibili.com/305921" target="_blank">BiliBili</a>
 		</p>
-		<button id="support-developer-btn" class="support-btn" style="margin-top: 0;"></button>
+		<div style="display: flex; gap: 8px;">
+			<button id="support-developer-btn" class="support-btn" style="margin-top: 0;"></button>
+			<button id="export-import-diagnostics-btn" class="support-btn" style="display: inline-block; margin-top: 0;"></button>
+		</div>
+		<p id="import-diagnostics-status" role="status" aria-live="polite" hidden
+			style="flex-basis: 100%; margin: 0; font-size: 12px;"></p>
 	</div>
 
 	<div id="update-notification"
@@ -235,6 +246,7 @@
 		</div>
 	</div>
 
+	<script src="js/diagnostic_export.js"></script>
 	<script>
 		NodeCG.waitForReplicants(
 			nodecg.Replicant('ptcg-settings'),
@@ -291,6 +303,7 @@
 				}
 				return i18nStrings.value[key][lang] || i18nStrings.value[key]['jp'] || key;
 			};
+			const diagnosticExport = setupDiagnosticExport({ getI18nText });
 
 			function updateAllLabels() {
 				document.getElementById('label-basic').textContent = getI18nText('settings_basic');
@@ -321,7 +334,9 @@
 				if (document.getElementById('support-developer-btn')) {
 					document.getElementById('support-developer-btn').textContent = getI18nText('settings_support_button');
 				}
+				diagnosticExport.updateLabels();
 			}
+			i18nStrings.on('change', updateAllLabels);
 
 			clearDbBtn.addEventListener('click', () => {
 				const confirmation = confirm("Are you sure you want to clear the entire card database and all downloaded images? This cannot be undone.");

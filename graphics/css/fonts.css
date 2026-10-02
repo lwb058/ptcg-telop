@@ -1,3 +1,9 @@
+/**
+ * [INPUT]: /assets/ptcg-telop/font/ のローカルフォントと、配信画面が設定する body.lang-jp / lang-chs / lang-cht に依存。
+ * [OUTPUT]: 数値・ダメージ・選手名・日中両言語の本文とワザ名の @font-face、および言語別の --font-main-lang / --font-attack-lang / --font-player-lang を提供。
+ * [POS]: main.html / extra.html / card.html の書体定義。common.css が参照し、各画面のプリロード処理がこのファイルの URL を読み取る。
+ * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+ */
 /* 
   PTCG Telop Local Font Definitions 
 */

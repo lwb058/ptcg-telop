@@ -1,4 +1,18 @@
+"""
+Input: os, re, time, argparse, sys, json, import_diagnostics, requests, bs4, bs4.BeautifulSoup
+Output: extract_deck_cards, main
+Pos: Application code
+
+🔄 Self-reference: When this file changes, update this header
+"""
+
+# [INPUT]: 標準ライブラリ、requests・BeautifulSoup、import_diagnostics、日本語公式 HTML と card_utils_jp の DB・カード取得に依存する。
+# [OUTPUT]: 従来のカード ID 一覧 JSON と終了結果を保ち、取得・解析・カード欠落の診断を段階付き stderr イベントとして親へ返す。
+# [POS]: extension/index.js が起動する日本語デッキ入口。デッキ内のカードをメモリ上で処理して DB をまとめて保存し、表示用 ID 一覧を NodeCG に返す。
+# [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
+
 import os, re, time, argparse, sys, json
+import import_diagnostics as diagnostics
 
 # Get the absolute path of the directory where the script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -33,15 +47,21 @@ def extract_deck_cards(deck_id, overwrite=True, db_path=None, language='jp'):
     # 1. Load the database once
     card_database = load_database(db_path=db_path)
     db_was_updated = False
+    stage, current_card_id = "deck.request", None
+    since = diagnostics.started(stage)
 
     try:
         print(f"Extracting card IDs from deck page: {url}...", file=sys.stderr)
         response = requests.get(url)
         response.raise_for_status()
+        diagnostics.completed(stage, since, httpStatus=response.status_code)
+        stage = "deck.parse"
+        diagnostics.started(stage)
         soup = BeautifulSoup(response.text, 'html.parser')
 
         input_area_form = soup.find('form', id='inputArea')
         if not input_area_form:
+            diagnostics.warning("deck.parse", "Deck inputArea form was not found")
             print("Error: Could not find the form with id 'inputArea'.", file=sys.stderr)
             return []
 
@@ -60,6 +80,7 @@ def extract_deck_cards(deck_id, overwrite=True, db_path=None, language='jp'):
                             deck_list_with_quantity[card_id] = quantity
         
         if not deck_list_with_quantity:
+            diagnostics.warning("deck.parse", "No card IDs were found in deck HTML")
             print("Warning: No card IDs were found in this deck.", file=sys.stderr)
             return []
 
@@ -69,6 +90,8 @@ def extract_deck_cards(deck_id, overwrite=True, db_path=None, language='jp'):
         card_list_items = list(deck_list_with_quantity.items())
         total_cards = len(card_list_items)
         for i, (card_id, quantity) in enumerate(card_list_items):
+            stage, current_card_id = "card.process", card_id
+            diagnostics.started(stage, card_id=card_id)
             print(f"--- Processing card {i+1}/{total_cards}: {card_id} ---", file=sys.stderr)
             card_info, status = _core_process_card(card_id, card_database, overwrite, language=language)
             
@@ -81,13 +104,16 @@ def extract_deck_cards(deck_id, overwrite=True, db_path=None, language='jp'):
                 card_display_info = {**card_info, "id": card_id, "quantity": quantity}
                 all_cards_details.append(card_display_info)
             else:
+                diagnostics.warning("card.process", "Card was omitted from the final deck", card_id=card_id)
                 print(f"Warning: Failed to process card ID {card_id}. It will not be included in the final list.", file=sys.stderr)
             
             time.sleep(0.3)
 
     except requests.exceptions.RequestException as e:
+        diagnostics.failed(stage, e, card_id=current_card_id)
         print(f"Request error: {e}", file=sys.stderr)
     except Exception as e:
+        diagnostics.failed(getattr(e, "_ptcg_recorded_stage", stage), e, card_id=current_card_id)
         print(f"An unknown error occurred while extracting the deck: {e}", file=sys.stderr)
 
     # 3. Save the database once after all cards have been processed
@@ -115,6 +141,7 @@ def main(deck_id_arg=None):
     if not deck_id:
         deck_id = input("Please enter the Deck ID: ")
         if not deck_id:
+            diagnostics.warning("input", "No deck ID was provided")
             print("No Deck ID entered, exiting.", file=sys.stderr)
             sys.exit(1)
 
@@ -139,6 +166,7 @@ def main(deck_id_arg=None):
                 print(f"  Incomplete card data detected, skipping display.", file=sys.stderr)
         print(f"A total of {total_cards} cards were extracted.", file=sys.stderr)
     else:
+        diagnostics.warning("result", "No cards were extracted")
         print("No cards were extracted or an error occurred.", file=sys.stderr)
         sys.exit(1)
 
