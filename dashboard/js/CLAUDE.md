@@ -4,7 +4,7 @@
 HTML の script 要素から読み込むクラシックスクリプト群。共通ヘルパーには利用側のグローバル Replicant を参照するものがあるため、読込順と変数の公開範囲もパネル間の契約になる。
 
 ## メンバー
-- [dashboard.js](dashboard.js): 共通基盤。翻訳、カード画像・名称、色変換、操作の追加／更新、HotkeyManager、操作要約を提供し、利用側の Replicant と NodeCG メッセージに接続する。
+- [dashboard.js](dashboard.js): 共通基盤。翻訳、カード画像・名称、色変換、操作の追加／更新、HotkeyManager、操作要約を提供し、利用側の Replicant と NodeCG メッセージに接続する。SET_SIDES の手動補正は同側の最後の待機操作を更新する。
 - [attack_sources.js](attack_sources.js): ワザ取得の単一入口。getAttackGroups が本体・道具・特性で借りるベンチ・進化前を表示順のグループとして返す。両デッキの同名版と進化鎖を探索し、本体→進化前→道具の同名優先順を維持する。ベンチは同名でも出所別に保持する。MEMORY_SPIRAL_ABILITY_NAMES の四言語設定は UI 言語と独立し、未入力名を除外する。
 - [deck_importer.js](deck_importer.js): 取り込みアダプター。setupDeckImporter が入力欄を importDeckOrCard と進捗 Replicant に接続し、応答待ちの連打を抑止する。成功後にだけ ID 更新を通知し、各言語の原因・警告・影響カード・診断番号を設定／翻訳 Replicant で表示する。
 - [diagnostic_export.js](diagnostic_export.js): Settings の診断ダウンロード境界。setupDiagnosticExport が exportImportDiagnostics を一度ずつ要求し、親ウィンドウの別 realm を含むバイナリ／Buffer 応答を ZIP Blob に変換して保存する。生成中はボタンを更新し、成功・空記録・失敗の結果を操作後にだけ表示する。updateLabels で言語変更を反映する。

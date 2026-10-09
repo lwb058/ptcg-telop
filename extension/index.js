@@ -7,9 +7,9 @@
  */
 
 /**
- * [INPUT]: NodeCG の Replicant・メッセージ・logger、Node.js API、バンドル設定、chs_import・legacy_import・import_diagnostics・timeline_manager に依存する。
+ * [INPUT]: NodeCG の Replicant・メッセージ・logger、Node.js crypto と他の API、バンドル設定、identity_guard・chs_import・legacy_import・import_diagnostics・timeline_manager に依存する。
  * [OUTPUT]: バンドル初期化関数を提供し、draft/live 盤面、操作キュー、カード取得、設定・資源の読込と更新確認を管理する。
- * [POS]: extension の起動点と対戦ロジックの所有者。dashboard の指示を受け、graphics の演出完了と同期し、timeline_manager に同じ盤面操作を渡す。
+ * [POS]: extension の起動点と対戦ロジックの所有者。dashboard の指示を受け、graphics の演出完了と同期し、新規入場の ID と初回 KO の自動サイド操作を確定し、timeline_manager に再構築用の盤面操作と ID 検証を渡す。
  * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
  */
 
@@ -19,6 +19,8 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const https = require('https');
+const { randomUUID } = require('node:crypto');
+const { assertUniqueInstanceIds: assertUniqueBoardInstanceIds, assertOperationsPreserveUniqueIds } = require('./identity_guard');
 const { createImportDiagnostics } = require('./import_diagnostics');
 const { createChsImporter } = require('./chs_import');
 const { createLegacyImporter } = require('./legacy_import');
@@ -275,13 +277,9 @@ module.exports = function (nodecg) {
 	const prizeCardsL = nodecg.Replicant('prizeCardsL', { defaultValue: Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false })) });
 	const prizeCardsR = nodecg.Replicant('prizeCardsR', { defaultValue: Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false })) });
 
-	// Instance ID counters for unique Pokémon identity
-	let instanceCounterL = 0;
-	let instanceCounterR = 0;
-
+	// ---- 新しい入場だけが新しい個体 ID を持ち、復元・再生では元の ID を保持する ----
 	function generateInstanceId(side) {
-		const counter = side === 'L' ? ++instanceCounterL : ++instanceCounterR;
-		return `${side}_${String(counter).padStart(3, '0')}`;
+		return `${side}_${randomUUID()}`;
 	}
 
 	// Player Slots
@@ -576,6 +574,7 @@ module.exports = function (nodecg) {
 	 * @param {object} op - The operation object.
 	 */
 	function applyOperationLogic(replicant, op, mode) {
+		assertBatchIdentity([op], mode, false);
 		const { type, payload } = op;
 		const { value, cardId, toolId, ailments, energyIndex } = payload;
 
@@ -686,48 +685,12 @@ module.exports = function (nodecg) {
 					nodecg.log.info(`REMOVE_POKEMON skipped: instanceId mismatch (expected ${payload.instanceId}, got ${replicant.value.instanceId})`);
 					break;
 				}
-				const prevCardId = replicant.value.cardId;
 				// Reset the slot to its default empty state
 				const isBattleSlot = replicant.name.endsWith('0');
 				replicant.value = {
 					cardId: null, instanceId: null, damage: 0, extraHp: 0, attachedEnergy: [], attachedToolIds: [],
 					...(isBattleSlot && { ailments: [] })
 				};
-
-				// KO-specific: auto-prize card logic
-				if (payload.actionType === 'KO') {
-					const autoPrizeTake = ptcgSettings.value && ptcgSettings.value.autoPrizeTake;
-					// This logic should only run when applying to DRAFT, to generate the follow-up op.
-					// When applying to LIVE, the generated op will be processed from the queue itself.
-					if (autoPrizeTake && mode === 'draft') {
-						// Determine which side was KO'd
-						const slotId = replicant.name.replace(/^draft_/, '').replace(/^live_/, '');
-						const side = slotId.charAt(4); // "slotL3" -> "L" or "R"
-						const isL = side === 'L';
-
-						// As long as a Pokémon is knocked out, the opponent takes prize cards (turn check removed).
-						let prizeCount = 1; // Default value
-						const cardData = prevCardId && cardDatabase.value[prevCardId];
-						if (cardData && cardData.pokemon && cardData.pokemon.prize) {
-							prizeCount = parseInt(cardData.pokemon.prize, 10);
-						}
-						// draft_sideL/draft_sideR
-						const draftSideRep = isL ? draft_sideR : draft_sideL;
-						const sideKey = isL ? 'sideR' : 'sideL';
-						const newValue = Math.max(0, (draftSideRep.value || 0) - prizeCount);
-
-						// Assign immediately to ensure UI sync
-						draftSideRep.value = newValue;
-
-						// Automatically add operation to the queue
-						operationQueue.value.push({
-							type: 'SET_SIDES',
-							payload: { target: sideKey, value: newValue },
-							priority: 4, // Taking prize cards
-							id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-						});
-					}
-				}
 				break;
 			}
 			case 'SET_AILMENTS':
@@ -892,7 +855,37 @@ module.exports = function (nodecg) {
 
 	nodecg.listenFor('queueOperation', (op, callback) => {
 		if (!op || !op.type || !op.payload) {
-			return callback(new Error('Invalid operation object.'));
+			if (callback) callback(new Error('Invalid operation object.'));
+			return;
+		}
+		try {
+			assertUniqueInstanceIds('draft');
+			assertUniqueInstanceIds('live');
+		} catch (error) {
+			nodecg.log.error('Operation rejected:', error.message);
+			if (callback) callback(error);
+			return;
+		}
+
+		// --- KO の派生操作は受付時に一度だけ確定し、再構築では生成しない ---
+		let prizeOperation = null;
+		if (op.type === 'REMOVE_POKEMON') {
+			const slot = /^slot[LR][0-8]$/.test(op.payload.target || '')
+				? nodecg.Replicant(`draft_${op.payload.target}`).value : null;
+			if (!slot || !slot.cardId || (op.payload.instanceId && op.payload.instanceId !== slot.instanceId)) {
+				if (callback) callback(new Error('REMOVE_POKEMON rejected: empty slot or stale instanceId.'));
+				return;
+			}
+			op.payload.instanceId = slot.instanceId || null;
+			if (op.payload.actionType === 'KO' && ptcgSettings.value?.autoPrizeTake) {
+				const target = op.payload.target.charAt(4) === 'L' ? 'sideR' : 'sideL';
+				const parsedPrize = parseInt(cardDatabase.value[slot.cardId]?.pokemon?.prize, 10);
+				const prizeCount = Number.isFinite(parsedPrize) && parsedPrize > 0 ? parsedPrize : 1;
+				prizeOperation = {
+					type: 'SET_SIDES',
+					payload: { target, value: Math.max(0, nodecg.Replicant(`draft_${target}`).value - prizeCount) }
+				};
+			}
 		}
 
 		// --- Duplicate Prevention ---
@@ -914,15 +907,16 @@ module.exports = function (nodecg) {
 			const side = op.payload.target.charAt(4); // "slotL0" -> "L"
 			op.payload.instanceId = generateInstanceId(side);
 		}
-		if (op.type === 'REMOVE_POKEMON' && op.payload.target) {
-			const draftSlot = nodecg.Replicant(`draft_${op.payload.target}`);
-			if (draftSlot && draftSlot.value) {
-				op.payload.instanceId = draftSlot.value.instanceId || null;
-			}
-		}
 
 		// Apply the logic to the DRAFT state for immediate feedback
-		applyOpToDraft(op);
+		try {
+			assertBatchIdentity([op], 'draft');
+			applyOpToDraft(op);
+		} catch (error) {
+			nodecg.log.error('Operation rejected:', error.message);
+			if (callback) callback(error);
+			return;
+		}
 
 		// If the operation is a switch, split it into two separate operations for the LIVE queue
 		if (op.type === 'SWITCH_POKEMON') {
@@ -1030,6 +1024,13 @@ module.exports = function (nodecg) {
 			op.queueIndex = queueCounter++;
 
 			operationQueue.value.push(op);
+			if (prizeOperation) {
+				prizeOperation.id = `${Date.now()}-prize-${Math.random().toString(36).substring(2, 9)}`;
+				prizeOperation.priority = getPriorityForOperation(prizeOperation.type);
+				prizeOperation.queueIndex = op.queueIndex;
+				applyOpToDraft(prizeOperation);
+				operationQueue.value.push(prizeOperation);
+			}
 			nodecg.log.info(`Operation queued: ${op.type} with priority ${op.priority} (queueIndex: ${op.queueIndex})`);
 		}
 
@@ -1054,6 +1055,13 @@ module.exports = function (nodecg) {
 		const newQueue = queue.filter(op => !idsToRemove.includes(op.id));
 
 		if (newQueue.length !== originalLength) {
+			try {
+				assertBatchIdentity(newQueue, 'live', false);
+			} catch (error) {
+				nodecg.log.error('Queue removal rejected:', error.message);
+				if (callback) callback(error);
+				return;
+			}
 			operationQueue.value = newQueue;
 			// syncLiveToDraft now includes catch-up replay of operationQueue (newQueue)
 			syncLiveToDraft();
@@ -1085,6 +1093,7 @@ module.exports = function (nodecg) {
 				}
 				return op;
 			});
+			assertBatchIdentity(newQueue, 'live', false);
 			operationQueue.value = newQueue;
 
 			// 2. Identify all affected draft replicants
@@ -1219,6 +1228,7 @@ module.exports = function (nodecg) {
 
 	const processorStatus = nodecg.Replicant('processorStatus', { defaultValue: 'IDLE' });
 	let pendingOperations = [];
+	let pendingOperationSources = [];
 	let ackTimeout = null; // Timeout for waiting for animation acknowledgement
 
 	// Gets a timeout duration based on priority. Higher priority (lower number) = longer animation.
@@ -1322,16 +1332,32 @@ module.exports = function (nodecg) {
 					if (callback) callback(null, 'Queue is empty.');
 					return;
 				}
-				const sortedQueue = [...operationQueue.value].sort((a, b) => a.priority - b.priority);
-				pendingOperations = assignEpochs(sortedQueue)
-				.sort((a, b) => a.priority - b.priority || a.queueIndex - b.queueIndex);
+				const sourceQueue = JSON.parse(JSON.stringify(operationQueue.value));
+				let preparedQueue;
+				try {
+					preparedQueue = assertQueueIdentity(sourceQueue);
+				} catch (error) {
+					processorStatus.value = 'IDLE';
+					nodecg.log.error(`Apply blocked: ${error.message}`);
+					if (callback) callback(error);
+					return;
+				}
+				pendingOperationSources = sourceQueue;
+				pendingOperations = preparedQueue;
 				operationQueue.value = [];
 				queueCounter = 0;
 			} else {
 				// Recursive call (from handleAnimationComplete): all batches done
 				processorStatus.value = 'IDLE';
 				nodecg.log.info('All operation batches processed.');
-				syncLiveToDraft();
+				try {
+					assertUniqueInstanceIds('live');
+					syncLiveToDraft();
+				} catch (error) {
+					nodecg.log.error(`Draft synchronization blocked: ${error.message}`);
+					if (callback) callback(error);
+					return;
+				}
 				if (callback) callback(null, 'All batches processed.');
 				return;
 			}
@@ -1342,6 +1368,31 @@ module.exports = function (nodecg) {
 		const currentPriority = pendingOperations[0].priority;
 		const batchToProcess = pendingOperations.filter(op => op.priority === currentPriority);
 		const remainingOps = pendingOperations.filter(op => op.priority !== currentPriority);
+
+		// ---- 演出と書込の前に検証し、失敗時は未処理の元操作を待機列へ戻す ----
+		try {
+			assertBatchIdentity(batchToProcess, 'live');
+		} catch (error) {
+			if (ackTimeout) clearTimeout(ackTimeout);
+			ackTimeout = null;
+			const waiting = JSON.parse(JSON.stringify(operationQueue.value || []));
+			// 別の受付期間の番号衝突を避け、KO と自動サイドなど同一操作のまとまりを保つ。
+			queueCounter = 0;
+			operationQueue.value = [pendingOperationSources, waiting].flatMap(operations => {
+				const groups = new Map();
+				return operations.map(op => {
+					const key = op.queueIndex ?? op.id;
+					if (!groups.has(key)) groups.set(key, queueCounter++);
+					return { ...op, queueIndex: groups.get(key) };
+				});
+			});
+			pendingOperations = [];
+			pendingOperationSources = [];
+			processorStatus.value = 'IDLE';
+			nodecg.log.error(`Apply stopped before animation: ${error.message}`);
+			if (callback) callback(error);
+			return;
+		}
 
 		pendingOperations = remainingOps;
 
@@ -1461,6 +1512,9 @@ module.exports = function (nodecg) {
 			}
 		});
 
+		const completedIds = new Set(batchToProcess.map(op => op.id));
+		pendingOperationSources = pendingOperationSources.filter(op => !completedIds.has(op.id));
+
 		if (doesBatchRequireAck(batchToProcess)) {
 			nodecg.log.info(`Batch (Prio ${currentPriority}) applied. Waiting for frontend acknowledgement.`);
 			const timeoutDuration = getTimeoutForPriority(currentPriority);
@@ -1551,10 +1605,6 @@ module.exports = function (nodecg) {
 
 		// Reset Selections
 		selections.value = [];
-
-		// Reset instance ID counters
-		instanceCounterL = 0;
-		instanceCounterR = 0;
 
 		// Reset all player slots (both LIVE and DRAFT)
 		for (let i = 0; i < 9; i++) {
@@ -1898,6 +1948,7 @@ module.exports = function (nodecg) {
 	 */
 	function resolveSlotByInstanceId(instanceId, mode) {
 		if (!instanceId) return null;
+		assertUniqueInstanceIds(mode);
 		const prefix = mode === 'draft' ? 'draft_' : 'live_';
 		for (const side of ['L', 'R']) {
 			for (let i = 0; i < 9; i++) {
@@ -1908,6 +1959,34 @@ module.exports = function (nodecg) {
 			}
 		}
 		return null;
+	}
+
+	// ---- 盤面の所有者から、実状態を変更しない個体 ID 検証へ渡す ----
+	function getIdentitySlots(mode) {
+		const slots = {};
+		for (const side of ['L', 'R']) {
+			for (let i = 0; i < 9; i++) {
+				const slotId = `slot${side}${i}`;
+				slots[slotId] = nodecg.Replicant(`${mode}_${slotId}`).value;
+			}
+		}
+		return slots;
+	}
+
+	function assertUniqueInstanceIds(mode) {
+		assertUniqueBoardInstanceIds(getIdentitySlots(mode), mode);
+	}
+
+	function assertBatchIdentity(operations, mode, resolveTargets = mode === 'live') {
+		assertOperationsPreserveUniqueIds(getIdentitySlots(mode), operations, mode, resolveTargets);
+	}
+
+	function assertQueueIdentity(operations) {
+		const sortedQueue = [...operations].sort((a, b) => a.priority - b.priority);
+		const preparedQueue = assignEpochs(sortedQueue)
+			.sort((a, b) => a.priority - b.priority || a.queueIndex - b.queueIndex);
+		assertBatchIdentity(preparedQueue, 'live');
+		return preparedQueue;
 	}
 
 	const gameLogic = {
@@ -1923,6 +2002,9 @@ module.exports = function (nodecg) {
 		getTimeoutForPriority,
 		resolveSlotByInstanceId,
 		assignEpochs,
+		assertUniqueInstanceIds,
+		assertBatchIdentity,
+		assertQueueIdentity,
 	};
 
 	// --- Timeline & Time Manager ---

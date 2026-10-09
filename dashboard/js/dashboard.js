@@ -9,7 +9,7 @@
 /**
  * [INPUT]: パネル側のグローバル Replicant、NodeCG メッセージ、DOM とキーイベントに依存し、利用ページより先に読み込まれる。
  * [OUTPUT]: 翻訳、カード画像／名称、操作の追加・更新、色変換、HotkeyManager と操作要約の共通ヘルパーを提供する。
- * [POS]: dashboard/js の共有基盤。各パネルが持つ状態と extension の操作キューを接続し、共通表示と入力処理を揃える。
+ * [POS]: dashboard/js の共有基盤。各パネルが持つ状態と extension の操作キューを接続し、共通表示と入力処理を揃え、手動サイド補正を同側の最後の待機操作へ反映する。
  * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
  */
 
@@ -93,11 +93,13 @@ function queueOrUpdateOperation(type, payload) {
                 return;
             }
         } else {
-            // For other operation types, update only the first match (original behavior)
-            const existingOpIndex = queue.findIndex(op =>
+            // サイド補正は最後の確定値を更新し、過去の自動取得に上書きされないようにする。
+            const matchesTarget = op =>
                 op.type === type &&
-                op.payload.target === payload.target
-            );
+                op.payload.target === payload.target;
+            const existingOpIndex = type === 'SET_SIDES'
+                ? queue.findLastIndex(matchesTarget)
+                : queue.findIndex(matchesTarget);
 
             if (existingOpIndex > -1) {
                 nodecg.sendMessage('updateOperation', { index: existingOpIndex, payload })

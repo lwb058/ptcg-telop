@@ -28,7 +28,7 @@ PTCG-Telop 1.7.1 + NodeCG ^2.0.0（package.json の互換範囲）+ JavaScript�
 
 ## 制御と保存の境界
 
-Dashboard の対戦操作を extension が受け付け、draft に反映する。Apply は待機キューのスナップショットを優先度／紀元ごとに live へ適用し、graphics の演出完了通知で進行する。名前・設定・カード紹介など、キューを通さない直接更新もある。タイムラインは同じ対戦ロジックを使って記録と再構築を行う。
+Dashboard の対戦操作を extension が受け付け、draft に反映する。Apply は待機キューのスナップショットを優先度／紀元ごとに live へ適用し、graphics の演出完了通知で進行する。名前・設定・カード紹介など、キューを通さない直接更新もある。新規入場には復元に依存しない UUID を発行し、KO の自動サイドは初回受付時に独立操作として保存する。タイムラインは同じ対戦ロジックと個体 ID 検証を使って記録と再構築を行う。
 
 カード DB、画像、テーマ、NodeCG の永続化データはホスト側の資源であり、この Git リポジトリの外に配置する。Python CLI は取得結果をホストの assets 領域へ保存し、extension が再読込する。全ランタイム Python は共通起動境界から例外・出力・終了の証拠を非公開 logs に 7 日／10 MiB 保持する。Settings は支援ボタンの隣から診断 ZIP をダウンロードする。CHS は全資料を検証してから状態を確定し、JP/CHT は既存の stdout／DB 更新契約を維持して警告を返す。英語 CLI は引き続きプレースホルダーだが空結果の失敗も診断する。
 
@@ -40,4 +40,4 @@ Dashboard の対戦操作を extension が受け付け、draft に反映する�
 
 ## 検証の入口
 
-`npm test` は Node の全言語子プロセス・内部 Python ツール・診断 ZIP・dashboard スクリプトのテストを実行し、`npm run test:python` は CHS と JP/CHT の標準 unittest を実行する（Python 3 と requirements.txt が必要。Linux で python がない場合は python3 を使う）。Node 子プロセステストの Python は `PTCG_TEST_PYTHON` で指定できる。JS の `node --check`、HTML スクリプトの構文解析、Python の compile で構文も確認する。表示と配布境界は隔離した NodeCG／Docker とブラウザーで対象経路を確認する。
+`npm test` は Node の全言語子プロセス・内部 Python ツール・診断 ZIP・dashboard スクリプトと対戦状態のメッセージ回帰テストを実行し、`npm run test:python` は CHS と JP/CHT の標準 unittest を実行する（Python 3 と requirements.txt が必要。Linux で python がない場合は python3 を使う）。Node 子プロセステストの Python は `PTCG_TEST_PYTHON` で指定できる。JS の `node --check`、HTML スクリプトの構文解析、Python の compile で構文も確認する。表示と配布境界は隔離した NodeCG／Docker とブラウザーで対象経路を確認する。

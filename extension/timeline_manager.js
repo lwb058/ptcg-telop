@@ -7,8 +7,8 @@
  */
 
 /**
- * [INPUT]: NodeCG の Replicant・メッセージ・logger と、index.js から注入される盤面操作・キュー処理・デッキ取得の gameLogic に依存する。
- * [OUTPUT]: 時系列管理の初期化関数を提供し、試合時計、対戦／表示の記録、履歴編集、シーク・再生、JSON 入出力を管理する。
+ * [INPUT]: NodeCG の Replicant・メッセージ・logger と、index.js から注入される盤面操作・個体 ID 検証・キュー処理・デッキ取得の gameLogic に依存する。
+ * [OUTPUT]: 時系列管理の初期化関数を提供し、試合時計、対戦／表示の記録、履歴編集、シーク・再生、JSON 入出力を管理し、個体 ID が重複する再構築は停止する。
  * [POS]: extension の記録・再構築層。盤面ルールは index.js に委ね、二系統のタイムラインを同じ対戦ロジックへ接続する。
  * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
  */
@@ -225,6 +225,14 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 		// 1. Bundle operationQueue into OpsPack
 		if (!operationQueue.value || operationQueue.value.length === 0) {
 			if (callback) callback(new Error('Operation queue is empty.'));
+			return;
+		}
+
+		try {
+			gameLogic.assertQueueIdentity(operationQueue.value);
+		} catch (error) {
+			nodecg.log.error(`OpsPack recording blocked: ${error.message}`);
+			if (callback) callback(error);
 			return;
 		}
 
@@ -486,6 +494,33 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 		return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 	}
 
+	// ---- 元の履歴 ID は変更せず、重複があれば時計と再生を停止する ----
+	function stopPlaybackOnError(error) {
+		stopPlaybackInterval();
+		playbackStatus.value.isPlaying = false;
+		matchTimer.value.isRunning = false;
+		matchTimer.value.startTime = null;
+		nodecg.log.error(`Timeline stopped (${error.code || 'ERROR'}): ${error.message || error}`);
+	}
+
+	function applyRecordedOperations(operations, animate = false) {
+		// 履歴の既存契約は target への直接適用。live キューの再解決と混同しない。
+		gameLogic.assertBatchIdentity(operations, 'live', false);
+		if (animate) triggerVisualsForOps(operations);
+		for (const op of operations) {
+			if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
+				gameLogic.applyOperationLogic(nodecg.Replicant(`live_${op.payload.target}`), op, 'live');
+			} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
+				gameLogic.applyOperationLogic(live_stadium, op, 'live');
+			} else if (op.payload.target && op.payload.target.startsWith('slot')) {
+				gameLogic.applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live');
+			} else {
+				gameLogic.applyOperationLogic(null, op, 'live');
+			}
+		}
+		gameLogic.assertUniqueInstanceIds('live');
+	}
+
 	function triggerVisualsForOps(ops) {
 		// Separate attack operations to build attack-fx message
 		const attackOps = ops.filter(op => op.type === 'ATTACK');
@@ -636,69 +671,61 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 		if (isPlaybackProcessing) return;
 		isPlaybackProcessing = true;
 
-		while (playbackQueue.length > 0) {
-			const pack = playbackQueue.shift();
+		try {
+			while (playbackQueue.length > 0) {
+				const pack = playbackQueue.shift();
 
-			// Assign Epochs based on causal queueIndex, then sort by priority
-			let sortedOps;
-			if (gameLogic.assignEpochs) {
-				const baseSortedOps = [...pack.ops].sort((a, b) => a.queueIndex - b.queueIndex);
-				sortedOps = gameLogic.assignEpochs(baseSortedOps).sort((a, b) => a.priority - b.priority || a.queueIndex - b.queueIndex);
-			} else {
-				// Fallback if assignEpochs is not available
-				sortedOps = [...pack.ops].sort((a, b) => a.priority - b.priority);
-			}
-
-			// Group by priority
-			const opsByPriority = new Map();
-			sortedOps.forEach(op => {
-				if (!opsByPriority.has(op.priority)) {
-					opsByPriority.set(op.priority, []);
-				}
-				opsByPriority.get(op.priority).push(op);
-			});
-
-			// Process each priority group sequentially
-			const priorities = Array.from(opsByPriority.keys()).sort((a, b) => a - b);
-
-			for (const priority of priorities) {
-				const batch = opsByPriority.get(priority);
-
-				nodecg.log.info(`Playback: Processing batch priority ${priority} (${batch.length} ops)`);
-
-				// 0. Filter out deleted operations first
-				const activeOps = batch.filter(op => !op.deleted);
-
-				if (activeOps.length === 0) {
-					// Skip waiting if all ops in batch are deleted to speed up playback.
-					continue;
+				// Assign Epochs based on causal queueIndex, then sort by priority
+				let sortedOps;
+				if (gameLogic.assignEpochs) {
+					const baseSortedOps = [...pack.ops].sort((a, b) => a.queueIndex - b.queueIndex);
+					sortedOps = gameLogic.assignEpochs(baseSortedOps).sort((a, b) => a.priority - b.priority || a.queueIndex - b.queueIndex);
+				} else {
+					// Fallback if assignEpochs is not available
+					sortedOps = [...pack.ops].sort((a, b) => a.priority - b.priority);
 				}
 
-				// 1. Trigger Visuals (only for active ops)
-				triggerVisualsForOps(activeOps);
-
-				// 2. Apply Data
-				activeOps.forEach(op => {
-					if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
-						gameLogic.applyOperationLogic(nodecg.Replicant(`live_${op.payload.target}`), op, 'live');
-					} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
-						gameLogic.applyOperationLogic(live_stadium, op, 'live');
-					} else if (op.payload.target && op.payload.target.startsWith('slot')) {
-						gameLogic.applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live');
-					} else {
-						gameLogic.applyOperationLogic(null, op, 'live');
+				// Group by priority
+				const opsByPriority = new Map();
+				sortedOps.forEach(op => {
+					if (!opsByPriority.has(op.priority)) {
+						opsByPriority.set(op.priority, []);
 					}
-				}); gameLogic.syncLiveToDraft();
+					opsByPriority.get(op.priority).push(op);
+				});
 
-				// 3. Wait if needed
-				if (gameLogic.doesBatchRequireAck(batch)) {
-					const delay = gameLogic.getTimeoutForPriority(priority);
-					nodecg.log.info(`Playback: Waiting ${delay}ms for animation...`);
-					await new Promise(resolve => setTimeout(resolve, delay));
+				// Process each priority group sequentially
+				const priorities = Array.from(opsByPriority.keys()).sort((a, b) => a - b);
+
+				for (const priority of priorities) {
+					const batch = opsByPriority.get(priority);
+
+					nodecg.log.info(`Playback: Processing batch priority ${priority} (${batch.length} ops)`);
+
+					// 0. Filter out deleted operations first
+					const activeOps = batch.filter(op => !op.deleted);
+
+					if (activeOps.length === 0) {
+						// Skip waiting if all ops in batch are deleted to speed up playback.
+						continue;
+					}
+
+					applyRecordedOperations(activeOps, true);
+					gameLogic.syncLiveToDraft();
+
+					// 3. Wait if needed
+					if (gameLogic.doesBatchRequireAck(batch)) {
+						const delay = gameLogic.getTimeoutForPriority(priority);
+						nodecg.log.info(`Playback: Waiting ${delay}ms for animation...`);
+						await new Promise(resolve => setTimeout(resolve, delay));
+					}
 				}
 			}
+		} catch (error) {
+			stopPlaybackOnError(error);
+		} finally {
+			isPlaybackProcessing = false;
 		}
-		isPlaybackProcessing = false;
 	}
 
 	function startPlaybackInterval() {
@@ -729,6 +756,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				}
 
 				processPlaybackQueue();
+				if (!playbackStatus.value.isPlaying) return;
 			}
 
 			// --- Display Track ---
@@ -803,6 +831,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 
 			if (callback) callback(null, 'Playback started.');
 		} catch (e) {
+			stopPlaybackOnError(e);
 			if (callback) callback(e);
 		}
 	});
@@ -826,10 +855,16 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 	});
 
 	nodecg.listenFor('resumeTimeline', (data, callback) => {
-		if (!playbackStatus.value.isPlaying) {
-			playbackStatus.value.isPlaying = true;
-			startPlaybackInterval();
+		try {
+			gameLogic.assertUniqueInstanceIds('live');
+			if (!playbackStatus.value.isPlaying) {
+				playbackStatus.value.isPlaying = true;
+				startPlaybackInterval();
+			}
 			if (callback) callback(null, 'Playback resumed.');
+		} catch (error) {
+			stopPlaybackOnError(error);
+			if (callback) callback(error);
 		}
 	});
 
@@ -855,18 +890,9 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			const packsToApply = timelineGameplay.value.slice(0, index + 1);
 			for (const pack of packsToApply) {
 				const activeOps = pack.ops.filter(op => !op.deleted);
-				activeOps.forEach(op => {
-					if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
-						gameLogic.applyOperationLogic(nodecg.Replicant(`live_${op.payload.target}`), op, 'live');
-					} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
-						gameLogic.applyOperationLogic(live_stadium, op, 'live');
-					} else if (op.payload.target && op.payload.target.startsWith('slot')) {
-						gameLogic.applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live');
-					} else {
-						gameLogic.applyOperationLogic(null, op, 'live');
-					}
-				});
+				applyRecordedOperations(activeOps);
 			}
+			gameLogic.assertUniqueInstanceIds('live');
 			gameLogic.syncLiveToDraft();
 
 			// 6. Reconstruct Display State (Display Track)
@@ -889,6 +915,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 
 			if (callback) callback(null, `Seeked to index ${index}.`);
 		} catch (e) {
+			stopPlaybackOnError(e);
 			if (callback) callback(e);
 		}
 	});
@@ -924,21 +951,13 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				if (parseTime(pack.timestamp) <= targetTime) {
 					const activeOps = pack.ops.filter(op => !op.deleted);
 
-					activeOps.forEach(op => {
-						if (op.type === 'SET_VSTAR_STATUS' || op.type === 'SET_ACTION_STATUS' || op.type === 'SET_SIDES' || op.type === 'SET_LOST_ZONE') {
-							gameLogic.applyOperationLogic(nodecg.Replicant(`live_${op.payload.target}`), op, 'live');
-						} else if (op.type === 'SET_STADIUM' || op.type === 'SET_STADIUM_USED') {
-							gameLogic.applyOperationLogic(live_stadium, op, 'live');
-						} else if (op.payload.target && op.payload.target.startsWith('slot')) {
-							gameLogic.applyOperationLogic(nodecg.Replicant(op.payload.target.replace('slot', 'live_slot')), op, 'live');
-						} else {
-							gameLogic.applyOperationLogic(null, op, 'live');
-						}
-					}); lastGameplayIndex = i;
+					applyRecordedOperations(activeOps);
+					lastGameplayIndex = i;
 				} else {
 					break;
 				}
 			}
+			gameLogic.assertUniqueInstanceIds('live');
 			gameLogic.syncLiveToDraft();
 			const displayIndex = reconstructDisplayState(targetTime);
 
@@ -957,6 +976,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 
 			if (callback) callback(null, `Seeked to timestamp ${timestamp}.`);
 		} catch (e) {
+			stopPlaybackOnError(e);
 			if (callback) callback(e);
 		}
 	});
