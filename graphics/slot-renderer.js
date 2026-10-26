@@ -1,9 +1,8 @@
 /**
- * Input: None
- * Output: None
- * Pos: Application code
- *
- * 🔄 Self-reference: When this file changes, update this header
+ * [INPUT]: init で注入されるカード DB・設定・画像／資源 URL と、ブラウザーの DOM・画像・動画・演出時計に依存する。
+ * [OUTPUT]: window.SlotRenderer が画像読込後の滑入・HP・付属物・状態を含む完了 Promise を返す。描画世代と個体 ID で古い読込・清槽・退場／KO が新表示を壊さないようにする。
+ * [POS]: main/extra 共通の描画器。画面と批次 ACK は呼出側が所有し、このモジュールは各スロットの表示と演出の完了を担当する。
+ * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
  */
 
 /**
@@ -31,6 +30,7 @@
     const removingSlots = new Set();
     const g_attackAnimationTargets = new Set();
     const activeAnimations = new Map();
+    const slotRenderVersions = new WeakMap();
 
     // === Dependencies (set via init) ===
     let _cardDatabase = null;
@@ -454,12 +454,42 @@
         });
     }
 
+    // === 画像読込と滑入を一つの描画完了へまとめる ===
+
+    function loadSlotImage(slotEl, image, source, renderVersion, isNewCard, forceSlideIn, skipSlideIn) {
+        return new Promise(resolve => {
+            let finished = false;
+            const onReady = () => {
+                if (finished) return;
+                finished = true;
+                image.removeEventListener('load', onReady);
+                image.removeEventListener('error', onReady);
+                if (slotRenderVersions.get(slotEl) !== renderVersion) return resolve();
+                image.style.visibility = 'visible';
+                if (isNewCard) {
+                    slotEl.style.transform = '';
+                    slotEl.style.opacity = '';
+                }
+                handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn).then(resolve);
+            };
+            image.style.visibility = 'hidden';
+            image.addEventListener('load', onReady);
+            image.addEventListener('error', onReady);
+            image.src = source;
+            if (image.complete) onReady();
+        });
+    }
+
     // === Main Render Function ===
 
     function renderSlot(side, index, slotData, oldSlotData) {
         const slotEl = document.getElementById(`slot-${side}${index}`);
+        if (!slotEl) return Promise.resolve();
+        const renderVersion = {};
+        slotRenderVersions.set(slotEl, renderVersion);
 
         const doRender = () => {
+            if (slotRenderVersions.get(slotEl) !== renderVersion) return Promise.resolve();
             const promises = [];
             const db = _cardDatabase.value;
             const settings = _settingsRep.value || {};
@@ -479,6 +509,7 @@
 
                 const isSlidingOut = slotEl.classList.contains('anim-slide-out-L') || slotEl.classList.contains('anim-slide-out-R');
                 const clearSlot = () => {
+                    if (slotRenderVersions.get(slotEl) !== renderVersion) return;
                     const activeWrapper = slotEl.querySelector('.active-pokemon-wrapper');
                     const benchWrapper = slotEl.querySelector('.bench-pokemon-wrapper');
 
@@ -511,6 +542,7 @@
                 return Promise.resolve();
             }
             slotEl.classList.remove('is-empty');
+            slotEl.dataset.instanceId = slotData.instanceId || '';
 
             const isUnderAttack = g_attackAnimationTargets.has(slotEl.id);
             const cardData = db[slotData.cardId];
@@ -574,18 +606,11 @@
                     slotEl.style.transform = offScreenTransform;
                     slotEl.style.opacity = '0';
 
-                    img.style.visibility = 'hidden';
-                    img.onload = () => {
-                        img.style.visibility = 'visible';
-                        slotEl.style.transform = '';
-                        slotEl.style.opacity = '';
-                        promises.push(handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn));
-                        img.onload = null;
-                    };
+                    promises.push(loadSlotImage(slotEl, img, _getCardImageUrl(slotData.cardId), renderVersion, isNewCard, forceSlideIn, skipSlideIn));
                 } else {
                     promises.push(handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn));
+                    img.src = _getCardImageUrl(slotData.cardId);
                 }
-                img.src = _getCardImageUrl(slotData.cardId);
                 img.classList.toggle('is-v', cardData.pokemon && cardData.subtype === 'V');
 
                 const hpUpdatePromise = new Promise(resolve => {
@@ -688,17 +713,7 @@
                         slotEl.style.opacity = '0';
                     }
 
-                    mainImg.style.visibility = 'hidden';
-                    mainImg.onload = () => {
-                        mainImg.style.visibility = 'visible';
-                        if (isNewCard) {
-                            slotEl.style.transform = '';
-                            slotEl.style.opacity = '';
-                        }
-                        promises.push(handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn));
-                        mainImg.onload = null;
-                    };
-                    mainImg.src = _getCardImageUrl(slotData.cardId);
+                    promises.push(loadSlotImage(slotEl, mainImg, _getCardImageUrl(slotData.cardId), renderVersion, isNewCard, forceSlideIn, skipSlideIn));
                     mainImg.classList.toggle('is-v', cardData.pokemon && cardData.subtype === 'V');
                 } else {
                     promises.push(handleSlotSlideAnimation(slotEl, isNewCard, forceSlideIn, skipSlideIn));
@@ -879,6 +894,7 @@
         return new Promise(resolve => {
             const targetEl = document.getElementById(animation.target);
             if (!targetEl) return resolve();
+            const instanceId = targetEl.dataset.instanceId;
 
             koSlots.add(animation.target);
 
@@ -900,12 +916,17 @@
             koVideo.play();
 
             setTimeout(() => {
+                if (targetEl.dataset.instanceId !== instanceId) return;
                 const cardImage = targetEl.querySelector(imageSelector);
                 if (cardImage) cardImage.style.visibility = 'hidden';
             }, 85);
 
             koVideo.addEventListener('ended', () => {
                 koVideo.remove();
+                if (targetEl.dataset.instanceId !== instanceId) {
+                    koSlots.delete(animation.target);
+                    return resolve();
+                }
                 targetEl.classList.add(`anim-slide-out-${side}`);
                 let isResolved = false;
                 const animationEndHandler = (event) => {
@@ -913,7 +934,7 @@
                     if (isResolved) return;
                     isResolved = true;
                     targetEl.removeEventListener('animationend', animationEndHandler);
-                    if (isBattleSlot) {
+                    if (isBattleSlot && targetEl.dataset.instanceId === instanceId) {
                         const ailmentsWrapper = targetEl.querySelector('.status-ailment');
                         if (ailmentsWrapper) ailmentsWrapper.innerHTML = '';
                     }
@@ -930,6 +951,7 @@
         return new Promise(resolve => {
             const targetEl = document.getElementById(animation.target);
             if (!targetEl) return resolve();
+            const instanceId = targetEl.dataset.instanceId;
 
             removingSlots.add(animation.target);
 
@@ -941,6 +963,11 @@
                 if (event && event.target !== targetEl) return;
                 if (isResolved) return;
                 isResolved = true;
+                if (targetEl.dataset.instanceId !== instanceId) {
+                    removingSlots.delete(animation.target);
+                    targetEl.removeEventListener('animationend', animationEndHandler);
+                    return resolve();
+                }
                 const activeWrapper = targetEl.querySelector('.active-pokemon-wrapper');
                 const benchWrapper = targetEl.querySelector('.bench-pokemon-wrapper');
                 if (activeWrapper) {

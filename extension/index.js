@@ -7,9 +7,9 @@
  */
 
 /**
- * [INPUT]: NodeCG の Replicant・メッセージ・logger、Node.js crypto と他の API、バンドル設定、identity_guard・chs_import・legacy_import・import_diagnostics・timeline_manager に依存する。
- * [OUTPUT]: バンドル初期化関数を提供し、draft/live 盤面、操作キュー、カード取得、設定・資源の読込と更新確認を管理する。
- * [POS]: extension の起動点と対戦ロジックの所有者。dashboard の指示を受け、graphics の演出完了と同期し、新規入場の ID と初回 KO の自動サイド操作を確定し、timeline_manager に再構築用の盤面操作と ID 検証を渡す。
+ * [INPUT]: NodeCG の Replicant・メッセージ・logger、Node.js crypto と他の API、バンドル設定、identity_guard・animation_batch・deck_state・chs_import・legacy_import・import_diagnostics・timeline_manager に依存する。
+ * [OUTPUT]: バンドル初期化関数を提供し、draft/live 盤面、操作キュー、デッキ固有の counts を含むカード取得、設定・資源の読込と更新確認を管理する。言語変更では現在の対局をリセットし、旧取得の確定を世代で拒否する。
+ * [POS]: extension の起動点と対戦ロジックの所有者。dashboard の指示を受け、graphics の批次 UUID と画面別完了を検証し、新規入場の ID と初回 KO の自動サイド操作を確定し、timeline_manager に再構築用の盤面操作と ID 検証を渡す。
  * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
  */
 
@@ -24,6 +24,8 @@ const { assertUniqueInstanceIds: assertUniqueBoardInstanceIds, assertOperationsP
 const { createImportDiagnostics } = require('./import_diagnostics');
 const { createChsImporter } = require('./chs_import');
 const { createLegacyImporter } = require('./legacy_import');
+const { createAnimationBatchCoordinator } = require('./animation_batch');
+const { createImportedDeck, addDeckCards } = require('./deck_state');
 
 module.exports = function (nodecg) {
 	nodecg.log.info('Bundle ptcg-telop starting up.');
@@ -103,6 +105,22 @@ module.exports = function (nodecg) {
 	const themeAssets = nodecg.Replicant('themeAssets', { defaultValue: {} });
 	const activeThemeCss = nodecg.Replicant('activeThemeCss', { defaultValue: null });
 	const updateInfo = nodecg.Replicant('updateInfo', { defaultValue: { available: false } });
+	const stateGeneration = nodecg.Replicant('stateGeneration', { defaultValue: 0, persistent: false });
+	stateGeneration.value = 0;
+	let timelineControl;
+
+	// ---- 言語を戻しても、取消済みの取得は現在の対局へ書き込めない ----
+	function getImportContext() {
+		return { language: ptcgSettings.value?.language || 'jp', generation: stateGeneration.value };
+	}
+	function assertImportContext(context) {
+		const current = getImportContext();
+		if (context.language !== current.language || context.generation !== current.generation) {
+			const error = new Error('语言或对局已更改，请重新导入。');
+			error.code = 'IMPORT_CONTEXT_EXPIRED';
+			throw error;
+		}
+	}
 
 	try {
 		const assetsBaseDir = path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop');
@@ -195,7 +213,13 @@ module.exports = function (nodecg) {
 		// --- END THEME CHANGE LOGIC ---
 
 		const newLang = (newValue && newValue.language) || 'jp';
-		const oldLang = (oldValue && oldValue.language); // No default for oldLang
+		const oldLang = (oldValue && oldValue.language) || 'jp';
+		const languageChanged = !!oldValue && newLang !== oldLang;
+		if (languageChanged) {
+			executeResetSystem();
+			nodecg.log.info(`Language changed from ${oldLang} to ${newLang}; the current game was reset.`);
+		}
+		if (!oldValue || languageChanged) loadCardDatabase();
 
 		if (language.value !== newLang) {
 			language.value = newLang;
@@ -219,7 +243,6 @@ module.exports = function (nodecg) {
 		// On initial load (oldValue is undefined) or if lang has changed, reload the DB.
 		if (!oldValue) {
 			nodecg.log.info('Initial load detected. Loading card database and i18n strings...');
-			loadCardDatabase();
 			loadI18nStrings();
 		}
 	});
@@ -342,6 +365,9 @@ module.exports = function (nodecg) {
 			}
 
 			const dbData = JSON.parse(fileContent);
+			if (!dbData || typeof dbData !== 'object' || Array.isArray(dbData)) {
+				throw new Error(`Invalid card database object for ${lang}.`);
+			}
 			cardDatabase.value = dbData;
 			nodecg.log.info(`[DB_DEBUG] Successfully loaded and parsed database. Total entries: ${Object.keys(dbData).length}`);
 
@@ -377,6 +403,7 @@ module.exports = function (nodecg) {
 		databasePath: path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', 'database_chs.json'),
 		diagnostics: importDiagnostics,
 		getSettings: () => ptcgSettings.value || {},
+		getContext: getImportContext, assertContext: assertImportContext,
 		onLoading: status => { deckLoadingStatus.value = status; },
 		commit: ({ side, type, code, cards, database }) => {
 			const deckRep = side === 'L' ? deckL : deckR;
@@ -387,11 +414,11 @@ module.exports = function (nodecg) {
 			try {
 				cardDatabase.value = { ...old.database, ...database };
 				if (type === 'deck') {
-					deckRep.value = { name: code, cards };
+					deckRep.value = createImportedDeck(code, cards);
 					idRep.value = code;
 					prizeRep.value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
 				} else {
-					deckRep.value = { ...old.deck, cards: [...new Set([...(old.deck.cards || []), ...cards])] };
+					deckRep.value = addDeckCards(old.deck, cards);
 				}
 			} catch (error) {
 				cardDatabase.value = old.database;
@@ -415,11 +442,12 @@ module.exports = function (nodecg) {
 	const legacyImporter = createLegacyImporter({
 		pythonDir: path.join(__dirname, '..', 'python'), pythonCommand,
 		diagnostics: importDiagnostics, getSettings: () => ptcgSettings.value || {},
+		getContext: getImportContext, assertContext: assertImportContext,
 		databasePathFor: language => path.join(projectRoot, 'nodecg', 'assets', 'ptcg-telop', `database_${language}.json`),
 		reloadDatabase: loadCardDatabase, getDatabase: () => cardDatabase.value,
 		getDeck: side => (side === 'L' ? deckL : deckR).value,
-		commitDeck: (side, code, cards) => {
-			(side === 'L' ? deckL : deckR).value = { name: code, cards };
+		commitDeck: (side, code, cards, counts) => {
+			(side === 'L' ? deckL : deckR).value = { name: code, cards, counts };
 			(side === 'L' ? prizeCardsL : prizeCardsR).value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
 		},
 		onLoading: status => { deckLoadingStatus.value = status; }
@@ -462,7 +490,12 @@ module.exports = function (nodecg) {
 			const newCards = currentCards.filter(id => id !== cardId);
 
 			if (newCards.length < initialLength) {
-				deckReplicant.value.cards = newCards; // Update the replicant
+				const nextDeck = { ...deckReplicant.value, cards: newCards };
+				if (nextDeck.counts) {
+					nextDeck.counts = { ...nextDeck.counts };
+					delete nextDeck.counts[cardId];
+				}
+				deckReplicant.value = nextDeck;
 				nodecg.log.info(`Card ${cardId} removed from Player ${side}'s deck.`);
 				if (callback) callback(null, 'Card removed.');
 			} else {
@@ -1226,10 +1259,46 @@ module.exports = function (nodecg) {
 		]; return batch.some(op => animationHeavyTypes.includes(op.type));
 	}
 
-	const processorStatus = nodecg.Replicant('processorStatus', { defaultValue: 'IDLE' });
+	const processorStatus = nodecg.Replicant('processorStatus', { defaultValue: 'IDLE', persistent: false });
+	processorStatus.value = 'IDLE';
 	let pendingOperations = [];
 	let pendingOperationSources = [];
-	let ackTimeout = null; // Timeout for waiting for animation acknowledgement
+	const animationBatch = createAnimationBatchCoordinator({ nodecg, getTimeout: getTimeoutForPriority,
+		onComplete: handleAnimationComplete });
+
+	function cancelQueueProcessing() {
+		animationBatch.cancel();
+		pendingOperations = [];
+		pendingOperationSources = [];
+		processorStatus.value = 'IDLE';
+	}
+
+	// ---- 実際に描画する画面ごとに一度だけの完了を待つ ----
+	function getBatchGraphics(batch) {
+		const graphics = new Set();
+		const addSlot = slot => {
+			const match = typeof slot === 'string' && slot.match(/^slot-?[LR]([0-8])$/);
+			if (match) graphics.add(Number(match[1]) < 6 ? 'main' : 'extra');
+		};
+		for (const op of batch) {
+			if (!doesBatchRequireAck([op])) continue;
+			const payload = op.payload || {};
+			if (op.type === 'ATTACK') {
+				graphics.add('main');
+				(payload.targets || [payload.target]).forEach(addSlot);
+			} else if (op.type === 'SLIDE_OUT' || op.type === 'APPLY_SWITCH') {
+				const slots = payload.involvedSlots || (payload.mapping
+					? [...Object.keys(payload.mapping), ...Object.values(payload.mapping)].map(i => `slot${payload.side}${i}`)
+					: [payload.source, payload.target]);
+				slots.forEach(addSlot);
+			} else {
+				const target = payload.instanceId && op.type !== 'SET_POKEMON'
+					? resolveSlotByInstanceId(payload.instanceId, 'live') : payload.target;
+				addSlot(target);
+			}
+		}
+		return ['main', 'extra'].filter(graphic => graphics.has(graphic));
+	}
 
 	// Gets a timeout duration based on priority. Higher priority (lower number) = longer animation.
 	// Uses % 100 to strip epoch offset (multiples of 100) and recover the base priority.
@@ -1307,10 +1376,6 @@ module.exports = function (nodecg) {
 
 	// Shared logic for when an animation batch is considered complete (either by ACK or timeout)
 	function handleAnimationComplete() {
-		if (ackTimeout) {
-			clearTimeout(ackTimeout);
-			ackTimeout = null;
-		}
 		if (processorStatus.value !== 'PROCESSING') return; // Avoid multiple triggers
 
 		nodecg.log.info('Animation batch complete. Processing next batch.');
@@ -1373,8 +1438,7 @@ module.exports = function (nodecg) {
 		try {
 			assertBatchIdentity(batchToProcess, 'live');
 		} catch (error) {
-			if (ackTimeout) clearTimeout(ackTimeout);
-			ackTimeout = null;
+			animationBatch.cancel();
 			const waiting = JSON.parse(JSON.stringify(operationQueue.value || []));
 			// 別の受付期間の番号衝突を避け、KO と自動サイドなど同一操作のまとまりを保つ。
 			queueCounter = 0;
@@ -1395,6 +1459,8 @@ module.exports = function (nodecg) {
 		}
 
 		pendingOperations = remainingOps;
+		const batchId = doesBatchRequireAck(batchToProcess)
+			? animationBatch.begin(getBatchGraphics(batchToProcess), currentPriority) : null;
 
 		nodecg.log.info(`Processing batch with priority ${currentPriority} (${batchToProcess.length} ops).`);
 
@@ -1429,7 +1495,7 @@ module.exports = function (nodecg) {
 					}
 				}
 				nodecg.log.info(`Sending attack-fx for ${group.moveName}`);
-				nodecg.sendMessage('attack-fx', group);
+				nodecg.sendMessage('attack-fx', { ...group, batchId });
 			});
 		}
 
@@ -1439,6 +1505,7 @@ module.exports = function (nodecg) {
 				case 'SLIDE_OUT': // New operation for switch animation
 					const slots = op.payload.involvedSlots || [op.payload.source, op.payload.target];
 					nodecg.sendMessage('playAnimation', { 
+						batchId,
 						type: 'SWITCH_POKEMON', 
 						involvedSlots: slots.map(s => s ? s.replace('slot', 'slot-') : s).filter(Boolean)
 					});
@@ -1456,9 +1523,9 @@ module.exports = function (nodecg) {
 						}
 					}
 					if (op.payload.actionType === 'KO') {
-						nodecg.sendMessage('playAnimation', { type: 'KO_POKEMON', target: removeTarget.replace('slot', 'slot-') });
+						nodecg.sendMessage('playAnimation', { batchId, type: 'KO_POKEMON', target: removeTarget.replace('slot', 'slot-') });
 					} else {
-						nodecg.sendMessage('playAnimation', { type: 'EXIT_POKEMON', target: removeTarget.replace('slot', 'slot-') });
+						nodecg.sendMessage('playAnimation', { batchId, type: 'EXIT_POKEMON', target: removeTarget.replace('slot', 'slot-') });
 					}
 					break;
 				}
@@ -1477,7 +1544,7 @@ module.exports = function (nodecg) {
 					let animationType = 'REPLACE_POKEMON';
 					if (op.payload.actionType === 'Evolve') animationType = 'EVOLVE_POKEMON';
 					else if (op.payload.actionType === 'Devolve') animationType = 'DEVOLVE_POKEMON';
-					nodecg.sendMessage('playAnimation', { type: animationType, target: replaceTarget.replace('slot', 'slot-'), cardId: op.payload.cardId });
+					nodecg.sendMessage('playAnimation', { batchId, type: animationType, target: replaceTarget.replace('slot', 'slot-'), cardId: op.payload.cardId });
 					break;
 				}
 			}
@@ -1515,13 +1582,10 @@ module.exports = function (nodecg) {
 		const completedIds = new Set(batchToProcess.map(op => op.id));
 		pendingOperationSources = pendingOperationSources.filter(op => !completedIds.has(op.id));
 
-		if (doesBatchRequireAck(batchToProcess)) {
+		if (batchId) {
 			nodecg.log.info(`Batch (Prio ${currentPriority}) applied. Waiting for frontend acknowledgement.`);
-			const timeoutDuration = getTimeoutForPriority(currentPriority);
-			ackTimeout = setTimeout(() => {
-				nodecg.log.warn(`Acknowledgement timeout for priority ${currentPriority}! Forcing next batch.`);
-				handleAnimationComplete();
-			}, timeoutDuration);
+			// Replicant の nextTick flush の後に封鎖し、クライアントでの収集漏れを防ぐ。
+			process.nextTick(() => animationBatch.seal(batchId));
 		} else {
 			nodecg.log.info(`Batch (Prio ${currentPriority}) was data-only. Proceeding to next batch immediately.`);
 			processorStatus.value = 'IDLE';
@@ -1534,9 +1598,8 @@ module.exports = function (nodecg) {
 	});
 
 	nodecg.listenFor('animationBatchComplete', (data, callback) => {
-		nodecg.log.info(`Received 'animationBatchComplete'.`);
-		handleAnimationComplete();
-		if (callback) callback(null, 'Acknowledged.');
+		const accepted = animationBatch.acknowledge(data);
+		if (callback) callback(null, { accepted });
 	});
 
 	/**
@@ -1557,7 +1620,8 @@ module.exports = function (nodecg) {
 	function executeResetSystem(callback) {
 
 		try {
-			executeRestart(null)
+			gameSetup.value = null;
+			executeRestart(null);
 
 			// Reset Turn and Action Status (both LIVE and DRAFT)
 			live_currentTurn.value = 'L';
@@ -1569,6 +1633,10 @@ module.exports = function (nodecg) {
 			// Reset Decks
 			deckL.value = { name: '', cards: [] };
 			deckR.value = { name: '', cards: [] };
+			deckIdL.value = '';
+			deckIdR.value = '';
+			deckLoadingProgress.value = { side: null, percentage: 0, text: '' };
+			firstMove.value = '';
 
 			// Clear Prize Cards (System Reset should clear, not restore)
 			nodecg.Replicant('prizeCardsL').value = Array.from({ length: 6 }, () => ({ cardId: null, isTaken: false }));
@@ -1589,6 +1657,8 @@ module.exports = function (nodecg) {
 
 	// Helper function to reset the board state (replicants) without clearing timeline
 	function resetBoardState() {
+		cancelQueueProcessing();
+		queueCounter = 0;
 		// Reset Current Turn based on firstMove
 		if (gameSetup.value && gameSetup.value.firstMove) {
 			firstMove.value = gameSetup.value.firstMove;
@@ -1662,6 +1732,8 @@ module.exports = function (nodecg) {
 	// Listen for a message to restart the Game board
 	function executeRestart(callback) {
 		try {
+			stateGeneration.value += 1;
+			timelineControl?.resetRuntime();
 			// 1. Reset the board state
 			resetBoardState();
 
@@ -1908,40 +1980,6 @@ module.exports = function (nodecg) {
 	nodecg.Replicant('cardToShowL').value = '';
 	nodecg.Replicant('cardToShowR').value = '';
 
-	function doesBatchRequireAck(batch) {
-		const animationHeavyTypes = [
-			'ATTACK',
-			'SET_DAMAGE',
-			'SET_AILMENTS',
-			'SLIDE_OUT',
-			'APPLY_SWITCH',
-			'REPLACE_POKEMON',
-			'SET_POKEMON',
-			'REMOVE_POKEMON', // This triggers EXIT_POKEMON animation
-			'EXIT_POKEMON',
-			'ENTER_POKEMON',
-			'SET_TOOLS',
-			'SET_ENERGIES'
-		]; return batch.some(op => animationHeavyTypes.includes(op.type));
-	}
-
-	// Gets a timeout duration based on priority. Higher priority (lower number) = longer animation.
-	// Uses % 100 to strip epoch offset (multiples of 100) and recover the base priority.
-	function getTimeoutForPriority(priority) {
-		const basePriority = priority % 100;
-		switch (basePriority) {
-			case 0: return 5000; // Attack animations
-			case 1: return 2500; // Epoch triggers (SET_POKEMON, SET_TURN)
-			case 2: return 2500; // State & attachment changes
-			case 3: return 3500; // Damage / extra HP
-			case 4: return 3000; // KO animations
-			case 5: return 3000; // Evolution animations (Mega/Tera webm up to 1.5s + startup)
-			case 6: return 2500; // Switch slide-out animations
-			case 7: return 2500; // Switch slide-in animations
-			default: return 2500;
-		}
-	}
-
 	/**
 	 * Resolves the current slot for a given instanceId by scanning live/draft replicants.
 	 * Returns the slot name (e.g. 'slotL0') or null if not found.
@@ -2005,8 +2043,10 @@ module.exports = function (nodecg) {
 		assertUniqueInstanceIds,
 		assertBatchIdentity,
 		assertQueueIdentity,
+		getImportContext,
+		assertImportContext,
 	};
 
 	// --- Timeline & Time Manager ---
-	require('./timeline_manager')(nodecg, gameLogic);
+	timelineControl = require('./timeline_manager')(nodecg, gameLogic);
 };

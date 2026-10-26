@@ -1,14 +1,14 @@
 """
 Input: contextlib, io, json, os, pathlib, pathlib.Path, subprocess, sys, tempfile, unittest
-Output: events, Response, RuntimeDiagnosticsTests
+Output: events, deck_html, Response, RuntimeDiagnosticsTests
 Pos: Application code
 
 🔄 Self-reference: When this file changes, update this header
 """
 
 # [INPUT]: unittest、標準 subprocess、一時 DB、JP/CHT/CHS の取得層と診断イベントに依存する。
-# [OUTPUT]: 捕捉・未捕捉例外、ゼロ終了時の失敗、画像・入力欠落、ZIP 生成失敗の現場証拠を通信なしで検証する。
-# [POS]: python/ の全言語診断回帰。実 CLI の stdout と終了意味を保持したまま stderr の段階・スタックを検証する。
+# [OUTPUT]: 例外と失敗の現場証拠、デッキ stdout の枚数、--keep・部分成功と共有 DB の分離を通信なしで検証する。
+# [POS]: python/ の全言語診断回帰。実 CLI の stdout・終了意味・stderr の段階を確認し、JP/CHT のデッキ枚数が取得境界で失われないことを保証する。
 # [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
 
 import contextlib
@@ -35,6 +35,15 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 def events(stderr):
     return [json.loads(line[len(diagnostics.EVENT_PREFIX):])
             for line in stderr.splitlines() if line.startswith(diagnostics.EVENT_PREFIX)]
+
+
+def deck_html(language, entries):
+    if language == "jp":
+        value = "-".join(f"{card_id}_{quantity}" for card_id, quantity in entries)
+        return f'<form id="inputArea"><input type="hidden" name="deck_pokemon" value="{value}"/></form>'
+    links = "".join(f'<a href="/detail/{card_id}/"><p class="count">{quantity}</p></a>'
+                    for card_id, quantity in entries)
+    return f'<div class="graphicList"><div class="card">{links}</div></div>'
 
 
 class Response:
@@ -172,15 +181,26 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
                                     for item in events(self.stderr.getvalue())))
 
     def test_deck_bad_quantity_parse_error_is_recorded(self):
-        fixtures = (
-            (deck_jp, '<form id="inputArea"><input type="hidden" name="deck_pokemon" value="123_bad"/></form>'),
-            (deck_cht, '<div class="graphicList"><div class="card"><a href="/detail/123/"><p class="count">bad</p></a></div></div>'),
-        )
-        for module, html in fixtures:
-            with self.subTest(module=module.__name__):
-                with mock.patch.object(module.requests, "get", return_value=Response(html)):
-                    self.assertEqual(module.extract_deck_cards("code", db_path=str(Path(self.temp.name) / "cards.json")), [])
-                self.failure("deck.parse", "ValueError")
+        for language, module in (("jp", deck_jp), ("cht", deck_cht)):
+            for quantity in ("bad", "0", "-1", "1.5"):
+                with self.subTest(language=language, quantity=quantity):
+                    self.stderr.seek(0)
+                    self.stderr.truncate(0)
+                    html = deck_html(language, [("123", quantity)])
+                    stdout = io.StringIO()
+                    with mock.patch.object(module, "load_database", return_value={}), \
+                         mock.patch.object(module.requests, "get", return_value=Response(html)), \
+                         mock.patch.object(module, "_core_process_card") as process, \
+                         mock.patch.object(module, "save_database") as save, \
+                         mock.patch.object(sys, "argv", ["deck", "code"]), \
+                         contextlib.redirect_stdout(stdout):
+                        with self.assertRaises(SystemExit) as stopped:
+                            module.main()
+                    self.assertEqual(stopped.exception.code, 1)
+                    self.assertEqual(stdout.getvalue(), "")
+                    process.assert_not_called()
+                    save.assert_not_called()
+                    self.failure("deck.parse", "ValueError")
 
     def test_chs_image_check_permission_records_error_but_missing_file_is_normal(self):
         with mock.patch("builtins.open", side_effect=PermissionError("image check denied")):
@@ -235,21 +255,18 @@ with mock.patch.object(cards, "get_card_details", return_value={{"name": "card"}
                 self.assertEqual(recorded[-1]["script"], "fixture.py")
                 self.assertIn("save denied", recorded[-1]["traceback"])
 
-    def test_real_deck_partial_result_keeps_legacy_json_and_records_omitted_card(self):
-        fixtures = {
-            "jp": '<form id="inputArea"><input type="hidden" name="deck_pokemon" value="123_1-456_1"/></form>',
-            "cht": '<div class="graphicList"><div class="card"><a href="/detail/123/"><p class="count">1</p></a><a href="/detail/456/"><p class="count">1</p></a></div></div>',
-        }
-        for language, html in fixtures.items():
+    def test_real_deck_partial_result_keeps_counts_and_records_omitted_card(self):
+        for language in ("jp", "cht"):
             with self.subTest(language=language):
+                html = deck_html(language, [("123", 2), ("456", 4), ("123", 3)])
+                path = Path(self.temp.name) / f"deck_{language}.json"
                 code = f"""
 import sys
 from unittest import mock
 import extract_deck_cards_{language} as deck
 response = mock.Mock(text={html!r}, status_code=200)
-sys.argv = ["deck", "code"]
+sys.argv = ["deck", "code", "--database-path", {str(path)!r}]
 with mock.patch.object(deck, "load_database", return_value={{}}), \
-     mock.patch.object(deck, "save_database"), \
      mock.patch.object(deck.requests, "get", return_value=response), \
      mock.patch.object(deck, "_core_process_card", side_effect=[({{"name": "good"}}, "updated"), (None, "failed")]), \
      mock.patch.object(deck.time, "sleep"):
@@ -257,9 +274,38 @@ with mock.patch.object(deck, "load_database", return_value={{}}), \
 """
                 result = self.run_script(language, code)
                 self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertEqual(json.loads(result.stdout), {"cards": ["123"]})
+                self.assertEqual(json.loads(result.stdout), {"cards": ["123"], "counts": {"123": 5}})
+                self.assertEqual(json.loads(path.read_text(encoding="utf-8")), {"123": {"name": "good"}})
                 self.assertTrue(any(item["event"] == "warning" and item.get("cardId") == "456"
                                     for item in events(result.stderr)))
+
+    def test_real_deck_keep_retains_counts_without_changing_cached_cards(self):
+        for language in ("jp", "cht"):
+            with self.subTest(language=language):
+                html = deck_html(language, [("123", 2), ("456", 1), ("123", 3)])
+                path = Path(self.temp.name) / f"cached_{language}.json"
+                original = json.dumps({"123": {"name": "cached A"}, "456": {"name": "cached B"}})
+                path.write_text(original, encoding="utf-8")
+                code = f"""
+import sys
+from unittest import mock
+import extract_deck_cards_{language} as deck
+import card_utils_{language} as cards
+response = mock.Mock(text={html!r}, status_code=200)
+sys.argv = ["deck", "code", "--keep", "--database-path", {str(path)!r}]
+with mock.patch.object(deck.requests, "get", return_value=response), \
+     mock.patch.object(cards, "get_card_details", side_effect=AssertionError("Cached card fetched")) as fetch, \
+     mock.patch.object(deck, "save_database") as save, \
+     mock.patch.object(deck.time, "sleep"):
+    deck.main()
+    fetch.assert_not_called()
+    save.assert_not_called()
+"""
+                result = self.run_script(language, code)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(json.loads(result.stdout),
+                                 {"cards": ["123", "456"], "counts": {"123": 5, "456": 1}})
+                self.assertEqual(path.read_text(encoding="utf-8"), original)
 
     def test_real_uncaught_error_has_hook_stage_card_and_traceback(self):
         result = self.run_script("jp", """

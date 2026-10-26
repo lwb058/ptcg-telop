@@ -9,4 +9,6 @@
 
 bench_attacks は借用ワザの出所見出しに使用する UI ラベル。カード特性の名前照合は表示言語と独立し、[attack_sources.js](../dashboard/js/attack_sources.js) の名称設定が所有する。
 
+deck_viewer_header_count、deck_viewer_count_unknown と deck_viewer_category_* はデッキの枚数列、不明枚数の説明、分類合計の見出しを四言語で表示する。
+
 [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。

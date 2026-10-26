@@ -401,6 +401,36 @@
     "cht": "卡名",
     "en": "Card Name"
   },
+  "deck_viewer_header_count": {
+    "jp": "枚数",
+    "en": "Quantity",
+    "chs": "数量",
+    "cht": "數量"
+  },
+  "deck_viewer_count_unknown": {
+    "jp": "枚数不明。デッキを再インポートしてください。",
+    "en": "Quantity unknown. Reimport the deck to restore quantities.",
+    "chs": "数量未知，请重新导入卡组补齐数量。",
+    "cht": "數量未知，請重新匯入牌組補齊數量。"
+  },
+  "deck_viewer_category_pokemon": {
+    "jp": "ポケモン",
+    "en": "Pokémon",
+    "chs": "宝可梦",
+    "cht": "寶可夢"
+  },
+  "deck_viewer_category_trainer": {
+    "jp": "トレーナーズ",
+    "en": "Trainers",
+    "chs": "训练家",
+    "cht": "訓練家"
+  },
+  "deck_viewer_category_energy": {
+    "jp": "エネルギー",
+    "en": "Energy",
+    "chs": "能量",
+    "cht": "能量"
+  },
   "deck_viewer_header_type": {
     "jp": "タイプ",
     "chs": "类别",

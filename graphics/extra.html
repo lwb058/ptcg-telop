@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
-[INPUT]: NodeCG の live_slotL6–L8 / live_slotR6–R8・extraBenchVisible・デッキ・設定・テーマ・言語 Replicant、攻撃と入替の通知、slot-renderer.js と共通 CSS に依存。
-[OUTPUT]: 1920×1080 の透明画面に左右の追加ベンチ 6–8 を描画し、表示切替、対象スロットの入替・被弾演出を再生。
+[INPUT]: NodeCG の live_slotL6–L8 / live_slotR6–R8・extraBenchVisible・デッキ・設定・テーマ・言語 Replicant、演出と批次境界の通知、slot-renderer.js / animation-batch.js と共通 CSS に依存。
+[OUTPUT]: 1920×1080 の透明画面に左右の追加ベンチ 6–8 を描画し、明示された extra 批次の描画・入替・被弾終了後に識別付き ACK を送信。
 [POS]: main.html に重ねる独立した拡張ベンチ画面。描画は SlotRenderer と共有し、この画面に存在するスロットへの通知だけを演出へ渡す。
 [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
 -->
@@ -113,6 +113,7 @@
     <!-- Preloader Container for FX Videos (Hidden) -->
     <div id="video-preloader"></div>
 
+    <script src="animation-batch.js"></script>
     <script src="slot-renderer.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -364,6 +365,7 @@
             }
 
             NodeCG.waitForReplicants(...replicantList, themeAssets, i18nStrings).then(() => {
+                const animationBatch = AnimationBatch.create({ nodecg, graphic: 'extra' });
                 SlotRenderer.init({ cardDatabase, settingsRep, getCardImageUrl, resolveAssetPath });
                 updateBodyLanguageClass();
 
@@ -410,7 +412,7 @@
                             if (!oldVal) {
                                 return;
                             }
-                            renderSlot(side, i, newVal, oldVal);
+                            animationBatch.add(renderSlot(side, i, newVal, oldVal));
                         });
                         renderSlot(side, i, replicant.value, null);
                     });
@@ -441,27 +443,19 @@
                         }
                     });
 
-                    setTimeout(() => {
-                        let animationsToEnd = targetsInThisGraphic.length;
-                        const onHitAnimationEnd = () => {
-                            animationsToEnd--;
-                            if (animationsToEnd === 0) {
-                                g_attackAnimationTargets.clear();
-                            }
-                        };
-
-                        targetsInThisGraphic.forEach(targetInfo => {
+                    const promise = new Promise(resolve => setTimeout(() => {
+                        const hitPromises = targetsInThisGraphic.map(targetInfo => {
                             const targetEl = document.getElementById(targetInfo.targetId.replace('slot', 'slot-'));
-                            if (!targetEl) {
-                                onHitAnimationEnd();
-                                return;
-                            }
+                            if (!targetEl) return Promise.resolve();
 
                             const cardImageSelector = '.card-image-area';
                             const cardImageEl = targetEl.querySelector(cardImageSelector);
                             if (cardImageEl) {
                                 cardImageEl.classList.add('anim-shake', 'anim-flash-white');
-                                setTimeout(() => cardImageEl.classList.remove('anim-shake', 'anim-flash-white'), 400);
+                                const shakePromise = new Promise(done => setTimeout(() => {
+                                    cardImageEl.classList.remove('anim-shake', 'anim-flash-white');
+                                    done();
+                                }, 400));
 
                                 const imageRect = cardImageEl.getBoundingClientRect();
                                 const slotRect = targetEl.getBoundingClientRect();
@@ -480,15 +474,21 @@
                                 hitVideo.style.top = `${relativeTop}px`;
                                 targetEl.appendChild(hitVideo);
 
-                                hitVideo.addEventListener('ended', () => {
+                                const videoPromise = new Promise(done => hitVideo.addEventListener('ended', () => {
                                     hitVideo.remove();
-                                    onHitAnimationEnd();
-                                });
+                                    done();
+                                }, { once: true }));
+                                return Promise.all([shakePromise, videoPromise]);
                             } else {
-                                onHitAnimationEnd();
+                                return Promise.resolve();
                             }
                         });
-                    }, 1000);
+                        Promise.allSettled(hitPromises).then(() => {
+                            targetsInThisGraphic.forEach(targetInfo => g_attackAnimationTargets.delete(targetInfo.targetId.replace('slot', 'slot-')));
+                            resolve();
+                        });
+                    }, 1000));
+                    animationBatch.add(promise, data.batchId);
                 });
 
                 nodecg.listenFor('playAnimation', (animation) => {
@@ -501,7 +501,7 @@
                     } else {
                         if (!animation.target || !document.getElementById(animation.target)) return;
                     }
-                    SlotRenderer.handleAnimation(animation);
+                    animationBatch.add(SlotRenderer.handleAnimation(animation), animation.batchId);
                 });
 
                 // Fallback cleanup for animation state

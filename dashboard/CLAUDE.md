@@ -8,7 +8,7 @@ NodeCG の操作パネル。対戦編集は draft_* の表示から操作キュ�
 - [director_panel.html](director_panel.html): 進行管理。操作キューの適用・破棄、先攻、カメラ、試合リセット、時計を操作し、processorStatus で適用ボタンの可否を決める。
 - [player_l_panel.html](player_l_panel.html): 左プレイヤーの DOM と読込順を定義する入口。Bootstrap と共有スクリプトを読み、setupPlayerPanel('L') に制御を渡す。
 - [player_r_panel.html](player_r_panel.html): 右プレイヤーの DOM と読込順を定義する入口。Bootstrap と共有スクリプトを読み、setupPlayerPanel('R') に制御を渡す。
-- [deck_viewer.html](deck_viewer.html): デッキ閲覧と表示操作。左右の一覧・サイドカードを管理し、共有インポーター、カード表示 Replicant、表示履歴の記録をつなぐ。
+- [deck_viewer.html](deck_viewer.html): デッキ閲覧と表示操作。左右の一覧・サイドカードを管理し、共有インポーター、カード表示 Replicant、表示履歴の記録をつなぐ。List の枚数列と Grid のバッジ・分類合計は各デッキの counts を優先し、旧デッキは重複から確定できる枚数だけを表示する。不明枚数とそれを含む合計は「—」を維持する。
 - [record.html](record.html): 記録編集。対戦操作と表示操作の二系統の履歴、時刻編集、シーク・再生、JSON 入出力を extension のメッセージ処理へ接続する。
 - [setting.html](setting.html): 設定編集。表示・対戦補助・言語・テーマ・ホットキー・時計設定を保存し、DB 初期化と更新通知を扱う。支援ボタンに隣接する診断ボタンを js/diagnostic_export.js に接続し、生成中の表示と操作後の結果を多言語で表示する。
 

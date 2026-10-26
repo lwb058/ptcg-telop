@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 [INPUT]: NodeCG のデッキ・カード DB・サイドカード・表示状態 Replicant と、js/dashboard.js、js/deck_importer.js、css/dashboard.css に依存する。
-[OUTPUT]: 左右のデッキ一覧、カード追加・削除、サイドカード割当 UI を提供し、カード表示 Replicant と表示記録メッセージを更新する。
+[OUTPUT]: 左右のデッキ一覧と保存された枚数、カード追加・削除、サイドカード割当 UI を提供し、カード表示 Replicant と表示記録メッセージを更新する。
 [POS]: dashboard のデッキ閲覧・表示操作パネル。インライン処理が一覧とドラッグ操作を管理し、取り込みは共有インポーターから extension へ委譲する。
 [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
 -->
@@ -49,6 +49,7 @@
                         <tr>
                             <th id="header-l-image">画像</th>
                             <th id="header-l-name">カード名</th>
+                            <th id="header-l-count">枚数</th>
                             <th id="header-l-type">タイプ</th>
                             <th id="header-l-id">ID</th>
                             <th id="header-l-delete">削除</th>
@@ -90,6 +91,7 @@
                         <tr>
                             <th id="header-r-image">画像</th>
                             <th id="header-r-name">カード名</th>
+                            <th id="header-r-count">枚数</th>
                             <th id="header-r-type">タイプ</th>
                             <th id="header-r-id">ID</th>
                             <th id="header-r-delete">削除</th>
@@ -184,6 +186,7 @@
             ['l', 'r'].forEach(s => {
                 document.getElementById(`header-${s}-image`).textContent = getI18nText('deck_viewer_header_image');
                 document.getElementById(`header-${s}-name`).textContent = getI18nText('deck_viewer_header_card_name');
+                document.getElementById(`header-${s}-count`).textContent = getI18nText('deck_viewer_header_count');
                 document.getElementById(`header-${s}-type`).textContent = getI18nText('deck_viewer_header_type');
                 document.getElementById(`header-${s}-id`).textContent = getI18nText('deck_viewer_header_id');
                 document.getElementById(`header-${s}-delete`).textContent = getI18nText('delete');
@@ -225,6 +228,21 @@
                 return a.id.localeCompare(b.id);
             });
             return sortableCards;
+        }
+
+        // ---- 保存枚数を優先し、旧デッキの重複から分かる枚数だけを復元する ----
+        function getDeckCardCounts(deck) {
+            const occurrences = new Map();
+            for (const cardId of deck.cards) {
+                occurrences.set(cardId, (occurrences.get(cardId) || 0) + 1);
+            }
+            for (const [cardId, occurrence] of occurrences) {
+                const savedCount = deck.counts?.[cardId];
+                const count = Number.isSafeInteger(savedCount) && savedCount > 0
+                    ? savedCount : occurrence > 1 ? occurrence : null;
+                occurrences.set(cardId, count);
+            }
+            return occurrences;
         }
 
         // --- Drag and Drop Handlers ---
@@ -363,11 +381,12 @@
 
         function renderDeckTableView(deck, tableBody, db, side) {
             if (!deck || !deck.cards || !db) {
-                tableBody.innerHTML = '<tr><td colspan="5">Waiting for data...</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="6">Waiting for data...</td></tr>';
                 return;
             }
             const uniqueCardIds = [...new Set(deck.cards)];
             const sortedCards = sortCards(uniqueCardIds, db);
+            const counts = getDeckCardCounts(deck);
 
             tableBody.innerHTML = '';
             for (const card of sortedCards) {
@@ -393,6 +412,12 @@
                 const nameCell = document.createElement('td');
                 nameCell.textContent = cardData.name;
                 row.appendChild(nameCell);
+
+                const countCell = document.createElement('td');
+                countCell.className = 'card-count-cell';
+                countCell.textContent = counts.get(card.id) ?? '—';
+                if (counts.get(card.id) === null) countCell.title = getI18nText('deck_viewer_count_unknown');
+                row.appendChild(countCell);
 
                 const typeCell = document.createElement('td');
                 let typeText = cardData.supertype;
@@ -441,11 +466,12 @@
 
             const uniqueCardIds = [...new Set(deck.cards)];
             const sortedCards = sortCards(uniqueCardIds, db);
+            const counts = getDeckCardCounts(deck);
 
             const groupedCards = { pokemon: [], trainer: [], energy: [] };
             for (const card of sortedCards) {
                 if (card && card.data && groupedCards[card.data.supertype]) {
-                    const count = deck.cards.filter(id => id === card.id).length;
+                    const count = counts.get(card.id);
                     groupedCards[card.data.supertype].push({ ...card, count });
                 }
             }
@@ -460,9 +486,10 @@
                 const categoryDiv = document.createElement('div');
                 categoryDiv.className = 'card-category';
 
-                const totalCount = cardsOfType.reduce((acc, card) => acc + card.count, 0);
+                const totalCount = cardsOfType.some(card => card.count === null)
+                    ? '—' : cardsOfType.reduce((acc, card) => acc + card.count, 0);
                 const title = document.createElement('h3');
-                title.textContent = `${supertype.charAt(0).toUpperCase() + supertype.slice(1)} (${totalCount})`;
+                title.textContent = `${getI18nText(`deck_viewer_category_${supertype}`)} (${totalCount})`;
                 categoryDiv.appendChild(title);
 
                 const gridDiv = document.createElement('div');
@@ -485,6 +512,13 @@
                     img.dataset.cardId = card.id;
                     img.addEventListener('dragstart', handleDragStart);
                     cardItemDiv.appendChild(img);
+
+                    const countBadge = document.createElement('span');
+                    countBadge.className = 'card-count-badge';
+                    countBadge.textContent = card.count === null ? '—' : `×${card.count}`;
+                    countBadge.title = card.count === null ? getI18nText('deck_viewer_count_unknown')
+                        : `${getI18nText('deck_viewer_header_count')}: ${card.count}`;
+                    cardItemDiv.appendChild(countBadge);
 
                     const deleteButton = document.createElement('button');
                     deleteButton.className = 'delete-btn';

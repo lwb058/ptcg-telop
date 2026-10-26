@@ -7,8 +7,8 @@
  */
 
 /**
- * [INPUT]: 共通 Python 起動境界、診断保存器と注入された JP/CHT/EN のカード DB・デッキ操作に依存する。
- * [OUTPUT]: createLegacyImporter が既存 CLI の stdout と終了コードを維持し、試行ごとの原因・警告・診断番号を返す。
+ * [INPUT]: 共通 Python 起動境界、診断保存器、deck_state、言語世代の検証と注入された JP/CHT/EN のカード DB・デッキ操作に依存する。
+ * [OUTPUT]: createLegacyImporter が CLI の ID・counts と終了コードを受け取り、枚数を維持して確定し、原因・警告・診断番号を返す。失効した取得は再試行・状態更新・進捗通知を行わない。
  * [POS]: extension の従来言語アダプター。タイムラインのデッキ専用取得と画面の単カードフォールバックを同じ観測境界に接続する。
  * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
  */
@@ -19,22 +19,37 @@ const path = require('node:path');
 const { StringDecoder } = require('node:string_decoder');
 const { spawnPython } = require('./python_process');
 const { redactText } = require('./import_diagnostics');
+const { createImportedDeck, addDeckCards } = require('./deck_state');
 
 const MAX_OUTPUT_BYTES = 1024 * 1024;
 const SCRIPT_LANGUAGES = new Set(['jp', 'cht', 'en']);
 
 function createLegacyImporter({ pythonDir, pythonCommand, diagnostics, getSettings,
     databasePathFor, reloadDatabase, getDatabase, getDeck, commitDeck,
-    onLoading = () => {}, spawnProcess, reloadDelayMs = 200 }) {
+    onLoading = () => {}, spawnProcess, reloadDelayMs = 200,
+    getContext = () => ({ language: getSettings().language || 'jp' }),
+    assertContext = context => {
+        if (context.language !== (getSettings().language || 'jp')) {
+            const error = new Error('Import language changed. Please import again.');
+            error.code = 'IMPORT_CONTEXT_EXPIRED';
+            throw error;
+        }
+    } }) {
 
     async function run({ side, code, allowCardFallback = true, progressOptions = { scale: 1, offset: 0 } }) {
-        const requestedLanguage = getSettings().language || 'jp';
+        const importContext = getContext();
+        const requestedLanguage = importContext.language || 'jp';
         const language = SCRIPT_LANGUAGES.has(requestedLanguage) ? requestedLanguage : 'jp';
         const context = diagnostics.begin({ input: code, side, language, operation: 'import' });
         const reasons = [];
         const write = event => { try { diagnostics.record(context, event); } catch (_) { /* 保存障害は取得を妨げない。 */ } };
+        const notifyLoading = value => {
+            try { assertContext(importContext); } catch (_) { return; }
+            onLoading(value);
+        };
 
         function runScript(type, attempt) {
+            assertContext(importContext);
             const script = type === 'deck' ? `extract_deck_cards_${language}.py` : `get_single_card_${language}.py`;
             const input = type === 'card' ? code.replace('/', '-') : code;
             const args = [path.join(pythonDir, script), input, '--database-path', databasePathFor(language)];
@@ -88,7 +103,7 @@ function createLegacyImporter({ pythonDir, pythonCommand, diagnostics, getSettin
                         const match = stderrLine.slice(0, end).match(/--- Processing card (\d+)\/(\d+):/);
                         if (match && Number(match[2]) > 0) {
                             const percentage = Math.round(Number(match[1]) / Number(match[2]) * 100 * progressOptions.scale + progressOptions.offset);
-                            onLoading({ loading: true, side, percentage, text: `${percentage}%` });
+                            notifyLoading({ loading: true, side, percentage, text: `${percentage}%` });
                         }
                         stderrLine = stderrLine.slice(end + 1);
                     }
@@ -106,22 +121,28 @@ function createLegacyImporter({ pythonDir, pythonCommand, diagnostics, getSettin
         }
 
         function addCard(id) {
+            assertContext(importContext);
             const deck = getDeck(side);
-            if (!Array.isArray(deck.cards)) deck.cards = [];
-            if (!deck.cards.includes(id)) deck.cards = [...deck.cards, id];
+            const updated = addDeckCards(deck, [id]);
+            if (updated !== deck) {
+                deck.cards = updated.cards;
+                deck.counts = updated.counts;
+            }
         }
 
         try {
+            assertContext(importContext);
             if (!['L', 'R'].includes(side) || typeof code !== 'string' || !code.trim() || code.length > 8192) {
                 throw new Error('Please enter a valid deck or card ID.');
             }
             code = code.trim();
-            onLoading({ loading: true, side, percentage: 0, text: 'Fetching...' });
+            notifyLoading({ loading: true, side, percentage: 0, text: 'Fetching...' });
             const types = allowCardFallback ? ['deck', 'card'] : ['deck'];
             for (let index = 0; index < types.length; index++) {
                 const type = types[index];
                 let result;
                 try {
+                    assertContext(importContext);
                     if (type === 'card') {
                         const id = code.replace('/', '-');
                         const cached = getDatabase();
@@ -131,8 +152,10 @@ function createLegacyImporter({ pythonDir, pythonCommand, diagnostics, getSettin
                             result = { warnings: [] };
                         } else {
                             result = await runScript(type, index + 1);
+                            assertContext(importContext);
                             reloadDatabase();
                             await new Promise(resolve => setTimeout(resolve, reloadDelayMs));
+                            assertContext(importContext);
                             const database = getDatabase();
                             if (!database || !database[id] || !database[id].name) {
                                 throw new Error(result.warnings.at(-1)?.message || `Failed to fetch card ${id}.`);
@@ -141,24 +164,29 @@ function createLegacyImporter({ pythonDir, pythonCommand, diagnostics, getSettin
                         }
                     } else {
                         result = await runScript(type, index + 1);
-                        let cards;
+                        assertContext(importContext);
+                        let deck;
                         try {
                             const output = JSON.parse(result.stdout);
                             if (!output || !Array.isArray(output.cards)) throw new Error('Python did not return a card list.');
-                            cards = output.cards;
+                            deck = createImportedDeck(code, output.cards, output.counts);
                         } catch (error) {
                             write({ script: result.script, stage: 'process.output', event: 'failed', attemptType: type,
                                 message: error.message, traceback: error.stack });
                             throw error;
                         }
+                        assertContext(importContext);
                         reloadDatabase();
-                        commitDeck(side, code, cards);
+                        assertContext(importContext);
+                        commitDeck(side, code, deck.cards, deck.counts);
                     }
                 } catch (error) {
+                    try { assertContext(importContext); } catch (expired) { error = expired; }
                     const message = redactText(error.message || String(error));
                     reasons.push({ type, message });
                     write({ script: type === 'deck' ? `extract_deck_cards_${language}.py` : `get_single_card_${language}.py`,
                         stage: 'import.attempt', event: 'failed', attempt: index + 1, attemptType: type, message, traceback: error.stack });
+                    if (error.code === 'IMPORT_CONTEXT_EXPIRED') throw error;
                     continue;
                 }
                 const warnings = result.warnings;
@@ -171,9 +199,10 @@ function createLegacyImporter({ pythonDir, pythonCommand, diagnostics, getSettin
         } catch (error) {
             const message = redactText(error.message || String(error));
             write({ stage: 'import', event: 'failed', message });
-            throw { error: message, message, diagnosticId: context.id, diagnosticsWarning: diagnostics.getWarning() };
+            throw { error: message, message, ...(error.code ? { code: error.code } : {}),
+                diagnosticId: context.id, diagnosticsWarning: diagnostics.getWarning() };
         } finally {
-            onLoading({ loading: false, side: null, percentage: 0, text: '' });
+            notifyLoading({ loading: false, side: null, percentage: 0, text: '' });
         }
     }
     return { run };

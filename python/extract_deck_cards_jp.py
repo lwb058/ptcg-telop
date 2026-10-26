@@ -7,8 +7,8 @@ Pos: Application code
 """
 
 # [INPUT]: 標準ライブラリ、requests・BeautifulSoup、import_diagnostics、日本語公式 HTML と card_utils_jp の DB・カード取得に依存する。
-# [OUTPUT]: 従来のカード ID 一覧 JSON と終了結果を保ち、取得・解析・カード欠落の診断を段階付き stderr イベントとして親へ返す。
-# [POS]: extension/index.js が起動する日本語デッキ入口。デッキ内のカードをメモリ上で処理して DB をまとめて保存し、表示用 ID 一覧を NodeCG に返す。
+# [OUTPUT]: カード ID 一覧 cards と成功カードの正整数枚数 counts を JSON で返し、取得・解析・カード欠落の診断と従来の終了結果を保つ。
+# [POS]: extension/index.js が起動する日本語デッキ入口。同じ ID の枚数を合算して一度だけ取得し、デッキの枚数を共有 DB から分離して NodeCG に返す。
 # [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
 
 import os, re, time, argparse, sys, json
@@ -77,7 +77,9 @@ def extract_deck_cards(deck_id, overwrite=True, db_path=None, language='jp'):
                         if len(parts) >= 2:
                             card_id = parts[0]
                             quantity = int(parts[1])
-                            deck_list_with_quantity[card_id] = quantity
+                            if quantity <= 0:
+                                raise ValueError("Deck entry contains a non-positive card quantity")
+                            deck_list_with_quantity[card_id] = deck_list_with_quantity.get(card_id, 0) + quantity
         
         if not deck_list_with_quantity:
             diagnostics.warning("deck.parse", "No card IDs were found in deck HTML")
@@ -149,11 +151,11 @@ def main(deck_id_arg=None):
     cards = extract_deck_cards(deck_id, args.overwrite, db_path=args.database_path)
 
     if cards:
-        # The user now wants a unique list of card IDs.
+        # 枚数はデッキに属するため、共有カード DB とは別の JSON フィールドに返す。
         card_ids_only = [card['id'] for card in cards if 'id' in card]
+        counts = {card['id']: card['quantity'] for card in cards if 'id' in card}
         
-        # To be consistent with other scripts, wrap the list in an object with a "cards" key.
-        print(json.dumps({"cards": card_ids_only}))
+        print(json.dumps({"cards": card_ids_only, "counts": counts}))
         
         print("Extracted cards:", file=sys.stderr)
         total_cards = 0

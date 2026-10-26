@@ -1,6 +1,6 @@
 /**
  * [INPUT]: dashboard の 7 HTML と各パネル処理が生成する DOM、状態クラス、カード・操作・設定用のセレクターに依存する。
- * [OUTPUT]: パネル共通のフォーム・ボタンと、盤面・操作履歴・デッキ一覧・サイドカード・設定画面のレイアウトおよび状態表示を提供する。
+ * [OUTPUT]: パネル共通のフォーム・ボタンと、盤面・操作履歴・デッキ一覧と枚数・サイドカード・設定画面のレイアウトおよび状態表示を提供する。
  * [POS]: dashboard/css の共有スタイルシート。各 HTML から直接読み込まれ、操作側の状態を見た目へ反映する。スタジアム背景は回転しない外枠に描画し、盤面の視点から分離する。
  * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
  */
@@ -1622,15 +1622,25 @@ body.deck-viewer-body {
 }
 
 .deck-viewer-body .deck-table th:nth-child(3) {
-    width: 20%;
+    width: 9%;
 }
 
 .deck-viewer-body .deck-table th:nth-child(4) {
-    width: 10%;
+    width: 18%;
 }
 
 .deck-viewer-body .deck-table th:nth-child(5) {
     width: 10%;
+}
+
+.deck-viewer-body .deck-table th:nth-child(6) {
+    width: 10%;
+}
+
+.deck-viewer-body .deck-table .card-count-cell {
+    text-align: center;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
 }
 
 .deck-viewer-body .deck-table th {
@@ -1691,6 +1701,20 @@ body.deck-viewer-body {
     cursor: grab;
     transition: transform 0.1s ease-in-out;
     border-radius: 5px;
+}
+
+.deck-viewer-body .card-count-badge {
+    position: absolute;
+    right: 3px;
+    bottom: 5px;
+    min-width: 1.5em;
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: #1a2438;
+    color: white;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
 }
 
 @media (hover: hover) {

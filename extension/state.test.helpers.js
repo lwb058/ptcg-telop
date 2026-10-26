@@ -1,6 +1,6 @@
 /**
  * [INPUT]: 実 extension・dashboard ソース、node:vm とイベント API に依存する。
- * [OUTPUT]: メッセージ経由で対戦状態を操作する隔離テスト環境を提供する。
+ * [OUTPUT]: メッセージ経由で対戦状態を操作し、言語別 DB・OS 子プロセス・時計を制御する隔離テスト環境を提供する。
  * [POS]: 状態回帰の共通境界。OS・通信・時計・Replicant のみを置換し、業務モジュールは実コードを実行する。
  * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
  */
@@ -15,7 +15,7 @@ const cards = Object.fromEntries([1, 2, 3].map(prize => [`card${prize}`, {
     name: `Fixture ${prize}`, card_type: 'Pokemon', pokemon: { hp: 200, prize, color: ['無'] }
 }]));
 
-async function createHarness(saved = {}) {
+async function createHarness(saved = {}, options = {}) {
     const reps = new Map(), handlers = new Map(), messages = [], logs = [];
     const timers = new Map();
     let time = 1700000000000, timerId = 0;
@@ -78,11 +78,20 @@ async function createHarness(saved = {}) {
             await Promise.all([...pending]); await tick();
         }
     }
+    const databases = { jp: cards, ...options.databases };
+    const databaseLanguage = file => /database_([^/\\]+)\.json$/.exec(String(file))?.[1];
     const fakeFs = {
-        existsSync: file => /database_jp\.json$|strings\.json$/.test(String(file)),
+        existsSync(file) {
+            const lang = databaseLanguage(file);
+            return lang ? Object.hasOwn(databases, lang) && databases[lang] !== undefined : /strings\.json$/.test(String(file));
+        },
         mkdirSync() {},
         readFileSync(file) {
-            if (/database_jp\.json$/.test(String(file))) return JSON.stringify(cards);
+            const lang = databaseLanguage(file);
+            if (lang && Object.hasOwn(databases, lang) && databases[lang] !== undefined) {
+                const value = databases[lang];
+                return typeof value === 'string' ? value : JSON.stringify(value);
+            }
             if (/strings\.json$/.test(String(file))) return fs.readFileSync(file, 'utf8');
             throw Error(`Unexpected filesystem read: ${file}`);
         },
@@ -105,7 +114,7 @@ async function createHarness(saved = {}) {
             const builtin = name.replace(/^node:/, '');
             if (builtin === 'fs') return fakeFs;
             if (builtin === 'https') return fakeHttps;
-            if (builtin === 'child_process') return { spawn() { throw Error('Subprocesses are outside this state test'); } };
+            if (builtin === 'child_process') return { spawn: options.spawn || (() => { throw Error('Subprocesses are outside this state test'); }) };
             if (!name.startsWith('.')) return require(name);
             const resolved = require.resolve(path.resolve(path.dirname(file), name));
             return load(resolved);
@@ -125,7 +134,35 @@ async function createHarness(saved = {}) {
         set: (name, value) => { nodecg.Replicant(name).value = value; },
         snapshot: () => Object.fromEntries([...reps].map(([name, rep]) => [name, clone(rep.value)])),
         messages, logs, flush,
-        async request(name, data) { time += 1100; const result = await dispatch(name, data); await flush(); return result; },
+        setDatabase(language, value) { databases[language] = clone(value); },
+        beginRequest(name, data) {
+            time += 1100;
+            const result = new Promise((resolve, reject) => {
+                try {
+                    const handler = handlers.get(name);
+                    if (!handler) throw new Error(`Unknown message: ${name}`);
+                    Promise.resolve(handler(clone(data), (error, answer) => error ? reject(error) : resolve(answer))).catch(reject);
+                } catch (error) { reject(error); }
+            });
+            result.catch(() => {});
+            return { result };
+        },
+        async request(name, data) {
+            time += 1100;
+            if (name === 'animationBatchComplete' && data === undefined) {
+                const batch = messages.findLast(message => message.name === 'animationBatchStart')?.data;
+                if (batch) {
+                    for (const graphic of batch.graphics) {
+                        await dispatch(name, { batchId: batch.batchId, graphic });
+                        await flush();
+                    }
+                    return;
+                }
+            }
+            const result = await dispatch(name, data);
+            await flush();
+            return result;
+        },
         async ui(type, payload, merge = false) {
             time += 1100;
             frontend[merge ? 'queueOrUpdateOperation' : 'queueOperation'](type, clone(payload)); await flush();
@@ -134,7 +171,9 @@ async function createHarness(saved = {}) {
             await api.request(record ? 'applyOpsPack' : 'applyQueue');
             for (let i = 0; api.get('processorStatus') === 'PROCESSING'; i++) {
                 if (i > 100) throw Error('Processor did not finish');
-                await api.request('animationBatchComplete');
+                const batch = messages.findLast(message => message.name === 'animationBatchStart')?.data;
+                if (batch && batch.graphics.length === 0) await api.advance(10000);
+                else await api.request('animationBatchComplete');
             }
         },
         async place(target, cardId = 'card1') { await api.ui('SET_POKEMON', { target, cardId }); await api.apply(); },

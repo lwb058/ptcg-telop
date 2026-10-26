@@ -7,8 +7,8 @@
  */
 
 /**
- * [INPUT]: 共通 Python 起動器、診断保存器、設定参照・進捗通知・状態コミットの注入関数に依存する。
- * [OUTPUT]: 簡体字のデッキ／単体取得を一つの期限と診断番号で実行する createChsImporter を提供する。
+ * [INPUT]: 共通 Python 起動器、診断保存器、言語世代の検証・進捗通知・状態コミットの注入関数に依存する。
+ * [OUTPUT]: createChsImporter が簡体字取得を一つの期限と診断番号で実行する。失効した取得は再試行・状態更新・進捗通知を行わない。
  * [POS]: extension の取得境界。子プロセスの証拠と完全性を検証し、成功候補だけを index の状態所有者へ渡す。
  * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
  */
@@ -49,10 +49,27 @@ function describe(reason) {
 
 function createChsImporter({ pythonDir, databasePath, pythonCommand, diagnostics,
     getSettings, commit, onLoading = () => {}, spawnProcess = spawn,
-    now = Date.now, totalTimeoutMs = TOTAL_TIMEOUT_MS }) {
-    let busy = false;
+    now = Date.now, totalTimeoutMs = TOTAL_TIMEOUT_MS,
+    getContext = () => ({ language: getSettings().language }),
+    assertContext = context => {
+        if (context.language !== getSettings().language) {
+            const error = new Error('导入期间语言已更改，请在简体中文下重新导入。');
+            error.code = 'IMPORT_CONTEXT_EXPIRED';
+            throw error;
+        }
+    } }) {
+    let activeContext = null;
+    function isBusy() {
+        if (!activeContext) return false;
+        try { assertContext(activeContext); return true; } catch (_) { return false; }
+    }
+    const notifyLoading = (importContext, value) => {
+        try { assertContext(importContext); } catch (_) { return; }
+        onLoading(value);
+    };
 
-    function runChild(context, attemptType, input, deadline, progressOptions) {
+    function runChild(context, attemptType, input, deadline, progressOptions, importContext) {
+        assertContext(importContext);
         return new Promise((resolve, reject) => {
             const attempt = attemptType === 'deck' ? 1 : 2;
             const started = now();
@@ -102,7 +119,7 @@ function createChsImporter({ pythonDir, databasePath, pythonCommand, diagnostics
                         }
                         if (!settled && Number.isFinite(event.current) && Number.isFinite(event.total) && event.total > 0) {
                             const percentage = Math.round(event.current / event.total * 100 * progressOptions.scale + progressOptions.offset);
-                            onLoading({ loading: true, side: context.side, percentage, text: `${percentage}%` });
+                            notifyLoading(importContext, { loading: true, side: context.side, percentage, text: `${percentage}%` });
                         }
                         return;
                     } catch (_) {
@@ -116,7 +133,7 @@ function createChsImporter({ pythonDir, databasePath, pythonCommand, diagnostics
                 const match = text.match(/--- Processing card (\d+)\/(\d+):/);
                 if (!settled && match && Number(match[2]) > 0) {
                     const percentage = Math.round(Number(match[1]) / Number(match[2]) * 100 * progressOptions.scale + progressOptions.offset);
-                    onLoading({ loading: true, side: context.side, percentage, text: `${percentage}%` });
+                    notifyLoading(importContext, { loading: true, side: context.side, percentage, text: `${percentage}%` });
                 }
             }
 
@@ -216,22 +233,26 @@ function createChsImporter({ pythonDir, databasePath, pythonCommand, diagnostics
     }
 
     async function run({ side, code, allowCardFallback = true, progressOptions = { scale: 1, offset: 0 } }) {
-        if (busy) throw { error: '已有导入正在进行，请等待完成后重试。', message: '已有导入正在进行，请等待完成后重试。' };
-        busy = true;
+        const importContext = getContext();
+        if (isBusy()) throw { error: '已有导入正在进行，请等待完成后重试。', message: '已有导入正在进行，请等待完成后重试。' };
+        activeContext = importContext;
         const context = diagnostics.begin({ input: code, side, language: 'chs', operation: 'import' });
         const deadline = now() + totalTimeoutMs;
         const reasons = [];
         try {
+            assertContext(importContext);
             if (!['L', 'R'].includes(side) || typeof code !== 'string' || !code.trim() || code.length > 8192) {
                 throw failure('input', '请输入有效卡组代码、链接或单卡 ID。', { fatal: true });
             }
             code = code.trim();
-            onLoading({ loading: true, side, percentage: 0, text: '0%' });
+            notifyLoading(importContext, { loading: true, side, percentage: 0, text: '0%' });
             const types = allowCardFallback ? ['deck', 'card'] : ['deck'];
             for (const type of types) {
                 let result, database, warnings;
                 try {
-                    result = await runChild(context, type, code, deadline, progressOptions);
+                    assertContext(importContext);
+                    result = await runChild(context, type, code, deadline, progressOptions, importContext);
+                    assertContext(importContext);
                     warnings = result.warnings.map(warning => typeof warning === 'string' ? redactText(warning) : {
                         stage: warning.stage, cardId: warning.cardId, message: redactText(warning.message)
                     });
@@ -246,13 +267,17 @@ function createChsImporter({ pythonDir, databasePath, pythonCommand, diagnostics
                     if (now() >= deadline) throw failure('process.timeout', '整次导入超过等待上限。', { timedOut: true });
                     if (getSettings().language !== 'chs') throw failure('state.commit', '导入期间语言已更改，请在简体中文下重新导入。', { fatal: true });
                     diagnostics.record(context, { stage: 'state.commit', event: 'started', attemptType: type });
+                    assertContext(importContext);
                     commit({ side, type, code, cards: result.cards, database });
                     diagnostics.record(context, { stage: 'state.commit', event: 'finished', attemptType: type });
                 } catch (reason) {
-                    const detail = reason.stage ? reason : failure('state.commit', reason.message || String(reason), { fatal: true });
+                    try { assertContext(importContext); } catch (expired) { reason = expired; }
+                    const detail = reason.stage ? reason : failure('state.commit', reason.message || String(reason),
+                        { fatal: true, ...(reason.code ? { code: reason.code } : {}) });
                     reasons.push({ type, ...detail });
                     diagnostics.record(context, { stage: detail.stage, event: 'failed', attemptType: type,
                         message: detail.message, missingCards: detail.missingCards, cardId: detail.cardId });
+                    if (detail.code === 'IMPORT_CONTEXT_EXPIRED') throw detail;
                     if (detail.timedOut || detail.fatal) break;
                     continue;
                 }
@@ -269,14 +294,17 @@ function createChsImporter({ pythonDir, databasePath, pythonCommand, diagnostics
         } catch (reason) {
             const message = reason.stage === 'import' ? reason.message : describe(reason.stage ? reason : failure('import', reason.message || String(reason)));
             diagnostics.record(context, { stage: 'import', event: 'failed', message, durationMs: now() - context.startedAt });
-            throw { error: message, message, diagnosticId: context.id, diagnosticsWarning: diagnostics.getWarning() };
+            throw { error: message, message, ...(reason.code ? { code: reason.code } : {}),
+                diagnosticId: context.id, diagnosticsWarning: diagnostics.getWarning() };
         } finally {
-            busy = false;
-            onLoading({ loading: false, side: null, percentage: 0, text: '' });
+            if (activeContext === importContext) {
+                activeContext = null;
+                notifyLoading(importContext, { loading: false, side: null, percentage: 0, text: '' });
+            }
         }
     }
 
-    return { run, isBusy: () => busy };
+    return { run, isBusy };
 }
 
 module.exports = { createChsImporter, TOTAL_TIMEOUT_MS };

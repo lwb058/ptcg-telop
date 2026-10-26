@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
-[INPUT]: NodeCG の live_*・選手名・ターン・camMode・デッキ・設定・テーマ・言語 Replicant、playAnimation / attack-fx 通知、slot-renderer.js と共通 CSS に依存。
-[OUTPUT]: 1920×1080 の対戦盤面、選手・サイド・スタジアム・ロストゾーン・行動表示を描画し、収集した演出 Promise の完了時に animationBatchComplete を送信。
+[INPUT]: NodeCG の live_*・選手名・ターン・camMode・デッキ・設定・テーマ・言語 Replicant、演出と批次境界の通知、slot-renderer.js / animation-batch.js と共通 CSS に依存。
+[OUTPUT]: 1920×1080 の対戦盤面を描画し、明示された main 批次の描画・入替・被弾 Promise が全て終了してから識別付き ACK を送信。
 [POS]: OBS 用のメイン画面。左右のバトル場 0 と通常ベンチ 1–5 を SlotRenderer へ渡し、カメラ表示時の縮小配置と画面全体の攻撃演出を担当する。
 [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
 -->
@@ -217,6 +217,7 @@
     <!-- Preloader Container for FX Videos (Hidden) -->
     <div id="video-preloader"></div>
 
+    <script src="animation-batch.js"></script>
     <script src="slot-renderer.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -809,6 +810,7 @@
             });
 
             NodeCG.waitForReplicants(...replicantList).then(() => {
+                const animationBatch = AnimationBatch.create({ nodecg, graphic: 'main' });
                 SlotRenderer.init({ cardDatabase, settingsRep, getCardImageUrl, resolveAssetPath });
                 setLanguageClass(language.value || 'jp');
 
@@ -851,8 +853,7 @@
                                 return;
                             }
                             const promise = renderSlot(side, i, newVal, oldVal);
-                            addAnimationPromise(promise);
-                            debouncedOnBatchFinished();
+                            animationBatch.add(promise);
                         });
                     }
                 });
@@ -999,8 +1000,7 @@
 
                 nodecg.listenFor('playAnimation', (animation) => {
                     const promise = SlotRenderer.handleAnimation(animation);
-                    addAnimationPromise(promise);
-                    debouncedOnBatchFinished();
+                    animationBatch.add(promise, animation && animation.batchId);
                 });
 
                 nodecg.listenFor('attack-fx', (data) => {
@@ -1119,64 +1119,12 @@
                         });
                     });
 
-                    addAnimationPromise(promise);
-                    debouncedOnBatchFinished();
+                    animationBatch.add(promise, data.batchId);
                 });
             }).catch(err => console.error("Replicants failed to load:", err));
         });
     </script>
-    <script>
-        // --- New Animation Promise Manager ---
-        let animationPromises = [];
 
-        // Debounce function to prevent rapid firing
-        function debounce(func, wait) {
-            let timeout;
-            return function (...args) {
-                const context = this;
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(context, args), wait);
-            };
-        }
-
-        // This function will be called after a batch of replicant changes
-        const onBatchFinished = () => {
-            if (animationPromises.length === 0) {
-                // If there were no animations triggered in this batch, we can send the ACK immediately.
-                // This is important for data-only changes.
-                console.log('Animation batch empty. Sending ACK immediately.');
-                nodecg.sendMessage('animationBatchComplete');
-                return;
-            }
-
-            console.log(`Waiting for ${animationPromises.length} animation(s) to complete...`);
-
-            Promise.all(animationPromises)
-                .then(() => {
-                    console.log('All animations in batch complete. Sending ACK.');
-                    nodecg.sendMessage('animationBatchComplete');
-                })
-                .catch(err => {
-                    console.error('An error occurred in an animation promise:', err);
-                    // Still send the ACK to prevent the backend from getting stuck
-                    nodecg.sendMessage('animationBatchComplete');
-                })
-                .finally(() => {
-                    // Clear the array for the next batch
-                    animationPromises = [];
-                });
-        };
-
-        // Create a debounced version of the function. The 150ms window should be enough to capture all replicant changes in a single backend batch.
-        const debouncedOnBatchFinished = debounce(onBatchFinished, 150);
-
-        // Helper to add promises to the queue
-        function addAnimationPromise(promise) {
-            if (promise && typeof promise.then === 'function') {
-                animationPromises.push(promise);
-            }
-        }
-    </script>
 </body>
 
 </html>

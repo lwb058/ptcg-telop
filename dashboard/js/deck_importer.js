@@ -7,8 +7,8 @@
  */
 
 /**
- * [INPUT]: 入力／ボタン DOM、importDeckOrCard、deckLoadingStatus、設定／翻訳 Replicant と呼出側の成功コールバックに依存する。
- * [OUTPUT]: setupDeckImporter が進捗と入力抑止を同期し、成功後の ID 更新と言語共通の警告・原因・診断番号の通知を提供する。
+ * [INPUT]: 入力／ボタン DOM、importDeckOrCard、deckLoadingStatus、stateGeneration、設定／翻訳 Replicant と成功コールバックに依存する。
+ * [OUTPUT]: setupDeckImporter が進捗と入力抑止を同期し、現在の言語世代だけに ID 更新・警告・診断番号を通知する。Reset System 後の遅い応答を破棄する。
  * [POS]: dashboard/js の共通取り込みアダプター。取得と状態の確定は extension に委ね、失敗時に成功済みデッキ ID を変更しない。
  * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
  */
@@ -31,10 +31,19 @@ function setupDeckImporter({ side, inputId, buttonId, onDeckIdChange }) {
     const deckLoadingStatus = nodecg.Replicant('deckLoadingStatus');
     const importSettings = nodecg.Replicant('ptcg-settings');
     const importStrings = nodecg.Replicant('i18nStrings');
-    let pending = false;
+    const stateGeneration = nodecg.Replicant('stateGeneration');
+    let pending = null;
+
+    function currentLanguage() {
+        return (importSettings.value && importSettings.value.language) || 'jp';
+    }
+
+    function isCurrent(request) {
+        return pending === request && request.generation === stateGeneration.value && request.language === currentLanguage();
+    }
 
     function text(key, fallback) {
-        const lang = (importSettings.value && importSettings.value.language) || 'jp';
+        const lang = currentLanguage();
         const entry = importStrings.value && importStrings.value[key];
         return entry ? (entry[lang] || entry.jp || fallback) : fallback;
     }
@@ -93,12 +102,14 @@ function setupDeckImporter({ side, inputId, buttonId, onDeckIdChange }) {
             return;
         }
 
-        const isChsImport = importSettings.value && importSettings.value.language === 'chs';
-        pending = true;
+        const request = { language: currentLanguage(), generation: stateGeneration.value };
+        const isChsImport = request.language === 'chs';
+        pending = request;
         updateLoadingStatus();
 
         nodecg.sendMessage('importDeckOrCard', { side: upperCaseSide, code: code })
             .then(result => {
+                if (!isCurrent(request)) return;
                 // 成功通知後に更新し、単カード追加ではデッキ ID を置き換えない。
                 if (onDeckIdChange) {
                     onDeckIdChange(code, result);
@@ -116,6 +127,7 @@ function setupDeckImporter({ side, inputId, buttonId, onDeckIdChange }) {
                 }
             })
             .catch(err => {
+                if (!isCurrent(request) || (err && err.code === 'IMPORT_CONTEXT_EXPIRED')) return;
                 const reason = typeof err === 'string' ? err : ((err && (err.error || err.message)) || text('import_unknown_error', 'Unknown error'));
                 if (isChsImport || (err && err.diagnosticId)) {
                     const lines = [text('import_failed', 'Failed to import'), reason];
@@ -126,8 +138,10 @@ function setupDeckImporter({ side, inputId, buttonId, onDeckIdChange }) {
                 }
             })
             .finally(() => {
-                pending = false;
-                updateLoadingStatus();
+                if (pending === request) {
+                    pending = null;
+                    updateLoadingStatus();
+                }
             });
     }
 
@@ -148,8 +162,9 @@ function setupDeckImporter({ side, inputId, buttonId, onDeckIdChange }) {
         const isThisPanelLoading = isLoading && statusSide === upperCaseSide;
         const isAnotherPanelLoading = isLoading && statusSide !== upperCaseSide;
 
-        buttonEl.disabled = isLoading || pending;
-        inputEl.disabled = isLoading || pending;
+        const awaitingGeneration = typeof stateGeneration.value !== 'number';
+        buttonEl.disabled = isLoading || !!pending || awaitingGeneration;
+        inputEl.disabled = isLoading || !!pending || awaitingGeneration;
 
         if (isThisPanelLoading) {
             const percentage = newStatus.percentage || 0;
@@ -160,6 +175,12 @@ function setupDeckImporter({ side, inputId, buttonId, onDeckIdChange }) {
             buttonEl.textContent = 'Import';
         }
     }
+    function updateContext() {
+        if (pending && !isCurrent(pending)) pending = null;
+        updateLoadingStatus();
+    }
     deckLoadingStatus.on('change', updateLoadingStatus);
+    stateGeneration.on('change', updateContext);
+    importSettings.on('change', updateContext);
     updateLoadingStatus();
 }

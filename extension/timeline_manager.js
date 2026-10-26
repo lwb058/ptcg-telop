@@ -7,9 +7,9 @@
  */
 
 /**
- * [INPUT]: NodeCG の Replicant・メッセージ・logger と、index.js から注入される盤面操作・個体 ID 検証・キュー処理・デッキ取得の gameLogic に依存する。
- * [OUTPUT]: 時系列管理の初期化関数を提供し、試合時計、対戦／表示の記録、履歴編集、シーク・再生、JSON 入出力を管理し、個体 ID が重複する再構築は停止する。
- * [POS]: extension の記録・再構築層。盤面ルールは index.js に委ね、二系統のタイムラインを同じ対戦ロジックへ接続する。
+ * [INPUT]: NodeCG の Replicant・メッセージ・logger と、index.js から注入される盤面操作・個体 ID 検証・キュー処理・デッキ取得・取得世代の gameLogic に依存する。
+ * [OUTPUT]: 時系列管理の初期化関数を提供し、試合時計、対戦／表示の記録、履歴編集、シーク・再生、JSON 入出力を管理し、個体 ID が重複する再構築は停止する。呼出元へ resetRuntime を返し、待機中の再生・時計・カード表示を取り消す。
+ * [POS]: extension の記録・再構築層。盤面ルールは index.js に委ね、二系統のタイムラインを同じ対戦ロジックへ接続する。各非同期復帰は再生／取得の世代を照合し、リセット後に旧操作を再開しない。
  * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
  */
 
@@ -477,11 +477,25 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 	const PLAYBACK_TICK_RATE = 100;
 	let playbackQueue = [];
 	let isPlaybackProcessing = false;
+	let playbackGeneration = 0;
+	let playbackWait = null;
+	let playbackResume = null;
 
-	function stopPlaybackInterval() {
+	function stopPlaybackInterval(cancelPending = true) {
 		if (playbackInterval) {
 			clearInterval(playbackInterval);
 			playbackInterval = null;
+		}
+		if (!cancelPending) return;
+		playbackGeneration++;
+		if (playbackResume) {
+			playbackResume();
+			playbackResume = null;
+		}
+		if (playbackWait) {
+			clearTimeout(playbackWait.timeout);
+			playbackWait.resolve();
+			playbackWait = null;
 		}
 		playbackQueue = [];
 		isPlaybackProcessing = false;
@@ -670,9 +684,10 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 	async function processPlaybackQueue() {
 		if (isPlaybackProcessing) return;
 		isPlaybackProcessing = true;
+		const generation = playbackGeneration;
 
 		try {
-			while (playbackQueue.length > 0) {
+			while (generation === playbackGeneration && playbackQueue.length > 0) {
 				const pack = playbackQueue.shift();
 
 				// Assign Epochs based on causal queueIndex, then sort by priority
@@ -698,6 +713,11 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 				const priorities = Array.from(opsByPriority.keys()).sort((a, b) => a - b);
 
 				for (const priority of priorities) {
+					if (generation !== playbackGeneration) return;
+					if (!playbackStatus.value.isPlaying) {
+						await new Promise(resolve => { playbackResume = resolve; });
+						if (generation !== playbackGeneration) return;
+					}
 					const batch = opsByPriority.get(priority);
 
 					nodecg.log.info(`Playback: Processing batch priority ${priority} (${batch.length} ops)`);
@@ -717,14 +737,21 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 					if (gameLogic.doesBatchRequireAck(batch)) {
 						const delay = gameLogic.getTimeoutForPriority(priority);
 						nodecg.log.info(`Playback: Waiting ${delay}ms for animation...`);
-						await new Promise(resolve => setTimeout(resolve, delay));
+						await new Promise(resolve => {
+							const wait = { resolve, timeout: null };
+							wait.timeout = setTimeout(() => {
+								if (playbackWait === wait) playbackWait = null;
+								resolve();
+							}, delay);
+							playbackWait = wait;
+						});
 					}
 				}
 			}
 		} catch (error) {
-			stopPlaybackOnError(error);
+			if (generation === playbackGeneration) stopPlaybackOnError(error);
 		} finally {
-			isPlaybackProcessing = false;
+			if (generation === playbackGeneration) isPlaybackProcessing = false;
 		}
 	}
 
@@ -784,7 +811,8 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			const gameplayDone = playbackStatus.value.currentIndexGameplay >= timelineGameplay.value.length;
 			const displayDone = playbackStatus.value.currentIndexDisplay >= timelineDisplay.value.length;
 
-			if (gameplayDone && displayDone && currentTimeMs >= endTime) {
+			if (gameplayDone && displayDone && currentTimeMs >= endTime &&
+				playbackQueue.length === 0 && !isPlaybackProcessing) {
 				stopPlaybackInterval();
 				playbackStatus.value.isPlaying = false;
 				matchTimer.value.isRunning = false;
@@ -795,6 +823,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 
 	nodecg.listenFor('playTimeline', async (data, callback) => {
 		try {
+			stopPlaybackInterval();
 			// 1. Preserve Prize Cards
 			const savedPrizeL = JSON.parse(JSON.stringify(prizeCardsL.value));
 			const savedPrizeR = JSON.parse(JSON.stringify(prizeCardsR.value));
@@ -839,7 +868,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 	nodecg.listenFor('pauseTimeline', (data, callback) => {
 		if (playbackStatus.value.isPlaying) {
 			playbackStatus.value.isPlaying = false;
-			stopPlaybackInterval();
+			stopPlaybackInterval(false);
 
 			// Also pause the matchTimer
 			if (matchTimer.value.isRunning) {
@@ -859,6 +888,10 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 			gameLogic.assertUniqueInstanceIds('live');
 			if (!playbackStatus.value.isPlaying) {
 				playbackStatus.value.isPlaying = true;
+				if (playbackResume) {
+					playbackResume();
+					playbackResume = null;
+				}
 				startPlaybackInterval();
 			}
 			if (callback) callback(null, 'Playback resumed.');
@@ -1110,6 +1143,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 	nodecg.listenFor('importTimeline', (jsonString, callback) => {
 		try {
 			const data = JSON.parse(jsonString);
+			const context = gameLogic.getImportContext();
 
 			// Check Language
 			const currentLang = (ptcgSettings.value && ptcgSettings.value.language) || 'jp';
@@ -1133,6 +1167,7 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 					let currentDeckIndex = 0;
 
 					if (data.deckL && data.deckL.deckId) {
+						gameLogic.assertImportContext(context);
 						await new Promise((resolve) => {
 							const offset = currentDeckIndex * scale * 100;
 							gameLogic.processDeckImport('L', data.deckL.deckId, (err) => {
@@ -1140,10 +1175,12 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 								resolve(); // Resolve anyway to continue
 							}, { scale, offset });
 						});
+						gameLogic.assertImportContext(context);
 						currentDeckIndex++;
 					}
 
 					if (data.deckR && data.deckR.deckId) {
+						gameLogic.assertImportContext(context);
 						await new Promise((resolve) => {
 							const offset = currentDeckIndex * scale * 100;
 							gameLogic.processDeckImport('R', data.deckR.deckId, (err) => {
@@ -1151,9 +1188,11 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 								resolve(); // Resolve anyway to continue
 							}, { scale, offset });
 						});
+						gameLogic.assertImportContext(context);
 						currentDeckIndex++;
 					}
 
+					gameLogic.assertImportContext(context);
 					timelineGameplay.value = data.timeline;
 
 					if (data.timelineDisplay) {
@@ -1199,7 +1238,10 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 					if (callback) callback(null, 'Timeline, Decks, and Display imported.');
 				};
 
-				processImports();
+				return processImports().catch(error => {
+					nodecg.log.warn(`Timeline import stopped: ${error.message || error}`);
+					if (callback) callback(error);
+				});
 
 			} else {
 				throw new Error('Invalid JSON format');
@@ -1358,4 +1400,12 @@ module.exports = function (nodecg, gameLogic) { // Modified to accept gameLogic
 		nodecg.log.info('Game state has been completely restart.');
 	});
 
+	// ---- 再開とシステムリセットは、待機中の古い再生も先に無効化する ----
+	return { resetRuntime() {
+		stopPlaybackInterval();
+		playbackStatus.value = { isPlaying: false, currentIndexGameplay: 0, currentIndexDisplay: 0,
+			currentTime: '00:00', playbackTimeMs: 0 };
+		resetTimer();
+		clearDisplay();
+	} };
 };

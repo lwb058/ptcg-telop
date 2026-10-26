@@ -8,7 +8,7 @@
 
 /**
  * [INPUT]: 実際の Python 子プロセス、テンポラリ DB、chs_import と診断ストアに依存する。
- * [OUTPUT]: 原因保持、UTF-8、完全性、期限、状態保護の再現可能な Node テストを提供する。
+ * [OUTPUT]: 原因保持、UTF-8、完全性、期限と、言語回切・Reset System による旧取得の失効を検証する。
  * [POS]: extension の CHS 統合境界テスト。通信なしで Python の実終了と保存結果を検証する。
  * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
  */
@@ -235,6 +235,78 @@ test('changing language during Python execution rejects the candidate before com
     const promise = f.importer.run({ side: 'L', code: 'language' });
     f.settings.language = 'jp';
     await assert.rejects(promise, error => error.message.includes('语言已更改'));
+    assert.deepEqual(f.state, f.original);
+});
+
+test('returning to CHS does not revive an import from the previous game generation', async t => {
+    let generation = 0;
+    const f = setup(t, {
+        getContext: () => ({ language: 'chs', generation }),
+        assertContext: context => {
+            if (context.generation !== generation) {
+                const error = new Error('Import context expired.');
+                error.code = 'IMPORT_CONTEXT_EXPIRED';
+                throw error;
+            }
+        }
+    });
+    const pending = f.importer.run({ side: 'L', code: 'language' });
+    generation += 2;
+    const loadingBefore = structuredClone(f.loading);
+    await assert.rejects(pending, error => error.code === 'IMPORT_CONTEXT_EXPIRED' && !!error.diagnosticId);
+    assert.deepEqual(f.state, f.original);
+    assert.deepEqual(f.loading, loadingBefore);
+    assert.equal(f.events.filter(event => event.stage === 'process.spawn').length, 1);
+});
+
+test('resetting the game allows a new import while the expired Python job is finishing', async t => {
+    let generation = 0;
+    const f = setup(t, {
+        getContext: () => ({ language: 'chs', generation }),
+        assertContext: context => {
+            if (context.generation !== generation) {
+                const error = new Error('Import context expired.');
+                error.code = 'IMPORT_CONTEXT_EXPIRED';
+                throw error;
+            }
+        }
+    });
+    const retired = assert.rejects(f.importer.run({ side: 'L', code: 'language' }), error => error.code === 'IMPORT_CONTEXT_EXPIRED');
+    generation++;
+    try {
+        const current = await f.importer.run({ side: 'R', code: 'warning' });
+        assert.equal(current.type, 'deck');
+        assert.equal(f.state.id, 'warning');
+    } finally {
+        await retired;
+    }
+    assert.equal(f.state.id, 'warning');
+    assert.equal(f.importer.isBusy(), false);
+});
+
+test('the expired job cannot release the busy state or progress of the new game import', async t => {
+    let generation = 0;
+    const f = setup(t, {
+        totalTimeoutMs: 600,
+        getContext: () => ({ language: 'chs', generation }),
+        assertContext: context => {
+            if (context.generation !== generation) {
+                const error = new Error('Import context expired.');
+                error.code = 'IMPORT_CONTEXT_EXPIRED';
+                throw error;
+            }
+        }
+    });
+    const retired = assert.rejects(f.importer.run({ side: 'L', code: 'language' }), error => error.code === 'IMPORT_CONTEXT_EXPIRED');
+    generation++;
+    const current = assert.rejects(f.importer.run({ side: 'R', code: 'slow' }), error => error.message.includes('超时'));
+    const loadingBefore = structuredClone(f.loading);
+    await retired;
+    assert.equal(f.importer.isBusy(), true);
+    assert.deepEqual(f.loading, loadingBefore);
+    await assert.rejects(f.importer.run({ side: 'L', code: 'warning' }), error => error.message.includes('已有导入'));
+    await current;
+    assert.equal(f.importer.isBusy(), false);
     assert.deepEqual(f.state, f.original);
 });
 

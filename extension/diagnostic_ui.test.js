@@ -8,7 +8,7 @@
 
 /**
  * [INPUT]: Node.js のテスト・VM API、診断ダウンロードと取り込み UI の実スクリプト、翻訳辞書に依存する。
- * [OUTPUT]: 別 realm を含む ZIP 応答形式、連打抑止、多言語状態、原因・警告表示と成功済みデッキ ID の保護をオフラインで検証する。
+ * [OUTPUT]: ZIP 応答、連打抑止、多言語診断と、言語変更・Reset System 後の旧応答から ID と入力を保護する契約を検証する。
  * [POS]: extension のブラウザー契約テスト。最小 DOM と NodeCG 応答を注入し、実ログ・カード API・ユーザーの Replicant を変更しない。
  * [PROTOCOL]: 変更時はこのヘッダーを更新し、その後 CLAUDE.md を確認する。
  */
@@ -106,7 +106,7 @@ function importHarness({ language = 'chs', onDeckIdChange } = {}) {
     const reps = new Map(), requests = [], alerts = [];
     function replicant(name) {
         if (!reps.has(name)) reps.set(name, {
-            value: name === 'ptcg-settings' ? { language } : name === 'i18nStrings' ? strings : { loading: false },
+            value: name === 'ptcg-settings' ? { language } : name === 'i18nStrings' ? strings : name === 'stateGeneration' ? 0 : { loading: false },
             callbacks: [], on(_event, callback) { this.callbacks.push(callback); }
         });
         return reps.get(name);
@@ -119,6 +119,7 @@ function importHarness({ language = 'chs', onDeckIdChange } = {}) {
             return request.promise;
         }
     } });
+    replicant('stateGeneration');
     vm.runInContext(source('dashboard/js/deck_importer.js'), context);
     context.setupDeckImporter({ side: 'L', inputId: 'input', buttonId: 'import', onDeckIdChange });
     return { reps, requests, alerts, input: document.getElementById('input'),
@@ -255,6 +256,64 @@ test('JP/CHT の成功応答と失敗通知を保ち、ビューアーでは成�
         await flush();
         assert.equal(viewer.input.value, '');
     }
+});
+
+test('Reset System 後の遅い成功応答はデッキ ID と新しい入力を書き換えない', async () => {
+    const successfulIds = [];
+    for (const onDeckIdChange of [undefined, code => successfulIds.push(code)]) {
+        const ui = importHarness({ language: 'jp', onDeckIdChange });
+        ui.input.value = 'old-deck';
+        ui.click();
+        const generation = ui.reps.get('stateGeneration');
+        generation.value = 1;
+        generation.callbacks.forEach(callback => callback(1, 0));
+        ui.input.value = 'new-deck';
+        ui.requests[0].resolve({ type: 'deck', warnings: [{ message: 'old warning' }], diagnosticId: 'old-result' });
+        await flush();
+        assert.deepEqual(successfulIds, []);
+        assert.equal(ui.input.value, 'new-deck');
+        assert.equal(ui.alerts.length, 0);
+        assert.equal(ui.input.disabled, false);
+    }
+});
+
+test('言語変更後の旧エラーと finally は新しい導入の待機状態を解除しない', async () => {
+    const successfulIds = [];
+    const ui = importHarness({ language: 'jp', onDeckIdChange: code => successfulIds.push(code) });
+    ui.input.value = 'old-deck';
+    ui.click();
+    const settings = ui.reps.get('ptcg-settings');
+    settings.value = { language: 'cht' };
+    settings.callbacks.forEach(callback => callback(settings.value, { language: 'jp' }));
+    const generation = ui.reps.get('stateGeneration');
+    generation.value = 1;
+    generation.callbacks.forEach(callback => callback(1, 0));
+    assert.equal(ui.input.disabled, false);
+    ui.input.value = 'current-deck';
+    ui.click();
+    assert.equal(ui.requests.length, 2);
+    ui.requests[0].reject({ error: 'Import context expired.', code: 'IMPORT_CONTEXT_EXPIRED', diagnosticId: 'old-error' });
+    await flush();
+    assert.equal(ui.alerts.length, 0);
+    assert.equal(ui.input.disabled, true);
+    ui.requests[1].resolve({ type: 'deck', warnings: [] });
+    await flush();
+    assert.deepEqual(successfulIds, ['current-deck']);
+    assert.equal(ui.input.disabled, false);
+});
+
+test('状態世代の初期同期を待ってから導入を受け付ける', () => {
+    const ui = importHarness({ language: 'jp' });
+    const generation = ui.reps.get('stateGeneration');
+    generation.value = undefined;
+    generation.callbacks.forEach(callback => callback(undefined, 0));
+    ui.input.value = 'deck-code';
+    ui.click();
+    assert.equal(ui.requests.length, 0);
+    assert.equal(ui.input.disabled, true);
+    generation.value = 0;
+    generation.callbacks.forEach(callback => callback(0, undefined));
+    assert.equal(ui.input.disabled, false);
 });
 
 test('JP/CHT/EN の診断付き失敗とゼロ終了の警告も Settings の案内と番号を表示する', async () => {
